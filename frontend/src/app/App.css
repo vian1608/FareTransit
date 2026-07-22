@@ -32,13 +32,13 @@ body.page-transitioning .main {
 }
 
 body.theme-flights {
-  --page-accent: #8b1538;
-  --page-accent-soft: rgba(139, 21, 56, 0.06);
+  --page-accent: #991b1b;
+  --page-accent-soft: rgba(153, 27, 27, 0.06);
 }
 
 body.theme-rail {
-  --page-accent: #1e3a5f;
-  --page-accent-soft: rgba(30, 58, 95, 0.06);
+  --page-accent: #d97706;
+  --page-accent-soft: rgba(217, 119, 6, 0.06);
 }
 
 body.theme-flights,
@@ -47,11 +47,11 @@ body.theme-rail {
 }
 
 body.theme-flights {
-  background-color: #faf8f9;
+  background-color: #fffafb;
 }
 
 body.theme-rail {
-  background-color: #f4f7fb;
+  background-color: #fffbf5;
 }
 
 @media (max-width: 640px) {

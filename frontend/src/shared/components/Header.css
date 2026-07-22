@@ -7,8 +7,8 @@
 
 /* Flights — solid, high-contrast branding */
 .header.header--flights {
-  background: linear-gradient(135deg, #9e1840 0%, #8b1538 45%, #6b0f2a 100%);
-  box-shadow: 0 4px 22px rgba(107, 15, 42, 0.45);
+  background: linear-gradient(135deg, #b91c1c 0%, #991b1b 45%, #7f1d1d 100%);
+  box-shadow: 0 4px 22px rgba(127, 29, 29, 0.45);
 }
 
 .header.header--flights .logo-icon {
@@ -252,7 +252,7 @@
     width: 100%;
     margin: 0;
     padding: 0.5rem 0;
-    background: linear-gradient(135deg, #8b1538 0%, #6b0f2a 100%);
+    background: linear-gradient(135deg, #991b1b 0%, #7f1d1d 100%);
     border-radius: 0 0 8px 8px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
     z-index: 1001;

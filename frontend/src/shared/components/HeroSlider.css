@@ -7,12 +7,12 @@
 
 /* Lighter than header — visually differentiated intro slide */
 .hero-slider--flights {
-  --hero-accent: #8b1538;
+  --hero-accent: #991b1b;
   --hero-gradient: linear-gradient(
     135deg,
-    rgba(155, 45, 75, 0.92) 0%,
-    rgba(125, 30, 58, 0.88) 45%,
-    rgba(100, 35, 60, 0.85) 100%
+    rgba(185, 28, 28, 0.92) 0%,
+    rgba(153, 27, 27, 0.88) 45%,
+    rgba(127, 29, 29, 0.85) 100%
   );
 }
 
@@ -183,7 +183,7 @@
 }
 
 .hero-offer-bar--flights {
-  background: linear-gradient(90deg, #6b0f2a 0%, #8b1538 50%, #6b0f2a 100%);
+  background: linear-gradient(90deg, #7f1d1d 0%, #991b1b 50%, #7f1d1d 100%);
 }
 
 .hero-offer-bar--rail {
