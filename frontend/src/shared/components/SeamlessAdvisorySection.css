@@ -1,0 +1,205 @@
+.seamless-advisory {
+  padding: 3.5rem 0;
+  background-color: #f1f5f9;
+}
+
+.seamless-advisory--flight {
+  background-color: #faf5f7;
+}
+
+.seamless-advisory__heading {
+  text-align: center;
+  max-width: 700px;
+  margin: 0 auto 3rem;
+}
+
+.seamless-advisory__heading h2 {
+  font-size: clamp(1.5rem, 4vw, 2.2rem);
+  font-weight: 800;
+  margin: 0 0 0.75rem;
+  color: #0f2744;
+}
+
+.seamless-advisory--flight .seamless-advisory__heading h2 {
+  color: #1e293b;
+}
+
+.seamless-advisory__heading p {
+  margin: 0;
+  color: #64748b;
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+
+/* ── Desktop 3-column grid ── */
+.seamless-advisory__steps--desktop {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2.5rem;
+}
+
+/* ── Mobile carousel: hidden on desktop ── */
+.seamless-advisory__carousel {
+  display: none;
+}
+
+.seamless-advisory__step,
+.seamless-advisory__carousel-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.seamless-advisory__number {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: #0f2744;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 8px 16px rgba(15, 39, 68, 0.2);
+  border: 4px solid #fff;
+}
+
+.seamless-advisory--flight .seamless-advisory__number {
+  background-color: #8b1538;
+  box-shadow: 0 8px 16px rgba(139, 21, 56, 0.25);
+}
+
+.seamless-advisory__step h3,
+.seamless-advisory__carousel-card h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0f2744;
+  margin: 0 0 0.75rem;
+}
+
+.seamless-advisory--flight .seamless-advisory__step h3,
+.seamless-advisory--flight .seamless-advisory__carousel-card h3 {
+  color: #1e293b;
+}
+
+.seamless-advisory__step p,
+.seamless-advisory__carousel-card p {
+  margin: 0;
+  color: #475569;
+  line-height: 1.55;
+  font-size: 0.95rem;
+  max-width: 280px;
+}
+
+/* ── Tablet: collapse to single column ── */
+@media (max-width: 900px) {
+  .seamless-advisory__steps--desktop {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+}
+
+/* ── Mobile: hide grid, show carousel ── */
+@media (max-width: 640px) {
+  .seamless-advisory {
+    padding: 2rem 0 1.75rem;
+  }
+
+  .seamless-advisory__heading {
+    margin: 0 auto 1.5rem;
+  }
+
+  .seamless-advisory__heading h2 {
+    font-size: 1.25rem;
+  }
+
+  .seamless-advisory__heading p {
+    font-size: 0.88rem;
+    line-height: 1.5;
+  }
+
+  /* Hide desktop grid, show carousel */
+  .seamless-advisory__steps--desktop {
+    display: none !important;
+  }
+
+  .seamless-advisory__carousel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+  }
+
+  .seamless-advisory__carousel-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 2rem 1.5rem 1.5rem;
+    width: 100%;
+    box-shadow: 0 4px 20px rgba(15, 23, 42, 0.06);
+    border: 1px solid #e2e8f0;
+    margin-bottom: 1.25rem;
+    animation: stepFadeIn 0.3s ease;
+  }
+
+  @keyframes stepFadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .seamless-advisory__carousel-card .seamless-advisory__number {
+    width: 52px;
+    height: 52px;
+    font-size: 1.35rem;
+    margin-bottom: 1rem;
+  }
+
+  .seamless-advisory__carousel-card h3 {
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .seamless-advisory__carousel-card p {
+    font-size: 0.9rem;
+    max-width: none;
+    color: #64748b;
+  }
+
+  /* Dot navigation */
+  .seamless-advisory__carousel-dots {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-bottom: 0.75rem;
+  }
+
+  .seamless-advisory__dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: none;
+    background: #cbd5e1;
+    cursor: pointer;
+    padding: 0;
+    transition: background 0.2s, transform 0.2s;
+  }
+
+  .seamless-advisory--flight .seamless-advisory__dot--active {
+    background: #8b1538;
+    transform: scale(1.25);
+  }
+
+  .seamless-advisory--rail .seamless-advisory__dot--active {
+    background: #0f2744;
+    transform: scale(1.25);
+  }
+
+  .seamless-advisory__swipe-hint {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    margin: 0;
+    text-align: center;
+  }
+}

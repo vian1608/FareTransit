@@ -1,0 +1,326 @@
+.amtrak-page {
+  background: #f8fafc;
+}
+
+.amtrak-hero {
+  background: linear-gradient(135deg, #1e3a5f 0%, #0f2744 55%, #1a4d7a 100%);
+  color: #fff;
+  padding: 2.5rem 0 3.5rem;
+}
+
+.amtrak-hero .container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.amtrak-hero__content {
+  max-width: 720px;
+}
+
+.amtrak-hero__eyebrow {
+  font-size: 0.9rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.85;
+  margin-bottom: 0.75rem;
+}
+
+.amtrak-hero h1 {
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  line-height: 1.2;
+  margin-bottom: 1rem;
+  font-weight: 700;
+}
+
+.amtrak-hero__lead {
+  font-size: 1.1rem;
+  line-height: 1.65;
+  opacity: 0.92;
+  margin-bottom: 1.5rem;
+}
+
+.amtrak-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.amtrak-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 48px;
+  padding: 0.75rem 1.35rem;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 1rem;
+  text-decoration: none;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.amtrak-btn--primary {
+  background: #fff;
+  color: #1e3a5f;
+  border-color: #fff;
+}
+
+.amtrak-btn--primary:hover {
+  background: #f1f5f9;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+}
+
+/* Primary CTA on form — rail navy theme (matches header) */
+.amtrak-btn--cta {
+  margin-top: 0.5rem;
+  background: linear-gradient(135deg, #1e3a5f 0%, #0f2744 55%, #1a4d7a 100%);
+  color: #fff;
+  border-color: #0f2744;
+  font-size: 1.05rem;
+  letter-spacing: 0.02em;
+  box-shadow: 0 4px 14px rgba(15, 39, 68, 0.4);
+  transition: background 0.25s ease, box-shadow 0.25s ease, transform 0.15s ease;
+}
+
+.amtrak-btn--cta:hover {
+  background: linear-gradient(135deg, #254a75 0%, #163a5c 55%, #2a5f94 100%);
+  box-shadow: 0 6px 22px rgba(15, 39, 68, 0.5);
+}
+
+.amtrak-btn--cta:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 8px rgba(15, 39, 68, 0.35);
+}
+
+.amtrak-btn--outline {
+  background: transparent;
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.65);
+}
+
+.amtrak-btn--outline:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.amtrak-btn--full {
+  width: 100%;
+}
+
+.amtrak-section {
+  padding: 3rem 0;
+}
+
+.amtrak-section--muted {
+  background: #eef2f7;
+}
+
+.inquiry-split-layout {
+  display: grid;
+  grid-template-columns: 0.8fr 1.2fr;
+  gap: 3rem;
+  align-items: start;
+}
+
+.inquiry-left-panel h2 {
+  font-size: 2rem;
+  color: #1e3a5f;
+  margin-bottom: 1rem;
+}
+
+.inquiry-left-panel p {
+  color: #475569;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+}
+
+@media (max-width: 900px) {
+  .inquiry-split-layout {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+}
+
+
+.amtrak-section__title {
+  text-align: center;
+  color: #1e293b;
+  font-size: 1.75rem;
+  margin-bottom: 2rem;
+}
+
+.amtrak-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.25rem;
+}
+
+.amtrak-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 1.5rem;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+}
+
+.amtrak-card i {
+  font-size: 1.5rem;
+  color: #1e3a5f;
+  margin-bottom: 0.75rem;
+}
+
+.amtrak-card h3 {
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+  font-size: 1.1rem;
+}
+
+.amtrak-card p {
+  color: #64748b;
+  line-height: 1.65;
+  font-size: 0.95rem;
+}
+
+.amtrak-steps {
+  max-width: 640px;
+  margin: 0 auto 1.5rem;
+  padding-left: 1.25rem;
+  color: #475569;
+  line-height: 1.8;
+}
+
+.amtrak-steps li {
+  margin-bottom: 0.75rem;
+}
+
+.amtrak-disclaimer {
+  max-width: 640px;
+  margin: 0 auto;
+  text-align: center;
+  font-size: 0.9rem;
+  color: #64748b;
+  line-height: 1.6;
+  padding: 1rem;
+  background: #fff;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+.amtrak-inquiry-card {
+  max-width: 720px;
+  margin: 0 auto;
+  background: #fff;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  border: 1px solid #e2e8f0;
+}
+
+.amtrak-inquiry-card h2 {
+  color: #1e3a5f;
+  margin-bottom: 0.5rem;
+}
+
+.amtrak-inquiry__intro {
+  color: #64748b;
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
+
+.amtrak-form__row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.amtrak-form__group {
+  margin-bottom: 1rem;
+}
+
+.amtrak-form__group label {
+  display: block;
+  font-weight: 500;
+  color: #334155;
+  margin-bottom: 0.35rem;
+  font-size: 0.9rem;
+}
+
+.amtrak-form__group input,
+.amtrak-form__group select,
+.amtrak-form__group textarea {
+  width: 100%;
+  min-height: 48px;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.amtrak-form__group textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.amtrak-form__group input:focus,
+.amtrak-form__group select:focus,
+.amtrak-form__group textarea:focus {
+  outline: none;
+  border-color: #1e3a5f;
+  box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.15);
+}
+
+.inquiry-form__message {
+  margin: 0 0 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.inquiry-form__message--success {
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.inquiry-form__message--error {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+.amtrak-btn--cta:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+@media (max-width: 640px) {
+  .amtrak-section {
+    padding: 2rem 0;
+  }
+
+  .amtrak-hero {
+    padding: 1.75rem 0 2.5rem;
+  }
+
+  .amtrak-form__row {
+    grid-template-columns: 1fr;
+  }
+
+  .amtrak-inquiry-card {
+    padding: 1.25rem 1rem;
+  }
+
+  .amtrak-hero__actions {
+    flex-direction: column;
+  }
+
+  .amtrak-btn {
+    width: 100%;
+  }
+}

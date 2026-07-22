@@ -1,0 +1,203 @@
+.footer {
+  background: #0f172a;
+  color: #cbd5e1;
+  padding: 2.75rem 0 1rem;
+  border-top: 3px solid #8b1538;
+  overflow-x: hidden;
+}
+
+.footer-content {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr 0.8fr 1fr;
+  gap: 2rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Brand section */
+.footer-brand {
+  display: flex;
+  flex-direction: column;
+}
+
+.footer-section h3,
+.footer-section h4 {
+  margin: 0 0 0.85rem;
+  color: #f8fafc;
+}
+
+.footer-section h3 {
+  font-size: 1.25rem;
+}
+
+.footer-section h4 {
+  font-size: 1rem;
+}
+
+.footer-section p {
+  margin: 0;
+  color: #cbd5e1;
+  line-height: 1.65;
+}
+
+.footer-section ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.footer-section li {
+  margin-bottom: 0.5rem;
+  color: #cbd5e1;
+  line-height: 1.55;
+}
+
+.footer-section a {
+  color: #cbd5e1;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.footer-section a:hover {
+  color: #ffffff;
+}
+
+/* Accordion toggle button — desktop: behaves like normal heading */
+.footer-section__toggle {
+  display: none; /* hidden on desktop */
+}
+
+.footer-section__body {
+  display: block; /* always visible on desktop */
+}
+
+.footer-bottom {
+  border-top: 1px solid rgba(148, 163, 184, 0.3);
+  padding-top: 0.95rem;
+  text-align: center;
+}
+
+.footer-bottom p {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 0.9rem;
+}
+
+/* Tablet */
+@media (max-width: 900px) {
+  .footer-content {
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+
+  .footer-brand {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ═══════════════════════════════════
+   MOBILE — Accordion Footer
+   ═══════════════════════════════════ */
+@media (max-width: 640px) {
+  .footer {
+    padding: 1.25rem 0 0.75rem;
+    border-top-width: 2px;
+  }
+
+  .footer-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin-bottom: 0;
+  }
+
+  /* Brand: compact, no accordion */
+  .footer-brand {
+    padding: 0.85rem 0;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+    margin-bottom: 0;
+  }
+
+  .footer-brand h3 {
+    font-size: 1rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .footer-brand p {
+    font-size: 0.8rem;
+    line-height: 1.45;
+    color: #94a3b8;
+  }
+
+  /* Collapsible sections */
+  .footer-section--collapsible {
+    border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+  }
+
+  /* Show the toggle button on mobile */
+  .footer-section__toggle {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    background: none;
+    border: none;
+    padding: 0.75rem 0;
+    color: #e2e8f0;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    text-align: left;
+  }
+
+  .footer-section__toggle i {
+    font-size: 0.7rem;
+    color: #64748b;
+    transition: transform 0.2s ease;
+  }
+
+  .footer-section--open .footer-section__toggle i {
+    transform: rotate(180deg);
+  }
+
+  /* Collapsed by default */
+  .footer-section__body {
+    display: none;
+    padding-bottom: 0.75rem;
+  }
+
+  /* Expanded state */
+  .footer-section--open .footer-section__body {
+    display: block;
+    animation: accordionOpen 0.2s ease-out;
+  }
+
+  @keyframes accordionOpen {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .footer-section li {
+    font-size: 0.85rem;
+    margin-bottom: 0.4rem;
+    color: #94a3b8;
+  }
+
+  .footer-section a {
+    color: #94a3b8;
+  }
+
+  .footer-section a:hover {
+    color: #e2e8f0;
+  }
+
+  .footer-bottom {
+    padding-top: 0.75rem;
+    margin-top: 0.5rem;
+  }
+
+  .footer-bottom p {
+    font-size: 0.75rem;
+    color: #64748b;
+  }
+}

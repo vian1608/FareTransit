@@ -1,0 +1,63 @@
+.airline-faq {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.airline-faq__item {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+  overflow: hidden;
+}
+
+.airline-faq__item--open {
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+}
+
+.airline-faq__question {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.1rem;
+  border: none;
+  background: transparent;
+  text-align: left;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1e293b;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.airline-faq__question:hover {
+  color: #059669;
+}
+
+.airline-faq__question .fa-chevron-down,
+.airline-faq__question .fa-chevron-up {
+  color: #64748b;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.airline-faq__answer {
+  padding: 0 1.1rem 1rem;
+}
+
+.airline-faq__answer p {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.65;
+  color: #475569;
+}
+
+.airline-faq__note {
+  margin: 0.75rem 0 0;
+  font-size: 0.8rem;
+  color: #94a3b8;
+  line-height: 1.5;
+}

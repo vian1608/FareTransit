@@ -1,0 +1,36 @@
+{
+  "name": "urgent-travel-backend",
+  "version": "1.0.0",
+  "description": "Backend API server for FareTransit flight booking application",
+  "type": "module",
+  "main": "src/server.mjs",
+  "scripts": {
+    "start": "node src/server.mjs",
+    "dev": "nodemon src/server.mjs"
+  },
+  "keywords": [
+    "flight",
+    "booking",
+    "api"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.50.0",
+    "axios": "^1.6.2",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.23.0",
+    "nodemailer": "^6.9.7",
+    "pg": "^8.22.0",
+    "razorpay": "^2.9.2",
+    "resend": "^4.5.2",
+    "sequelize": "^6.37.8"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}

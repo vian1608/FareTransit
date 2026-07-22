@@ -1,0 +1,14 @@
+{
+  "buildCommand": "cd backend && npm install && cd ../frontend && npm install && npm run build",
+  "outputDirectory": "frontend/build",
+  "redirects": [
+    { "source": "/amtrak-assistance", "destination": "/amtrak", "permanent": true },
+    { "source": "/amtrak-assitance", "destination": "/amtrak", "permanent": true },
+    { "source": "/amtrak-assisstance", "destination": "/amtrak", "permanent": true },
+    { "source": "/amtrak-asistance", "destination": "/amtrak", "permanent": true }
+  ],
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/app.js" },
+    { "source": "/((?!api/|static/).*)", "destination": "/index.html" }
+  ]
+}

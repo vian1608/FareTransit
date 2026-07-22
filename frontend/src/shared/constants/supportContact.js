@@ -1,0 +1,3 @@
+export const SUPPORT_PHONE_TEL = '+12139659727';
+export const SUPPORT_PHONE_DISPLAY = '+1 (213) 965-9727';
+export const SUPPORT_PHONE_HREF = `tel:${SUPPORT_PHONE_TEL}`;

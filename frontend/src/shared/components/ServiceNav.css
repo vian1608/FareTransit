@@ -1,0 +1,82 @@
+.hero-content .service-nav,
+.amtrak-hero .service-nav {
+  margin-bottom: 1.25rem;
+}
+
+.service-nav {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.35rem;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  width: fit-content;
+  max-width: 100%;
+}
+
+.service-nav__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.1rem;
+  min-height: 44px;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.9);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.95rem;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.service-nav__item:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.service-nav__item--active {
+  background: #fff;
+  color: #1e3a5f;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.service-nav__item--active:hover {
+  background: #fff;
+  color: #1e3a5f;
+}
+
+.service-nav--light {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+}
+
+.service-nav--light .service-nav__item {
+  color: #475569;
+}
+
+.service-nav--light .service-nav__item:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
+.service-nav--light .service-nav__item--active {
+  background: #1e3a5f;
+  color: #fff;
+}
+
+.service-nav--light .service-nav__item--active:hover {
+  background: #1e3a5f;
+  color: #fff;
+}
+
+@media (max-width: 480px) {
+  .service-nav {
+    width: 100%;
+  }
+
+  .service-nav__item {
+    flex: 1;
+    justify-content: center;
+    padding: 0.65rem 0.5rem;
+    font-size: 0.85rem;
+  }
+}

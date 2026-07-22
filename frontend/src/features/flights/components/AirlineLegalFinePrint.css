@@ -1,0 +1,19 @@
+.airline-legal-fineprint {
+  margin: 1.25rem auto 0;
+  padding: 0.35rem 0.5rem;
+  max-width: 40rem;
+  text-align: center;
+}
+
+.airline-legal-fineprint__text {
+  display: block;
+  font-size: 0.68rem;
+  line-height: 1.4;
+  font-weight: 400;
+  color: #94a3b8;
+  letter-spacing: 0.01em;
+}
+
+.airline-legal-fineprint__consultancy {
+  opacity: 0.92;
+}

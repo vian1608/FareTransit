@@ -1,0 +1,824 @@
+.flights-page {
+  background: #f8fafc;
+  overflow-x: hidden;
+}
+
+.flights-hero {
+  background: linear-gradient(135deg, #8b1538 0%, #6b0f2a 55%, #7a1838 100%);
+  color: #fff;
+  padding: 2.5rem 0 3.5rem;
+}
+
+.flights-hero .container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.flights-hero__content {
+  max-width: 720px;
+}
+
+.flights-hero__eyebrow {
+  font-size: 0.9rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.88;
+  margin-bottom: 0.75rem;
+}
+
+.flights-hero h1 {
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  line-height: 1.2;
+  margin-bottom: 1rem;
+  font-weight: 700;
+}
+
+.flights-hero__lead {
+  font-size: 1.1rem;
+  line-height: 1.65;
+  opacity: 0.92;
+  margin-bottom: 1.5rem;
+}
+
+.flights-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.flights-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 48px;
+  padding: 0.75rem 1.35rem;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 1rem;
+  text-decoration: none;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: background 0.25s ease, box-shadow 0.25s ease, transform 0.15s ease;
+}
+
+.flights-btn--primary {
+  background: #fff;
+  color: #8b1538;
+  border-color: #fff;
+}
+
+.flights-btn--primary:hover {
+  background: #faf5f7;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+}
+
+.flights-btn--outline {
+  background: transparent;
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.65);
+}
+
+.flights-btn--outline:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.flights-btn--cta {
+  margin-top: 0.5rem;
+  background: linear-gradient(135deg, #8b1538 0%, #6b0f2a 55%, #7a1838 100%);
+  color: #fff;
+  border-color: #6b0f2a;
+  font-size: 1.05rem;
+  letter-spacing: 0.02em;
+  box-shadow: 0 4px 14px rgba(139, 21, 56, 0.35);
+}
+
+.flights-btn--cta:hover {
+  background: linear-gradient(135deg, #9e1840 0%, #7a1230 55%, #8b2045 100%);
+  box-shadow: 0 6px 20px rgba(139, 21, 56, 0.45);
+}
+
+.flights-btn--cta:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 8px rgba(139, 21, 56, 0.3);
+}
+
+.flights-btn--full {
+  width: 100%;
+}
+
+.flights-section {
+  padding: 3rem 0;
+}
+
+.flights-section--muted {
+  background: #faf5f7;
+}
+
+/* ─── Inquiry section container ─── */
+#inquiry .container {
+  width: 100% !important;
+  max-width: 1260px !important;
+  margin: 0 auto !important;
+  padding: 0 2rem !important;
+  box-sizing: border-box !important;
+}
+
+/* Desktop two-column layout */
+.inquiry-split-layout {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 380px !important;
+  gap: 2rem !important;
+  align-items: start !important;
+  width: 100% !important;
+}
+
+.inquiry-main-panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0 !important;
+}
+
+.inquiry-side-panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0 !important;
+}
+
+/* ─── Support card defaults ─── */
+.support-inquiry-card {
+  padding: 1.5rem !important;
+}
+
+.support-inquiry-card h2 {
+  font-size: 1.35rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.support-inquiry-card p {
+  font-size: 0.9rem !important;
+  line-height: 1.5 !important;
+  margin-bottom: 1rem !important;
+}
+
+.support-inquiry-card .benefits-list {
+  margin-top: 1rem !important;
+}
+
+.support-inquiry-card .benefits-list h3 {
+  font-size: 0.95rem !important;
+  margin-bottom: 0.75rem !important;
+}
+
+.support-inquiry-card .benefits-list ul {
+  gap: 0.65rem !important;
+}
+
+.support-inquiry-card .benefits-list li {
+  font-size: 0.85rem !important;
+}
+
+/* ─── Stacks at tablet ─── */
+@media (max-width: 992px) {
+  .inquiry-split-layout {
+    grid-template-columns: 1fr !important;
+    gap: 1.5rem !important;
+    align-items: stretch !important;
+  }
+}
+
+/* ─── Misc flights section content ─── */
+.flights-section__title {
+  text-align: center;
+  color: #1e293b;
+  font-size: 1.75rem;
+  margin-bottom: 2rem;
+}
+
+.flights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.25rem;
+}
+
+.flights-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 1.5rem;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+}
+
+.flights-card i {
+  font-size: 1.5rem;
+  color: #8b1538;
+  margin-bottom: 0.75rem;
+}
+
+.flights-card h3 {
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+  font-size: 1.1rem;
+}
+
+.flights-card p {
+  color: #64748b;
+  line-height: 1.65;
+  font-size: 0.95rem;
+}
+
+.flights-steps {
+  max-width: 640px;
+  margin: 0 auto 1.5rem;
+  padding-left: 1.25rem;
+  color: #475569;
+  line-height: 1.8;
+}
+
+.flights-steps li {
+  margin-bottom: 0.75rem;
+}
+
+.flights-disclaimer {
+  max-width: 640px;
+  margin: 0 auto;
+  text-align: center;
+  font-size: 0.9rem;
+  color: #64748b;
+  line-height: 1.6;
+  padding: 1rem;
+  background: #fff;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+/* ─── Main search card ─── */
+.flights-inquiry-card {
+  width: 100%;
+  background: #fff;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05);
+  border: 1px solid #e2e8f0;
+  box-sizing: border-box;
+}
+
+.flights-inquiry-card h2 {
+  color: #8b1538;
+  margin-bottom: 0.5rem;
+}
+
+.flights-inquiry__intro {
+  color: #64748b;
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
+
+/* ─── Two-column form rows ─── */
+.flights-form__row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.flights-form__group {
+  margin-bottom: 1rem;
+}
+
+.flights-form__group label {
+  display: block;
+  font-weight: 500;
+  color: #334155;
+  margin-bottom: 0.35rem;
+  font-size: 0.9rem;
+}
+
+.flights-form__group input,
+.flights-form__group select,
+.flights-form__group textarea {
+  width: 100%;
+  min-height: 48px;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.flights-form__group textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.flights-form__group input:focus,
+.flights-form__group select:focus,
+.flights-form__group textarea:focus {
+  outline: none;
+  border-color: #8b1538;
+  box-shadow: 0 0 0 3px rgba(139, 21, 56, 0.12);
+}
+
+.inquiry-form__message {
+  margin: 0 0 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.inquiry-form__message--success {
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.inquiry-form__message--error {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+.flights-btn--cta:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* ─── Route slider section ─── */
+.route-slider-section {
+  padding-bottom: 1rem;
+}
+
+/* ─── Tab Buttons ─── */
+.search-tabs-header {
+  display: flex;
+  background-color: #f1f5f9;
+  border-radius: 12px;
+  padding: 4px;
+  margin-bottom: 1.5rem;
+  border: 1px solid #e2e8f0;
+}
+
+.search-tabs-header .tab-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-weight: 600;
+  font-size: 0.95rem;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.search-tabs-header .tab-btn.active {
+  background-color: #ffffff;
+  color: #1e3a5f;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+}
+
+/* ─── Search meta row (Trip type, cabin, pax, currency) ─── */
+.search-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 1.5rem;
+  position: relative;
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.search-meta-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.search-meta-right {
+  display: flex;
+  align-items: center;
+}
+
+.search-meta-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ─── Passenger trigger button ─── */
+.passenger-trigger-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 38px;
+  padding: 0 12px;
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  cursor: pointer;
+  outline: none;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #475569;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease-in-out;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.passenger-trigger-btn:hover,
+.passenger-trigger-btn.active {
+  border-color: #94a3b8;
+  background-color: #f8fafc;
+}
+
+/* ─── Passenger popover ─── */
+.passenger-popover {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 1010;
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  padding: 16px;
+  width: 250px;
+  margin-top: 6px;
+}
+
+.passenger-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.passenger-row:last-child {
+  margin-bottom: 0;
+}
+
+.passenger-label {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.passenger-type {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.passenger-age-desc {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.passenger-counters {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.counter-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid #cbd5e1;
+  background-color: #ffffff;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  cursor: pointer;
+  outline: none;
+  transition: background-color 0.15s ease;
+}
+
+.counter-btn:hover:not(:disabled) {
+  background-color: #f1f5f9;
+}
+
+.counter-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.counter-value {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1e293b;
+  min-width: 20px;
+  text-align: center;
+}
+
+.passenger-popup-close {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  padding: 8px;
+  border: none;
+  background-color: #1e3a5f;
+  color: #ffffff;
+  font-weight: 600;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.passenger-popup-close:hover {
+  background-color: #12253f;
+}
+
+.search-meta-select-wrapper {
+  margin: 0;
+}
+
+/* ─── Call button ─── */
+.call-btn {
+  margin-top: 0.5rem;
+  margin-bottom: 2rem;
+  min-height: 44px !important;
+  padding: 0.6rem 1.5rem !important;
+  font-size: 0.95rem !important;
+  font-weight: 700;
+  border-radius: 10px !important;
+  width: fit-content !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ════════════════════════════════════════════
+   MOBILE BREAKPOINTS — 768px and below
+   ════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  /* Global overflow guard */
+  .flights-page,
+  #inquiry .container,
+  .flights-inquiry-card,
+  .support-inquiry-card,
+  .inquiry-split-layout,
+  .inquiry-main-panel,
+  .inquiry-side-panel {
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Container padding on mobile */
+  #inquiry .container {
+    padding: 0 1rem !important;
+  }
+
+  /* ── Hero ── */
+  .flights-hero {
+    padding: 1.5rem 0 2rem;
+  }
+
+  .flights-hero__lead {
+    font-size: 0.95rem;
+  }
+
+  .flights-hero__actions {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .flights-hero__actions .flights-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* ── Section padding — tighter on mobile ── */
+  .flights-section {
+    padding: 1.25rem 0;
+  }
+
+  /* ── Force single column layout on mobile ── */
+  .inquiry-split-layout {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1rem !important;
+    width: 100% !important;
+  }
+
+  /* Search card comes FIRST, support card comes SECOND */
+  .inquiry-main-panel {
+    order: 1;
+    width: 100% !important;
+  }
+
+  .inquiry-side-panel {
+    order: 2;
+    width: 100% !important;
+  }
+
+  /* ── Search card ── */
+  .flights-inquiry-card {
+    padding: 1rem !important;
+    border-radius: 12px !important;
+    width: 100% !important;
+  }
+
+  /* ── Form rows: stack to single column ── */
+  .flights-form__row {
+    grid-template-columns: 1fr !important;
+    gap: 0.65rem !important;
+  }
+
+  .flights-form__group {
+    margin-bottom: 0.65rem;
+    width: 100% !important;
+  }
+
+  .flights-form__group input,
+  .flights-form__group select,
+  .flights-form__group textarea {
+    min-height: 50px;
+    font-size: 1rem;
+  }
+
+  /* ── Meta row: each dropdown gets its OWN full-width row ── */
+  .search-meta-row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+    margin-bottom: 1rem !important;
+  }
+
+  .search-meta-left {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+
+  /* Every direct child of meta-left and meta-right is full width */
+  .search-meta-left > *,
+  .search-meta-right {
+    width: 100% !important;
+    margin-left: 0 !important;
+  }
+
+  /* Custom select triggers go full width */
+  .search-meta-left .custom-select-container,
+  .search-meta-right .custom-select-container {
+    width: 100% !important;
+    min-width: unset !important;
+  }
+
+  .search-meta-left .custom-select-trigger,
+  .search-meta-right .custom-select-trigger {
+    width: 100% !important;
+    height: 48px !important;
+    font-size: 0.95rem !important;
+  }
+
+  /* Passenger trigger button goes full width */
+  .search-meta-group {
+    width: 100% !important;
+  }
+
+  .passenger-trigger-btn {
+    width: 100% !important;
+    height: 48px !important;
+    font-size: 0.95rem !important;
+    justify-content: space-between !important;
+    max-width: unset !important;
+  }
+
+  /* Passenger popover on mobile: attach to full width */
+  .passenger-popover {
+    width: 100% !important;
+    left: 0 !important;
+    right: 0 !important;
+    max-width: 100% !important;
+  }
+
+  /* ── COMPACT Support card on mobile ── */
+  .support-inquiry-card {
+    padding: 1rem !important;
+    border-radius: 12px !important;
+    width: 100% !important;
+  }
+
+  /* Hide the large paragraph and benefits heading on mobile */
+  .support-inquiry-card > div > p,
+  .support-inquiry-card .benefits-list h3 {
+    display: none !important;
+  }
+
+  /* Compact heading */
+  .support-inquiry-card h2 {
+    font-size: 1rem !important;
+    margin-bottom: 0.4rem !important;
+    font-weight: 700 !important;
+  }
+
+  /* Compact benefits list — show as inline chips */
+  .support-inquiry-card .benefits-list {
+    margin-top: 0.5rem !important;
+  }
+
+  .support-inquiry-card .benefits-list ul {
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    gap: 0.35rem !important;
+  }
+
+  .support-inquiry-card .benefits-list li {
+    font-size: 0.78rem !important;
+    background: #f1f5f9;
+    border-radius: 20px;
+    padding: 0.2rem 0.6rem;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .call-btn {
+    width: 100% !important;
+    margin-top: 0.75rem !important;
+    margin-bottom: 0.25rem !important;
+    min-height: 48px !important;
+    height: auto !important;
+    font-size: 1rem !important;
+    padding: 0.75rem 1rem !important;
+  }
+}
+
+/* ── 480px and below (iPhone SE) ── */
+@media (max-width: 480px) {
+  .flights-hero h1 {
+    font-size: 1.5rem;
+  }
+
+  .flights-hero__lead {
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+  }
+
+  .flights-section {
+    padding: 1.5rem 0;
+  }
+
+  .search-tabs-header .tab-btn {
+    font-size: 0.82rem;
+    padding: 8px 4px;
+    gap: 5px;
+  }
+}
+
+/* ── 480px and below: ultra-compact (iPhone SE, small Android) ── */
+@media (max-width: 480px) {
+  .flights-section {
+    padding: 1rem 0;
+  }
+
+  .flights-section__title {
+    font-size: 1.35rem;
+    margin-bottom: 1.25rem;
+  }
+
+  /* Route slider: reduce section padding */
+  .route-slider-section {
+    padding-bottom: 0;
+  }
+
+  /* Inquiry tabs compact */
+  .search-tabs-header {
+    margin-bottom: 1rem;
+    padding: 3px;
+  }
+
+  .search-tabs-header .tab-btn {
+    font-size: 0.8rem;
+    padding: 7px 4px;
+    gap: 4px;
+    min-height: 36px;
+  }
+
+  /* Search card H2 */
+  .flights-inquiry-card h2 {
+    font-size: 1.35rem !important;
+  }
+
+  .flights-inquiry__intro {
+    font-size: 0.85rem;
+    margin-bottom: 1rem;
+  }
+}

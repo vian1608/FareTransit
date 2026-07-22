@@ -1,0 +1,183 @@
+.train-route-page {
+  --primary-color: #1e3a5f;
+  --primary-dark: #0f1d30;
+  --text-color: #1e293b;
+  padding-top: 80px;
+  min-height: 100vh;
+  background-color: #f8fafc;
+}
+
+.train-route-hero {
+  background-color: var(--primary-color);
+  color: white;
+  padding: 4rem 1rem;
+  text-align: center;
+}
+
+.train-route-hero h1 {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  font-weight: 700;
+}
+
+.train-route-hero p {
+  font-size: 1.1rem;
+  opacity: 0.9;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.train-route-form-section {
+  padding: 4rem 1rem;
+}
+
+.train-route-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  padding: 2.5rem;
+  max-width: 800px;
+  margin: -4rem auto 0;
+  position: relative;
+  z-index: 10;
+}
+
+.train-route-card h2 {
+  text-align: center;
+  color: var(--text-color);
+  margin-bottom: 2rem;
+  font-size: 1.5rem;
+}
+
+.train-route-form .form-group {
+  margin-bottom: 1.5rem;
+}
+
+.train-route-form label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: #334155;
+  font-size: 0.95rem;
+}
+
+.train-route-form input,
+.train-route-form select,
+.train-route-form textarea {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.train-route-form input:focus,
+.train-route-form select:focus,
+.train-route-form textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(139, 21, 56, 0.1);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.train-route-submit-btn {
+  width: 100%;
+  padding: 1rem;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-top: 1rem;
+}
+
+.train-route-submit-btn:hover:not(:disabled) {
+  background-color: var(--primary-dark);
+}
+
+.train-route-submit-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.form-message {
+  padding: 1rem;
+  border-radius: 6px;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.form-message.success {
+  background-color: #dcfce7;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.form-message.error {
+  background-color: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+@media (max-width: 768px) {
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  
+  .train-route-hero h1 {
+    font-size: 2rem;
+  }
+  
+  .train-route-card {
+    padding: 1.5rem;
+    margin-top: -2rem;
+  }
+}
+
+.inquiry-split-layout {
+  display: grid;
+  grid-template-columns: 0.8fr 1.2fr;
+  gap: 3rem;
+  align-items: start;
+  margin-top: -4rem;
+  position: relative;
+  z-index: 10;
+}
+
+.inquiry-left-panel {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  padding: 2.5rem;
+}
+
+.inquiry-left-panel h2 {
+  font-size: 1.8rem;
+  color: #1e293b;
+  margin-bottom: 1rem;
+}
+
+.inquiry-left-panel p {
+  color: #475569;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+}
+
+@media (max-width: 900px) {
+  .inquiry-split-layout {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+}

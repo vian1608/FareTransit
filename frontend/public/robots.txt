@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Allow: /amtrak
+Disallow: /admin/
+Disallow: /confirmation/
+Disallow: /booking
+Disallow: /search
+Disallow: /return-flight
+
+Sitemap: https://faretransit.com/sitemap.xml

@@ -1,0 +1,73 @@
+.email-input-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  width: 100%;
+}
+
+.email-input-label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.email-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.email-input-field {
+  width: 100%;
+  min-height: 48px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 0.65rem 2.5rem 0.65rem 1rem;
+  font-size: 0.98rem;
+  font-family: inherit;
+  color: #0f172a;
+  background-color: #fff;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+}
+
+.email-input-field:focus {
+  outline: none;
+  border-color: #8b1538;
+  box-shadow: 0 0 0 3.5px rgba(139, 21, 56, 0.12);
+}
+
+.email-input-field::placeholder {
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+.email-input-icon {
+  position: absolute;
+  right: 12px;
+  color: #94a3b8;
+  font-size: 1rem;
+  pointer-events: none;
+}
+
+/* Error state */
+.email-input-wrapper.has-error .email-input-field {
+  border-color: #ef4444;
+}
+
+.email-input-wrapper.has-error .email-input-field:focus {
+  box-shadow: 0 0 0 3.5px rgba(239, 68, 68, 0.12);
+}
+
+.email-input-wrapper.has-error .email-input-icon {
+  color: #ef4444;
+}
+
+.email-input-error {
+  font-size: 0.78rem;
+  color: #ef4444;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}

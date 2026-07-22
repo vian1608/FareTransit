@@ -1,0 +1,381 @@
+.consulting-payment-page {
+  background: #f8fafc;
+  min-height: 70vh;
+  padding: 2rem 0 3rem;
+}
+
+.consulting-payment-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 1.25rem;
+}
+
+.consulting-payment-header {
+  text-align: center;
+  max-width: 720px;
+  margin: 0 auto 2.5rem;
+}
+
+.consulting-payment-header h1 {
+  font-size: clamp(1.75rem, 4vw, 2.25rem);
+  color: #0f172a;
+  margin: 0 0 0.75rem;
+  font-weight: 800;
+}
+
+.consulting-payment-header p {
+  margin: 0;
+  color: #475569;
+  line-height: 1.65;
+  font-size: 1.05rem;
+}
+
+.consulting-payment-layout {
+  display: grid;
+  grid-template-columns: 1fr 1.1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+.consulting-payment-services h2,
+.consulting-payment-checkout h2 {
+  font-size: 1.25rem;
+  color: #0f172a;
+  margin: 0 0 0.5rem;
+}
+
+.consulting-payment-services__intro {
+  margin: 0 0 1.25rem;
+  color: #64748b;
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+.consulting-payment-plans {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.consulting-payment-plan {
+  position: relative;
+  text-align: left;
+  width: 100%;
+  padding: 1.15rem 1.25rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fff;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.consulting-payment-plan:hover {
+  border-color: #cbd5e1;
+}
+
+.consulting-payment-plan--active {
+  border-color: #059669;
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.15);
+}
+
+.consulting-payment-plan__badge {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: #059669;
+  color: #fff;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+}
+
+.consulting-payment-plan h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1.05rem;
+  color: #1e293b;
+}
+
+.consulting-payment-plan__price {
+  margin: 0 0 0.5rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.consulting-payment-plan__price span {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #059669;
+}
+
+.consulting-payment-plan__price small {
+  font-size: 0.8rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.consulting-payment-plan__desc {
+  margin: 0 0 0.65rem;
+  font-size: 0.88rem;
+  color: #475569;
+  line-height: 1.5;
+}
+
+.consulting-payment-plan ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.82rem;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.consulting-payment-checkout {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+.consulting-payment-fieldset {
+  border: none;
+  margin: 0 0 1.25rem;
+  padding: 0;
+}
+
+.consulting-payment-fieldset legend {
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  font-size: 0.95rem;
+}
+
+.consulting-payment-secure {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #059669;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.consulting-payment-form label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #334155;
+  margin-bottom: 0.85rem;
+}
+
+.consulting-payment-form label:last-child {
+  margin-bottom: 0;
+}
+
+.consulting-payment-form input[type='text'],
+.consulting-payment-form input[type='email'],
+.consulting-payment-form input[type='tel'] {
+  display: block;
+  width: 100%;
+  margin-top: 0.35rem;
+  min-height: 46px;
+  padding: 0.6rem 0.85rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.consulting-payment-form input:focus {
+  outline: none;
+  border-color: #059669;
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.12);
+}
+
+.consulting-payment-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85rem;
+}
+
+.consulting-payment-row--3 {
+  grid-template-columns: 1fr 1fr 0.75fr;
+}
+
+.stripe-secure-payment-notice {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 1.15rem;
+  margin-top: 0.5rem;
+}
+
+.stripe-notice-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.secure-badge {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #059669;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.card-brand-logos {
+  display: flex;
+  gap: 0.55rem;
+  font-size: 1.5rem;
+  color: #475569;
+}
+
+.stripe-secure-payment-notice p {
+  font-size: 0.85rem;
+  color: #64748b;
+  line-height: 1.55;
+  margin: 0;
+}
+
+
+.consulting-payment-order-summary {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 1rem 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.consulting-payment-order-summary > div {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.92rem;
+  color: #475569;
+  margin-bottom: 0.5rem;
+}
+
+.consulting-payment-order-summary__total {
+  padding-top: 0.65rem;
+  margin-bottom: 0 !important;
+  border-top: 1px solid #e2e8f0;
+  font-size: 1rem !important;
+  color: #0f172a !important;
+}
+
+.consulting-payment-order-summary__total strong {
+  color: #059669;
+  font-size: 1.15rem;
+}
+
+.consulting-payment-terms {
+  display: flex;
+  gap: 0.65rem;
+  align-items: flex-start;
+  font-size: 0.82rem !important;
+  line-height: 1.55;
+  color: #475569 !important;
+  margin-bottom: 1rem !important;
+}
+
+.consulting-payment-terms input {
+  margin-top: 0.2rem;
+  flex-shrink: 0;
+}
+
+.consulting-payment-terms a {
+  color: #1e3a5f;
+  font-weight: 600;
+}
+
+.consulting-payment-submit {
+  width: 100%;
+  min-height: 52px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #fff;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(5, 150, 105, 0.35);
+}
+
+.consulting-payment-submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.consulting-payment-message {
+  margin: 0 0 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.92rem;
+}
+
+.consulting-payment-message--success {
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.consulting-payment-message--error {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+.consulting-payment-help {
+  margin: 1rem 0 0;
+  text-align: center;
+  font-size: 0.88rem;
+  color: #64748b;
+}
+
+.consulting-payment-help a {
+  color: #1e3a5f;
+  font-weight: 600;
+}
+
+.consulting-payment-disclaimer {
+  margin-top: 2rem;
+  text-align: center;
+}
+
+.consulting-payment-disclaimer small {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  line-height: 1.5;
+  max-width: 52rem;
+  display: inline-block;
+}
+
+.consulting-payment-business {
+  margin-top: 1.25rem;
+  text-align: center;
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
+@media (max-width: 900px) {
+  .consulting-payment-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .consulting-payment-row,
+  .consulting-payment-row--3 {
+    grid-template-columns: 1fr;
+  }
+}

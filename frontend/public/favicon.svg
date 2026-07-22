@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="faretransit-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E3A8A" /> <!-- Deep Royal Blue -->
+      <stop offset="50%" stop-color="#3B82F6" /> <!-- Vibrant Sapphire -->
+      <stop offset="100%" stop-color="#8B1538" /> <!-- Deep Crimson -->
+    </linearGradient>
+    <linearGradient id="accent-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#60A5FA" />
+      <stop offset="100%" stop-color="#F43F5E" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Rounded Square Container -->
+  <rect x="16" y="16" width="480" height="480" rx="108" fill="url(#faretransit-grad)" />
+  
+  <!-- Outer Glow Arc / Transit Track -->
+  <path d="M 110 370 C 140 210, 270 120, 400 120" fill="none" stroke="url(#accent-grad)" stroke-width="14" stroke-linecap="round" opacity="0.85" />
+  
+  <!-- Jet Aircraft Icon -->
+  <path fill="#FFFFFF" d="M390,140 C395,135 405,135 410,140 C415,145 415,155 410,160 L320,240 L340,340 C341,345 337,350 331,349 L305,345 L255,275 L180,315 L190,345 L175,355 L150,320 L120,320 L110,305 L130,290 L130,265 L170,230 L220,150 L245,155 L225,225 L320,180 Z" />
+
+  <!-- High-Speed Train Front Silhouette -->
+  <path fill="#FFFFFF" opacity="0.95" d="M140 370 C140 350 155 335 175 335 L260 335 C280 335 295 350 295 370 L295 400 C295 408 288 415 280 415 L155 415 C147 415 140 408 140 400 Z M165 355 C160 355 155 360 155 365 L155 375 L280 375 L280 365 C280 360 275 355 270 355 Z" />
+</svg>

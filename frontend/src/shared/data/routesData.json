@@ -1,0 +1,178 @@
+[
+  {
+    "slug": "flight-nyc-to-lon",
+    "type": "flight",
+    "originCity": "New York",
+    "destinationCity": "London",
+    "originCode": "JFK",
+    "destinationCode": "LHR",
+    "title": "Flights from New York (JFK) to London (LHR)",
+    "metaTitle": "Flights from New York to London | FareTransit",
+    "metaDescription": "Book premium routing and travel logistics for flights from New York JFK to London Heathrow."
+  },
+  {
+    "slug": "flight-lax-to-tokyo",
+    "type": "flight",
+    "originCity": "Los Angeles",
+    "destinationCity": "Tokyo",
+    "originCode": "LAX",
+    "destinationCode": "NRT/HND",
+    "title": "Flights from Los Angeles (LAX) to Tokyo (NRT/HND)",
+    "metaTitle": "Flights from LAX to Tokyo | FareTransit",
+    "metaDescription": "Seamless premium flight bookings from Los Angeles to Tokyo Narita or Haneda."
+  },
+  {
+    "slug": "flight-mia-to-paris",
+    "type": "flight",
+    "originCity": "Miami",
+    "destinationCity": "Paris",
+    "originCode": "MIA",
+    "destinationCode": "CDG",
+    "title": "Flights from Miami (MIA) to Paris (CDG)",
+    "metaTitle": "Flights from Miami to Paris | FareTransit",
+    "metaDescription": "Expert logistics and premium bookings for flights from Miami to Paris Charles de Gaulle."
+  },
+  {
+    "slug": "flight-ord-to-fra",
+    "type": "flight",
+    "originCity": "Chicago",
+    "destinationCity": "Frankfurt",
+    "originCode": "ORD",
+    "destinationCode": "FRA",
+    "title": "Flights from Chicago (ORD) to Frankfurt (FRA)",
+    "metaTitle": "Flights from Chicago to Frankfurt | FareTransit",
+    "metaDescription": "Premium international flight logistics from Chicago O'Hare to Frankfurt."
+  },
+  {
+    "slug": "flight-sfo-to-syd",
+    "type": "flight",
+    "originCity": "San Francisco",
+    "destinationCity": "Sydney",
+    "originCode": "SFO",
+    "destinationCode": "SYD",
+    "title": "Flights from San Francisco (SFO) to Sydney (SYD)",
+    "metaTitle": "Flights from SFO to Sydney | FareTransit",
+    "metaDescription": "Expert booking support for transpacific flights from San Francisco to Sydney."
+  },
+  {
+    "slug": "flight-jfk-to-dxb",
+    "type": "flight",
+    "originCity": "New York",
+    "destinationCity": "Dubai",
+    "originCode": "JFK",
+    "destinationCode": "DXB",
+    "title": "Flights from New York (JFK) to Dubai (DXB)",
+    "metaTitle": "Flights from JFK to Dubai | FareTransit",
+    "metaDescription": "Luxury flight arrangements and logistics from New York JFK to Dubai."
+  },
+  {
+    "slug": "flight-dfw-to-lhr",
+    "type": "flight",
+    "originCity": "Dallas",
+    "destinationCity": "London",
+    "originCode": "DFW",
+    "destinationCode": "LHR",
+    "title": "Flights from Dallas (DFW) to London (LHR)",
+    "metaTitle": "Flights from Dallas to London | FareTransit",
+    "metaDescription": "Premium flight bookings from Dallas Fort Worth to London Heathrow."
+  },
+  {
+    "slug": "flight-bos-to-dub",
+    "type": "flight",
+    "originCity": "Boston",
+    "destinationCity": "Dublin",
+    "originCode": "BOS",
+    "destinationCode": "DUB",
+    "title": "Flights from Boston (BOS) to Dublin (DUB)",
+    "metaTitle": "Flights from Boston to Dublin | FareTransit",
+    "metaDescription": "Seamless premium flight bookings from Boston to Dublin, Ireland."
+  },
+  {
+    "slug": "train-nyc-to-dc",
+    "type": "train",
+    "originCity": "New York City",
+    "destinationCity": "Washington, D.C.",
+    "originCode": "NYC",
+    "destinationCode": "DC",
+    "title": "Train from NYC to Washington, D.C.",
+    "metaTitle": "Train from NYC to DC | Book Tickets & Schedules | FareTransit",
+    "metaDescription": "Need a train from NYC to Washington DC? Get optimized schedules, seat selections, and seamless ticketing assistance on the Northeast Corridor."
+  },
+  {
+    "slug": "train-dc-to-nyc",
+    "type": "train",
+    "originCity": "Washington, D.C.",
+    "destinationCity": "New York City",
+    "originCode": "DC",
+    "destinationCode": "NYC",
+    "title": "Train from D.C. to New York City",
+    "metaTitle": "Train from DC to NYC | Schedules & Easy Booking | FareTransit",
+    "metaDescription": "Find the fastest train routes from Washington DC to New York City. Plan your Northeast Corridor travel with zero hassle or booking stress."
+  },
+  {
+    "slug": "train-philly-to-nyc",
+    "type": "train",
+    "originCity": "Philadelphia",
+    "destinationCity": "New York City",
+    "originCode": "PHL",
+    "destinationCode": "NYC",
+    "title": "Train from Philadelphia to NYC",
+    "metaTitle": "Train from Philly to NYC | Fast Passenger Routing | FareTransit",
+    "metaDescription": "Coordination and support for train travel from Philadelphia to NYC. Book your Amtrak or regional commuter seats instantly."
+  },
+  {
+    "slug": "train-boston-to-nyc",
+    "type": "train",
+    "originCity": "Boston",
+    "destinationCity": "New York City",
+    "originCode": "BOS",
+    "destinationCode": "NYC",
+    "title": "Train from Boston to NYC",
+    "metaTitle": "Train from Boston to NYC | Premium Tickets | FareTransit",
+    "metaDescription": "Expert logistics for Northeast Corridor rail from Boston to New York City."
+  },
+  {
+    "slug": "train-chicago-to-stlouis",
+    "type": "train",
+    "originCity": "Chicago",
+    "destinationCity": "St. Louis",
+    "originCode": "CHI",
+    "destinationCode": "STL",
+    "title": "Train from Chicago to St. Louis",
+    "metaTitle": "Train from Chicago to St. Louis | FareTransit",
+    "metaDescription": "Book your train travel from Chicago to St. Louis easily with our premium rail advisory."
+  },
+  {
+    "slug": "train-la-to-sandiego",
+    "type": "train",
+    "originCity": "Los Angeles",
+    "destinationCity": "San Diego",
+    "originCode": "LA",
+    "destinationCode": "SD",
+    "title": "Train from Los Angeles to San Diego",
+    "metaTitle": "Train from LA to San Diego | FareTransit",
+    "metaDescription": "Enjoy the scenic Pacific Surfliner route with premium bookings from LA to San Diego."
+  },
+  {
+    "slug": "train-seattle-to-portland",
+    "type": "train",
+    "originCity": "Seattle",
+    "destinationCity": "Portland",
+    "originCode": "SEA",
+    "destinationCode": "PDX",
+    "title": "Train from Seattle to Portland",
+    "metaTitle": "Train from Seattle to Portland | Cascades Route | FareTransit",
+    "metaDescription": "Travel the scenic Pacific Northwest on the Cascades route from Seattle to Portland."
+  },
+  {
+    "slug": "train-nyc-to-albany",
+    "type": "train",
+    "originCity": "New York City",
+    "destinationCity": "Albany",
+    "originCode": "NYC",
+    "destinationCode": "ALB",
+    "title": "Train from NYC to Albany",
+    "metaTitle": "Train from NYC to Albany | FareTransit",
+    "metaDescription": "Fast and reliable train bookings from New York City to Albany."
+  }
+]

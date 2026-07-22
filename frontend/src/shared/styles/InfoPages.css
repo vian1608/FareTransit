@@ -1,0 +1,77 @@
+.info-page {
+  padding: 3rem 0;
+  background: #f8fafc;
+  min-height: 70vh;
+}
+
+.info-card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+  padding: 2rem;
+}
+
+.info-card h1 {
+  color: #8b1538;
+  margin-bottom: 0.5rem;
+}
+
+.info-card h2 {
+  color: #334155;
+  margin-bottom: 0.5rem;
+  font-size: 1.1rem;
+}
+
+.info-card section {
+  margin-top: 1.25rem;
+}
+
+.info-card p,
+.info-card li {
+  color: #475569;
+  line-height: 1.7;
+}
+
+.info-updated,
+.info-intro {
+  color: #64748b;
+  margin-bottom: 1rem;
+}
+
+.contact-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.contact-item {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1rem;
+  background: #f8fafc;
+}
+
+.contact-item a {
+  color: #8b1538;
+  text-decoration: none;
+}
+
+.contact-item a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+  .info-page {
+    padding: 2rem 0;
+  }
+
+  .info-card {
+    padding: 1.25rem;
+  }
+
+  .contact-grid {
+    grid-template-columns: 1fr;
+  }
+}
+

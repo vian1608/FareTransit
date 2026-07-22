@@ -1,0 +1,222 @@
+[
+  {
+    "slug": "delta",
+    "name": "Delta Air Lines",
+    "domain": "delta.com",
+    "keyword": "delta cheap flight",
+    "h1": "Book Delta Flights Now",
+    "phone": "+1-213-965-9727",
+    "hub1": "Atlanta to Los Angeles",
+    "hub2": "New York to Orlando",
+    "baggage": "1 personal item + 1 carry-on bag free. Checked bags start at $35."
+  },
+  {
+    "slug": "united",
+    "name": "United Airlines",
+    "domain": "united.com",
+    "keyword": "united cheap flight",
+    "h1": "Book United Flights Now",
+    "phone": "+1-213-965-9727",
+    "hub1": "Chicago to San Francisco",
+    "hub2": "Houston to New York",
+    "baggage": "Full-size carry-on included except for Basic Economy. Standard checked fees apply."
+  },
+  {
+    "slug": "american-airlines",
+    "name": "American Airlines",
+    "domain": "aa.com",
+    "keyword": "american airlines cheap flight",
+    "h1": "Book American Airlines Flights Now",
+    "phone": "+1-213-965-9727",
+    "hub1": "Dallas to Miami",
+    "hub2": "Charlotte to Los Angeles",
+    "baggage": "1 complimentary carry-on and personal item. Checked bags can be added online."
+  },
+  {
+    "slug": "southwest",
+    "name": "Southwest Airlines",
+    "domain": "southwest.com",
+    "keyword": "southwest cheap flight",
+    "h1": "Book Southwest Flights Now",
+    "phone": "+1-213-965-9727",
+    "hub1": "Denver to Las Vegas",
+    "hub2": "Phoenix to Chicago",
+    "baggage": "First two checked bags fly completely free. No flight change fees apply."
+  },
+  {
+    "slug": "jetblue",
+    "name": "JetBlue Airways",
+    "domain": "jetblue.com",
+    "keyword": "jetblue cheap flight",
+    "h1": "Book JetBlue Flights Now",
+    "phone": "+1-213-965-9727",
+    "hub1": "New York to Boston",
+    "hub2": "Fort Lauderdale to Los Angeles",
+    "baggage": "Blue Extra and Mint fares include carry-ons. Basic fares carry restrictions."
+  },
+  {
+    "slug": "alaska-airlines",
+    "name": "Alaska Airlines",
+    "domain": "alaskaair.com",
+    "keyword": "alaska airlines cheap flight",
+    "h1": "Book Alaska Airlines Flights Now",
+    "phone": "+1-213-965-9727",
+    "hub1": "Seattle to Anchorage",
+    "hub2": "Portland to San Francisco",
+    "baggage": "Standard US domestic baggage rates apply. Free overhead carry-on included."
+  },
+  {
+    "slug": "frontier",
+    "name": "Frontier Airlines",
+    "domain": "flyfrontier.com",
+    "keyword": "frontier cheap flight",
+    "h1": "Book Frontier Flights Now",
+    "phone": "+1-213-965-9727",
+    "hub1": "Denver to Orlando",
+    "hub2": "Atlanta to Dallas",
+    "baggage": "Budget carrier rules. Personal item included; carry-on and checked luggage carry fees."
+  },
+  {
+    "slug": "hawaiian",
+    "name": "Hawaiian Airlines",
+    "domain": "hawaiianairlines.com",
+    "keyword": "hawaiian cheap flight",
+    "h1": "Book Hawaiian Airlines Flights Now",
+    "phone": "+1-213-965-9727",
+    "hub1": "Honolulu to Los Angeles",
+    "hub2": "Maui to San Francisco",
+    "baggage": "Complimentary carry-on bag and personal item included. Checked bags optional."
+  },
+  {
+    "slug": "sun-country",
+    "name": "Sun Country Airlines",
+    "domain": "suncountry.com",
+    "keyword": "sun country cheap flight",
+    "h1": "Book Sun Country Flights Now",
+    "phone": "+1-213-965-9727",
+    "hub1": "Minneapolis to Las Vegas",
+    "hub2": "Minneapolis to Orlando",
+    "baggage": "Under-seat personal item included free. Carry-on and checked bags incur fees."
+  },
+  {
+    "slug": "british-airways",
+    "name": "British Airways",
+    "domain": "britishairways.com",
+    "keyword": "british airways cheap flight",
+    "h1": "Book British Airways Flights Now",
+    "phone": "+1-213-965-9727",
+    "hub1": "New York to London Heathrow",
+    "hub2": "Los Angeles to Manchester",
+    "baggage": "Standard 23kg check-in luggage piece concept applies to Main Cabin Economy."
+  },
+  {
+    "slug": "lufthansa",
+    "name": "Lufthansa",
+    "domain": "lufthansa.com",
+    "keyword": "lufthansa cheap flight",
+    "h1": "Book Lufthansa Flights Now",
+    "phone": "+1-213-965-9727",
+    "hub1": "Chicago to Frankfurt",
+    "hub2": "Miami to Munich",
+    "baggage": "Standard transatlantic carrier baggage allowances apply based on ticket tier."
+  },
+  {
+    "slug": "air-france",
+    "name": "Air France",
+    "domain": "airfrance.us",
+    "keyword": "air france cheap flight",
+    "h1": "Book Air France Flights Now",
+    "phone": "+1-213-965-9727",
+    "hub1": "New York to Paris CDG",
+    "hub2": "Los Angeles to Nice",
+    "baggage": "SkyTeam alliance transatlantic baggage policies include carry-on options."
+  },
+  {
+    "slug": "klm",
+    "name": "KLM Royal Dutch Airlines",
+    "domain": "klm.com",
+    "keyword": "klm cheap flight",
+    "h1": "Book KLM Flights Now",
+    "phone": "+1-213-965-9727",
+    "hub1": "Atlanta to Amsterdam",
+    "hub2": "San Francisco to Paris",
+    "baggage": "1 cabin bag + 1 accessory item up to 12kg total weight included free."
+  },
+  {
+    "slug": "virgin-atlantic",
+    "name": "Virgin Atlantic",
+    "domain": "virginatlantic.com",
+    "keyword": "virgin atlantic cheap flight",
+    "h1": "Book Virgin Atlantic Flights Now",
+    "phone": "+1-213-965-9727",
+    "hub1": "New York to London",
+    "hub2": "Miami to Edinburgh",
+    "baggage": "Hand baggage only options or standard 23kg checking available."
+  },
+  {
+    "slug": "aer-lingus",
+    "name": "Aer Lingus",
+    "domain": "aerlingus.com",
+    "keyword": "aer lingus cheap flight",
+    "h1": "Book Aer Lingus Flights Now",
+    "phone": "+1-213-965-9727",
+    "hub1": "Boston to Dublin",
+    "hub2": "New York to Shannon",
+    "baggage": "Transatlantic fares include overhead cabin baggage; checked options online."
+  },
+  {
+    "slug": "emirates",
+    "name": "Emirates",
+    "domain": "emirates.com",
+    "keyword": "emirates cheap flight",
+    "h1": "Book Emirates Flights Now",
+    "phone": "+1-213-965-9727",
+    "hub1": "New York to Dubai",
+    "hub2": "Los Angeles to Milan",
+    "baggage": "Generous US-route piece concept allowances for checked baggage."
+  },
+  {
+    "slug": "qatar-airways",
+    "name": "Qatar Airways",
+    "domain": "qatarairways.com",
+    "keyword": "qatar airways cheap flight",
+    "h1": "Book Qatar Airways Flights Now",
+    "phone": "+1-213-965-9727",
+    "hub1": "Miami to Doha",
+    "hub2": "Chicago to Malé",
+    "baggage": "Two checked luggage pieces up to 23kg each included for US economy routes."
+  },
+  {
+    "slug": "singapore-airlines",
+    "name": "Singapore Airlines",
+    "domain": "singaporeair.com",
+    "keyword": "singapore airlines cheap flight",
+    "h1": "Book Singapore Airlines Flights Now",
+    "phone": "+1-213-965-9727",
+    "hub1": "Los Angeles to Singapore",
+    "hub2": "New York to Frankfurt",
+    "baggage": "Premium international checked baggage limits based on selected sub-class."
+  },
+  {
+    "slug": "ana",
+    "name": "All Nippon Airways",
+    "domain": "ana.co.jp",
+    "keyword": "ana cheap flight",
+    "h1": "Book ANA Flights Now",
+    "phone": "+1-213-965-9727",
+    "hub1": "Los Angeles to Tokyo Haneda",
+    "hub2": "San Francisco to Osaka",
+    "baggage": "Two separate pieces of checked baggage up to 23kg each for Economy Class."
+  },
+  {
+    "slug": "cathay-pacific",
+    "name": "Cathay Pacific",
+    "domain": "cathaypacific.com",
+    "keyword": "cathay pacific cheap flight",
+    "h1": "Book Cathay Pacific Flights Now",
+    "phone": "+1-213-965-9727",
+    "hub1": "Los Angeles to Hong Kong",
+    "hub2": "New York to Vancouver",
+    "baggage": "Standard international piece concept rules apply for all US routes."
+  }
+]

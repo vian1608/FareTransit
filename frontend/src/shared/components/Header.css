@@ -1,0 +1,343 @@
+/* Smooth theme transition when switching Flights ↔ Rail */
+.header {
+  transition:
+    background 0.45s ease,
+    box-shadow 0.45s ease;
+}
+
+/* Flights — solid, high-contrast branding */
+.header.header--flights {
+  background: linear-gradient(135deg, #9e1840 0%, #8b1538 45%, #6b0f2a 100%);
+  box-shadow: 0 4px 22px rgba(107, 15, 42, 0.45);
+}
+
+.header.header--flights .logo-icon {
+  color: #f5d78e;
+  opacity: 1;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.3));
+}
+
+.header.header--flights .logo h1 {
+  color: #ffffff;
+  background: none;
+  -webkit-text-fill-color: #ffffff;
+  background-clip: unset;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+}
+
+.header .logo-icon {
+  transition: color 0.35s ease, transform 0.35s ease, opacity 0.35s ease;
+}
+
+.header--rail .logo-icon {
+  animation: headerIconSwap 0.45s ease;
+}
+
+.header--flights .logo-icon {
+  animation: headerIconSwap 0.45s ease;
+}
+
+@keyframes headerIconSwap {
+  0% {
+    opacity: 0;
+    transform: scale(0.85) translateY(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Rail (Amtrak) — blue header theme */
+.header.header--rail {
+  background: linear-gradient(135deg, #254a75 0%, #1e3a5f 45%, #0f2744 100%);
+  box-shadow: 0 4px 22px rgba(15, 39, 68, 0.45);
+}
+
+.header.header--rail .logo i,
+.header.header--rail .logo-icon {
+  color: #c8dff5;
+  opacity: 1;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.3));
+}
+
+.header.header--rail .logo h1 {
+  color: #ffffff;
+  background: none;
+  -webkit-text-fill-color: #ffffff;
+  background-clip: unset;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.28);
+}
+
+
+
+.header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.logo-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.nav-main {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.header-auth {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-left: 0.5rem;
+  padding-left: 1.5rem;
+  border-left: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+/* Classical professional nav — text links with understated active state */
+.header .header-nav-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0.35rem 0;
+  color: rgba(255, 255, 255, 0.95);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.9375rem;
+  letter-spacing: 0.01em;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+  overflow: visible;
+  position: relative;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.header .header-nav-link::before {
+  display: none;
+}
+
+.header .header-nav-link:hover {
+  color: #fff;
+  background: transparent;
+  border-bottom-color: rgba(255, 255, 255, 0.45);
+  transform: none;
+  box-shadow: none;
+}
+
+.header .header-nav-link--active {
+  color: #fff;
+  font-weight: 600;
+  border-bottom-color: #fff;
+  background: transparent;
+}
+
+.header .header-nav-link--active:hover {
+  color: #fff;
+  border-bottom-color: #fff;
+}
+
+.header .header-auth__signin {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+
+
+.nav-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 4px;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+}
+
+.nav-toggle:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.nav-toggle i {
+  font-size: 1.1rem;
+}
+
+.nav-backdrop {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .header {
+    padding: 0.55rem 0;
+    transition: padding 0.25s ease, box-shadow 0.25s ease;
+  }
+
+  .header--scrolled {
+    padding: 0.3rem 0;
+    box-shadow: 0 2px 12px rgba(139, 21, 56, 0.35);
+  }
+
+  .header.header--rail.header--scrolled {
+    box-shadow: 0 2px 12px rgba(15, 39, 68, 0.45);
+  }
+
+  .header--scrolled .logo h1 {
+    font-size: 1.2rem;
+    transition: font-size 0.2s ease;
+  }
+
+  .header--scrolled .logo i {
+    font-size: 1.35rem;
+    transition: font-size 0.2s ease;
+  }
+
+  .header-inner {
+    position: relative;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .logo {
+    flex: 1;
+    min-width: 0;
+    justify-content: flex-start;
+  }
+
+  .logo h1 {
+    font-size: 1.35rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .logo i {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+  }
+
+  .nav-toggle {
+    display: inline-flex;
+    flex-shrink: 0;
+    z-index: 1002;
+  }
+
+  .nav {
+    display: flex;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0.5rem 0;
+    background: linear-gradient(135deg, #8b1538 0%, #6b0f2a 100%);
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    z-index: 1001;
+    max-height: min(75vh, 480px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    flex: none;
+    justify-content: flex-start;
+    
+    /* Animation state for smooth mobile slide-down menu */
+    transform: translateY(-10px);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease, background 0.45s ease;
+  }
+
+  .nav.nav--open {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .header.header--rail .nav {
+    background: linear-gradient(135deg, #1e3a5f 0%, #0f2744 100%);
+  }
+
+  .nav-main {
+    flex-direction: column;
+    gap: 0;
+    width: 100%;
+  }
+
+  .header-auth {
+    margin-left: 0;
+    padding: 0.5rem 1rem 0.75rem;
+    border-left: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.18);
+    flex-direction: column;
+    width: 100%;
+    gap: 0.5rem;
+  }
+
+  .header .header-nav-link {
+    padding: 0.75rem 1rem;
+    border-bottom: none;
+    border-left: 3px solid transparent;
+    min-height: auto;
+  }
+
+  .header .header-nav-link:hover,
+  .header .header-nav-link--active {
+    background: rgba(255, 255, 255, 0.06);
+    border-left-color: #fff;
+    border-bottom-color: transparent;
+  }
+
+
+
+  .nav-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    z-index: 999;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+  }
+}
+
+@media (min-width: 769px) {
+  .header-inner {
+    flex-wrap: nowrap;
+  }
+
+  .nav {
+    display: flex !important;
+    position: static;
+    flex-direction: row;
+    width: auto;
+    max-height: none;
+    overflow: visible;
+    padding: 0;
+    box-shadow: none;
+    background: transparent;
+    border-radius: 0;
+  }
+}

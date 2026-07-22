@@ -1,0 +1,196 @@
+.dob-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  position: relative;
+  width: 100%;
+}
+
+.dob-label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.dob-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.dob-input {
+  width: 100%;
+  min-height: 48px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 0.65rem 2.5rem 0.65rem 1rem;
+  font-size: 0.98rem;
+  font-family: inherit;
+  color: #0f172a;
+  background-color: #fff;
+  transition: all 0.15s ease;
+}
+
+.dob-input:focus {
+  outline: none;
+  border-color: #8b1538;
+  box-shadow: 0 0 0 3.5px rgba(139, 21, 56, 0.12);
+}
+
+.dob-icon-btn {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 5px;
+}
+
+.dob-icon-btn:hover {
+  color: #8b1538;
+}
+
+/* Popover via Portal */
+.dob-popover {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.1);
+  padding: 1rem;
+  animation: dobFadeIn 0.2s ease-out;
+  font-family: inherit;
+}
+
+@keyframes dobFadeIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.dob-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.dob-header button {
+  background: #f1f5f9;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  color: #475569;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.dob-header button:hover:not(:disabled) {
+  background: #e2e8f0;
+}
+
+.dob-header button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.dob-header-selectors {
+  display: flex;
+  gap: 0.5rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.dob-header-selectors span {
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.dob-header-selectors span:hover {
+  background: #f1f5f9;
+}
+
+.dob-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #64748b;
+  margin-bottom: 0.5rem;
+}
+
+.dob-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.dob-day {
+  aspect-ratio: 1;
+  border: none;
+  background: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #1e293b;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.dob-day.empty {
+  cursor: default;
+}
+
+.dob-day:hover:not(:disabled):not(.empty) {
+  background: #f1f5f9;
+}
+
+.dob-day.selected {
+  background: #8b1538;
+  color: #fff;
+}
+
+.dob-day:disabled {
+  color: #cbd5e1;
+  cursor: not-allowed;
+}
+
+/* Month / Year Grids */
+.dob-grid-view {
+  min-height: 200px;
+}
+
+.dob-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.dob-grid-months {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.dob-grid-years {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.dob-grid button {
+  padding: 0.75rem 0;
+  background: none;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-weight: 600;
+  color: #1e293b;
+  cursor: pointer;
+}
+
+.dob-grid button:hover:not(:disabled) {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.dob-grid button:disabled {
+  color: #cbd5e1;
+  cursor: not-allowed;
+}
