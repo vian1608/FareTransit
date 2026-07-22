@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { adminAPI } from '../../../shared/api/api';
@@ -22,22 +22,11 @@ function AdminDashboard() {
 
   // Selected Booking details modal/panel state
   const [selectedBooking, setSelectedBooking] = useState(null);
-  const [isEditingNotes, setIsEditingNotes] = useState(false);
   const [internalNotes, setInternalNotes] = useState('');
   const [newStatus, setNewStatus] = useState('');
   const [updatingRecord, setUpdatingRecord] = useState(false);
 
-  // Authenticate Admin Session on Mount
-  useEffect(() => {
-    const adminSession = sessionStorage.getItem('adminSession');
-    if (!adminSession) {
-      navigate('/admin/login');
-      return;
-    }
-    loadData();
-  }, [navigate]);
-
-  const loadData = async (activeFilters = filters) => {
+  const loadData = useCallback(async (activeFilters = filters) => {
     try {
       setLoading(true);
       setError('');
@@ -67,7 +56,17 @@ function AdminDashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters]);
+
+  // Authenticate Admin Session on Mount
+  useEffect(() => {
+    const adminSession = sessionStorage.getItem('adminSession');
+    if (!adminSession) {
+      navigate('/admin/login');
+      return;
+    }
+    loadData();
+  }, [navigate, loadData]);
 
   const handleFilterChange = (field, value) => {
     const updatedFilters = { ...filters, [field]: value };
@@ -85,7 +84,6 @@ function AdminDashboard() {
     setSelectedBooking(booking);
     setInternalNotes(booking.internalNotes || '');
     setNewStatus(booking.bookingStatus || 'pending');
-    setIsEditingNotes(false);
   };
 
   const handleUpdateStatusAndNotes = async (e) => {
