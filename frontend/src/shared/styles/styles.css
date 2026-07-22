@@ -1,23 +1,52 @@
-/* FareTransit Crimson & Sunset Gold Design System */
+/* FareTransit Modern Travel Design Token System */
 :root {
-    /* Crimson & Sunset Palette */
-    --qa-burgundy: #991b1b;
-    --qa-burgundy-dark: #7f1d1d;
-    --qa-burgundy-light: #b91c1c;
-    --qa-gold: #d97706;
-    --qa-gold-light: #fef3c7;
-    --qa-white: #FFFFFF;
-    --qa-grey-light: #fffafb;
-    --qa-grey-medium: #fee2e2;
-    --qa-grey-dark: #6C757D;
-    --qa-text-dark: #1f2937;
-    --qa-text-medium: #374151;
-    --qa-text-light: #6b7280;
-    
-    /* Gradients */
-    --qa-gradient-primary: linear-gradient(135deg, var(--qa-burgundy) 0%, var(--qa-burgundy-dark) 100%);
-    --qa-gradient-gold: linear-gradient(135deg, var(--qa-gold) 0%, #b45309 100%);
-    --qa-gradient-hero: linear-gradient(135deg, rgba(153, 27, 27, 0.94) 0%, rgba(127, 29, 29, 0.94) 100%);
+  /* Core Palette Tokens */
+  --color-primary-dark: #0B1F33;
+  --color-primary: #1464F4;
+  --color-primary-hover: #0E4FCC;
+  --color-secondary: #0EA5A4;
+  --color-accent: #F97360;
+
+  --color-background: #F5F8FC;
+  --color-surface: #FFFFFF;
+  --color-surface-secondary: #EDF3F9;
+
+  --color-text-primary: #162033;
+  --color-text-secondary: #5B677A;
+  --color-text-muted: #7B8798;
+
+  --color-border: #D8E1EB;
+  --color-input-bg: #FFFFFF;
+
+  --color-success: #16A36A;
+  --color-warning: #F59E0B;
+  --color-error: #DC3545;
+  --color-info: #2684FF;
+
+  --color-disabled-bg: #E5EAF0;
+  --color-disabled-text: #98A2B3;
+
+  /* Focus & Overlay Tokens */
+  --color-focus-ring: rgba(20, 100, 244, 0.25);
+  --color-overlay: rgba(11, 31, 51, 0.6);
+
+  /* Compatibility & Legacy Token Aliases */
+  --qa-burgundy: var(--color-primary-dark);
+  --qa-burgundy-dark: #071524;
+  --qa-burgundy-light: var(--color-primary);
+  --qa-gold: var(--color-secondary);
+  --qa-gold-light: var(--color-surface-secondary);
+  --qa-white: var(--color-surface);
+  --qa-grey-light: var(--color-background);
+  --qa-grey-medium: var(--color-surface-secondary);
+  --qa-grey-dark: var(--color-text-muted);
+  --qa-text-dark: var(--color-text-primary);
+  --qa-text-medium: var(--color-text-secondary);
+  --qa-text-light: var(--color-text-muted);
+
+  --qa-gradient-primary: linear-gradient(135deg, var(--color-primary-dark) 0%, #071524 100%);
+  --qa-gradient-gold: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
+  --qa-gradient-hero: linear-gradient(135deg, rgba(11, 31, 51, 0.95) 0%, rgba(20, 100, 244, 0.9) 100%);
 }
 
 /* Reset and Base Styles */

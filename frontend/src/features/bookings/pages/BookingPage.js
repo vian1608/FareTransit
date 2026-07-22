@@ -800,7 +800,7 @@ function Booking() {
               <ItineraryCard
                 flight={flight}
                 label="Outbound"
-                labelColor="#1e3a5f"
+                labelColor="var(--color-primary-dark)"
                 isTrain={isTrain}
               />
 
@@ -808,7 +808,7 @@ function Booking() {
                 <ItineraryCard
                   flight={returnFlight}
                   label="Return"
-                  labelColor="#8b1538"
+                  labelColor="var(--color-secondary)"
                   isTrain={returnFlight.isTrain}
                 />
               )}

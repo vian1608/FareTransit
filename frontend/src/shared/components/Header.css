@@ -7,12 +7,12 @@
 
 /* Flights — solid, high-contrast branding */
 .header.header--flights {
-  background: linear-gradient(135deg, #b91c1c 0%, #991b1b 45%, #7f1d1d 100%);
-  box-shadow: 0 4px 22px rgba(127, 29, 29, 0.45);
+  background: linear-gradient(135deg, #0B1F33 0%, #071524 100%);
+  box-shadow: 0 4px 22px rgba(11, 31, 51, 0.45);
 }
 
 .header.header--flights .logo-icon {
-  color: #f5d78e;
+  color: #1464F4;
   opacity: 1;
   filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.3));
 }
@@ -252,7 +252,7 @@
     width: 100%;
     margin: 0;
     padding: 0.5rem 0;
-    background: linear-gradient(135deg, #991b1b 0%, #7f1d1d 100%);
+    background: linear-gradient(135deg, #0B1F33 0%, #071524 100%);
     border-radius: 0 0 8px 8px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
     z-index: 1001;

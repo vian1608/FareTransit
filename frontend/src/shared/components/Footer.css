@@ -1,8 +1,8 @@
 .footer {
-  background: #0f172a;
-  color: #cbd5e1;
+  background: var(--color-primary-dark, #0B1F33);
+  color: var(--color-text-muted, #7B8798);
   padding: 2.75rem 0 1rem;
-  border-top: 3px solid #991b1b;
+  border-top: 3px solid var(--color-primary, #1464F4);
   overflow-x: hidden;
 }
 

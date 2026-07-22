@@ -305,7 +305,7 @@ function PaymentSuccess() {
                 </div>
                 
                 <div className="boarding-pass-visual">
-                  <div className="boarding-pass-header" style={{ borderBottom: isAmtrak ? '2px dashed #8b1538' : '2px dashed #1e3a5f' }}>
+                  <div className="boarding-pass-header" style={{ borderBottom: isAmtrak ? '2px dashed var(--color-secondary)' : '2px dashed var(--color-primary)' }}>
                     <span>{isAmtrak ? 'Operator' : 'Carrier'}: <strong>{bookingDataFromDb?.flight_details?.airline || metadata.flight_airline}</strong></span>
                     <span>{isAmtrak ? 'Train' : 'Flight'}: <strong>{bookingDataFromDb?.flight_details?.flightNumber || metadata.flight_number}</strong></span>
                     {bookingRef && <span className="ref-tag">Confirmation Code: <strong>{bookingRef}</strong></span>}
@@ -319,7 +319,7 @@ function PaymentSuccess() {
                     </div>
                     
                     <div className="route-flight-symbol">
-                      <i className={`fas ${isAmtrak ? 'fa-subway' : 'fa-plane'}`} style={{ color: isAmtrak ? '#8b1538' : '#1e3a5f' }}></i>
+                      <i className={`fas ${isAmtrak ? 'fa-subway' : 'fa-plane'}`} style={{ color: isAmtrak ? 'var(--color-secondary)' : 'var(--color-primary)' }}></i>
                       <span className="flight-dot-line"></span>
                     </div>
   

@@ -7,22 +7,22 @@
 
 /* Lighter than header — visually differentiated intro slide */
 .hero-slider--flights {
-  --hero-accent: #991b1b;
+  --hero-accent: #1464F4;
   --hero-gradient: linear-gradient(
     135deg,
-    rgba(185, 28, 28, 0.92) 0%,
-    rgba(153, 27, 27, 0.88) 45%,
-    rgba(127, 29, 29, 0.85) 100%
+    rgba(11, 31, 51, 0.94) 0%,
+    rgba(20, 100, 244, 0.88) 50%,
+    rgba(11, 31, 51, 0.92) 100%
   );
 }
 
 .hero-slider--rail {
-  --hero-accent: #1e3a5f;
+  --hero-accent: #0EA5A4;
   --hero-gradient: linear-gradient(
     135deg,
-    rgba(45, 85, 130, 0.9) 0%,
-    rgba(30, 58, 95, 0.86) 45%,
-    rgba(25, 50, 85, 0.84) 100%
+    rgba(11, 31, 51, 0.94) 0%,
+    rgba(14, 165, 164, 0.88) 50%,
+    rgba(11, 31, 51, 0.92) 100%
   );
 }
 
@@ -183,11 +183,11 @@
 }
 
 .hero-offer-bar--flights {
-  background: linear-gradient(90deg, #7f1d1d 0%, #991b1b 50%, #7f1d1d 100%);
+  background: linear-gradient(90deg, #0B1F33 0%, #1464F4 50%, #0B1F33 100%);
 }
 
 .hero-offer-bar--rail {
-  background: linear-gradient(90deg, #0f2744 0%, #1e3a5f 50%, #0f2744 100%);
+  background: linear-gradient(90deg, #0B1F33 0%, #0EA5A4 50%, #0B1F33 100%);
 }
 
 .hero-offer-bar__inner {

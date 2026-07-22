@@ -267,7 +267,7 @@ function AdminDashboard() {
                   <tbody>
                     {bookings.length === 0 ? (
                       <tr>
-                        <td colSpan="8" style={{ textCenter: 'center', padding: '2rem', color: '#64748b' }}>
+                        <td colSpan="8" style={{ textCenter: 'center', padding: '2rem', color: 'var(--color-text-secondary)' }}>
                           No booking records found matching search queries.
                         </td>
                       </tr>
@@ -277,8 +277,8 @@ function AdminDashboard() {
                           <td style={{ fontWeight: '700' }}>{booking.bookingReference}</td>
                           <td>{booking.customerName}</td>
                           <td>{booking.email}</td>
-                          <td style={{ fontWeight: '700', color: '#1e3a5f' }}>${parseFloat(booking.displayedWebsitePrice).toFixed(2)}</td>
-                          <td style={{ color: '#64748b', fontSize: '0.85rem' }}>${parseFloat(booking.originalApiPrice).toFixed(2)}</td>
+                          <td style={{ fontWeight: '700', color: 'var(--color-primary-dark)' }}>${parseFloat(booking.displayedWebsitePrice).toFixed(2)}</td>
+                          <td style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>${parseFloat(booking.originalApiPrice).toFixed(2)}</td>
                           <td>
                             <span className={`status-badge status-badge--${booking.bookingStatus}`}>
                               {booking.bookingStatus}
@@ -355,7 +355,7 @@ function AdminDashboard() {
                   <div className="meta-data-grid">
                     <div>
                       <span>Stripe Sale Total</span>
-                      <strong style={{ color: '#10b981' }}>${parseFloat(selectedBooking.displayedWebsitePrice).toFixed(2)} USD</strong>
+                      <strong style={{ color: 'var(--color-success)' }}>${parseFloat(selectedBooking.displayedWebsitePrice).toFixed(2)} USD</strong>
                     </div>
                     <div>
                       <span>API original price</span>
@@ -388,10 +388,10 @@ function AdminDashboard() {
                     const depCity = f.departure?.city || 'Origin';
                     const arrCity = f.arrival?.city || 'Destination';
                     return (
-                      <div className="itinerary-quick-details" style={{ padding: '10px', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                      <div className="itinerary-quick-details" style={{ padding: '10px', backgroundColor: 'var(--color-background)', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
                         <div className="summary-airline-row">
                           <strong>{f.airline}</strong>
-                          <span className="flight-num-badge" style={{ backgroundColor: '#1e3a5f', padding: '2px 6px', borderRadius: '4px', color: '#fff', fontSize: '0.75rem' }}>{f.flightNumber}</span>
+                          <span className="flight-num-badge" style={{ backgroundColor: 'var(--color-primary-dark)', padding: '2px 6px', borderRadius: '4px', color: '#fff', fontSize: '0.75rem' }}>{f.flightNumber}</span>
                         </div>
                         <p style={{ margin: '8px 0 4px 0', fontSize: '0.85rem' }}>
                           <strong>Route:</strong> {depCity} ({f.departure?.airport}) → {arrCity} ({f.arrival?.airport})
@@ -413,7 +413,7 @@ function AdminDashboard() {
                             <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px dashed #cbd5e1' }}>
                               <div className="summary-airline-row">
                                 <strong>Return: {r.airline}</strong>
-                                <span className="flight-num-badge" style={{ backgroundColor: '#8b1538', padding: '2px 6px', borderRadius: '4px', color: '#fff', fontSize: '0.75rem' }}>{r.flightNumber}</span>
+                                <span className="flight-num-badge" style={{ backgroundColor: 'var(--color-secondary)', padding: '2px 6px', borderRadius: '4px', color: '#fff', fontSize: '0.75rem' }}>{r.flightNumber}</span>
                               </div>
                               <p style={{ margin: '8px 0 4px 0', fontSize: '0.85rem' }}>
                                 <strong>Departure:</strong> {r.departure?.time} on {r.departure?.date}
@@ -444,12 +444,12 @@ function AdminDashboard() {
                 <div className="detail-section">
                   <h4>Travelers Credentials ({selectedBooking.passengers ? selectedBooking.passengers.length : 0})</h4>
                   {selectedBooking.passengers && selectedBooking.passengers.map((traveler, tIdx) => (
-                    <div key={tIdx} style={{ fontSize: '0.85rem', padding: '8px', border: '1px solid #e2e8f0', borderRadius: '6px', marginBottom: '8px', backgroundColor: '#ffffff' }}>
+                    <div key={tIdx} style={{ fontSize: '0.85rem', padding: '8px', border: '1px solid var(--color-border)', borderRadius: '6px', marginBottom: '8px', backgroundColor: 'var(--color-surface)' }}>
                       <p style={{ margin: '0 0 4px 0' }}><strong>{tIdx + 1}. {traveler.firstName} {traveler.middleName || ''} {traveler.lastName}</strong> ({traveler.role})</p>
-                      <p style={{ margin: '2px 0', color: '#475569' }}><strong>DOB:</strong> {traveler.dateOfBirth} | <strong>Gender:</strong> {traveler.gender}</p>
-                      <p style={{ margin: '2px 0', color: '#475569' }}><strong>Nationality:</strong> {traveler.nationality}</p>
+                      <p style={{ margin: '2px 0', color: 'var(--color-text-secondary)' }}><strong>DOB:</strong> {traveler.dateOfBirth} | <strong>Gender:</strong> {traveler.gender}</p>
+                      <p style={{ margin: '2px 0', color: 'var(--color-text-secondary)' }}><strong>Nationality:</strong> {traveler.nationality}</p>
                       {traveler.passportNumber && (
-                        <p style={{ margin: '2px 0', color: '#475569' }}><strong>Passport:</strong> {traveler.passportNumber} (Expires: {traveler.passportExpiry})</p>
+                        <p style={{ margin: '2px 0', color: 'var(--color-text-secondary)' }}><strong>Passport:</strong> {traveler.passportNumber} (Expires: {traveler.passportExpiry})</p>
                       )}
                       {traveler.knownTravelerNumber && (
                         <p style={{ margin: '2px 0', color: '#475569' }}><strong>KTN:</strong> {traveler.knownTravelerNumber}</p>

@@ -122,22 +122,22 @@ function AmtrakAssistance() {
         <div className="container">
           <div className="inquiry-split-layout">
             <div className="inquiry-left-panel">
-              <h2 style={{ fontSize: '1.8rem', color: '#1e3a5f', marginBottom: '1rem' }}>Need Immediate Support?</h2>
+              <h2 style={{ fontSize: '1.8rem', color: 'var(--color-primary-dark)', marginBottom: '1rem' }}>Need Immediate Support?</h2>
               <p>Skip the form and call us directly to secure your rail logistics immediately.</p>
               
-              <a href={SUPPORT_PHONE_HREF} className="call-btn amtrak-btn amtrak-btn--cta" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '2rem', padding: '1.25rem', fontSize: '1.2rem', backgroundColor: '#8b1538', color: '#fff', textDecoration: 'none', borderRadius: '8px', fontWeight: 'bold' }}>
+              <a href={SUPPORT_PHONE_HREF} className="call-btn amtrak-btn amtrak-btn--cta" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '2rem', padding: '1.25rem', fontSize: '1.2rem', backgroundColor: 'var(--color-primary)', color: '#fff', textDecoration: 'none', borderRadius: '8px', fontWeight: 'bold' }}>
                 <i className="fas fa-phone"></i> Call {SUPPORT_PHONE_DISPLAY}
               </a>
               
               <div className="benefits-list">
-                <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem', color: '#1e293b' }}>Benefits for booking with us:</h3>
+                <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem', color: 'var(--color-text-primary)' }}>Benefits for booking with us:</h3>
                 <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
                   <li style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem', alignItems: 'start' }}>
-                    <i className="fas fa-check-circle" style={{ color: '#8b1538', marginTop: '0.25rem' }}></i>
+                    <i className="fas fa-check-circle" style={{ color: 'var(--color-secondary)', marginTop: '0.25rem' }}></i>
                     <span>Includes free 24/7 support till date of travel.</span>
                   </li>
                   <li style={{ display: 'flex', gap: '0.75rem', alignItems: 'start' }}>
-                    <i className="fas fa-check-circle" style={{ color: '#8b1538', marginTop: '0.25rem' }}></i>
+                    <i className="fas fa-check-circle" style={{ color: 'var(--color-secondary)', marginTop: '0.25rem' }}></i>
                     <span>No need to wait on long holds like with Amtrak.</span>
                   </li>
                 </ul>
@@ -146,7 +146,7 @@ function AmtrakAssistance() {
 
             <div className="inquiry-right-panel">
               <div className="amtrak-inquiry-card" style={{ margin: 0 }}>
-                <h2 style={{ marginBottom: '0.5rem', color: '#1e3a5f', fontSize: '1.75rem' }}>Consulting Inquiry</h2>
+                <h2 style={{ marginBottom: '0.5rem', color: 'var(--color-primary-dark)', fontSize: '1.75rem' }}>Consulting Inquiry</h2>
                 <p className="amtrak-inquiry__intro">
                   Submit your rail logistics details. A consultant will respond with advisory options and a quote outline.
                 </p>
