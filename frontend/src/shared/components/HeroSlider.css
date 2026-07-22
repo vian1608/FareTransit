@@ -183,11 +183,11 @@
 }
 
 .hero-offer-bar--flights {
-  background: linear-gradient(90deg, #0B1F33 0%, #1464F4 50%, #0B1F33 100%);
+  background: linear-gradient(90deg, var(--color-primary-dark) 0%, var(--color-primary) 50%, var(--color-primary-dark) 100%);
 }
 
 .hero-offer-bar--rail {
-  background: linear-gradient(90deg, #0B1F33 0%, #0EA5A4 50%, #0B1F33 100%);
+  background: linear-gradient(90deg, var(--color-primary-dark) 0%, var(--color-secondary) 50%, var(--color-primary-dark) 100%);
 }
 
 .hero-offer-bar__inner {

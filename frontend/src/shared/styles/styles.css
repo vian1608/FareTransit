@@ -1,38 +1,38 @@
-/* FareTransit Modern Travel Design Token System */
+/* FareTransit Coastal Cypress & Terracotta Design Token System */
 :root {
   /* Core Palette Tokens */
-  --color-primary-dark: #0B1F33;
-  --color-primary: #1464F4;
-  --color-primary-hover: #0E4FCC;
-  --color-secondary: #0EA5A4;
-  --color-accent: #F97360;
+  --color-primary-dark: #132E27;
+  --color-primary: #2B6CB0;
+  --color-primary-hover: #2C5282;
+  --color-secondary: #C05621;
+  --color-accent: #DD6B20;
 
-  --color-background: #F5F8FC;
+  --color-background: #F7FAFC;
   --color-surface: #FFFFFF;
-  --color-surface-secondary: #EDF3F9;
+  --color-surface-secondary: #EDF2F7;
 
-  --color-text-primary: #162033;
-  --color-text-secondary: #5B677A;
-  --color-text-muted: #7B8798;
+  --color-text-primary: #1A202C;
+  --color-text-secondary: #4A5568;
+  --color-text-muted: #718096;
 
-  --color-border: #D8E1EB;
+  --color-border: #E2E8F0;
   --color-input-bg: #FFFFFF;
 
-  --color-success: #16A36A;
-  --color-warning: #F59E0B;
-  --color-error: #DC3545;
-  --color-info: #2684FF;
+  --color-success: #2F855A;
+  --color-warning: #D69E2E;
+  --color-error: #C53030;
+  --color-info: #3182CE;
 
-  --color-disabled-bg: #E5EAF0;
-  --color-disabled-text: #98A2B3;
+  --color-disabled-bg: #E2E8F0;
+  --color-disabled-text: #A0AEC0;
 
   /* Focus & Overlay Tokens */
-  --color-focus-ring: rgba(20, 100, 244, 0.25);
-  --color-overlay: rgba(11, 31, 51, 0.6);
+  --color-focus-ring: rgba(43, 108, 176, 0.25);
+  --color-overlay: rgba(19, 46, 39, 0.6);
 
   /* Compatibility & Legacy Token Aliases */
   --qa-burgundy: var(--color-primary-dark);
-  --qa-burgundy-dark: #071524;
+  --qa-burgundy-dark: #0A1C17;
   --qa-burgundy-light: var(--color-primary);
   --qa-gold: var(--color-secondary);
   --qa-gold-light: var(--color-surface-secondary);
@@ -44,9 +44,9 @@
   --qa-text-medium: var(--color-text-secondary);
   --qa-text-light: var(--color-text-muted);
 
-  --qa-gradient-primary: linear-gradient(135deg, var(--color-primary-dark) 0%, #071524 100%);
+  --qa-gradient-primary: linear-gradient(135deg, var(--color-primary-dark) 0%, #0A1C17 100%);
   --qa-gradient-gold: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
-  --qa-gradient-hero: linear-gradient(135deg, rgba(11, 31, 51, 0.95) 0%, rgba(20, 100, 244, 0.9) 100%);
+  --qa-gradient-hero: linear-gradient(135deg, rgba(19, 46, 39, 0.95) 0%, rgba(43, 108, 176, 0.9) 100%);
 }
 
 /* Reset and Base Styles */
