@@ -1,14 +1,33 @@
 {
-  "buildCommand": "cd backend && npm install && cd ../frontend && npm install && npm run build",
-  "outputDirectory": "frontend/build",
-  "redirects": [
-    { "source": "/amtrak-assistance", "destination": "/amtrak", "permanent": true },
-    { "source": "/amtrak-assitance", "destination": "/amtrak", "permanent": true },
-    { "source": "/amtrak-assisstance", "destination": "/amtrak", "permanent": true },
-    { "source": "/amtrak-asistance", "destination": "/amtrak", "permanent": true }
-  ],
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "services": {
+    "frontend": {
+      "root": "frontend",
+      "framework": "create-react-app"
+    },
+    "backend": {
+      "root": "backend",
+      "framework": "express"
+    }
+  },
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/app.js" },
-    { "source": "/((?!api/|static/).*)", "destination": "/index.html" }
+    {
+      "source": "/api",
+      "destination": {
+        "service": "backend"
+      }
+    },
+    {
+      "source": "/api/(.*)",
+      "destination": {
+        "service": "backend"
+      }
+    },
+    {
+      "source": "/(.*)",
+      "destination": {
+        "service": "frontend"
+      }
+    }
   ]
 }
