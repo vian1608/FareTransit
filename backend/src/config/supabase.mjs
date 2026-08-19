@@ -1,16 +1,28 @@
 import { createClient } from '@supabase/supabase-js';
 import env from './env.mjs';
 
-const isProdMode = (process.env.NODE_ENV || 'development').toLowerCase() === 'production';
-if (isProdMode && (!env.supabaseUrl || !env.supabaseSecretKey || env.supabaseUrl.includes('placeholder') || env.supabaseSecretKey.includes('placeholder'))) {
+const nodeEnv = (process.env.NODE_ENV || 'development').toLowerCase();
+const vercelEnv = (process.env.VERCEL_ENV || '').toLowerCase();
+// Vercel sets NODE_ENV=production for Preview builds as well. Enforce the
+// hard credential guard only for a real production deployment; non-Vercel
+// production runtimes continue to be treated as production.
+const isProductionDeployment = vercelEnv ? vercelEnv === 'production' : nodeEnv === 'production';
+const hasValidSupabaseConfig = Boolean(
+  env.supabaseUrl &&
+  env.supabaseSecretKey &&
+  !env.supabaseUrl.includes('placeholder') &&
+  !env.supabaseSecretKey.includes('placeholder')
+);
+
+if (isProductionDeployment && !hasValidSupabaseConfig) {
   throw new Error('FATAL_CONFIG_ERROR: SUPABASE_URL and SUPABASE_SECRET_KEY environment variables are required in production');
 }
 
 const url = env.supabaseUrl || 'https://placeholder.supabase.co';
 const key = env.supabaseSecretKey || 'placeholder-key';
 
-if (!env.supabaseUrl || !env.supabaseSecretKey) {
-  console.warn('⚠️ Supabase environment variables missing! Using safe stub client for tests/offline execution.');
+if (!hasValidSupabaseConfig) {
+  console.warn('⚠️ Supabase environment variables missing! Using safe stub client outside the live production deployment.');
 }
 
 export const supabase = createClient(url, key, {
