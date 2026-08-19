@@ -1,0 +1,172 @@
+name: Final Seat parity sync
+
+on:
+  push:
+    branches:
+      - agent/finalseat-parity-2026-08
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    if: github.event_name == 'workflow_dispatch' || !contains(github.event.head_commit.message, '[parity-sync]')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout FareTransit parity branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/finalseat-parity-2026-08
+          fetch-depth: 0
+
+      - name: Checkout current Final Seat source
+        uses: actions/checkout@v4
+        with:
+          repository: vian1608/thefinalseat
+          ref: master
+          path: .parity-source
+          fetch-depth: 1
+
+      - name: Overlay current Final Seat application
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Keep FareTransit production identity/data while taking the current
+          # application, migrations, routes, UI and deployment configuration
+          # from The Final Seat. Do not delete FareTransit-only files.
+          rsync -a \
+            --exclude='.git/' \
+            --exclude='.github/workflows/finalseat-parity-sync.yml' \
+            --exclude='.DS_Store' \
+            --exclude='backend/data/' \
+            --exclude='backend/backups/' \
+            --exclude='frontend/public/logo/' \
+            --exclude='frontend/public/favicon.png' \
+            --exclude='frontend/public/favicon.svg' \
+            .parity-source/ ./
+
+          rm -rf .parity-source
+
+      - name: Apply FareTransit identity
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          python3 <<'PY'
+          from pathlib import Path
+
+          root = Path('.')
+          excluded_parts = {'.git', 'node_modules', 'build', 'dist', '.next', 'coverage'}
+          text_exts = {
+              '.js', '.jsx', '.ts', '.tsx', '.mjs', '.cjs', '.json', '.html', '.css',
+              '.scss', '.md', '.txt', '.xml', '.yml', '.yaml', '.sql', '.env', '.example'
+          }
+          exact_names = {'Dockerfile', 'Procfile', 'vercel.json', 'package.json'}
+
+          replacements = [
+              ('support@thefinalseat.com', 'support@faretransit.com'),
+              ('www.thefinalseat.com', 'www.faretransit.com'),
+              ('thefinalseat.com', 'faretransit.com'),
+              ('The Final Seat LLC', 'FareTransit LLC'),
+              ('The Final Seat', 'FareTransit'),
+              ('TheFinalSeat', 'FareTransit'),
+              ('the-final-seat', 'fare-transit'),
+              ('thefinalseat', 'faretransit'),
+              ('+18887808855', '+12139659727'),
+              ('+1 (888) 780-8855', '+1 (213) 965-9727'),
+              ('(888) 780-8855', '+1 (213) 965-9727'),
+              ('+1-888-780-8855', '+1-213-965-9727'),
+              ('888-780-8855', '213-965-9727'),
+              ('5830 E 2nd St, Ste 7000, Casper, WY 82609', '1309 Coffeen Avenue STE 1200, Sheridan, WY 82801'),
+              ('5830 E 2nd St, Suite 7000, Casper, WY 82609', '1309 Coffeen Avenue STE 1200, Sheridan, WY 82801'),
+          ]
+
+          changed = 0
+          for path in root.rglob('*'):
+              if not path.is_file() or any(part in excluded_parts for part in path.parts):
+                  continue
+              if path.suffix.lower() not in text_exts and path.name not in exact_names:
+                  continue
+              try:
+                  raw = path.read_text(encoding='utf-8')
+              except (UnicodeDecodeError, OSError):
+                  continue
+              new = raw
+              for old, repl in replacements:
+                  new = new.replace(old, repl)
+              if new != raw:
+                  path.write_text(new, encoding='utf-8')
+                  changed += 1
+
+          print(f'Rebranded {changed} text files for FareTransit')
+          PY
+
+          # Use the current Final Seat contact API shape so new components work,
+          # but populate it only with FareTransit production contact details.
+          mkdir -p frontend/src/shared/constants
+          cat > frontend/src/shared/constants/supportContact.js <<'EOF'
+          export const SUPPORT_PHONE_TEL = '+12139659727';
+          export const SUPPORT_PHONE_DISPLAY = '+1 (213) 965-9727';
+          export const SUPPORT_PHONE_INTERNATIONAL = '+1 (213) 965-9727';
+          export const SUPPORT_PHONE_SCHEMA = '+1-213-965-9727';
+          export const SUPPORT_PHONE_HREF = `tel:${SUPPORT_PHONE_TEL}`;
+
+          export const BUSINESS_ADDRESS_STREET = '1309 Coffeen Avenue STE 1200';
+          export const BUSINESS_ADDRESS_CITY = 'Sheridan';
+          export const BUSINESS_ADDRESS_STATE = 'Wyoming';
+          export const BUSINESS_ADDRESS_STATE_CODE = 'WY';
+          export const BUSINESS_ADDRESS_ZIP = '82801';
+          export const BUSINESS_ADDRESS_FULL = `${BUSINESS_ADDRESS_STREET}, ${BUSINESS_ADDRESS_CITY}, ${BUSINESS_ADDRESS_STATE} ${BUSINESS_ADDRESS_ZIP} US`;
+          export const BUSINESS_ADDRESS_SHORT = `${BUSINESS_ADDRESS_STREET}, ${BUSINESS_ADDRESS_CITY}, ${BUSINESS_ADDRESS_STATE_CODE} ${BUSINESS_ADDRESS_ZIP}`;
+
+          export const BUSINESS_CONTACT = {
+            phoneDisplay: SUPPORT_PHONE_DISPLAY,
+            phoneInternational: SUPPORT_PHONE_INTERNATIONAL,
+            phoneHref: SUPPORT_PHONE_HREF,
+            phoneSchema: SUPPORT_PHONE_SCHEMA,
+          };
+
+          export default BUSINESS_CONTACT;
+          EOF
+
+      - name: Check for leaked Final Seat public identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -RInE --exclude-dir=.git --exclude='finalseat-parity-sync.yml' \
+            'The Final Seat|thefinalseat\.com|support@thefinalseat\.com|888.?780.?8855|5830 E 2nd St' \
+            frontend backend api vercel.json package.json 2>/dev/null; then
+            echo 'Found Final Seat public identity after rebranding.' >&2
+            exit 1
+          fi
+
+      - name: Install and build frontend
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --prefix frontend
+          npm run build --prefix frontend
+
+      - name: Validate backend syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --prefix backend
+          find backend/src -type f -name '*.mjs' -print0 | xargs -0 -n1 node --check
+
+      - name: Commit parity snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          if git diff --cached --quiet; then
+            echo 'No parity changes to commit.'
+            exit 0
+          fi
+          git commit -m '[parity-sync] Bring FareTransit to current Final Seat parity'
+          git push origin HEAD:agent/finalseat-parity-2026-08
