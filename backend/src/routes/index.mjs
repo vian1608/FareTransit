@@ -52,7 +52,7 @@ router.use('/airports', publicLookupCache(300, 86400, 3600), airportRouter);
 router.use('/cars', carRouter);
 router.use('/hotels', noStore, hotelRouter);
 router.get('/address-autocomplete', publicLookupCache(300, 86400, 3600), addressAutocompleteController.getAddressAutocomplete);
-router.get('/health', (req, res) => res.json({ success: true, data: { status: 'ok', message: 'Urgent Travel API is running', timestamp: new Date().toISOString() } }));
+router.get('/health', (req, res) => res.json({ success: true, data: { status: 'ok', message: 'FareTransit API is running', timestamp: new Date().toISOString() } }));
 
 export default router;
 export { router as rootRouter };
