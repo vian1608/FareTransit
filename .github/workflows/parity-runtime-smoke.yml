@@ -1,0 +1,50 @@
+name: FareTransit parity runtime smoke
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  runtime-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout parity branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/finalseat-parity-2026-08
+
+      - name: Install backend dependencies
+        run: npm install --prefix backend --no-audit --no-fund
+
+      - name: Verify expected production guard without Supabase server credentials
+        shell: bash
+        run: |
+          set +e
+          OUTPUT=$(NODE_ENV=production \
+            JWT_SECRET='faretransit-parity-smoke-jwt-secret-2026' \
+            ADMIN_PASSWORD='faretransit-parity-smoke-admin-password-2026' \
+            node -e "import('./api/app.js')" 2>&1)
+          STATUS=$?
+          echo "$OUTPUT"
+          if [ "$STATUS" -eq 0 ]; then
+            echo 'Expected production import to reject missing Supabase server credentials.' >&2
+            exit 1
+          fi
+          echo "$OUTPUT" | grep -q 'FATAL_CONFIG_ERROR: SUPABASE_URL and SUPABASE_SECRET_KEY environment variables are required in production'
+
+      - name: Verify production serverless import with required core configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          NODE_ENV=production \
+          SUPABASE_URL='https://example.supabase.co' \
+          SUPABASE_SECRET_KEY='sb_secret_runtime_smoke_only_not_a_real_credential' \
+          JWT_SECRET='faretransit-parity-smoke-jwt-secret-2026' \
+          ADMIN_PASSWORD='faretransit-parity-smoke-admin-password-2026' \
+          RESEND_API_KEY='runtime-smoke' \
+          STRIPE_SECRET_KEY='runtime-smoke' \
+          SERPAPI_API_KEY='runtime-smoke' \
+          node -e "import('./api/app.js').then(() => console.log('SERVERLESS_IMPORT_OK')).catch((e) => { console.error(e); process.exit(1); })"
