@@ -41,6 +41,7 @@ jobs:
             --exclude='frontend/public/favicon.svg' \
             .parity-source/ ./
           rm -rf .parity-source
+          rm -f .parity-trigger
 
       - name: Apply FareTransit identity
         shell: bash
@@ -48,6 +49,7 @@ jobs:
           set -euo pipefail
           python3 <<'PY'
           from pathlib import Path
+
           root = Path('.')
           excluded_parts = {'.git', 'node_modules', 'build', 'dist', '.next', 'coverage'}
           text_exts = {'.js','.jsx','.ts','.tsx','.mjs','.cjs','.json','.html','.css','.scss','.md','.txt','.xml','.yml','.yaml','.sql','.example'}
@@ -74,6 +76,7 @@ jobs:
               ('Casper, Wyoming 82609','Sheridan, Wyoming 82801'),
               ('Casper, WY 82609','Sheridan, WY 82801'),
           ]
+
           for path in root.rglob('*'):
               if not path.is_file() or any(part in excluded_parts for part in path.parts):
                   continue
@@ -89,6 +92,24 @@ jobs:
                   new = new.replace(old, repl)
               if new != raw:
                   path.write_text(new, encoding='utf-8')
+
+          # Rebrand matching source filenames as well as their contents so imports
+          # remain valid after identifiers such as HowTheFinalSeatHelps are changed.
+          paths = sorted(
+              [p for p in root.rglob('*') if not any(part in excluded_parts for part in p.parts)],
+              key=lambda p: len(p.parts),
+              reverse=True,
+          )
+          for path in paths:
+              if not path.exists():
+                  continue
+              new_name = path.name.replace('TheFinalSeat', 'FareTransit').replace('the-final-seat', 'fare-transit').replace('thefinalseat', 'faretransit')
+              if new_name == path.name:
+                  continue
+              destination = path.with_name(new_name)
+              if destination.exists() and destination.is_dir() and path.is_dir():
+                  continue
+              path.replace(destination)
           PY
 
           mkdir -p frontend/src/shared/constants
