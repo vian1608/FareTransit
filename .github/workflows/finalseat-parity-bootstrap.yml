@@ -49,6 +49,11 @@ jobs:
           rm -f .parity-trigger
           rm -f .github/workflows/admin-dashboard-rebuild-ci.yml
 
+          # The Final Seat has a broad *.sql ignore rule because its migrations
+          # are already tracked there. These files are new to FareTransit, so
+          # explicitly keep backend migrations versioned here.
+          printf '\n# FareTransit schema migrations\n!backend/migrations/\n!backend/migrations/*.sql\n' >> .gitignore
+
       - name: Apply FareTransit identity
         shell: bash
         run: |
@@ -170,6 +175,7 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
+          git add -f backend/migrations/*.sql
           if git diff --cached --quiet; then
             echo 'No parity changes to commit.'
             exit 0
