@@ -17,6 +17,12 @@ function required(key) {
   return value;
 }
 
+function isProductionDeployment() {
+  const vercelEnv = (process.env.VERCEL_ENV || '').toLowerCase();
+  if (vercelEnv) return vercelEnv === 'production';
+  return (process.env.NODE_ENV || 'development').toLowerCase() === 'production';
+}
+
 export const env = {
   get nodeEnv() { return process.env.NODE_ENV || 'development'; },
   get port() { return parseInt(process.env.PORT || '5001', 10); },
@@ -50,8 +56,7 @@ export const env = {
   // JWT
   get jwtSecret() {
     const val = process.env.JWT_SECRET;
-    const isProd = (process.env.NODE_ENV || 'development').toLowerCase() === 'production';
-    if (isProd && (!val || val === 'your-secret-key-change-this-in-production')) {
+    if (isProductionDeployment() && (!val || val === 'your-secret-key-change-this-in-production')) {
       throw new Error('FATAL_CONFIG_ERROR: JWT_SECRET environment variable is missing or insecure in production');
     }
     return val || 'your-secret-key-change-this-in-production';
@@ -62,8 +67,7 @@ export const env = {
   get adminEmail() { return process.env.ADMIN_EMAIL || 'admin@faretransit.com'; },
   get adminPassword() {
     const val = process.env.ADMIN_PASSWORD;
-    const isProd = (process.env.NODE_ENV || 'development').toLowerCase() === 'production';
-    if (isProd && (!val || val === 'admin123')) {
+    if (isProductionDeployment() && (!val || val === 'admin123')) {
       throw new Error('FATAL_CONFIG_ERROR: ADMIN_PASSWORD environment variable is missing or insecure in production');
     }
     return val || 'admin123';
@@ -98,6 +102,5 @@ export const env = {
   get bookingDemandApiEnv() { return process.env.BOOKING_DEMAND_API_ENVIRONMENT || 'sandbox'; },
   get carRentalsApiEnabled() { return process.env.CAR_RENTALS_API_ENABLED !== 'false'; }
 };
-
 
 export default env;
