@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_HREF } from '../constants/supportContact';
+import { SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_HREF, BUSINESS_ADDRESS_SHORT } from '../constants/supportContact';
 import './Footer.css';
 
 function FooterSection({ title, children }) {
@@ -53,7 +53,7 @@ function Footer() {
             <ul>
               <li><a href="mailto:support@faretransit.com">support@faretransit.com</a></li>
               <li><a href={SUPPORT_PHONE_HREF}>{SUPPORT_PHONE_DISPLAY}</a></li>
-              <li>5830 E 2nd St, Ste 7000, Casper, WY 82609</li>
+              <li>{BUSINESS_ADDRESS_SHORT}</li>
             </ul>
           </FooterSection>
         </div>

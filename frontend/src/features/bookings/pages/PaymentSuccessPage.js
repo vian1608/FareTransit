@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { paymentAPI, bookingAPI, inquiryAPI } from '../../../shared/api/api';
-import { SUPPORT_PHONE_DISPLAY } from '../../../shared/constants/supportContact';
+import { SUPPORT_PHONE_DISPLAY, BUSINESS_ADDRESS_SHORT, BUSINESS_ADDRESS_CITY, BUSINESS_ADDRESS_STATE_CODE } from '../../../shared/constants/supportContact';
 import './PaymentSuccessPage.css';
 
 function PaymentSuccess() {
@@ -244,7 +244,7 @@ function PaymentSuccess() {
         <div className="invoice-print-header">
           <h2>FareTransit LLC</h2>
           <p>Temporary Booking Confirmation Receipt</p>
-          <small>5830 E 2nd St, Ste 7000, Casper, WY 82609 · support@faretransit.com</small>
+          <small>{BUSINESS_ADDRESS_SHORT} · support@faretransit.com</small>
         </div>
 
         {/* Success Card Header */}
@@ -444,7 +444,7 @@ function PaymentSuccess() {
         </div>
 
         <div className="success-footer">
-          <p>FareTransit LLC · Casper, WY · support@faretransit.com</p>
+          <p>FareTransit LLC · {BUSINESS_ADDRESS_CITY}, {BUSINESS_ADDRESS_STATE_CODE} · support@faretransit.com</p>
         </div>
       </div>
     </div>

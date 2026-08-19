@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_HREF } from '../constants/supportContact';
+import { SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_HREF, BUSINESS_ADDRESS_FULL } from '../constants/supportContact';
 import '../styles/InfoPages.css';
 
 function ContactInfo() {
@@ -36,7 +36,7 @@ function ContactInfo() {
 
             <div className="contact-item">
               <h2>Business Address</h2>
-              <p>5830 E 2nd St, Ste 7000 #34290, Casper, Wyoming 82609 US</p>
+              <p>{BUSINESS_ADDRESS_FULL}</p>
             </div>
 
             <div className="contact-item">

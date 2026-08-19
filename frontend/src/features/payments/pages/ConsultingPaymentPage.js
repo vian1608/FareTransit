@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { consultingServices, PAYMENT_DISCLAIMER } from '../../../shared/data/consultingServices';
 import { paymentAPI } from '../../../shared/api/api';
-import { SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_HREF } from '../../../shared/constants/supportContact';
+import { SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_HREF, BUSINESS_ADDRESS_SHORT } from '../../../shared/constants/supportContact';
 import './ConsultingPaymentPage.css';
 
 const initialBilling = {
@@ -386,7 +386,7 @@ function ConsultingPayment() {
 
         <div className="consulting-payment-business">
           <p>
-            <strong>FareTransit LLC</strong> · 5830 E 2nd St, Ste 7000, Casper, WY 82609 ·{' '}
+            <strong>FareTransit LLC</strong> · {BUSINESS_ADDRESS_SHORT} ·{' '}
             {SUPPORT_PHONE_DISPLAY} · support@faretransit.com
           </p>
         </div>
