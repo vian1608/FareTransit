@@ -1,201 +1,33 @@
 {
-  "buildCommand": "cd backend && npm install && cd ../frontend && npm install && npm run build",
-  "outputDirectory": "frontend/build",
-  "headers": [
-    {
-      "source": "/static/(.*)",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
-      ]
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "services": {
+    "frontend": {
+      "root": "frontend",
+      "framework": "create-react-app"
     },
-    {
-      "source": "/(assets|images|logo)/(.*)",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=2592000" }
-      ]
-    },
-    {
-      "source": "/(favicon.png|favicon.svg|manifest.json|robots.txt|sitemap.xml)",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=86400" }
-      ]
-    },
-    {
-      "source": "/(index.html)?",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
-      ]
-    },
-    {
-      "source": "/admin",
-      "headers": [
-        { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }
-      ]
-    },
-    {
-      "source": "/admin/(.*)",
-      "headers": [
-        { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }
-      ]
-    },
-    {
-      "source": "/search",
-      "headers": [
-        { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }
-      ]
-    },
-    {
-      "source": "/booking",
-      "headers": [
-        { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }
-      ]
-    },
-    {
-      "source": "/booking/(.*)",
-      "headers": [
-        { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }
-      ]
-    },
-    {
-      "source": "/payment",
-      "headers": [
-        { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }
-      ]
-    },
-    {
-      "source": "/payment/(.*)",
-      "headers": [
-        { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }
-      ]
-    },
-    {
-      "source": "/authorize/(.*)",
-      "headers": [
-        { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }
-      ]
-    },
-    {
-      "source": "/confirmation/(.*)",
-      "headers": [
-        { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }
-      ]
-    },
-    {
-      "source": "/booking-confirmed",
-      "headers": [
-        { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }
-      ]
-    },
-    {
-      "source": "/booking-confirmed/(.*)",
-      "headers": [
-        { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }
-      ]
-    },
-    {
-      "source": "/my-bookings",
-      "headers": [
-        { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }
-      ]
-    },
-    {
-      "source": "/signin",
-      "headers": [
-        { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }
-      ]
-    },
-    {
-      "source": "/signup",
-      "headers": [
-        { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }
-      ]
-    },
-    {
-      "source": "/return-flight",
-      "headers": [
-        { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }
-      ]
-    },
-    {
-      "source": "/return-flight/(.*)",
-      "headers": [
-        { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }
-      ]
-    },
-    {
-      "source": "/book/(.*)",
-      "headers": [
-        { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }
-      ]
-    },
-    {
-      "source": "/changes/(.*)",
-      "headers": [
-        { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }
-      ]
-    },
-    {
-      "source": "/cancellation/(.*)",
-      "headers": [
-        { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }
-      ]
-    },
-    {
-      "source": "/car-rentals/search",
-      "headers": [
-        { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }
-      ]
-    },
-    {
-      "source": "/car-rentals/results",
-      "headers": [
-        { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }
-      ]
+    "backend": {
+      "root": "backend",
+      "framework": "express"
     }
-  ],
-  "redirects": [
-    {
-      "source": "/:path*",
-      "has": [
-        { "type": "host", "value": "faretransit.com" }
-      ],
-      "destination": "https://www.faretransit.com/:path*",
-      "permanent": true
-    },
-    { "source": "/amtrak", "destination": "/car-rentals", "permanent": true },
-    { "source": "/amtrak-assistance", "destination": "/car-rentals", "permanent": true },
-    { "source": "/amtrak-assitance", "destination": "/car-rentals", "permanent": true },
-    { "source": "/amtrak-assisstance", "destination": "/car-rentals", "permanent": true },
-    { "source": "/amtrak-asistance", "destination": "/car-rentals", "permanent": true },
-    { "source": "/senior-travel", "destination": "/senior-travel/flight-deals", "permanent": true },
-    { "source": "/senior-flight-deals", "destination": "/senior-travel/flight-deals", "permanent": true },
-    { "source": "/privacy", "destination": "/privacy-policy", "permanent": true },
-    { "source": "/privacypolicy", "destination": "/privacy-policy", "permanent": true },
-    { "source": "/refund", "destination": "/refund-policy", "permanent": true },
-    { "source": "/refundpolicy", "destination": "/refund-policy", "permanent": true },
-    { "source": "/pay", "destination": "/payment", "permanent": true },
-    { "source": "/airlines/:airlineSlug", "destination": "/book/:airlineSlug", "permanent": true },
-
-    { "source": "/flight-nyc-to-lon", "destination": "/routes/flight-nyc-to-lon", "permanent": true },
-    { "source": "/flight-lax-to-tokyo", "destination": "/routes/flight-lax-to-tokyo", "permanent": true },
-    { "source": "/flight-mia-to-paris", "destination": "/routes/flight-mia-to-paris", "permanent": true },
-    { "source": "/flight-ord-to-fra", "destination": "/routes/flight-ord-to-fra", "permanent": true },
-    { "source": "/flight-sfo-to-syd", "destination": "/routes/flight-sfo-to-syd", "permanent": true },
-    { "source": "/flight-jfk-to-dxb", "destination": "/routes/flight-jfk-to-dxb", "permanent": true },
-    { "source": "/flight-dfw-to-lhr", "destination": "/routes/flight-dfw-to-lhr", "permanent": true },
-    { "source": "/flight-bos-to-dub", "destination": "/routes/flight-bos-to-dub", "permanent": true },
-
-    { "source": "/routes/train-nyc-to-dc", "destination": "/train-nyc-to-dc", "permanent": true },
-    { "source": "/routes/train-dc-to-nyc", "destination": "/train-dc-to-nyc", "permanent": true },
-    { "source": "/routes/train-philly-to-nyc", "destination": "/train-philly-to-nyc", "permanent": true },
-    { "source": "/routes/train-boston-to-nyc", "destination": "/train-boston-to-nyc", "permanent": true },
-    { "source": "/train-chicago-to-stlouis", "destination": "/routes/train-chicago-to-stlouis", "permanent": true },
-    { "source": "/train-la-to-sandiego", "destination": "/routes/train-la-to-sandiego", "permanent": true },
-    { "source": "/train-seattle-to-portland", "destination": "/routes/train-seattle-to-portland", "permanent": true },
-    { "source": "/train-nyc-to-albany", "destination": "/routes/train-nyc-to-albany", "permanent": true }
-  ],
+  },
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/app.js" },
-    { "source": "/((?!api/|static/).*)", "destination": "/index.html" }
+    {
+      "source": "/api",
+      "destination": {
+        "service": "backend"
+      }
+    },
+    {
+      "source": "/api/(.*)",
+      "destination": {
+        "service": "backend"
+      }
+    },
+    {
+      "source": "/(.*)",
+      "destination": {
+        "service": "frontend"
+      }
+    }
   ]
 }
