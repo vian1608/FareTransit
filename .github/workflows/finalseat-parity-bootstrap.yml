@@ -3,7 +3,7 @@ name: Bootstrap FareTransit parity sync
 on:
   pull_request:
     branches: [main]
-    types: [opened]
+    types: [opened, synchronize]
 
 permissions:
   contents: write
@@ -32,7 +32,6 @@ jobs:
           set -euo pipefail
           rsync -a \
             --exclude='.git/' \
-            --exclude='.github/workflows/finalseat-parity-sync.yml' \
             --exclude='.github/workflows/finalseat-parity-bootstrap.yml' \
             --exclude='.DS_Store' \
             --exclude='backend/data/' \
@@ -51,7 +50,7 @@ jobs:
           from pathlib import Path
           root = Path('.')
           excluded_parts = {'.git', 'node_modules', 'build', 'dist', '.next', 'coverage'}
-          text_exts = {'.js','.jsx','.ts','.tsx','.mjs','.cjs','.json','.html','.css','.scss','.md','.txt','.xml','.yml','.yaml','.sql','.env','.example'}
+          text_exts = {'.js','.jsx','.ts','.tsx','.mjs','.cjs','.json','.html','.css','.scss','.md','.txt','.xml','.yml','.yaml','.sql','.example'}
           exact_names = {'Dockerfile','Procfile','vercel.json','package.json'}
           replacements = [
               ('support@thefinalseat.com','support@faretransit.com'),
@@ -67,13 +66,19 @@ jobs:
               ('(888) 780-8855','+1 (213) 965-9727'),
               ('+1-888-780-8855','+1-213-965-9727'),
               ('888-780-8855','213-965-9727'),
+              ('+1 888 780 8855','+1 213 965 9727'),
+              ('5830 E 2nd St, Ste 7000 #34290, Casper, Wyoming 82609 US','1309 Coffeen Avenue STE 1200, Sheridan, Wyoming 82801 US'),
               ('5830 E 2nd St, Ste 7000, Casper, WY 82609','1309 Coffeen Avenue STE 1200, Sheridan, WY 82801'),
               ('5830 E 2nd St, Suite 7000, Casper, WY 82609','1309 Coffeen Avenue STE 1200, Sheridan, WY 82801'),
+              ('5830 E 2nd St, Ste 7000','1309 Coffeen Avenue STE 1200'),
+              ('Casper, Wyoming 82609','Sheridan, Wyoming 82801'),
+              ('Casper, WY 82609','Sheridan, WY 82801'),
           ]
           for path in root.rglob('*'):
               if not path.is_file() or any(part in excluded_parts for part in path.parts):
                   continue
-              if path.suffix.lower() not in text_exts and path.name not in exact_names:
+              is_text_target = path.suffix.lower() in text_exts or path.name in exact_names or path.name.startswith('.env')
+              if not is_text_target:
                   continue
               try:
                   raw = path.read_text(encoding='utf-8')
@@ -115,8 +120,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if grep -RInE --exclude-dir=.git --exclude='finalseat-parity-sync.yml' --exclude='finalseat-parity-bootstrap.yml' \
-            'The Final Seat|thefinalseat\.com|support@thefinalseat\.com|888.?780.?8855|5830 E 2nd St' \
+          if grep -RInE --exclude-dir=.git --exclude='finalseat-parity-bootstrap.yml' \
+            'The Final Seat|thefinalseat\.com|support@thefinalseat\.com|888.?780.?8855|888 780 8855|5830 E 2nd St|Casper, (WY|Wyoming) 82609' \
             frontend backend api vercel.json package.json 2>/dev/null; then
             echo 'Found Final Seat public identity after rebranding.' >&2
             exit 1
