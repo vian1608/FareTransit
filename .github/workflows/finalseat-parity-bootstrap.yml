@@ -130,13 +130,13 @@ jobs:
       - name: Install and build frontend
         run: |
           set -euo pipefail
-          npm ci --prefix frontend
+          npm install --prefix frontend --no-audit --no-fund
           npm run build --prefix frontend
 
       - name: Validate backend
         run: |
           set -euo pipefail
-          npm ci --prefix backend
+          npm install --prefix backend --no-audit --no-fund
           find backend/src -type f -name '*.mjs' -print0 | xargs -0 -n1 node --check
 
       - name: Commit and push parity branch
