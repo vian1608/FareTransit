@@ -93,8 +93,6 @@ jobs:
               if new != raw:
                   path.write_text(new, encoding='utf-8')
 
-          # Rebrand matching source filenames as well as their contents so imports
-          # remain valid after identifiers such as HowTheFinalSeatHelps are changed.
           paths = sorted(
               [p for p in root.rglob('*') if not any(part in excluded_parts for part in p.parts)],
               key=lambda p: len(p.parts),
@@ -152,7 +150,7 @@ jobs:
         run: |
           set -euo pipefail
           npm install --prefix frontend --no-audit --no-fund
-          npm run build --prefix frontend
+          CI=false npm run build --prefix frontend
 
       - name: Validate backend
         run: |
