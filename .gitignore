@@ -15,3 +15,7 @@ backend/backups/
 *.jsonl
 the-final-seat-*.json
 urgent.json
+
+# FareTransit schema migrations
+!backend/migrations/
+!backend/migrations/*.sql
