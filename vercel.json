@@ -1,5 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "alias": [
+    "faretransit.com",
+    "www.faretransit.com"
+  ],
   "services": {
     "frontend": {
       "root": "frontend",
