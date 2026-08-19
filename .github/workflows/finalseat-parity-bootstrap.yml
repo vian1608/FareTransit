@@ -32,16 +32,22 @@ jobs:
           set -euo pipefail
           rsync -a \
             --exclude='.git/' \
-            --exclude='.github/workflows/finalseat-parity-bootstrap.yml' \
+            --exclude='.github/workflows/' \
             --exclude='.DS_Store' \
             --exclude='backend/data/' \
             --exclude='backend/backups/' \
+            --exclude='backend/.env' \
+            --exclude='frontend/.env' \
+            --exclude='frontend/.env.development' \
+            --exclude='frontend/.env.local' \
+            --exclude='frontend/.env.production' \
             --exclude='frontend/public/logo/' \
             --exclude='frontend/public/favicon.png' \
             --exclude='frontend/public/favicon.svg' \
             .parity-source/ ./
           rm -rf .parity-source
           rm -f .parity-trigger
+          rm -f .github/workflows/admin-dashboard-rebuild-ci.yml
 
       - name: Apply FareTransit identity
         shell: bash
