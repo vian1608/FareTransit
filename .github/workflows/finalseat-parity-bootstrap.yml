@@ -1,8 +1,9 @@
 name: Bootstrap FareTransit parity sync
 
 on:
-  push:
+  pull_request:
     branches: [main]
+    types: [opened]
 
 permissions:
   contents: write
