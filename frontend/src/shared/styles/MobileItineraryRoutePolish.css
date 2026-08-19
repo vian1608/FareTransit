@@ -1,0 +1,176 @@
+/* Final mobile itinerary route polish.
+   Keeps the compact verification card, aligns trip duration beneath the
+   arrival side, places the aircraft on the dashed route toward destination,
+   and surfaces layover duration without requiring expansion. */
+
+.itin-mobile-arrival-meta {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  /* Mobile card structure:
+     1) date + departure/arrival route
+     2) arrival-side duration/stops/layover directly below FCO/SEA
+     3) airline row + expand chevron */
+  .booking-itinerary-top-grid .itin-summary-row {
+    grid-template-columns: minmax(0, 1fr) 18px !important;
+    grid-template-areas:
+      "route route"
+      "carrier chevron" !important;
+    row-gap: 0.52rem !important;
+  }
+
+  /* Make the time row a true origin -> destination track. */
+  .booking-itinerary-top-grid .itin-times {
+    display: grid !important;
+    grid-template-columns: auto minmax(56px, 1fr) auto !important;
+    align-items: center !important;
+    width: 100% !important;
+    gap: 0.5rem !important;
+  }
+
+  .booking-itinerary-top-grid .itin-route-dash {
+    position: relative !important;
+    display: block !important;
+    width: 100% !important;
+    min-width: 56px !important;
+    height: 0 !important;
+    margin: 0 !important;
+    border-top: 1.5px dashed #94a3b8 !important;
+    overflow: visible !important;
+    color: transparent !important;
+    font-size: 0 !important;
+  }
+
+  /* Font Awesome plane is horizontal at 0deg, so the nose points right toward
+     the destination. The white chip prevents the dashed line cutting through it. */
+  .booking-itinerary-top-grid .itin-route-dash::after {
+    content: "\f072";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%) rotate(0deg);
+    transform-origin: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 20px;
+    padding: 0 4px;
+    background: #ffffff;
+    color: #8b1538;
+    font-family: "Font Awesome 6 Free", "Font Awesome 5 Free";
+    font-size: 0.78rem;
+    font-weight: 900;
+    line-height: 1;
+    z-index: 2;
+  }
+
+  /* Airport codes sit directly under their corresponding times. */
+  .booking-itinerary-top-grid .itin-airports {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+  }
+
+  .booking-itinerary-top-grid .itin-route-arrow {
+    display: none !important;
+  }
+
+  .booking-itinerary-top-grid .itin-airports > span:first-child {
+    grid-column: 1 !important;
+    justify-self: start !important;
+  }
+
+  .booking-itinerary-top-grid .itin-airports > span:last-child {
+    grid-column: 2 !important;
+    justify-self: end !important;
+  }
+
+  /* Critical mobile hierarchy: arrival time + arrival airport are immediately
+     followed by journey duration/stops/layover on the same right half. */
+  .booking-itinerary-top-grid .itin-mobile-arrival-meta {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-end !important;
+    width: 50% !important;
+    margin: 0.42rem 0 0 auto !important;
+    padding: 0 !important;
+    text-align: right !important;
+    gap: 0.08rem !important;
+  }
+
+  .booking-itinerary-top-grid .itin-mobile-arrival-duration {
+    color: #1e293b !important;
+    font-size: 0.78rem !important;
+    font-weight: 850 !important;
+    line-height: 1.15 !important;
+  }
+
+  .booking-itinerary-top-grid .itin-mobile-arrival-stops {
+    color: #64748b !important;
+    font-size: 0.66rem !important;
+    font-weight: 700 !important;
+    line-height: 1.2 !important;
+  }
+
+  .booking-itinerary-top-grid .itin-mobile-arrival-stops--nonstop {
+    color: #059669 !important;
+  }
+
+  .booking-itinerary-top-grid .itin-mobile-layover-summary {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 0.25rem !important;
+    margin-top: 0.16rem !important;
+    padding: 0.18rem 0.38rem !important;
+    border-radius: 999px !important;
+    background: #fffbeb !important;
+    color: #92400e !important;
+    font-size: 0.62rem !important;
+    font-weight: 800 !important;
+    line-height: 1.15 !important;
+    white-space: nowrap !important;
+  }
+
+  .booking-itinerary-top-grid .itin-mobile-layover-summary i {
+    font-size: 0.58rem !important;
+  }
+
+  /* The old lower duration/stops block is hidden on mobile because its content
+     now belongs directly beneath the arrival time/airport. */
+  .booking-itinerary-top-grid .itin-col-meta {
+    display: none !important;
+  }
+
+  .booking-itinerary-top-grid .itin-col-carrier {
+    grid-area: carrier !important;
+    grid-column: 1 !important;
+    width: 100% !important;
+    max-width: calc(100% - 24px) !important;
+  }
+
+  .booking-itinerary-top-grid .itin-chevron {
+    grid-area: chevron !important;
+    grid-column: 2 !important;
+    justify-self: end !important;
+    align-self: center !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .booking-itinerary-top-grid .itin-times {
+    grid-template-columns: auto minmax(42px, 1fr) auto !important;
+    gap: 0.38rem !important;
+  }
+
+  .booking-itinerary-top-grid .itin-route-dash::after {
+    min-width: 21px;
+    height: 18px;
+    font-size: 0.72rem;
+  }
+
+  .booking-itinerary-top-grid .itin-mobile-layover-summary {
+    max-width: 100% !important;
+    white-space: normal !important;
+  }
+}

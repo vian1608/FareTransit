@@ -1,0 +1,104 @@
+:root {
+  --tfs-wine-950: #3b0a1c;
+  --tfs-wine-900: #531027;
+  --tfs-wine-800: #6d1532;
+  --tfs-wine-700: #861b3d;
+  --tfs-wine-600: #a1284e;
+  --tfs-wine-500: #b83b60;
+  --tfs-wine-100: #fbeef3;
+  --tfs-wine-50: #fff7fa;
+  --tfs-gold-500: #d9b95f;
+  --tfs-gold-300: #ead58e;
+  --tfs-navy-950: #0b1628;
+  --tfs-navy-900: #10243e;
+  --tfs-navy-800: #173451;
+  --tfs-ink: #18263a;
+  --tfs-text: #33445a;
+  --tfs-muted: #6d7e93;
+  --tfs-border: #d9e2ec;
+  --tfs-border-strong: #c7d3e1;
+  --tfs-surface: #ffffff;
+  --tfs-surface-soft: #f7f9fc;
+  --tfs-surface-warm: #fbf8fa;
+  --tfs-focus: rgba(134, 27, 61, 0.18);
+  --tfs-shadow-sm: 0 4px 16px rgba(11, 22, 40, 0.06);
+  --tfs-shadow-md: 0 12px 34px rgba(11, 22, 40, 0.09);
+  --tfs-radius-sm: 10px;
+  --tfs-radius-md: 14px;
+  --tfs-radius-lg: 18px;
+  --tfs-public-shell: 1440px;
+  --tfs-admin-shell: 1540px;
+
+  /* Keep legacy components on the same palette without rewriting every screen. */
+  --qa-burgundy: var(--tfs-wine-700);
+  --qa-burgundy-dark: var(--tfs-wine-900);
+  --qa-burgundy-light: var(--tfs-wine-600);
+  --qa-gold: var(--tfs-gold-500);
+  --qa-gold-light: var(--tfs-gold-300);
+  --qa-text-dark: var(--tfs-ink);
+  --qa-text-medium: var(--tfs-text);
+  --qa-text-light: var(--tfs-muted);
+}
+
+html {
+  color-scheme: light;
+}
+
+body {
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: var(--tfs-ink);
+  background: var(--tfs-surface-soft);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* One public-page horizontal rhythm. Components that intentionally need a
+   narrower reading column keep their own max-width inside this shell. */
+body .container {
+  width: 100%;
+  max-width: var(--tfs-public-shell);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 24px;
+  padding-right: 24px;
+}
+
+body.theme-flights {
+  background-color: var(--tfs-surface-soft);
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid var(--tfs-focus);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--tfs-wine-100);
+  color: var(--tfs-wine-950);
+}
+
+@media (max-width: 640px) {
+  body .container {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}

@@ -1,37 +1,30 @@
-import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import React from 'react';
+import { Link, Navigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import '../../../shared/styles/Confirmation.css';
 
 function RoundTripConfirmation() {
-  const [bookingRef, setBookingRef] = useState('');
+  const bookingRef = sessionStorage.getItem('bookingReference') || '';
 
-  useEffect(() => {
-    const ref = sessionStorage.getItem('bookingReference');
-    setBookingRef(ref || 'N/A');
-
-    // Fire Google Ads conversion event
-    if (typeof window !== 'undefined' && window.gtag) {
-      window.gtag('event', 'conversion', {
-          'send_to': 'AW-18166581434/W9aXCMPzpq8cELqRwNZD',
-          'transaction_id': ref || ''
-      });
-    }
-  }, []);
+  // Never declare a booking confirmed from client-side state alone. Forward
+  // to the canonical page, which fetches authoritative backend booking data.
+  if (bookingRef) {
+    return <Navigate to={`/booking-confirmed/${encodeURIComponent(bookingRef)}`} replace />;
+  }
 
   return (
     <div className="confirmation-page">
+      <Helmet><title>Reservation Reference Required | FareTransit</title></Helmet>
       <div className="container">
         <div className="confirmation-card">
-          <div className="success-icon">
-            <i className="fas fa-check-circle"></i>
+          <div className="success-icon" style={{ color: '#64748b' }}>
+            <i className="fas fa-info-circle" />
           </div>
-          <h2>Round Trip Booking Confirmed!</h2>
-          <p>Your round trip flight has been successfully booked.</p>
-          <div className="booking-reference">
-            <strong>Booking Reference:</strong> {bookingRef}
-          </div>
+          <h2>Reservation Reference Required</h2>
+          <p>We cannot verify a reservation from this browser session. Use My Bookings to retrieve your saved reservation.</p>
           <div className="confirmation-actions">
-            <Link to="/" className="btn-primary">Book Another Flight</Link>
+            <Link to="/my-bookings" className="btn-primary">Find My Booking</Link>
+            <Link to="/contact" className="btn-secondary">Contact Support</Link>
           </div>
         </div>
       </div>

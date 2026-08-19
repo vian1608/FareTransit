@@ -1,0 +1,124 @@
+/* ── Standardized Landing CTA Container ── */
+.landing-cta-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 100%;
+}
+
+.landing-cta-header {
+  margin-bottom: 2rem;
+  max-width: 650px;
+}
+
+.landing-cta-title {
+  font-size: clamp(1.75rem, 3.5vw, 2.25rem);
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+  line-height: 1.2;
+}
+
+.landing-cta-container--hero .landing-cta-title {
+  color: #ffffff;
+}
+
+.landing-cta-container--footer .landing-cta-title {
+  color: #8b1538;
+}
+
+.landing-cta-desc {
+  font-size: 1.1rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.landing-cta-container--hero .landing-cta-desc {
+  color: #f1f5f9;
+}
+
+.landing-cta-container--footer .landing-cta-desc {
+  color: #475569;
+}
+
+/* ── Actions Layout ── */
+.landing-cta-actions {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  width: 100%;
+}
+
+/* ── Standardized Button Specifications ── */
+.landing-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  height: 72px;
+  min-width: 280px;
+  padding: 0 40px;
+  border-radius: 14px;
+  font-size: 20px;
+  font-weight: 600;
+  text-decoration: none;
+  box-sizing: border-box;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+/* Primary Button: White BG, Burgundy Text */
+.landing-btn--primary {
+  background-color: #ffffff;
+  color: #8b1538;
+  border: 2px solid #ffffff;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.landing-btn--primary:hover {
+  background-color: #fef2f4;
+  color: #6b0f2a;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+/* Secondary Button: Burgundy BG, White Text */
+.landing-btn--secondary {
+  background-color: #8b1538;
+  color: #ffffff;
+  border: 2px solid #8b1538;
+  box-shadow: 0 6px 20px rgba(139, 21, 56, 0.3);
+}
+
+.landing-btn--secondary:hover {
+  background-color: #6b0f2a;
+  border-color: #6b0f2a;
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(139, 21, 56, 0.4);
+}
+
+.landing-btn--secondary i {
+  font-size: 1.15rem;
+}
+
+/* ── Mobile Layout (< 768px) ── */
+@media (max-width: 768px) {
+  .landing-cta-actions {
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+  }
+
+  .landing-btn {
+    width: 100%;
+    min-width: 100%;
+    height: 72px;
+    padding: 0 20px;
+    font-size: 18px;
+    white-space: normal;
+  }
+}

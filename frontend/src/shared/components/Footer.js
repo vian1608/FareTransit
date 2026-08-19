@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_HREF, BUSINESS_ADDRESS_SHORT } from '../constants/supportContact';
+import { Link, useLocation } from 'react-router-dom';
+import { SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_HREF } from '../constants/supportContact';
 import './Footer.css';
+import './FooterLayoutOverrides.css';
 
 function FooterSection({ title, children }) {
   const [open, setOpen] = useState(false);
@@ -21,23 +22,47 @@ function FooterSection({ title, children }) {
 }
 
 function Footer() {
+  const location = useLocation();
+  const isAdminRoute = location.pathname.startsWith('/admin');
+  const isHotelRoute = location.pathname.startsWith('/hotels');
+  const isCarRoute = location.pathname.startsWith('/car-rentals');
+
   return (
-    <footer className="footer">
+    <footer className={`footer${isAdminRoute ? ' footer--admin' : ''}${isHotelRoute ? ' footer--hotels' : ''}${isCarRoute ? ' footer--cars' : ''}`}>
       <div className="container">
         <div className="footer-content">
-          {/* Brand — always visible */}
           <div className="footer-section footer-brand">
             <h3>FareTransit LLC</h3>
-            <p>Your trusted partner for urgent travel advisory and support.</p>
+            <p>FareTransit provides travel-search and reservation assistance for travelers who value clear information and real human support.</p>
           </div>
 
-          {/* Collapsible on mobile */}
           <FooterSection title="Company">
             <ul>
-              <li><Link to="/">Flights</Link></li>
-              <li><Link to="/amtrak">Amtrak Assistance</Link></li>
+              <li><Link to="/">Flight Search</Link></li>
+              <li><Link to="/hotels">Hotels</Link></li>
+              <li><Link to="/car-rentals">Car Rentals</Link></li>
               <li><Link to="/my-bookings">My Bookings</Link></li>
               <li><Link to="/contact">Contact Information</Link></li>
+            </ul>
+          </FooterSection>
+
+          <FooterSection title="Travel Help">
+            <ul>
+              <li><Link to="/travel-assistance">Flight Booking Assistance</Link></li>
+              <li><Link to="/booking-for-parents">Booking Flights for Parents</Link></li>
+              <li><Link to="/urgent-travel">Urgent Travel Assistance</Link></li>
+              <li><Link to="/senior-travel/flight-deals">Senior Flight Assistance</Link></li>
+            </ul>
+          </FooterSection>
+
+          <FooterSection title="Popular Routes">
+            <ul>
+              <li><Link to="/flight-nyc-to-mia">New York to Miami Flights</Link></li>
+              <li><Link to="/flight-lax-to-jfk">Los Angeles to New York Flights</Link></li>
+              <li><Link to="/routes/flight-nyc-to-lon">New York to London Flights</Link></li>
+              <li><Link to="/routes/flight-lax-to-tokyo">Los Angeles to Tokyo Flights</Link></li>
+              <li><Link to="/train-nyc-to-dc">New York to Washington Train</Link></li>
+              <li><Link to="/train-boston-to-nyc">Boston to New York Train</Link></li>
             </ul>
           </FooterSection>
 
@@ -53,7 +78,7 @@ function Footer() {
             <ul>
               <li><a href="mailto:support@faretransit.com">support@faretransit.com</a></li>
               <li><a href={SUPPORT_PHONE_HREF}>{SUPPORT_PHONE_DISPLAY}</a></li>
-              <li>{BUSINESS_ADDRESS_SHORT}</li>
+              <li>1309 Coffeen Avenue STE 1200, Sheridan, WY 82801</li>
             </ul>
           </FooterSection>
         </div>

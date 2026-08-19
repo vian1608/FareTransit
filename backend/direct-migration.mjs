@@ -116,7 +116,43 @@ CREATE TABLE IF NOT EXISTS abandoned_bookings (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_abandoned_session ON abandoned_bookings(session_key);
+CREATE TABLE IF NOT EXISTS inquiries (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  service_type VARCHAR(50) NOT NULL DEFAULT 'flights',
+  status VARCHAR(20) NOT NULL DEFAULT 'NEW',
+  name VARCHAR(255) NOT NULL,
+  email VARCHAR(255) NOT NULL,
+  phone VARCHAR(50),
+  origin VARCHAR(255),
+  destination VARCHAR(255),
+  trip_type VARCHAR(50),
+  travel_date VARCHAR(50),
+  return_date VARCHAR(50),
+  passengers VARCHAR(50),
+  cabin_class VARCHAR(50),
+  notes TEXT,
+  sms_opt_in BOOLEAN DEFAULT FALSE,
+  preferred_destination VARCHAR(255),
+  flexible_dates VARCHAR(50),
+  source VARCHAR(100),
+  utm_source VARCHAR(100),
+  utm_medium VARCHAR(100),
+  utm_campaign VARCHAR(100),
+  utm_content VARCHAR(100),
+  gclid VARCHAR(255),
+  gbraid VARCHAR(255),
+  wbraid VARCHAR(255),
+  email_status VARCHAR(20) DEFAULT 'PENDING',
+  email_provider VARCHAR(50),
+  email_message_id VARCHAR(255),
+  email_error TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_inquiries_email ON inquiries(email);
+CREATE INDEX IF NOT EXISTS idx_inquiries_service ON inquiries(service_type);
+CREATE INDEX IF NOT EXISTS idx_inquiries_created ON inquiries(created_at DESC);
 
 CREATE OR REPLACE FUNCTION update_updated_at()
 RETURNS TRIGGER AS $$
@@ -132,12 +168,16 @@ CREATE TRIGGER trg_bookings_updated_at BEFORE UPDATE ON bookings FOR EACH ROW EX
 DROP TRIGGER IF EXISTS trg_abandoned_updated_at ON abandoned_bookings;
 CREATE TRIGGER trg_abandoned_updated_at BEFORE UPDATE ON abandoned_bookings FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
+DROP TRIGGER IF EXISTS trg_inquiries_updated_at ON inquiries;
+CREATE TRIGGER trg_inquiries_updated_at BEFORE UPDATE ON inquiries FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
 ALTER TABLE bookings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE travellers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE contacts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE flights ENABLE ROW LEVEL SECURITY;
 ALTER TABLE payments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE abandoned_bookings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE inquiries ENABLE ROW LEVEL SECURITY;
 `;
 
 async function run() {

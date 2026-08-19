@@ -13,11 +13,18 @@ function ServiceNav({ active }) {
         <span>Flights</span>
       </Link>
       <Link
-        to="/amtrak"
-        className={`service-nav__item ${active === 'rail' ? 'service-nav__item--active' : ''}`}
+        to="/hotels"
+        className={`service-nav__item ${active === 'hotels' ? 'service-nav__item--active' : ''}`}
       >
-        <i className="fas fa-train" aria-hidden="true" />
-        <span>Rail (Amtrak)</span>
+        <i className="fas fa-hotel" aria-hidden="true" />
+        <span>Hotels</span>
+      </Link>
+      <Link
+        to="/car-rentals"
+        className={`service-nav__item ${active === 'cars' ? 'service-nav__item--active' : ''}`}
+      >
+        <i className="fas fa-car" aria-hidden="true" />
+        <span>Car Rentals</span>
       </Link>
     </nav>
   );

@@ -1,0 +1,167 @@
+.car-search-form {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.car-search-form--compact {
+  padding: 1rem;
+  gap: 1rem;
+  box-shadow: none;
+  border-radius: 8px;
+}
+
+.car-search-error-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.88rem;
+}
+
+.car-search-meta-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.car-meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.car-meta-label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.car-meta-label i {
+  color: #8b1538;
+}
+
+.car-age-input {
+  width: 80px;
+  padding: 0.5rem 0.65rem;
+  font-size: 0.9rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #1e293b;
+  box-sizing: border-box;
+}
+
+.car-same-dropoff-toggle {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+}
+
+.car-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: #334155;
+  cursor: pointer;
+  user-select: none;
+}
+
+.car-checkbox-label input[type="checkbox"] {
+  accent-color: #8b1538;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.car-search-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.25rem;
+  align-items: flex-end;
+}
+
+.car-search-field {
+  width: 100%;
+}
+
+.car-datetime-group {
+  display: grid;
+  grid-template-columns: 2fr 1.2fr;
+  gap: 0.75rem;
+  align-items: flex-end;
+}
+
+.car-time-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.car-search-submit-wrapper {
+  margin-top: 0.5rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.car-search-submit-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  background: linear-gradient(135deg, #8b1538 0%, #68102a 100%);
+  color: #ffffff;
+  font-size: 1.05rem;
+  font-weight: 600;
+  padding: 0.85rem 2rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  box-shadow: 0 4px 12px rgba(139, 21, 56, 0.25);
+  width: 100%;
+}
+
+.car-search-submit-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(139, 21, 56, 0.35);
+}
+
+.car-search-submit-btn:active {
+  transform: translateY(0);
+}
+
+@media (max-width: 768px) {
+  .car-search-form {
+    padding: 1rem;
+    gap: 1rem;
+  }
+
+  .car-same-dropoff-toggle {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .car-datetime-group {
+    grid-template-columns: 1fr;
+  }
+}

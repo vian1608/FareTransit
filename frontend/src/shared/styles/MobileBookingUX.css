@@ -1,0 +1,602 @@
+/* Mobile booking UX — source-of-truth phone layout.
+   This file intentionally owns booking behavior at <=640px so desktop layout
+   rules cannot leak into the phone checkout. */
+
+@media (max-width: 640px) {
+  /* ── Itinerary header / Back button ─────────────────────────────── */
+  .booking-itinerary-top-panel {
+    padding: 0.8rem 0 0.95rem !important;
+  }
+
+  .booking-itinerary-top-panel__inner {
+    padding-top: 0 !important;
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+  }
+
+  /* Put Back in normal document flow. It must never cover the title. */
+  .tfs-customer-back-wrap--booking {
+    position: static !important;
+    inset: auto !important;
+    top: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    left: auto !important;
+    transform: none !important;
+    width: max-content !important;
+    margin: 0 0 0.7rem !important;
+  }
+
+  .booking-itinerary-top-panel__title {
+    position: static !important;
+    margin: 0 0 0.65rem !important;
+    padding: 0 !important;
+    min-height: 0 !important;
+    font-size: 0.74rem !important;
+    line-height: 1.2 !important;
+  }
+
+  /* ── Fare summary ───────────────────────────────────────────────── */
+  .tfs-fare-breakdown-root {
+    padding: 0.62rem 0.68rem !important;
+  }
+
+  .tfs-fare-value-story {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+    gap: 0.42rem !important;
+  }
+
+  .tfs-fare-original-block {
+    grid-column: 1 !important;
+    padding: 0.22rem 0.42rem 0.22rem 0 !important;
+    border-right: 1px solid #dbe8e1 !important;
+    border-bottom: 0 !important;
+  }
+
+  .tfs-fare-savings-block {
+    grid-column: 2 !important;
+    padding: 0.4rem 0.48rem !important;
+  }
+
+  .tfs-fare-final-block,
+  .tfs-fare-final-block--solo {
+    grid-column: 1 / -1 !important;
+    padding: 0.48rem 0 0 !important;
+    border-top: 1px solid #d1fae5 !important;
+  }
+
+  .tfs-fare-details {
+    grid-column: 1 / -1 !important;
+  }
+
+  .tfs-fare-original-total {
+    font-size: 0.9rem !important;
+  }
+
+  .tfs-fare-savings-amount {
+    font-size: 0.98rem !important;
+  }
+
+  .tfs-fare-total {
+    font-size: 1.08rem !important;
+  }
+
+  .tfs-fare-per-traveler {
+    margin-top: 0.42rem !important;
+    padding-top: 0.42rem !important;
+    font-size: 0.69rem !important;
+  }
+
+  /* ── Real mobile itinerary timeline ─────────────────────────────── */
+  .booking-itinerary-top-grid > .itin-card {
+    border-radius: 12px !important;
+    margin-bottom: 0.7rem !important;
+  }
+
+  .booking-itinerary-top-grid .itin-card > div[style] {
+    padding: 8px 8px 0 !important;
+  }
+
+  .booking-itinerary-top-grid .itin-card .itinerary-timeline-container {
+    margin-bottom: 7px !important;
+    padding: 10px 10px 8px !important;
+    border-radius: 10px !important;
+  }
+
+  /* The first child is the intentionally hidden duplicate timeline heading.
+     The second child contains node / leg / node / leg / node. Turn that desktop
+     row into a clean vertical journey on phones. */
+  .booking-itinerary-top-grid .itinerary-timeline-container > div:nth-child(2) {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    justify-content: flex-start !important;
+    flex-wrap: nowrap !important;
+    gap: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Airport nodes */
+  .booking-itinerary-top-grid .itinerary-timeline-container > div:nth-child(2) > div:nth-child(odd) {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    align-items: flex-start !important;
+    text-align: left !important;
+    padding: 0.35rem 0.25rem 0.35rem 0.55rem !important;
+    box-sizing: border-box !important;
+  }
+
+  .booking-itinerary-top-grid .itinerary-timeline-container > div:nth-child(2) > div:nth-child(odd) > div {
+    max-width: 100% !important;
+  }
+
+  .booking-itinerary-top-grid .itinerary-timeline-container .itinerary-node-date {
+    font-size: 0.68rem !important;
+    padding: 3px 7px !important;
+    margin-bottom: 4px !important;
+  }
+
+  /* Segment connector. Keep the flight badge readable and use a vertical dashed
+     connector instead of squeezing the desktop horizontal line into the card. */
+  .booking-itinerary-top-grid .itinerary-timeline-container > div:nth-child(2) > div:nth-child(even) {
+    flex: 0 0 auto !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0.05rem 0 0.05rem 1.05rem !important;
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
+    box-sizing: border-box !important;
+  }
+
+  .booking-itinerary-top-grid .flight-number-badge {
+    margin: 0 0 0.28rem 0.5rem !important;
+    font-size: 0.7rem !important;
+    padding: 3px 8px !important;
+  }
+
+  .booking-itinerary-top-grid .itinerary-timeline-container > div:nth-child(2) > div:nth-child(even) > div:last-child {
+    display: block !important;
+    width: 2px !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    margin: 0 0 0 1rem !important;
+    border-left: 2px dashed #94a3b8 !important;
+  }
+
+  .booking-itinerary-top-grid .itinerary-timeline-container > div:nth-child(2) > div:nth-child(even) > div:last-child > * {
+    display: none !important;
+  }
+
+  /* Compact lower summary: main timeline already carries date/time/route. */
+  .itin-summary-row {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto 18px !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    padding: 0.62rem 0.68rem !important;
+    position: relative !important;
+  }
+
+  .itin-col-carrier {
+    grid-column: 1 !important;
+    min-width: 0 !important;
+    width: auto !important;
+    flex: none !important;
+    overflow: hidden !important;
+  }
+
+  .itin-logo,
+  .itin-logo-fallback {
+    width: 30px !important;
+    height: 30px !important;
+  }
+
+  .itin-carrier-text {
+    min-width: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .itin-airline-name,
+  .itin-flight-num {
+    white-space: nowrap !important;
+    word-break: normal !important;
+    overflow-wrap: normal !important;
+    text-overflow: ellipsis !important;
+    overflow: hidden !important;
+  }
+
+  .itin-col-route {
+    display: none !important;
+  }
+
+  .itin-col-meta {
+    grid-column: 2 !important;
+    align-items: flex-end !important;
+    min-width: max-content !important;
+    padding-right: 0 !important;
+  }
+
+  .itin-duration {
+    font-size: 0.75rem !important;
+  }
+
+  .itin-stops {
+    font-size: 0.65rem !important;
+  }
+
+  .itin-chevron {
+    grid-column: 3 !important;
+    position: static !important;
+    right: auto !important;
+    top: auto !important;
+    transform: none !important;
+    margin: 0 !important;
+    justify-self: end !important;
+  }
+
+  .itin-chevron--rotated {
+    transform: rotate(180deg) !important;
+  }
+
+  /* ── Main form shell / major accordion ─────────────────────────── */
+  .container.booking-main-container {
+    padding-left: 0.45rem !important;
+    padding-right: 0.45rem !important;
+    padding-top: 0.65rem !important;
+    padding-bottom: 1.5rem !important;
+  }
+
+  .accordion-section {
+    border-radius: 13px !important;
+    margin-bottom: 0.6rem !important;
+  }
+
+  .accordion-section-header {
+    min-height: 58px !important;
+    padding: 0.7rem 0.68rem !important;
+    gap: 0.42rem !important;
+  }
+
+  .accordion-header-left {
+    gap: 0.52rem !important;
+    min-width: 0 !important;
+  }
+
+  .accordion-step-badge {
+    width: 30px !important;
+    height: 30px !important;
+    min-width: 30px !important;
+    font-size: 0.76rem !important;
+  }
+
+  .accordion-section-title {
+    font-size: 0.9rem !important;
+    line-height: 1.2 !important;
+  }
+
+  .accordion-section-body--open {
+    padding-top: 0.6rem !important;
+    padding-bottom: 0.2rem !important;
+  }
+
+  /* ── Multi-passenger entry ─────────────────────────────────────── */
+  .passenger-card-block {
+    padding: 0.68rem !important;
+    margin: 0 0 0.58rem !important;
+    border-radius: 11px !important;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04) !important;
+  }
+
+  .passenger-card-block + .passenger-card-block {
+    margin-top: 0.58rem !important;
+  }
+
+  .passenger-card-title {
+    margin: -0.68rem -0.68rem 0.65rem !important;
+    padding: 0.62rem 0.65rem !important;
+    min-height: 46px !important;
+    box-sizing: border-box !important;
+    font-size: 0.8rem !important;
+    line-height: 1.15 !important;
+    cursor: pointer !important;
+    user-select: none !important;
+  }
+
+  .passenger-card-title i {
+    width: 26px !important;
+    height: 26px !important;
+    flex-basis: 26px !important;
+    font-size: 0.68rem !important;
+  }
+
+  .passenger-card-title:focus-visible {
+    outline: 2px solid #8b1538 !important;
+    outline-offset: -2px !important;
+  }
+
+  .tfs-pax-mobile-state {
+    margin-left: auto !important;
+    padding: 0.16rem 0.38rem !important;
+    border-radius: 999px !important;
+    background: #fff1f2 !important;
+    color: #9f1239 !important;
+    font-size: 0.58rem !important;
+    font-weight: 800 !important;
+    white-space: nowrap !important;
+  }
+
+  .tfs-pax-complete .tfs-pax-mobile-state {
+    background: #ecfdf5 !important;
+    color: #047857 !important;
+  }
+
+  .tfs-pax-mobile-chevron {
+    flex: 0 0 auto !important;
+    margin-left: 0.18rem !important;
+    color: #64748b !important;
+    font-size: 0.64rem !important;
+    transition: transform 160ms ease !important;
+  }
+
+  .passenger-card-block.tfs-pax-collapsed {
+    padding: 0 !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .passenger-card-block.tfs-pax-collapsed > :not(.passenger-card-title) {
+    display: none !important;
+  }
+
+  .passenger-card-block.tfs-pax-collapsed .passenger-card-title {
+    margin: 0 !important;
+    border-bottom: 0 !important;
+  }
+
+  .passenger-card-block.tfs-pax-collapsed .tfs-pax-mobile-chevron {
+    transform: rotate(-90deg) !important;
+  }
+
+  /* Compact the open traveler from 9 single rows to 6 useful rows. */
+  .passenger-card-block > .booking-form-grid,
+  .passenger-card-block > .booking-form-grid--3col {
+    display: grid !important;
+    gap: 0.55rem !important;
+  }
+
+  /* This rule MUST stay after the open-grid declaration above. The collapse
+     state wins both by specificity and source order, so the arrow and body can
+     never get out of sync again. */
+  .passenger-card-block.tfs-pax-collapsed > .booking-form-grid,
+  .passenger-card-block.tfs-pax-collapsed > .booking-form-grid--3col {
+    display: none !important;
+  }
+
+  /* Title + First Name, Middle Name full width. */
+  .passenger-card-block > .booking-form-grid--3col:nth-of-type(1) {
+    grid-template-columns: minmax(88px, 0.7fr) minmax(0, 1.3fr) !important;
+  }
+
+  .passenger-card-block > .booking-form-grid--3col:nth-of-type(1) > :nth-child(3) {
+    grid-column: 1 / -1 !important;
+  }
+
+  /* Last Name full width, Gender + DOB side by side. */
+  .passenger-card-block > .booking-form-grid--3col:nth-of-type(2) {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+  }
+
+  .passenger-card-block > .booking-form-grid--3col:nth-of-type(2) > :nth-child(1) {
+    grid-column: 1 / -1 !important;
+  }
+
+  /* Nationality full width, Passport Number + Expiry side by side. */
+  .passenger-card-block > .booking-form-grid--3col:nth-of-type(3) {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+  }
+
+  .passenger-card-block > .booking-form-grid--3col:nth-of-type(3) > :nth-child(1) {
+    grid-column: 1 / -1 !important;
+  }
+
+  .passenger-card-block .booking-form-grid[style] {
+    margin-top: 0.55rem !important;
+  }
+
+  .passenger-card-block .booking-form-field {
+    gap: 0.28rem !important;
+    font-size: 0.78rem !important;
+  }
+
+  .passenger-card-block input,
+  .passenger-card-block select,
+  .passenger-card-block .custom-select,
+  .passenger-card-block .dob-container,
+  .passenger-card-block .travel-date-picker {
+    min-width: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 44px !important;
+    box-sizing: border-box !important;
+    font-size: 0.84rem !important;
+  }
+
+  /* ── Payment section ────────────────────────────────────────────── */
+  .card-payment-container {
+    gap: 0.7rem !important;
+  }
+
+  .card-payment-header {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 0.55rem !important;
+    padding: 0.68rem !important;
+    border-radius: 11px !important;
+  }
+
+  .security-badge-group {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    gap: 0.35rem !important;
+  }
+
+  .secure-badge {
+    width: auto !important;
+    min-height: 30px !important;
+    padding: 0.32rem 0.55rem !important;
+    font-size: 0.67rem !important;
+    line-height: 1.1 !important;
+  }
+
+  .card-brand-logos {
+    display: flex !important;
+    justify-content: flex-start !important;
+    align-items: center !important;
+    gap: 0.58rem !important;
+    margin: 0 !important;
+  }
+
+  .card-brand-logos i {
+    font-size: 1.45rem !important;
+  }
+
+  .card-details-box,
+  .billing-address-box {
+    padding: 0.8rem !important;
+    border-radius: 11px !important;
+  }
+
+  .payment-sub-heading {
+    margin-bottom: 0.7rem !important;
+    font-size: 0.98rem !important;
+  }
+
+  /* Empty card field should not show the broken generic Brands-font glyph. */
+  .card-input-wrapper:has(input:placeholder-shown) .card-brand-icon {
+    display: none !important;
+  }
+
+  .card-brand-icon i.fa-credit-card {
+    font-family: 'Font Awesome 6 Free', 'Font Awesome 5 Free' !important;
+    font-weight: 900 !important;
+  }
+
+  .billing-address-compact-notice {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 0.35rem !important;
+    padding: 0.65rem !important;
+    min-height: 0 !important;
+    border-radius: 10px !important;
+  }
+
+  .btn-add-billing {
+    width: 100% !important;
+    min-height: 42px !important;
+    padding: 0.58rem 0.75rem !important;
+    font-size: 0.84rem !important;
+  }
+
+  .compact-subtext {
+    font-size: 0.7rem !important;
+    line-height: 1.35 !important;
+  }
+
+  .verification-block {
+    margin-top: 0.7rem !important;
+    margin-bottom: 0.7rem !important;
+  }
+
+  .verification-inner {
+    align-items: flex-start !important;
+    gap: 0.55rem !important;
+    padding: 0.65rem !important;
+  }
+
+  .verification-label {
+    font-size: 0.72rem !important;
+    line-height: 1.4 !important;
+  }
+
+  .amtrak-btn.amtrak-btn--cta.amtrak-btn--full {
+    min-height: 52px !important;
+    padding: 0.75rem 0.8rem !important;
+    font-size: 0.9rem !important;
+  }
+
+  /* ── Footer ─────────────────────────────────────────────────────── */
+  .footer {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.35rem !important;
+  }
+
+  .footer-brand {
+    padding: 0.35rem 0 0.45rem !important;
+  }
+
+  .footer-brand h3 {
+    margin-bottom: 0.12rem !important;
+    font-size: 0.86rem !important;
+  }
+
+  .footer-brand p {
+    font-size: 0.68rem !important;
+    line-height: 1.3 !important;
+  }
+
+  .footer-section__toggle {
+    min-height: 36px !important;
+    padding: 0.42rem 0 !important;
+    font-size: 0.78rem !important;
+  }
+
+  .footer-bottom {
+    margin-top: 0.1rem !important;
+    padding-top: 0.42rem !important;
+  }
+
+  .footer-bottom p {
+    font-size: 0.66rem !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .tfs-fare-value-story {
+    grid-template-columns: 1fr !important;
+  }
+
+  .tfs-fare-original-block,
+  .tfs-fare-savings-block,
+  .tfs-fare-final-block,
+  .tfs-fare-final-block--solo,
+  .tfs-fare-details {
+    grid-column: 1 !important;
+  }
+
+  .tfs-fare-original-block {
+    border-right: 0 !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+  }
+
+  .passenger-card-title {
+    font-size: 0.76rem !important;
+  }
+
+  .tfs-pax-mobile-state {
+    font-size: 0.55rem !important;
+  }
+
+  /* Very narrow devices need safe single-column traveler fields. */
+  .passenger-card-block > .booking-form-grid--3col:nth-of-type(1),
+  .passenger-card-block > .booking-form-grid--3col:nth-of-type(2),
+  .passenger-card-block > .booking-form-grid--3col:nth-of-type(3) {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .passenger-card-block > .booking-form-grid--3col > * {
+    grid-column: 1 !important;
+  }
+}

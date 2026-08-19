@@ -1,0 +1,151 @@
+/* Global mobile slider/carousel controls.
+   Every public carousel uses the same simple web-style treatment:
+   plain chevrons + circular pagination dots. */
+
+@media (max-width: 767px) {
+  /* Shared visual tokens */
+  .how-helps-nav-row,
+  .seamless-advisory__carousel-nav,
+  .customer-reviews__mobile-nav,
+  .route-slider-mobile-nav {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 18px !important;
+    width: 100% !important;
+    margin: 16px auto 0 !important;
+  }
+
+  .how-helps-arrow,
+  .seamless-advisory__carousel-arrow,
+  .customer-reviews__mobile-arrow,
+  .route-slider-mobile-arrow {
+    appearance: none !important;
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    min-height: 38px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    color: #8b1538 !important;
+    box-shadow: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 1.35rem !important;
+    line-height: 1 !important;
+    cursor: pointer !important;
+    opacity: 0.95 !important;
+    transform: none !important;
+  }
+
+  .how-helps-arrow:hover,
+  .how-helps-arrow:focus-visible,
+  .seamless-advisory__carousel-arrow:hover,
+  .seamless-advisory__carousel-arrow:focus-visible,
+  .customer-reviews__mobile-arrow:hover,
+  .customer-reviews__mobile-arrow:focus-visible,
+  .route-slider-mobile-arrow:hover,
+  .route-slider-mobile-arrow:focus-visible {
+    background: transparent !important;
+    color: #8b1538 !important;
+    opacity: 1 !important;
+    transform: scale(1.08) !important;
+    outline: none !important;
+  }
+
+  .how-helps-arrow:active,
+  .seamless-advisory__carousel-arrow:active,
+  .customer-reviews__mobile-arrow:active,
+  .route-slider-mobile-arrow:active {
+    transform: scale(0.94) !important;
+  }
+
+  .how-helps-dots,
+  .seamless-advisory__carousel-dots,
+  .customer-reviews__mobile-dots,
+  .route-slider-mobile-dots {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 10px !important;
+    width: auto !important;
+    margin: 0 !important;
+  }
+
+  .how-helps-dot,
+  .seamless-advisory__dot,
+  .customer-reviews__mobile-dot,
+  .route-slider-mobile-dot {
+    appearance: none !important;
+    width: 9px !important;
+    height: 9px !important;
+    min-width: 9px !important;
+    min-height: 9px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 50% !important;
+    background: #cbd5e1 !important;
+    box-shadow: none !important;
+    cursor: pointer !important;
+    transform: none !important;
+    transition: background 0.2s ease, transform 0.2s ease !important;
+  }
+
+  .how-helps-dot--active,
+  .seamless-advisory__dot--active,
+  .customer-reviews__mobile-dot--active,
+  .route-slider-mobile-dot--active {
+    width: 11px !important;
+    height: 11px !important;
+    min-width: 11px !important;
+    min-height: 11px !important;
+    border-radius: 50% !important;
+    background: #8b1538 !important;
+    transform: none !important;
+  }
+
+  /* How FareTransit Helps: remove the old pill/boxed treatment. */
+  .how-helps-nav-row {
+    margin-top: 14px !important;
+  }
+
+  /* Seamless advisory: the new nav row replaces the tall bar indicators. */
+  .seamless-advisory__carousel-nav {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+  }
+
+  .seamless-advisory__swipe-hint {
+    display: none !important;
+  }
+
+  /* Reviews use a dedicated mobile control row; desktop controls stay intact. */
+  .customer-reviews__carousel > .customer-reviews__arrow,
+  .customer-reviews > .container > .customer-reviews__dots,
+  .customer-reviews__counter {
+    display: none !important;
+  }
+
+  .customer-reviews__mobile-nav {
+    display: flex !important;
+  }
+
+  /* Popular routes: replace hidden mobile arrows with the same shared navigation. */
+  .route-slider-header .route-slider-controls {
+    display: none !important;
+  }
+
+  .route-slider-mobile-nav {
+    display: flex !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .customer-reviews__mobile-nav,
+  .route-slider-mobile-nav {
+    display: none !important;
+  }
+}

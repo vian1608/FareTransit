@@ -1,0 +1,47 @@
+/* Progressive native <details> motion for modern Chromium/Safari builds. */
+@supports (interpolate-size: allow-keywords) {
+  :root { interpolate-size: allow-keywords; }
+
+  .abx-panel::details-content,
+  .abx-passenger-editor::details-content,
+  .abx-flight::details-content {
+    block-size: 0;
+    opacity: 0;
+    overflow: hidden;
+    transform: translateY(-5px);
+    transition:
+      block-size .36s cubic-bezier(.16, 1, .3, 1),
+      opacity .20s ease,
+      transform .30s cubic-bezier(.16, 1, .3, 1),
+      content-visibility .36s allow-discrete;
+  }
+
+  .abx-panel[open]::details-content,
+  .abx-passenger-editor[open]::details-content,
+  .abx-flight[open]::details-content {
+    block-size: auto;
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.abx-panel > summary,
+.abx-passenger-editor > summary,
+.abx-flight > summary {
+  position: relative;
+  outline: none;
+}
+
+.abx-panel > summary:focus-visible,
+.abx-passenger-editor > summary:focus-visible,
+.abx-flight > summary:focus-visible {
+  box-shadow: inset 0 0 0 3px rgba(31, 116, 170, .15);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .abx-panel::details-content,
+  .abx-passenger-editor::details-content,
+  .abx-flight::details-content {
+    transition: none !important;
+  }
+}

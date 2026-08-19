@@ -1,52 +1,23 @@
-/* FareTransit Coastal Cypress & Terracotta Design Token System */
+/* Qatar Airways Inspired Design */
 :root {
-  /* Core Palette Tokens */
-  --color-primary-dark: #132E27;
-  --color-primary: #2B6CB0;
-  --color-primary-hover: #2C5282;
-  --color-secondary: #C05621;
-  --color-accent: #DD6B20;
-
-  --color-background: #F7FAFC;
-  --color-surface: #FFFFFF;
-  --color-surface-secondary: #EDF2F7;
-
-  --color-text-primary: #1A202C;
-  --color-text-secondary: #4A5568;
-  --color-text-muted: #718096;
-
-  --color-border: #E2E8F0;
-  --color-input-bg: #FFFFFF;
-
-  --color-success: #2F855A;
-  --color-warning: #D69E2E;
-  --color-error: #C53030;
-  --color-info: #3182CE;
-
-  --color-disabled-bg: #E2E8F0;
-  --color-disabled-text: #A0AEC0;
-
-  /* Focus & Overlay Tokens */
-  --color-focus-ring: rgba(43, 108, 176, 0.25);
-  --color-overlay: rgba(19, 46, 39, 0.6);
-
-  /* Compatibility & Legacy Token Aliases */
-  --qa-burgundy: var(--color-primary-dark);
-  --qa-burgundy-dark: #0A1C17;
-  --qa-burgundy-light: var(--color-primary);
-  --qa-gold: var(--color-secondary);
-  --qa-gold-light: var(--color-surface-secondary);
-  --qa-white: var(--color-surface);
-  --qa-grey-light: var(--color-background);
-  --qa-grey-medium: var(--color-surface-secondary);
-  --qa-grey-dark: var(--color-text-muted);
-  --qa-text-dark: var(--color-text-primary);
-  --qa-text-medium: var(--color-text-secondary);
-  --qa-text-light: var(--color-text-muted);
-
-  --qa-gradient-primary: linear-gradient(135deg, var(--color-primary-dark) 0%, #0A1C17 100%);
-  --qa-gradient-gold: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
-  --qa-gradient-hero: linear-gradient(135deg, rgba(19, 46, 39, 0.95) 0%, rgba(43, 108, 176, 0.9) 100%);
+    /* Qatar Airways Color Palette */
+    --qa-burgundy: #8B1538;
+    --qa-burgundy-dark: #6B0F2A;
+    --qa-burgundy-light: #A51E47;
+    --qa-gold: #D4AF37;
+    --qa-gold-light: #F4E4BC;
+    --qa-white: #FFFFFF;
+    --qa-grey-light: #F8F9FA;
+    --qa-grey-medium: #E9ECEF;
+    --qa-grey-dark: #6C757D;
+    --qa-text-dark: #212529;
+    --qa-text-medium: #495057;
+    --qa-text-light: #6C757D;
+    
+    /* Gradients */
+    --qa-gradient-primary: linear-gradient(135deg, var(--qa-burgundy) 0%, var(--qa-burgundy-dark) 100%);
+    --qa-gradient-gold: linear-gradient(135deg, var(--qa-gold) 0%, #B8941F 100%);
+    --qa-gradient-hero: linear-gradient(135deg, rgba(139, 21, 56, 0.9) 0%, rgba(107, 15, 42, 0.9) 100%);
 }
 
 /* Reset and Base Styles */
@@ -1491,7 +1462,7 @@ body {
     color: #ef4444;
     font-size: 0.85rem;
     margin-top: 0.25rem;
-    display: none;
+    display: block;
 }
 
 /* Payment Methods */

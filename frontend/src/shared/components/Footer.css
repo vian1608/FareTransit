@@ -1,15 +1,24 @@
 .footer {
-  background: var(--color-primary-dark, #0B1F33);
-  color: var(--color-text-muted, #7B8798);
+  background: #0f172a;
+  color: #cbd5e1;
   padding: 2.75rem 0 1rem;
-  border-top: 3px solid var(--color-primary, #1464F4);
+  border-top: 3px solid #8b1538;
   overflow-x: hidden;
+}
+
+/* Admin pages use the same horizontal geometry as the 1540px admin shell.
+   Customer-facing pages keep the standard 1200px global .container. */
+.footer--admin > .container {
+  width: 100%;
+  max-width: 1540px;
+  padding-left: 22px;
+  padding-right: 22px;
 }
 
 .footer-content {
   display: grid;
-  grid-template-columns: 1.2fr 0.8fr 0.8fr 1fr;
-  gap: 2rem;
+  grid-template-columns: 1.4fr repeat(5, minmax(0, 1fr));
+  gap: 1.4rem;
   margin-bottom: 1.5rem;
 }
 
@@ -83,14 +92,20 @@
 }
 
 /* Tablet */
-@media (max-width: 900px) {
+@media (max-width: 1050px) {
   .footer-content {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(3, 1fr);
     gap: 1.5rem;
   }
 
   .footer-brand {
     grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 900px) {
+  .footer-content {
+    grid-template-columns: 1fr 1fr;
   }
 }
 
@@ -101,6 +116,11 @@
   .footer {
     padding: 1.25rem 0 0.75rem;
     border-top-width: 2px;
+  }
+
+  .footer--admin > .container {
+    padding-left: 16px;
+    padding-right: 16px;
   }
 
   .footer-content {

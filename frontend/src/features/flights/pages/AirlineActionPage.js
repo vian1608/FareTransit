@@ -1,39 +1,47 @@
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Link, useParams, Navigate } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import AirlineLogo from '../../../shared/components/AirlineLogo';
 import AirlineFaq from '../components/AirlineFaq';
 import { AIRLINE_ACTIONS } from '../../../shared/config/airlineActionContent';
-import { getAirlineFromSlug, getAirlineDisplayName } from '../../../shared/utils/airlineDisplay';
 import { getAirlineFaqs } from '../../../shared/utils/getAirlineFaqs';
 import { getAirlineMetaDescription } from '../../../shared/utils/airlineMeta';
 import { SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_HREF } from '../../../shared/constants/supportContact';
 import AirlineLegalFinePrint from '../components/AirlineLegalFinePrint';
+import NotFoundPage from '../../../shared/pages/NotFoundPage';
 import airlinesData from '../../../shared/data/airlinesData.json';
 import './AirlineActionPage.css';
 
-const baggageBySlug = Object.fromEntries(airlinesData.map((a) => [a.slug, a.baggage]));
+const airlinesBySlug = Object.fromEntries(airlinesData.map((airline) => [airline.slug, airline]));
+const baggageBySlug = Object.fromEntries(airlinesData.map((airline) => [airline.slug, airline.baggage]));
 
 function AirlineActionPage({ action }) {
-  const { airline: airlineSlug } = useParams();
+  const { airline: rawAirlineSlug } = useParams();
   const config = AIRLINE_ACTIONS[action];
-  const airline = getAirlineFromSlug(airlineSlug);
+  const airlineSlug = String(rawAirlineSlug || '').toLowerCase().trim();
+  const airline = airlinesBySlug[airlineSlug];
 
-  if (!config || !airlineSlug) {
-    return <Navigate to="/" replace />;
+  if (!config || !airline) {
+    return <NotFoundPage />;
   }
 
-  const airlineName = getAirlineDisplayName(airlineSlug);
-  const canonicalUrl = `https://faretransit.com/${action}/${airline.slug}`;
+  const airlineName = airline.name;
+  const canonicalUrl = `https://www.faretransit.com/${action}/${airline.slug}`;
   const faqs = getAirlineFaqs(airline.slug, airlineName, baggageBySlug[airline.slug]);
   const metaDescription = getAirlineMetaDescription(airlineName);
+  const pageTitle = `${config.h1(airlineName)} | FareTransit`;
 
   return (
     <div className={`airline-action-page airline-action-page--${action}`}>
       <Helmet>
-        <title>{config.h1(airlineName)} | FareTransit LLC</title>
+        <title>{pageTitle}</title>
         <meta name="description" content={metaDescription} />
+        <meta property="og:title" content={pageTitle} />
         <meta property="og:description" content={metaDescription} />
+        <meta property="og:url" content={canonicalUrl} />
+        <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:title" content={pageTitle} />
         <meta name="twitter:description" content={metaDescription} />
         <link rel="canonical" href={canonicalUrl} />
       </Helmet>
@@ -42,7 +50,7 @@ function AirlineActionPage({ action }) {
         <nav className="airline-action-breadcrumbs" aria-label="Breadcrumb">
           <Link to="/">{config.breadcrumbRoot}</Link>
           <span aria-hidden="true">›</span>
-          <span>{airlineName} Airlines</span>
+          <span>{airlineName}</span>
           <span aria-hidden="true">›</span>
           <span>{config.breadcrumbDesk}</span>
         </nav>

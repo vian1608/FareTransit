@@ -1,0 +1,413 @@
+/* Approved booking page – OPTION 1
+   One full-width itinerary, one full-width form column, no duplicate sidebar. */
+
+/* Use one consistent content width from itinerary through payment. */
+.booking-itinerary-top-panel__inner,
+.container.booking-main-container {
+  width: 100% !important;
+  max-width: 1180px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  padding-left: 2rem !important;
+  padding-right: 2rem !important;
+  box-sizing: border-box !important;
+}
+
+.booking-itinerary-top-panel__inner {
+  position: relative !important;
+  padding-top: 3.25rem !important;
+}
+
+/* Back sits with the itinerary controls, not above the hero. */
+.tfs-customer-back-wrap--booking {
+  left: 2rem !important;
+  right: auto !important;
+  top: 0 !important;
+}
+
+.booking-itinerary-top-panel__title {
+  min-height: 0 !important;
+  padding: 0 !important;
+  margin: 0 0 1rem !important;
+}
+
+/* Option 1: outbound then return, each full width. */
+.booking-itinerary-top-grid,
+.booking-itinerary-top-grid--single,
+.booking-itinerary-top-grid--roundtrip {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 1rem !important;
+  align-items: stretch !important;
+  width: 100% !important;
+}
+
+.booking-itinerary-top-grid > .itin-card {
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+}
+
+/* The blue/red OUTBOUND / RETURN badge already identifies each leg. Hide the
+   duplicate FLT logo + "Flight Route Timeline" + airline header inside the
+   timeline, but only on the customer booking cards. The shared timeline keeps
+   its header everywhere else. */
+.booking-itinerary-top-grid .itin-card .itinerary-timeline-container > div:first-child {
+  display: none !important;
+}
+
+/* Pull the actual SEA → FCO / FCO → AMS → SEA route upward after removing the
+   redundant header so the itinerary card becomes shorter and easier to scan. */
+.booking-itinerary-top-grid .itin-card .itinerary-timeline-container {
+  padding-top: 14px !important;
+  padding-bottom: 16px !important;
+  margin-bottom: 12px !important;
+}
+
+/* Keep the compact total-price card at the top-right, matching Option 1. */
+.booking-itinerary-top-grid > .booking-itinerary-pricing-summary {
+  position: absolute !important;
+  top: 0 !important;
+  right: 2rem !important;
+  width: auto !important;
+  min-width: 190px !important;
+  max-width: 240px !important;
+  display: block !important;
+  padding: 0.7rem 0.9rem !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.07) !important;
+  z-index: 5 !important;
+}
+
+.booking-itinerary-pricing-summary__discounted {
+  font-size: 1.35rem !important;
+  margin-bottom: 0.3rem !important;
+}
+
+/* CRITICAL: these are the real classes used by BookingPage.js.
+   The previous patch targeted obsolete class names, which is why the second
+   itinerary remained and the form stayed narrow. */
+.booking-summary-sidebar,
+.mobile-summary-toggle-bar {
+  display: none !important;
+}
+
+.container.booking-main-container {
+  padding-top: 1.25rem !important;
+  padding-bottom: 3rem !important;
+}
+
+.booking-layout {
+  display: block !important;
+  width: 100% !important;
+  max-width: none !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+.booking-form-area {
+  display: block !important;
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+}
+
+.booking-form-area > form,
+.booking-form-area > form > * {
+  width: 100% !important;
+  max-width: none !important;
+  box-sizing: border-box !important;
+}
+
+/* Prevent any legacy two-column checkout/sidebar rule from narrowing the form. */
+.booking-checkout-layout,
+.booking-main-content {
+  width: 100% !important;
+  max-width: none !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+/* Passenger forms need clear visual boundaries when several travelers are
+   entered in the same accordion. BookingPage.js uses passenger-card-block and
+   passenger-card-title, so style those real production classes directly. */
+.passenger-card-block {
+  position: relative !important;
+  background: #ffffff !important;
+  border: 1px solid #dbe3ee !important;
+  border-left: 4px solid #8b1538 !important;
+  border-radius: 14px !important;
+  padding: 1.25rem !important;
+  margin: 0 0 1.35rem !important;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.045) !important;
+  overflow: hidden !important;
+}
+
+.passenger-card-block + .passenger-card-block {
+  margin-top: 1.45rem !important;
+}
+
+.passenger-card-block:last-child {
+  margin-bottom: 0 !important;
+}
+
+.passenger-card-title {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.6rem !important;
+  margin: -1.25rem -1.25rem 1.2rem !important;
+  padding: 0.8rem 1.15rem !important;
+  background: linear-gradient(90deg, #f8fafc 0%, #fff7f9 100%) !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  color: #172033 !important;
+  font-size: 0.96rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.01em !important;
+}
+
+.passenger-card-title i {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 50% !important;
+  background: #8b1538 !important;
+  color: #ffffff !important;
+  font-size: 0.75rem !important;
+  flex: 0 0 28px !important;
+}
+
+.passenger-card-block .booking-form-grid {
+  column-gap: 1.15rem !important;
+  row-gap: 0.85rem !important;
+}
+
+.passenger-card-block .booking-form-grid + .booking-form-grid {
+  margin-top: 1rem !important;
+}
+
+/* The production submit button currently uses the amtrak-btn class family.
+   Give it an intentional checkout appearance instead of falling back to a
+   browser-default-looking button. */
+.amtrak-btn.amtrak-btn--cta.amtrak-btn--full {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  width: 100% !important;
+  min-height: 58px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border: 0 !important;
+  border-radius: 14px !important;
+  padding: 0.95rem 1.4rem !important;
+  background: linear-gradient(135deg, #9b1743 0%, #7a102f 58%, #5f0b24 100%) !important;
+  color: #ffffff !important;
+  font-family: inherit !important;
+  font-size: 1.05rem !important;
+  font-weight: 800 !important;
+  line-height: 1.2 !important;
+  letter-spacing: 0.005em !important;
+  text-align: center !important;
+  cursor: pointer !important;
+  box-shadow: 0 9px 24px rgba(139, 21, 56, 0.24) !important;
+  transition: transform 160ms ease, box-shadow 160ms ease, filter 160ms ease !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+.amtrak-btn.amtrak-btn--cta.amtrak-btn--full > span {
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.65rem !important;
+}
+
+.amtrak-btn.amtrak-btn--cta.amtrak-btn--full:not(:disabled):hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 12px 30px rgba(139, 21, 56, 0.32) !important;
+  filter: brightness(1.03) !important;
+}
+
+.amtrak-btn.amtrak-btn--cta.amtrak-btn--full:not(:disabled):active {
+  transform: translateY(0) !important;
+  box-shadow: 0 6px 18px rgba(139, 21, 56, 0.24) !important;
+}
+
+/* Disabled because terms are not accepted yet. */
+.amtrak-btn.amtrak-btn--cta.amtrak-btn--full:disabled {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Once clicked, BookingPage swaps the icon to fa-circle-notch. Use that real
+   DOM state to turn the button itself into a reassuring waiting panel. */
+.amtrak-btn.amtrak-btn--cta.amtrak-btn--full:has(.fa-circle-notch) {
+  min-height: 104px !important;
+  opacity: 1 !important;
+  cursor: wait !important;
+  padding: 1rem 1.35rem 1.3rem !important;
+  background: linear-gradient(135deg, #102a49 0%, #173b61 52%, #0c223d 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 10px 28px rgba(15, 39, 68, 0.24) !important;
+  isolation: isolate !important;
+}
+
+.amtrak-btn.amtrak-btn--cta.amtrak-btn--full:has(.fa-circle-notch)::before {
+  content: '' !important;
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: -1 !important;
+  background: linear-gradient(
+    110deg,
+    transparent 0%,
+    transparent 34%,
+    rgba(255, 255, 255, 0.08) 45%,
+    rgba(255, 255, 255, 0.16) 50%,
+    rgba(255, 255, 255, 0.08) 55%,
+    transparent 66%,
+    transparent 100%
+  ) !important;
+  transform: translateX(-100%) !important;
+  animation: tfs-booking-wait-shimmer 2.2s ease-in-out infinite !important;
+}
+
+.amtrak-btn.amtrak-btn--cta.amtrak-btn--full:has(.fa-circle-notch)::after {
+  content: '' !important;
+  position: absolute !important;
+  left: 0 !important;
+  bottom: 0 !important;
+  width: 42% !important;
+  height: 5px !important;
+  border-radius: 0 999px 999px 0 !important;
+  background: linear-gradient(90deg, #f4c66a 0%, #ffffff 55%, #f4c66a 100%) !important;
+  box-shadow: 0 0 14px rgba(244, 198, 106, 0.42) !important;
+  animation: tfs-booking-wait-progress 1.65s ease-in-out infinite !important;
+}
+
+.amtrak-btn.amtrak-btn--cta.amtrak-btn--full:has(.fa-circle-notch) > span {
+  position: relative !important;
+  z-index: 2 !important;
+  flex-direction: column !important;
+  gap: 0.35rem !important;
+  font-size: 1rem !important;
+}
+
+.amtrak-btn.amtrak-btn--cta.amtrak-btn--full:has(.fa-circle-notch) > span i {
+  font-size: 1.35rem !important;
+  margin-bottom: 0.1rem !important;
+  color: #f4c66a !important;
+}
+
+.amtrak-btn.amtrak-btn--cta.amtrak-btn--full:has(.fa-circle-notch) > span::after {
+  content: 'Creating your reservation securely. Please keep this page open — you will be redirected automatically.' !important;
+  display: block !important;
+  max-width: 720px !important;
+  color: rgba(255, 255, 255, 0.78) !important;
+  font-size: 0.82rem !important;
+  font-weight: 500 !important;
+  line-height: 1.45 !important;
+  letter-spacing: 0 !important;
+}
+
+@keyframes tfs-booking-wait-progress {
+  0% { transform: translateX(-105%); }
+  50% { transform: translateX(120%); }
+  100% { transform: translateX(245%); }
+}
+
+@keyframes tfs-booking-wait-shimmer {
+  0% { transform: translateX(-115%); }
+  55%, 100% { transform: translateX(115%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .amtrak-btn.amtrak-btn--cta.amtrak-btn--full:has(.fa-circle-notch)::before,
+  .amtrak-btn.amtrak-btn--cta.amtrak-btn--full:has(.fa-circle-notch)::after {
+    animation-duration: 4s !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .booking-itinerary-top-panel__inner,
+  .container.booking-main-container {
+    max-width: 100% !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+
+  .booking-itinerary-top-panel__inner {
+    padding-top: 3.1rem !important;
+  }
+
+  .tfs-customer-back-wrap--booking {
+    left: 1rem !important;
+    top: 0 !important;
+  }
+
+  /* On smaller screens the price becomes part of the normal flow and sits
+     before the itinerary cards so nothing overlaps. */
+  .booking-itinerary-top-grid > .booking-itinerary-pricing-summary {
+    position: static !important;
+    order: -1 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, max-content)) !important;
+    gap: 0.35rem 1rem !important;
+    align-items: center !important;
+  }
+
+  .passenger-card-block {
+    padding: 1rem !important;
+    margin-bottom: 1.1rem !important;
+    border-radius: 12px !important;
+  }
+
+  .passenger-card-block + .passenger-card-block {
+    margin-top: 1.15rem !important;
+  }
+
+  .passenger-card-title {
+    margin: -1rem -1rem 1rem !important;
+    padding: 0.75rem 0.9rem !important;
+    font-size: 0.9rem !important;
+  }
+
+  .amtrak-btn.amtrak-btn--cta.amtrak-btn--full {
+    min-height: 56px !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    font-size: 0.98rem !important;
+  }
+
+  .amtrak-btn.amtrak-btn--cta.amtrak-btn--full:has(.fa-circle-notch) {
+    min-height: 112px !important;
+  }
+}
+
+@media (max-width: 520px) {
+  .booking-itinerary-top-grid > .booking-itinerary-pricing-summary {
+    grid-template-columns: 1fr !important;
+  }
+
+  .passenger-card-block {
+    padding: 0.9rem !important;
+  }
+
+  .passenger-card-title {
+    margin: -0.9rem -0.9rem 0.9rem !important;
+  }
+
+  .amtrak-btn.amtrak-btn--cta.amtrak-btn--full {
+    font-size: 0.92rem !important;
+    border-radius: 12px !important;
+  }
+
+  .amtrak-btn.amtrak-btn--cta.amtrak-btn--full:has(.fa-circle-notch) > span::after {
+    font-size: 0.76rem !important;
+  }
+}

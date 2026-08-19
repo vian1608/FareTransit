@@ -1,6 +1,7 @@
 import React from 'react';
-import { useParams, Navigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import routesData from '../../../shared/data/routesData.json';
+import NotFoundPage from '../../../shared/pages/NotFoundPage';
 import FlightRoute from './FlightRoutePage';
 import TrainRoute from './TrainRoutePage';
 
@@ -9,7 +10,7 @@ const RouteDispatcher = () => {
   const route = routesData.find((r) => r.slug === slug);
 
   if (!route) {
-    return <Navigate to="/" replace />;
+    return <NotFoundPage />;
   }
 
   if (route.type === 'flight') {
@@ -24,7 +25,9 @@ const RouteDispatcher = () => {
         destinationCode={route.destinationCode}
       />
     );
-  } else if (route.type === 'train') {
+  }
+
+  if (route.type === 'train') {
     return (
       <TrainRoute
         title={route.title}
@@ -38,7 +41,7 @@ const RouteDispatcher = () => {
     );
   }
 
-  return <Navigate to="/" replace />;
+  return <NotFoundPage />;
 };
 
 export default RouteDispatcher;

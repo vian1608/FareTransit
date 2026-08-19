@@ -33,6 +33,28 @@ function CustomerReviews({ reviews, variant = 'flights' }) {
   const review = reviews[current];
   const isFlights = variant === 'flights';
 
+  const renderDots = (mobile = false) => (
+    <div
+      className={mobile ? 'customer-reviews__mobile-dots' : 'customer-reviews__dots'}
+      role="tablist"
+      aria-label="Review navigation"
+    >
+      {reviews.map((item, index) => (
+        <button
+          key={item.id}
+          type="button"
+          role="tab"
+          aria-selected={index === current}
+          aria-label={`View review ${index + 1} of ${count}`}
+          className={mobile
+            ? `customer-reviews__mobile-dot ${index === current ? 'customer-reviews__mobile-dot--active' : ''}`
+            : `customer-reviews__dot ${index === current ? 'customer-reviews__dot--active' : ''}`}
+          onClick={() => goTo(index)}
+        />
+      ))}
+    </div>
+  );
+
   return (
     <section
       className={`customer-reviews customer-reviews--${variant}`}
@@ -49,8 +71,8 @@ function CustomerReviews({ reviews, variant = 'flights' }) {
           </h2>
           <p className="customer-reviews__subtitle">
             {isFlights
-              ? 'Real experiences from clients who relied on our air logistics advisory.'
-              : 'Real experiences from travelers who used our Amtrak and national rail consultancy.'}
+              ? 'Real experiences from travelers who used our flight reservation support.'
+              : 'Real experiences from travelers who used our Amtrak and national rail support.'}
           </p>
         </div>
 
@@ -99,18 +121,16 @@ function CustomerReviews({ reviews, variant = 'flights' }) {
           </button>
         </div>
 
-        <div className="customer-reviews__dots" role="tablist" aria-label="Review navigation">
-          {reviews.map((item, index) => (
-            <button
-              key={item.id}
-              type="button"
-              role="tab"
-              aria-selected={index === current}
-              aria-label={`View review ${index + 1} of ${count}`}
-              className={`customer-reviews__dot ${index === current ? 'customer-reviews__dot--active' : ''}`}
-              onClick={() => goTo(index)}
-            />
-          ))}
+        {renderDots(false)}
+
+        <div className="customer-reviews__mobile-nav" aria-label="Review navigation controls">
+          <button type="button" className="customer-reviews__mobile-arrow" onClick={goPrev} aria-label="Previous review">
+            <i className="fas fa-chevron-left" aria-hidden="true" />
+          </button>
+          {renderDots(true)}
+          <button type="button" className="customer-reviews__mobile-arrow" onClick={goNext} aria-label="Next review">
+            <i className="fas fa-chevron-right" aria-hidden="true" />
+          </button>
         </div>
 
         <p className="customer-reviews__counter" aria-hidden="true">

@@ -1,34 +1,43 @@
 import logger from '../config/logger.mjs';
 
-const cache = new Map();
+let limiterSequence = 0;
 
 export const rateLimit = ({ windowMs = 60000, maxRequests = 60, message = 'Too many requests, please try again later.' } = {}) => {
-  return (req, res, next) => {
-    const ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-    const now = Date.now();
-    
-    if (!cache.has(ip)) {
-      cache.set(ip, []);
-    }
+  const buckets = new Map();
+  const limiterId = ++limiterSequence;
+  let requestCounter = 0;
 
-    const timestamps = cache.get(ip);
-    // Filter timestamps older than the window
-    const activeTimestamps = timestamps.filter(t => now - t < windowMs);
-    
-    if (activeTimestamps.length >= maxRequests) {
-      logger.warn(`Rate limit exceeded for IP: ${ip} on path: ${req.path}`);
+  return (req, res, next) => {
+    const rawForwarded = req.headers['x-forwarded-for'];
+    const forwardedIp = Array.isArray(rawForwarded) ? rawForwarded[0] : String(rawForwarded || '').split(',')[0].trim();
+    const ip = req.ip || forwardedIp || req.socket?.remoteAddress || 'unknown';
+    const now = Date.now();
+    const timestamps = (buckets.get(ip) || []).filter(timestamp => now - timestamp < windowMs);
+
+    if (timestamps.length >= maxRequests) {
+      logger.warn(`Rate limit exceeded [limiter=${limiterId}] for IP: ${ip} on path: ${req.path}`);
+      res.setHeader('Retry-After', String(Math.max(1, Math.ceil(windowMs / 1000))));
       return res.status(429).json({
         success: false,
-        error: {
-          code: 'TOO_MANY_REQUESTS',
-          message
-        }
+        error: { code: 'TOO_MANY_REQUESTS', message }
       });
     }
 
-    activeTimestamps.push(now);
-    cache.set(ip, activeTimestamps);
-    next();
+    timestamps.push(now);
+    buckets.set(ip, timestamps);
+
+    // Periodic bounded cleanup prevents a long-lived process from accumulating
+    // stale IP entries while keeping request-path work very small.
+    requestCounter += 1;
+    if (requestCounter % 500 === 0) {
+      for (const [bucketIp, values] of buckets.entries()) {
+        const active = values.filter(timestamp => now - timestamp < windowMs);
+        if (active.length) buckets.set(bucketIp, active);
+        else buckets.delete(bucketIp);
+      }
+    }
+
+    return next();
   };
 };
 

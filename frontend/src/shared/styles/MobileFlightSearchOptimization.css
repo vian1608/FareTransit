@@ -1,0 +1,380 @@
+/* Mobile flight-search blueprint shared across homepage, assistance pages,
+   and senior-travel landing pages. Desktop/tablet layouts are untouched. */
+
+@media (max-width: 640px) {
+  /* ---------- Shared/home flight-search cards ---------- */
+  .flights-inquiry-card {
+    padding: 16px !important;
+    border-radius: 14px !important;
+  }
+
+  .flight-search-title,
+  .flights-inquiry-card h2 {
+    font-size: 1.55rem !important;
+    line-height: 1.18 !important;
+    margin-bottom: 0.35rem !important;
+  }
+
+  .flights-inquiry__intro {
+    margin-bottom: 0.9rem !important;
+    font-size: 0.9rem !important;
+    line-height: 1.42 !important;
+  }
+
+  .search-urgent-hint {
+    min-height: 42px !important;
+    margin: 0 0 0.9rem !important;
+    padding: 0.55rem 0.7rem !important;
+    border-radius: 9px !important;
+    font-size: 0.82rem !important;
+    line-height: 1.3 !important;
+    gap: 0.45rem !important;
+  }
+
+  /* Four desktop controls become a compact 2 × 2 grid. */
+  .search-meta-row {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    margin-bottom: 0.85rem !important;
+    align-items: stretch !important;
+  }
+
+  .search-meta-left,
+  .search-meta-right {
+    display: contents !important;
+  }
+
+  .search-meta-row .custom-select-container,
+  .search-meta-row .search-meta-group {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .search-meta-row .custom-select-trigger,
+  .search-meta-row .passenger-trigger-btn {
+    width: 100% !important;
+    height: 46px !important;
+    min-height: 46px !important;
+    padding: 0 10px !important;
+    border-radius: 10px !important;
+    font-size: 0.84rem !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05) !important;
+  }
+
+  .search-meta-row .custom-select-trigger-left {
+    min-width: 0 !important;
+    gap: 6px !important;
+    font-size: 0.84rem !important;
+  }
+
+  .search-meta-row .custom-select-icon {
+    font-size: 0.82rem !important;
+    flex: 0 0 auto;
+  }
+
+  .search-meta-row .custom-select-value {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .search-meta-row .custom-select-arrow {
+    margin-left: 5px !important;
+  }
+
+  .search-meta-row .passenger-trigger-btn {
+    justify-content: flex-start !important;
+    gap: 7px !important;
+    text-align: left !important;
+  }
+
+  .search-meta-row .passenger-trigger-btn > span {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: left !important;
+  }
+
+  .search-meta-row .passenger-trigger-btn > i:last-child {
+    margin-left: auto !important;
+    flex: 0 0 auto;
+  }
+
+  .passenger-popover {
+    width: min(300px, calc(100vw - 48px)) !important;
+    max-width: calc(100vw - 48px) !important;
+  }
+
+  /* Airport fields: full-width, tighter, with helper copy removed on mobile. */
+  .airport-search-help {
+    display: none !important;
+  }
+
+  .autocomplete-label,
+  .traveldate-label {
+    margin-bottom: 0.28rem !important;
+    font-size: 0.72rem !important;
+    line-height: 1.2 !important;
+    letter-spacing: 0.045em !important;
+  }
+
+  .autocomplete-input {
+    height: 48px !important;
+    min-height: 48px !important;
+    padding-left: 40px !important;
+    padding-right: 42px !important;
+    border-radius: 11px !important;
+    font-size: 0.92rem !important;
+  }
+
+  .autocomplete-input-wrapper .input-icon {
+    left: 13px !important;
+    font-size: 0.92rem !important;
+  }
+
+  /* Homepage search has a real swap button; float it between airport fields. */
+  .airport-swap-row {
+    position: relative !important;
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+    align-items: stretch !important;
+    margin-top: 0 !important;
+  }
+
+  .airport-swap-row > .flights-form__group {
+    margin: 0 !important;
+    min-width: 0 !important;
+  }
+
+  .airport-swap-row .airport-swap-button {
+    position: absolute !important;
+    right: 11px !important;
+    top: 50% !important;
+    transform: translateY(-50%) rotate(90deg) !important;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border-radius: 50% !important;
+    background: #ffffff !important;
+    color: #8b1538 !important;
+    border: 1px solid #e5c4cf !important;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12) !important;
+    z-index: 8 !important;
+  }
+
+  .airport-swap-row .autocomplete-input {
+    padding-right: 54px !important;
+  }
+
+  /* Shared FlightSearchPanel has airports in the row immediately after meta controls. */
+  .search-meta-row + .flights-form__row {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+    margin-top: 0 !important;
+  }
+
+  .search-meta-row + .flights-form__row > .flights-form__group {
+    margin: 0 !important;
+  }
+
+  /* Date fields stay side-by-side to save vertical space. */
+  .airport-swap-row + .flights-form__row,
+  .search-meta-row + .flights-form__row + .flights-form__row {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    margin-top: 0.85rem !important;
+  }
+
+  .airport-swap-row + .flights-form__row > .flights-form__group,
+  .search-meta-row + .flights-form__row + .flights-form__row > .flights-form__group {
+    min-width: 0 !important;
+    margin: 0 !important;
+  }
+
+  .traveldate-input {
+    height: 46px !important;
+    min-height: 46px !important;
+    padding-left: 10px !important;
+    padding-right: 34px !important;
+    border-radius: 10px !important;
+    font-size: 0.86rem !important;
+  }
+
+  .traveldate-icon-btn {
+    right: 7px !important;
+    width: 30px !important;
+    height: 30px !important;
+  }
+
+  .search-booking-for-someone-else {
+    margin-top: 0.8rem !important;
+    padding-top: 0.7rem !important;
+  }
+
+  .search-booking-for-someone-else label {
+    align-items: flex-start !important;
+    gap: 0.48rem !important;
+    font-size: 0.82rem !important;
+    line-height: 1.35 !important;
+  }
+
+  .search-booking-for-someone-else input {
+    margin-top: 1px !important;
+    flex: 0 0 auto;
+  }
+
+  .flights-form .flights-btn--cta,
+  .flights-form .btn-primary-search {
+    min-height: 50px !important;
+    height: 50px !important;
+    margin-top: 0 !important;
+    padding: 0 1rem !important;
+    border-radius: 11px !important;
+    font-size: 0.98rem !important;
+    font-weight: 800 !important;
+  }
+
+  .flights-form > div[style*="margin-top: '1.25rem'"],
+  .flights-form > div[style*="margin-top: 1.25rem"] {
+    margin-top: 0.9rem !important;
+  }
+
+  .airline-intent-disclosure {
+    margin-top: 0.75rem !important;
+    font-size: 0.68rem !important;
+    line-height: 1.35 !important;
+  }
+
+  /* ---------- Senior-travel search ---------- */
+  .st-senior-search-slot .st-section {
+    padding-top: 22px !important;
+    padding-bottom: 26px !important;
+  }
+
+  .senior-search-card {
+    padding: 16px !important;
+    border-radius: 14px !important;
+  }
+
+  .senior-search-heading {
+    margin-bottom: 12px !important;
+  }
+
+  .senior-search-kicker {
+    margin-bottom: 3px !important;
+    font-size: 0.65rem !important;
+  }
+
+  .senior-search-heading h2 {
+    margin-bottom: 4px !important;
+    font-size: 1.5rem !important;
+  }
+
+  .senior-search-heading p {
+    font-size: 0.86rem !important;
+    line-height: 1.38 !important;
+  }
+
+  .senior-search-form {
+    gap: 12px !important;
+  }
+
+  .senior-search-options {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  .senior-search-options label,
+  .senior-search-field {
+    gap: 4px !important;
+    min-width: 0 !important;
+  }
+
+  .senior-search-options label > span,
+  .senior-search-field > span {
+    font-size: 0.66rem !important;
+    letter-spacing: 0.035em !important;
+  }
+
+  .senior-search-options select,
+  .senior-search-field input[type="date"] {
+    height: 44px !important;
+    padding: 0 9px !important;
+    border-radius: 9px !important;
+    font-size: 0.84rem !important;
+  }
+
+  .senior-search-route-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px 8px !important;
+    align-items: end !important;
+  }
+
+  .senior-search-airport-field {
+    grid-column: 1 / -1 !important;
+  }
+
+  .senior-search-airport-field .autocomplete-input-wrapper,
+  .senior-search-airport-field .autocomplete-input {
+    min-height: 48px !important;
+    height: 48px !important;
+  }
+
+  .senior-search-action-row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+    padding-top: 0 !important;
+  }
+
+  .senior-search-action-row button {
+    order: 1;
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 50px !important;
+    border-radius: 11px !important;
+    font-size: 0.96rem !important;
+  }
+
+  .senior-search-action-row p {
+    order: 2;
+    text-align: center !important;
+    font-size: 0.76rem !important;
+    line-height: 1.35 !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .search-meta-row,
+  .senior-search-options {
+    gap: 6px !important;
+  }
+
+  .search-meta-row .custom-select-trigger,
+  .search-meta-row .passenger-trigger-btn {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+    font-size: 0.78rem !important;
+  }
+
+  .search-meta-row .custom-select-trigger-left {
+    font-size: 0.78rem !important;
+  }
+
+  .airport-swap-row + .flights-form__row,
+  .search-meta-row + .flights-form__row + .flights-form__row,
+  .senior-search-route-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  .senior-search-airport-field {
+    grid-column: auto !important;
+  }
+}

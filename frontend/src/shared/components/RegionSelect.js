@@ -19,10 +19,10 @@ function RegionSelect({ id, value, onChange, countryName, placeholder = 'State /
       ...base,
       minHeight: '48px',
       borderRadius: '10px',
-      borderColor: state.isFocused ? 'var(--color-primary)' : 'var(--color-border)',
-      boxShadow: state.isFocused ? '0 0 0 3.5px var(--color-focus-ring)' : 'none',
+      borderColor: state.isFocused ? '#8b1538' : '#cbd5e1',
+      boxShadow: state.isFocused ? '0 0 0 3.5px rgba(139, 21, 56, 0.12)' : 'none',
       '&:hover': {
-        borderColor: state.isFocused ? 'var(--color-primary)' : 'var(--color-border)'
+        borderColor: state.isFocused ? '#8b1538' : '#cbd5e1'
       }
     }),
     valueContainer: (base) => ({

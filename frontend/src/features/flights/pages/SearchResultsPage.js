@@ -1,374 +1,325 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { flightAPI } from '../../../shared/api/api';
-import './SearchResultsPage.css';
+import ModifySearchSummaryBar from '../components/ModifySearchSummaryBar';
+import ModifySearchModal from '../components/ModifySearchModal';
 import FlightResultRow, { normalizeFlight } from '../components/FlightResultRow';
+import { normalizeSelectedItinerary, validateItineraryIntegrity } from '../../../shared/utils/itineraryNormalizer';
+import { getAirportDisplayName, normalizeIataCode } from '../utils/airportIdentity';
+import './SearchResultsPage.css';
+import './SearchResultsReadability.css';
 
-// Helper to convert duration string (e.g. "3h 15m") to minutes
-function durationToMinutes(durationStr) {
-  if (!durationStr) return 0;
-  const hoursMatch = durationStr.match(/(\d+)\s*h/i);
-  const minutesMatch = durationStr.match(/(\d+)\s*m/i);
-  const hours = hoursMatch ? parseInt(hoursMatch[1], 10) : 0;
-  const minutes = minutesMatch ? parseInt(minutesMatch[1], 10) : 0;
+function getErrorMessage(error) {
+  if (!error) return 'An unexpected error occurred while searching for flights.';
+  if (typeof error === 'string') return error;
+  if (error.userMessage) return error.userMessage;
+  if (error.response?.data?.error?.message) return error.response.data.error.message;
+  if (error.response?.data?.message) return error.response.data.message;
+  if (error.message) return error.message;
+  return 'Unable to process this flight search.';
+}
+
+function formatDateDisplay(dateStr) {
+  if (!dateStr) return '';
+  try {
+    const clean = String(dateStr).includes('T') ? dateStr : `${dateStr}T00:00:00`;
+    const date = new Date(clean);
+    if (Number.isNaN(date.getTime())) return String(dateStr);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  } catch {
+    return String(dateStr || '');
+  }
+}
+
+function durationToMinutes(duration) {
+  const text = String(duration || '');
+  const hours = Number.parseInt(text.match(/(\d+)\s*h/i)?.[1] || '0', 10);
+  const minutes = Number.parseInt(text.match(/(\d+)\s*m/i)?.[1] || '0', 10);
   return (hours * 60) + minutes;
 }
 
-// Helper to get time period (morning, afternoon, evening) from time string
-function getTimePeriod(timeStr) {
-  if (!timeStr || timeStr === 'N/A') return 'other';
-  const hour = parseInt(timeStr.split(':')[0], 10);
+function getTimePeriod(time) {
+  const hour = Number.parseInt(String(time || '').split(':')[0], 10);
+  if (!Number.isFinite(hour)) return 'other';
   if (hour >= 5 && hour < 12) return 'morning';
   if (hour >= 12 && hour < 18) return 'afternoon';
   return 'evening';
 }
 
+function parsePassengerCounts(query) {
+  const adults = Math.max(1, Number.parseInt(query.get('adults') || '1', 10) || 1);
+  const children = Math.max(0, Number.parseInt(query.get('children') || '0', 10) || 0);
+  const legacyInfants = Math.max(0, Number.parseInt(query.get('infants') || '0', 10) || 0);
+  const hasSplitInfants = query.has('infantsInSeat') || query.has('infantsOnLap');
+  const infantsInSeat = hasSplitInfants
+    ? Math.max(0, Number.parseInt(query.get('infantsInSeat') || '0', 10) || 0)
+    : 0;
+  const infantsOnLap = hasSplitInfants
+    ? Math.max(0, Number.parseInt(query.get('infantsOnLap') || '0', 10) || 0)
+    : legacyInfants;
 
-function SearchResults() {
+  return {
+    adults,
+    children,
+    infantsInSeat,
+    infantsOnLap,
+    // Keep total infants in the legacy field so the existing booking page still
+    // creates a traveler record for every infant.
+    infants: hasSplitInfants ? infantsInSeat + infantsOnLap : legacyInfants,
+  };
+}
+
+function normalizeUpdatedPassengerCounts(updated = {}) {
+  const adults = Math.max(1, Number.parseInt(updated.adults || 1, 10) || 1);
+  const children = Math.max(0, Number.parseInt(updated.children || 0, 10) || 0);
+  const infantsInSeat = Math.max(0, Number.parseInt(updated.infantsInSeat || 0, 10) || 0);
+  const hasLapValue = updated.infantsOnLap !== undefined && updated.infantsOnLap !== null;
+  const infantsOnLap = hasLapValue
+    ? Math.max(0, Number.parseInt(updated.infantsOnLap || 0, 10) || 0)
+    : Math.max(0, (Number.parseInt(updated.infants || 0, 10) || 0) - infantsInSeat);
+
+  return {
+    adults,
+    children,
+    infantsInSeat,
+    infantsOnLap,
+    infants: infantsInSeat + infantsOnLap,
+  };
+}
+
+function parseSearchFromLocation(location) {
+  const query = new URLSearchParams(location.search || '');
+  const fromCode = normalizeIataCode(query.get('from'));
+  const toCode = normalizeIataCode(query.get('to'));
+  const departure = query.get('departure') || query.get('departureDate') || '';
+  const returnDate = query.get('returnDate') || query.get('return') || '';
+
+  if (!fromCode || !toCode || !departure) {
+    return {
+      valid: false,
+      message: 'This flight-results link is missing a valid origin, destination, or departure date. We did not load an older saved search because that could show the wrong trip.',
+    };
+  }
+
+  if (fromCode === toCode) {
+    return { valid: false, message: 'Origin and destination airports must be different.' };
+  }
+
+  const tripTypeRaw = String(query.get('tripType') || (returnDate ? 'roundtrip' : 'oneway')).toLowerCase();
+  const tripType = returnDate || tripTypeRaw.includes('round') ? 'roundtrip' : 'oneway';
+  const travelClass = query.get('travelClass') || query.get('cabin') || 'economy';
+  const currency = query.get('currency') || 'USD';
+  const fromDisplay = query.get('fromDisplay') || fromCode;
+  const toDisplay = query.get('toDisplay') || toCode;
+  const passengerCounts = parsePassengerCounts(query);
+
+  return {
+    valid: true,
+    params: {
+      from: fromDisplay,
+      to: toDisplay,
+      fromCode,
+      toCode,
+      fromDisplay,
+      toDisplay,
+      departure,
+      returnDate: returnDate || undefined,
+      ...passengerCounts,
+      travelClass,
+      cabinClass: travelClass,
+      currency,
+      tripType,
+    },
+  };
+}
+
+function routeMatches(flight, searchParams) {
+  const departure = normalizeIataCode(flight?.departure?.airport);
+  const arrival = normalizeIataCode(flight?.arrival?.airport);
+  if (!departure || !arrival) return false;
+  return departure === searchParams.fromCode && arrival === searchParams.toCode;
+}
+
+function SearchResultsContent() {
   const location = useLocation();
   const navigate = useNavigate();
+
   const [flights, setFlights] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [searchType, setSearchType] = useState('oneway');
   const [searchParams, setSearchParams] = useState(null);
-
-  // Filter States
-  const [maxPrice, setMaxPrice] = useState(3000);
-  const [sliderPrice, setSliderPrice] = useState(3000);
-  const [selectedStops, setSelectedStops] = useState({ nonstop: true, oneStop: true, twoPlusStops: true });
-  const [selectedAirlines, setSelectedAirlines] = useState([]);
-  const [depTimeFilter, setDepTimeFilter] = useState('all');
-  const [arrTimeFilter, setArrTimeFilter] = useState('all');
-  const [maxDuration, setMaxDuration] = useState(1440); // in minutes
-  const [sliderDuration, setSliderDuration] = useState(1440);
-  const [sortBy, setSortBy] = useState('best');
-
-  // Accordion Expand State
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [isModifySearchOpen, setIsModifySearchOpen] = useState(false);
   const [expandedFlightId, setExpandedFlightId] = useState(null);
 
-  // Top Filter Popover State
-  const [activeFilterPopover, setActiveFilterPopover] = useState(null);
+  const [sortBy, setSortBy] = useState('best');
+  const [stopFilter, setStopFilter] = useState('all');
+  const [airlineFilter, setAirlineFilter] = useState('all');
+  const [departureFilter, setDepartureFilter] = useState('all');
+  const [maxPrice, setMaxPrice] = useState(0);
+  const [priceLimit, setPriceLimit] = useState(0);
 
-  // Mobile Filter Drawer State
-  const [showFiltersDrawer, setShowFiltersDrawer] = useState(false);
-
-  const popoverRef = useRef(null);
-
-  // Close popover on click outside
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (popoverRef.current && !popoverRef.current.contains(event.target)) {
-        setActiveFilterPopover(null);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  useEffect(() => {
-    const params = location.state?.searchParams || JSON.parse(sessionStorage.getItem('searchParams') || '{}');
-    const type = location.state?.searchType || sessionStorage.getItem('searchType') || 'oneway';
-    
-    setSearchType(type);
-    setSearchParams(params);
-
-    if (params.from && params.to && params.departure) {
-      if (type === 'rail') {
-        searchTrains(params);
-      } else {
-        searchFlights(params);
-      }
-    } else {
-      setError('Missing flight search parameters.');
-      setLoading(false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location]);
-
-  const searchTrains = (params) => {
+  const executeSearch = async (params) => {
+    if (!params?.fromCode || !params?.toCode || !params?.departure) return;
     setLoading(true);
-    setError(null);
+    setError('');
+    setFlights([]);
+
     try {
-      const fromStation = params.from || 'New York';
-      const toStation = params.to || 'Washington';
-      const departureDate = params.departure || new Date().toISOString().split('T')[0];
-      const passengers = parseInt(params.passengers || 1, 10);
+      const response = await flightAPI.search({
+        from: params.fromCode,
+        to: params.toCode,
+        departure: params.departure,
+        returnDate: params.returnDate,
+        adults: params.adults,
+        children: params.children,
+        infants: params.infants,
+        infantsInSeat: params.infantsInSeat || 0,
+        infantsOnLap: params.infantsOnLap || 0,
+        travelClass: params.travelClass,
+        currency: params.currency,
+      });
 
-      const mockTrains = [
-        {
-          id: `mock-train-acela-1`,
-          isTrain: true,
-          airline: 'Amtrak Acela Express',
-          flightNumber: 'ACELA #2151',
-          price: {
-            total: (120 * passengers).toFixed(2),
-            originalApiPrice: (133.33 * passengers).toFixed(2),
-            currency: 'USD',
-            formatted: `$${(120 * passengers).toFixed(2)}`
-          },
-          departure: {
-            airport: fromStation.match(/\(([A-Z]{3,4})\)/)?.[1] || fromStation.substring(0, 3).toUpperCase(),
-            city: fromStation.split('(')[0].trim(),
-            time: '08:00',
-            date: departureDate
-          },
-          arrival: {
-            airport: toStation.match(/\(([A-Z]{3,4})\)/)?.[1] || toStation.substring(0, 3).toUpperCase(),
-            city: toStation.split('(')[0].trim(),
-            time: '10:55',
-            date: departureDate
-          },
-          duration: '2h 55m',
-          stops: 0,
-          class: 'Business Class',
-          aircraft: 'High-Speed Acela Trainset',
-          refundableStatus: 'Refundable (Fees Apply)',
-          baggageAllowance: '2 carry-on bags included'
-        },
-        {
-          id: `mock-train-regional-2`,
-          isTrain: true,
-          airline: 'Amtrak Northeast Regional',
-          flightNumber: 'REGIONAL #143',
-          price: {
-            total: (65 * passengers).toFixed(2),
-            originalApiPrice: (72.22 * passengers).toFixed(2),
-            currency: 'USD',
-            formatted: `$${(65 * passengers).toFixed(2)}`
-          },
-          departure: {
-            airport: fromStation.match(/\(([A-Z]{3,4})\)/)?.[1] || fromStation.substring(0, 3).toUpperCase(),
-            city: fromStation.split('(')[0].trim(),
-            time: '09:30',
-            date: departureDate
-          },
-          arrival: {
-            airport: toStation.match(/\(([A-Z]{3,4})\)/)?.[1] || toStation.substring(0, 3).toUpperCase(),
-            city: toStation.split('(')[0].trim(),
-            time: '13:05',
-            date: departureDate
-          },
-          duration: '3h 35m',
-          stops: 1,
-          layovers: [{ airportCode: 'PHL', airportName: 'Philadelphia 30th St', duration: 10 }],
-          class: 'Coach Class',
-          aircraft: 'Northeast Regional Trainset',
-          refundableStatus: 'Non-Refundable',
-          baggageAllowance: '2 carry-on bags included'
-        },
-        {
-          id: `mock-train-acela-3`,
-          isTrain: true,
-          airline: 'Amtrak Acela Express',
-          flightNumber: 'ACELA #2163',
-          price: {
-            total: (190 * passengers).toFixed(2),
-            originalApiPrice: (211.11 * passengers).toFixed(2),
-            currency: 'USD',
-            formatted: `$${(190 * passengers).toFixed(2)}`
-          },
-          departure: {
-            airport: fromStation.match(/\(([A-Z]{3,4})\)/)?.[1] || fromStation.substring(0, 3).toUpperCase(),
-            city: fromStation.split('(')[0].trim(),
-            time: '14:00',
-            date: departureDate
-          },
-          arrival: {
-            airport: toStation.match(/\(([A-Z]{3,4})\)/)?.[1] || toStation.substring(0, 3).toUpperCase(),
-            city: toStation.split('(')[0].trim(),
-            time: '16:55',
-            date: departureDate
-          },
-          duration: '2h 55m',
-          stops: 0,
-          class: 'First Class (Roomette)',
-          aircraft: 'High-Speed Acela Trainset',
-          refundableStatus: 'Refundable (No Fees)',
-          baggageAllowance: '3 bags included'
-        }
-      ];
+      const supplierList = Array.isArray(response?.data?.flights) ? response.data.flights : [];
+      const normalized = supplierList.map((flight, index) => normalizeFlight(flight, index)).filter(Boolean);
+      const matched = normalized.filter((flight) => routeMatches(flight, params));
 
-      setFlights(mockTrains);
-      initFilterLimits(mockTrains);
-    } catch (err) {
-      console.error('Error simulating train search:', err);
-      setError('Failed to load train schedules.');
+      if (normalized.length > 0 && matched.length === 0) {
+        setError(`The flight provider returned results for a different route instead of ${params.fromCode} → ${params.toCode}. Those results were blocked so you are never shown another customer's or an old route by mistake.`);
+        return;
+      }
+
+      setFlights(matched);
+      const prices = matched.map((flight) => Number(flight.price?.total || 0)).filter((price) => Number.isFinite(price) && price > 0);
+      const nextMax = prices.length ? Math.ceil(Math.max(...prices)) : 0;
+      setMaxPrice(nextMax);
+      setPriceLimit(nextMax);
+    } catch (requestError) {
+      setError(getErrorMessage(requestError));
     } finally {
       setLoading(false);
     }
   };
 
-  const searchFlights = async (params) => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await flightAPI.search(params);
-      const flightList = response.data?.flights || [];
-      setFlights(flightList);
-      initFilterLimits(flightList);
-    } catch (err) {
-      console.error('Error searching flights:', err);
-      setError(err.response?.data?.error || 'Failed to search flights');
-    } finally {
+  useEffect(() => {
+    const parsed = parseSearchFromLocation(location);
+    if (!parsed.valid) {
+      setSearchParams(null);
+      setFlights([]);
       setLoading(false);
+      setError(parsed.message);
+      return;
     }
+
+    const params = parsed.params;
+    setSearchParams(params);
+    setExpandedFlightId(null);
+    setStopFilter('all');
+    setAirlineFilter('all');
+    setDepartureFilter('all');
+    setSortBy('best');
+
+    // This is the single canonical search state used by departure -> return -> booking.
+    // Never leave an older session search behind after a URL/Modify Search change.
+    sessionStorage.setItem('searchParams', JSON.stringify(params));
+    sessionStorage.setItem('searchType', params.tripType);
+    sessionStorage.removeItem('selectedFlight');
+    sessionStorage.removeItem('selectedReturnFlight');
+    sessionStorage.removeItem('returnFlight');
+    sessionStorage.removeItem('bookingDraft');
+
+    executeSearch(params);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname, location.search]);
+
+  const airlines = useMemo(() => [...new Set(flights.map((flight) => flight.airline).filter(Boolean))].sort(), [flights]);
+
+  const filteredFlights = useMemo(() => flights.filter((flight) => {
+    if (priceLimit > 0 && Number(flight.price?.total || 0) > priceLimit) return false;
+    if (airlineFilter !== 'all' && flight.airline !== airlineFilter) return false;
+    if (departureFilter !== 'all' && getTimePeriod(flight.departure?.time) !== departureFilter) return false;
+    if (stopFilter === 'nonstop' && flight.stops !== 0) return false;
+    if (stopFilter === '1' && flight.stops !== 1) return false;
+    if (stopFilter === '2plus' && flight.stops < 2) return false;
+    return true;
+  }), [flights, priceLimit, airlineFilter, departureFilter, stopFilter]);
+
+  const sortedFlights = useMemo(() => [...filteredFlights].sort((a, b) => {
+    if (sortBy === 'cheapest') return Number(a.price?.total || 0) - Number(b.price?.total || 0);
+    if (sortBy === 'fastest') return durationToMinutes(a.duration) - durationToMinutes(b.duration);
+    if (sortBy === 'earliest') return String(a.departure?.time || '').localeCompare(String(b.departure?.time || ''));
+    if (sortBy === 'latest') return String(b.departure?.time || '').localeCompare(String(a.departure?.time || ''));
+
+    const scoreA = Number(a.price?.total || 0) + (durationToMinutes(a.duration) * 1.1) + (Number(a.stops || 0) * 180);
+    const scoreB = Number(b.price?.total || 0) + (durationToMinutes(b.duration) * 1.1) + (Number(b.stops || 0) * 180);
+    return scoreA - scoreB;
+  }), [filteredFlights, sortBy]);
+
+  const resetFilters = () => {
+    setStopFilter('all');
+    setAirlineFilter('all');
+    setDepartureFilter('all');
+    setPriceLimit(maxPrice);
   };
 
-  const initFilterLimits = (list) => {
-    if (list.length === 0) return;
-    const prices = list.map(f => parseFloat(f.price?.total || 0));
-    const maxP = Math.max(...prices);
-    setMaxPrice(Math.ceil(maxP));
-    setSliderPrice(Math.ceil(maxP));
+  const handleUpdateSearchFromResults = (updated) => {
+    const fromCode = normalizeIataCode(updated.from || updated.origin);
+    const toCode = normalizeIataCode(updated.to || updated.destination);
+    if (!fromCode || !toCode) throw new Error('Please select valid 3-letter origin and destination airport codes.');
 
-    const durations = list.map(f => durationToMinutes(f.duration));
-    const maxD = Math.max(...durations);
-    setMaxDuration(maxD || 1440);
-    setSliderDuration(maxD || 1440);
-
-    setSelectedAirlines([...new Set(list.map(f => f.airline))]);
-  };
-
-  const handleBookFlight = (flight) => {
-    sessionStorage.setItem('selectedFlight', JSON.stringify(flight));
-    sessionStorage.setItem('searchType', searchType);
-    
-    if (searchType === 'roundtrip') {
-      navigate('/return-flight');
-    } else {
-      navigate('/booking');
-    }
-  };
-
-  const toggleAirline = (airline) => {
-    setSelectedAirlines(prev => 
-      prev.includes(airline) ? prev.filter(a => a !== airline) : [...prev, airline]
-    );
-  };
-
-  const toggleStop = (stopType) => {
-    setSelectedStops(prev => ({ ...prev, [stopType]: !prev[stopType] }));
-  };
-
-
-
-  // 1. FILTERING
-  const filteredFlights = flights
-    .map((f, idx) => normalizeFlight(f, idx))
-    .filter(Boolean)
-    .filter(flight => {
-      if (flight.price.total > sliderPrice) return false;
-
-      // Stops check
-      const stops = flight.stops;
-      if (stops === 0 && !selectedStops.nonstop) return false;
-      if (stops === 1 && !selectedStops.oneStop) return false;
-      if (stops >= 2 && !selectedStops.twoPlusStops) return false;
-
-      // Airline check
-      if (selectedAirlines.length > 0 && !selectedAirlines.includes(flight.airline)) return false;
-
-      // Time ranges check
-      const depPeriod = getTimePeriod(flight.departure.time);
-      if (depTimeFilter !== 'all' && depPeriod !== depTimeFilter) return false;
-
-      const arrPeriod = getTimePeriod(flight.arrival.time);
-      if (arrTimeFilter !== 'all' && arrPeriod !== arrTimeFilter) return false;
-
-      // Duration check
-      const durationMin = durationToMinutes(flight.duration);
-      if (durationMin > sliderDuration) return false;
-
-      return true;
+    const fromDisplay = getAirportDisplayName(updated.origin) || fromCode;
+    const toDisplay = getAirportDisplayName(updated.destination) || toCode;
+    const passengerCounts = normalizeUpdatedPassengerCounts(updated);
+    const query = new URLSearchParams({
+      from: fromCode,
+      to: toCode,
+      fromDisplay,
+      toDisplay,
+      departure: updated.departureDate || updated.departure,
+      adults: String(passengerCounts.adults),
+      children: String(passengerCounts.children),
+      infants: String(passengerCounts.infants),
+      infantsInSeat: String(passengerCounts.infantsInSeat),
+      infantsOnLap: String(passengerCounts.infantsOnLap),
+      travelClass: updated.cabinClass || updated.travelClass || 'economy',
+      currency: searchParams?.currency || 'USD',
+      tripType: updated.tripType === 'round-trip' ? 'roundtrip' : (updated.tripType || 'oneway'),
     });
 
-  // 2. SORTING
-  const sortedFlights = [...filteredFlights].sort((a, b) => {
-    if (sortBy === 'cheapest') {
-      return a.price.total - b.price.total;
-    }
-    if (sortBy === 'fastest') {
-      return durationToMinutes(a.duration) - durationToMinutes(b.duration);
-    }
-    if (sortBy === 'earliest') {
-      return (a.departure.time || '').localeCompare(b.departure.time || '');
-    }
-    if (sortBy === 'latest') {
-      return (b.departure.time || '').localeCompare(a.departure.time || '');
-    }
-    if (sortBy === 'best') {
-      const scoreA = a.price.total + (durationToMinutes(a.duration) * 1.25) + (a.stops * 150);
-      const scoreB = b.price.total + (durationToMinutes(b.duration) * 1.25) + (b.stops * 150);
-      return scoreA - scoreB;
-    }
-    return 0;
-  });
-
-  const isRail = searchType === 'rail';
-  const uniqueAirlines = [...new Set(flights.map(f => f.airline))];
-
-  // Active filters calculation
-  let activeFiltersCount = 0;
-  if (sliderPrice < maxPrice) activeFiltersCount++;
-  if (!selectedStops.nonstop || !selectedStops.oneStop || !selectedStops.twoPlusStops) activeFiltersCount++;
-  if (depTimeFilter !== 'all') activeFiltersCount++;
-  if (arrTimeFilter !== 'all') activeFiltersCount++;
-  if (sliderDuration < maxDuration) activeFiltersCount++;
-  if (selectedAirlines.length < uniqueAirlines.length) activeFiltersCount++;
-
-  const handleClearAllFilters = () => {
-    setSliderPrice(maxPrice);
-    setSelectedStops({ nonstop: true, oneStop: true, twoPlusStops: true });
-    setDepTimeFilter('all');
-    setArrTimeFilter('all');
-    setSliderDuration(maxDuration);
-    setSelectedAirlines(uniqueAirlines);
+    const returnDate = updated.returnDate || updated.return || '';
+    if (returnDate) query.set('returnDate', returnDate);
+    navigate(`/search?${query.toString()}`);
   };
 
-  const toggleExpandFlight = (flightId) => {
-    setExpandedFlightId(prev => (prev === flightId ? null : flightId));
+  const handleSelectFlight = (flight) => {
+    if (!searchParams) return;
+    if (!routeMatches(flight, searchParams)) {
+      setError('This flight no longer matches the route you searched. Refresh the results before continuing.');
+      return;
+    }
+
+    const normalizedItinerary = normalizeSelectedItinerary(flight, searchParams);
+    const integrity = validateItineraryIntegrity(normalizedItinerary);
+    if (!integrity.valid) {
+      setError(integrity.message);
+      return;
+    }
+
+    sessionStorage.setItem('searchParams', JSON.stringify(searchParams));
+    sessionStorage.setItem('searchType', searchParams.tripType);
+    sessionStorage.setItem('selectedFlight', JSON.stringify(flight));
+    sessionStorage.setItem('selectedItinerary', JSON.stringify(normalizedItinerary));
+    sessionStorage.removeItem('returnFlight');
+
+    navigate(searchParams.tripType === 'roundtrip' && searchParams.returnDate ? '/return-flight' : '/booking');
   };
 
-
-
-  // Rendering Loading Skeletons
   if (loading) {
     return (
       <div className="search-results-page">
-        <div className="container search-layout-container">
-          <aside className="filters-sidebar skeleton-loader">
-            <div className="skeleton-title pulsing"></div>
-            <div className="skeleton-group pulsing"></div>
-            <div className="skeleton-group pulsing"></div>
-            <div className="skeleton-group pulsing"></div>
-          </aside>
-
-          <div className="results-main-panel">
-            <div className="results-toolbar skeleton-loader pulsing-fast">
-              <div className="skeleton-line-title"></div>
-              <div className="skeleton-line-sort"></div>
-            </div>
-
-            <div className="flight-results">
-              {[1, 2, 3].map((n) => (
-                <div key={n} className="flight-card skeleton-card">
-                  <div className="flight-header skeleton-flex">
-                    <div className="skeleton-circle pulsing"></div>
-                    <div className="skeleton-lines">
-                      <div className="skeleton-line-heading pulsing"></div>
-                      <div className="skeleton-line-sub pulsing"></div>
-                    </div>
-                    <div className="skeleton-price-block pulsing"></div>
-                  </div>
-                  <div className="flight-details skeleton">
-                    <div className="skeleton-route-bar pulsing"></div>
-                    <div className="skeleton-info-tags pulsing"></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+        <div className="tfs-results-shell">
+          <div className="tfs-results-loading-head skeleton-loader pulsing" />
+          <div className="tfs-results-loading-filter skeleton-loader pulsing" />
+          {[1, 2, 3].map((item) => <div key={item} className="flight-card skeleton-card tfs-results-loading-card pulsing" />)}
         </div>
       </div>
     );
@@ -377,406 +328,172 @@ function SearchResults() {
   if (error) {
     return (
       <div className="search-results-page">
-        <div className="container">
-          <div className="error-message">
-            <i className="fas fa-exclamation-triangle"></i>
+        <div className="tfs-results-shell">
+          {searchParams && <ModifySearchSummaryBar searchParams={searchParams} onOpenModifyModal={() => setIsModifySearchOpen(true)} />}
+          <div className="search-error-card tfs-search-error" role="alert">
+            <div className="tfs-search-error__icon"><i className="fas fa-exclamation-triangle" /></div>
+            <h2>Flight Search Needs Attention</h2>
             <p>{error}</p>
-            <button onClick={() => navigate(isRail ? '/amtrak' : '/')} className="btn-primary">Go Back</button>
+            <p className="tfs-search-error__help">Your previous search will not be substituted automatically. Retry this exact route or start a new search.</p>
+            <div className="tfs-search-error__actions">
+              {searchParams && <button type="button" className="btn-primary" onClick={() => executeSearch(searchParams)}>Retry exact search</button>}
+              {searchParams && <button type="button" className="btn-outline-modify" onClick={() => setIsModifySearchOpen(true)}>Modify search</button>}
+              <button type="button" className="btn-outline-modify" onClick={() => navigate('/')}>Start new search</button>
+            </div>
           </div>
+          <ModifySearchModal
+            isOpen={isModifySearchOpen}
+            onClose={() => setIsModifySearchOpen(false)}
+            initialSearch={searchParams || {}}
+            onUpdateSearch={handleUpdateSearchFromResults}
+            isCheckoutPage={false}
+          />
         </div>
       </div>
     );
   }
 
-  // Render Sidebar Filters Content
-  const renderSidebarFilters = () => (
-    <>
-      <div className="sidebar-header-row">
-        <h3>Filter {isRail ? 'Trains' : 'Flights'}</h3>
-        {activeFiltersCount > 0 && (
-          <button 
-            type="button" 
-            className="clear-filters-action" 
-            onClick={handleClearAllFilters}
-          >
-            Clear All ({activeFiltersCount})
-          </button>
-        )}
-      </div>
-      
-      {/* Price Filter */}
-      <div className="filter-group">
-        <label className="filter-label">
-          <span>Max Price:</span>
-          <strong>${sliderPrice}</strong>
-        </label>
-        <input 
-          type="range" 
-          min={flights.length > 0 ? Math.min(...flights.map(f => parseFloat(f.price?.total || 0))) : 0}
-          max={maxPrice || 3000}
-          value={sliderPrice} 
-          onChange={(e) => setSliderPrice(parseFloat(e.target.value))}
-          className="filter-slider"
-        />
-      </div>
-
-      {/* Stops Filter */}
-      <div className="filter-group">
-        <span className="filter-group-title">Stops</span>
-        <label className="checkbox-filter-row">
-          <input type="checkbox" checked={selectedStops.nonstop} onChange={() => toggleStop('nonstop')} />
-          <span className="custom-checkbox"></span>
-          <span>Nonstop / Direct</span>
-        </label>
-        <label className="checkbox-filter-row">
-          <input type="checkbox" checked={selectedStops.oneStop} onChange={() => toggleStop('oneStop')} />
-          <span className="custom-checkbox"></span>
-          <span>1 Stop</span>
-        </label>
-        <label className="checkbox-filter-row">
-          <input type="checkbox" checked={selectedStops.twoPlusStops} onChange={() => toggleStop('twoPlusStops')} />
-          <span className="custom-checkbox"></span>
-          <span>2+ Stops</span>
-        </label>
-      </div>
-
-      {/* Time Filter */}
-      <div className="filter-group">
-        <span className="filter-group-title">Departure Time</span>
-        <select value={depTimeFilter} onChange={(e) => setDepTimeFilter(e.target.value)} className="filter-select">
-          <option value="all">Any Departure Time</option>
-          <option value="morning">Morning (5 AM - 12 PM)</option>
-          <option value="afternoon">Afternoon (12 PM - 6 PM)</option>
-          <option value="evening">Evening (6 PM - 5 AM)</option>
-        </select>
-      </div>
-
-      <div className="filter-group">
-        <span className="filter-group-title">Arrival Time</span>
-        <select value={arrTimeFilter} onChange={(e) => setArrTimeFilter(e.target.value)} className="filter-select">
-          <option value="all">Any Arrival Time</option>
-          <option value="morning">Morning (5 AM - 12 PM)</option>
-          <option value="afternoon">Afternoon (12 PM - 6 PM)</option>
-          <option value="evening">Evening (6 PM - 5 AM)</option>
-        </select>
-      </div>
-
-      {/* Airline Filter */}
-      {uniqueAirlines.length > 0 && (
-        <div className="filter-group">
-          <span className="filter-group-title">{isRail ? 'Train Lines' : 'Airlines'}</span>
-          {uniqueAirlines.map(airline => (
-            <label key={airline} className="checkbox-filter-row">
-              <input 
-                type="checkbox" 
-                checked={selectedAirlines.includes(airline)} 
-                onChange={() => toggleAirline(airline)} 
-              />
-              <span className="custom-checkbox"></span>
-              <span className="truncate">{airline}</span>
-            </label>
-          ))}
-        </div>
-      )}
-
-      {/* Duration Filter */}
-      <div className="filter-group">
-        <label className="filter-label">
-          <span>Max Travel Time:</span>
-          <strong>{Math.floor(sliderDuration / 60)}h {sliderDuration % 60}m</strong>
-        </label>
-        <input 
-          type="range" 
-          min={30}
-          max={maxDuration || 1440}
-          value={sliderDuration} 
-          onChange={(e) => setSliderDuration(parseInt(e.target.value, 10))}
-          className="filter-slider"
-        />
-      </div>
-    </>
-  );
+  const routeLabel = `${searchParams.fromCode} → ${searchParams.toCode}`;
+  const datesLabel = searchParams.returnDate
+    ? `${formatDateDisplay(searchParams.departure)} – ${formatDateDisplay(searchParams.returnDate)}`
+    : formatDateDisplay(searchParams.departure);
 
   return (
-    <div className={`search-results-page ${isRail ? 'search-results-page--rail' : ''}`}>
-      <div className="container search-layout-container">
-        
-        {/* DESKTOP SIDEBAR FILTERS PANEL */}
-        <aside className="filters-sidebar desktop-only">
-          {renderSidebarFilters()}
-        </aside>
+    <div className="search-results-page">
+      <div className="tfs-results-shell">
+        <ModifySearchSummaryBar searchParams={searchParams} onOpenModifyModal={() => setIsModifySearchOpen(true)} />
 
-        {/* MOBILE SLIDE-OVER DRAWER MODAL */}
-        {showFiltersDrawer && (
-          <>
-            <div className="drawer-backdrop" onClick={() => setShowFiltersDrawer(false)}></div>
-            <aside className="filters-sidebar mobile-drawer animate-slide-in">
-              <div className="drawer-header-row">
-                <h3>Filters</h3>
-                <button type="button" className="drawer-close-btn" onClick={() => setShowFiltersDrawer(false)} aria-label="Close filters">
-                  <i className="fas fa-times"></i>
-                </button>
-              </div>
-              <div className="drawer-body">
-                {renderSidebarFilters()}
-              </div>
-              <div className="drawer-footer">
-                <button type="button" className="drawer-apply-btn" onClick={() => setShowFiltersDrawer(false)}>
-                  Apply Filters {activeFiltersCount > 0 && `(${activeFiltersCount})`}
-                </button>
-              </div>
-            </aside>
-          </>
-        )}
-
-        {/* RESULTS SECTION */}
-        <div className="results-main-panel">
-          
-          {/* Top Bar with Route, Dates, and Outlined filter chips */}
-          <div className="results-toolbar-row">
-            <div className="results-meta-header-row">
-              <div className="route-dates-summary">
-                <span className="summary-route">
-                  {searchParams?.from?.split('(')[0]?.trim() || 'Origin'} <i className="fas fa-arrow-right route-arrow-icon"></i> {searchParams?.to?.split('(')[0]?.trim() || 'Destination'}
-                </span>
-                <span className="summary-date-separator">·</span>
-                <span className="summary-date">
-                  {searchParams?.departure ? new Date(searchParams.departure + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Departure'}
-                  {searchParams?.returnDate && ` – ${new Date(searchParams.returnDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
-                </span>
-              </div>
-              <span className="results-count-badge">{sortedFlights.length} result(s)</span>
-            </div>
-
-            {/* Outlined Filter Chips */}
-            <div className="filter-chips-container" ref={popoverRef}>
-              {/* Stops chip */}
-              <div className="filter-chip-wrapper">
-                <button 
-                  type="button" 
-                  className={`filter-chip ${!selectedStops.nonstop || !selectedStops.oneStop || !selectedStops.twoPlusStops ? 'selected' : ''}`}
-                  onClick={() => setActiveFilterPopover(prev => (prev === 'stops' ? null : 'stops'))}
-                >
-                  <span>Stops</span>
-                  <i className="fas fa-chevron-down chip-chevron"></i>
-                </button>
-                {activeFilterPopover === 'stops' && (
-                  <div className="filter-chip-popover">
-                    <label className="checkbox-filter-row">
-                      <input type="checkbox" checked={selectedStops.nonstop} onChange={() => toggleStop('nonstop')} />
-                      <span className="custom-checkbox"></span>
-                      <span>Nonstop</span>
-                    </label>
-                    <label className="checkbox-filter-row">
-                      <input type="checkbox" checked={selectedStops.oneStop} onChange={() => toggleStop('oneStop')} />
-                      <span className="custom-checkbox"></span>
-                      <span>1 Stop</span>
-                    </label>
-                    <label className="checkbox-filter-row">
-                      <input type="checkbox" checked={selectedStops.twoPlusStops} onChange={() => toggleStop('twoPlusStops')} />
-                      <span className="custom-checkbox"></span>
-                      <span>2+ Stops</span>
-                    </label>
-                  </div>
-                )}
-              </div>
-
-              {/* Airlines chip */}
-              <div className="filter-chip-wrapper">
-                <button 
-                  type="button" 
-                  className={`filter-chip ${selectedAirlines.length < uniqueAirlines.length ? 'selected' : ''}`}
-                  onClick={() => setActiveFilterPopover(prev => (prev === 'airlines' ? null : 'airlines'))}
-                >
-                  <span>Airlines</span>
-                  <i className="fas fa-chevron-down chip-chevron"></i>
-                </button>
-                {activeFilterPopover === 'airlines' && (
-                  <div className="filter-chip-popover max-height-popover">
-                    {uniqueAirlines.map(airline => (
-                      <label key={airline} className="checkbox-filter-row">
-                        <input 
-                          type="checkbox" 
-                          checked={selectedAirlines.includes(airline)} 
-                          onChange={() => toggleAirline(airline)} 
-                        />
-                        <span className="custom-checkbox"></span>
-                        <span className="truncate">{airline}</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Price chip */}
-              <div className="filter-chip-wrapper">
-                <button 
-                  type="button" 
-                  className={`filter-chip ${sliderPrice < maxPrice ? 'selected' : ''}`}
-                  onClick={() => setActiveFilterPopover(prev => (prev === 'price' ? null : 'price'))}
-                >
-                  <span>Price: Under ${sliderPrice}</span>
-                  <i className="fas fa-chevron-down chip-chevron"></i>
-                </button>
-                {activeFilterPopover === 'price' && (
-                  <div className="filter-chip-popover slider-popover">
-                    <label className="filter-label">Max Price: <strong>${sliderPrice}</strong></label>
-                    <input 
-                      type="range" 
-                      min={flights.length > 0 ? Math.min(...flights.map(f => parseFloat(f.price?.total || 0))) : 0}
-                      max={maxPrice || 3000}
-                      value={sliderPrice} 
-                      onChange={(e) => setSliderPrice(parseFloat(e.target.value))}
-                      className="filter-slider"
-                    />
-                  </div>
-                )}
-              </div>
-
-              {/* Times chip */}
-              <div className="filter-chip-wrapper">
-                <button 
-                  type="button" 
-                  className={`filter-chip ${depTimeFilter !== 'all' || arrTimeFilter !== 'all' ? 'selected' : ''}`}
-                  onClick={() => setActiveFilterPopover(prev => (prev === 'times' ? null : 'times'))}
-                >
-                  <span>Times</span>
-                  <i className="fas fa-chevron-down chip-chevron"></i>
-                </button>
-                {activeFilterPopover === 'times' && (
-                  <div className="filter-chip-popover dropdown-popover">
-                    <span className="popover-section-title">Departure</span>
-                    <select value={depTimeFilter} onChange={(e) => setDepTimeFilter(e.target.value)} className="filter-select popover-select">
-                      <option value="all">Any Departure Time</option>
-                      <option value="morning">Morning (5 AM - 12 PM)</option>
-                      <option value="afternoon">Afternoon (12 PM - 6 PM)</option>
-                      <option value="evening">Evening (6 PM - 5 AM)</option>
-                    </select>
-
-                    <span className="popover-section-title" style={{ marginTop: '10px', display: 'block' }}>Arrival</span>
-                    <select value={arrTimeFilter} onChange={(e) => setArrTimeFilter(e.target.value)} className="filter-select popover-select">
-                      <option value="all">Any Arrival Time</option>
-                      <option value="morning">Morning (5 AM - 12 PM)</option>
-                      <option value="afternoon">Afternoon (12 PM - 6 PM)</option>
-                      <option value="evening">Evening (6 PM - 5 AM)</option>
-                    </select>
-                  </div>
-                )}
-              </div>
-
-              {/* Duration chip */}
-              <div className="filter-chip-wrapper">
-                <button 
-                  type="button" 
-                  className={`filter-chip ${sliderDuration < maxDuration ? 'selected' : ''}`}
-                  onClick={() => setActiveFilterPopover(prev => (prev === 'duration' ? null : 'duration'))}
-                >
-                  <span>Duration</span>
-                  <i className="fas fa-chevron-down chip-chevron"></i>
-                </button>
-                {activeFilterPopover === 'duration' && (
-                  <div className="filter-chip-popover slider-popover">
-                    <label className="filter-label">Max Travel Time: <strong>{Math.floor(sliderDuration / 60)}h {sliderDuration % 60}m</strong></label>
-                    <input 
-                      type="range" 
-                      min={30}
-                      max={maxDuration || 1440}
-                      value={sliderDuration} 
-                      onChange={(e) => setSliderDuration(parseInt(e.target.value, 10))}
-                      className="filter-slider"
-                    />
-                  </div>
-                )}
-              </div>
-
-              <button 
-                type="button" 
-                className="mobile-filter-trigger-chip" 
-                onClick={() => setShowFiltersDrawer(true)}
-              >
-                <i className="fas fa-sliders-h"></i> All Filters 
-                {activeFiltersCount > 0 && <span className="badge">{activeFiltersCount}</span>}
-              </button>
-
-              {activeFiltersCount > 0 && (
-                <button type="button" className="clear-all-chips-btn" onClick={handleClearAllFilters}>
-                  Reset
-                </button>
-              )}
-            </div>
+        <section className="tfs-results-context" aria-label="Current flight search">
+          <div>
+            <strong>{routeLabel}</strong>
+            <span>{datesLabel}</span>
           </div>
+          <span className="tfs-results-count">{sortedFlights.length} flight{sortedFlights.length === 1 ? '' : 's'}</span>
+        </section>
 
-          {/* Results Toolbar with Heading & Sort dropdown */}
-          <div className="results-toolbar-comparison">
-            <h3 className="results-heading-google">{isRail ? 'Departing Trains' : 'Departing Flights'}</h3>
-            
-            <div className="sorting-group">
-              <label htmlFor="results-sort-select">Sort by:</label>
-              <div className="sort-select-wrapper">
-                <select 
-                  id="results-sort-select"
-                  value={sortBy} 
-                  onChange={(e) => setSortBy(e.target.value)} 
-                  className="sort-select"
-                >
-                  <option value="best">Best Flights</option>
-                  <option value="cheapest">Cheapest Price</option>
-                  <option value="fastest">Shortest Duration</option>
-                  <option value="earliest">Earliest Departure</option>
-                  <option value="latest">Latest Departure</option>
-                </select>
-                <i className="fas fa-chevron-down sort-chevron"></i>
-              </div>
-            </div>
-          </div>
+        <section className="tfs-filter-strip" aria-label="Flight filters">
+          <label>
+            <span>Stops</span>
+            <select value={stopFilter} onChange={(event) => setStopFilter(event.target.value)}>
+              <option value="all">Any stops</option>
+              <option value="nonstop">Nonstop</option>
+              <option value="1">1 stop</option>
+              <option value="2plus">2+ stops</option>
+            </select>
+          </label>
 
-          {/* Flight comparison rows */}
-          <div className="flight-results-rows-container">
-            {sortedFlights.length === 0 ? (
-              <div className="no-results-card">
-                <div className="no-results-icon-circle">
-                  <i className={`fas ${isRail ? 'fa-train' : 'fa-plane-departure'}`}></i>
-                </div>
-                <h3>No flights match your filters</h3>
-                <p>Try clearing your active filters or modify your search criteria to find available schedules.</p>
-                
-                <div className="no-results-actions">
-                  {activeFiltersCount > 0 && (
-                    <button 
-                      onClick={handleClearAllFilters} 
-                      className="btn-primary-reset"
-                    >
-                      Clear All Filters
-                    </button>
-                  )}
-                  <button 
-                    onClick={() => navigate(isRail ? '/amtrak' : '/')} 
-                    className="btn-outline-modify"
-                  >
-                    Modify Search
-                  </button>
-                </div>
-              </div>
-            ) : (
-              sortedFlights.map((flight) => (
-                <FlightResultRow
-                  key={flight.id}
-                  flight={flight}
-                  isExpanded={expandedFlightId === flight.id}
-                  onToggleExpand={() => toggleExpandFlight(flight.id)}
-                  onSelect={handleBookFlight}
-                  actionLabel="Select Flight"
-                  isRail={isRail}
-                  travelersCount={parseInt(searchParams?.adults || 1, 10)}
-                />
-              ))
-            )}
+          <label>
+            <span>Airline</span>
+            <select value={airlineFilter} onChange={(event) => setAirlineFilter(event.target.value)}>
+              <option value="all">All airlines</option>
+              {airlines.map((airline) => <option key={airline} value={airline}>{airline}</option>)}
+            </select>
+          </label>
+
+          <label>
+            <span>Departure</span>
+            <select value={departureFilter} onChange={(event) => setDepartureFilter(event.target.value)}>
+              <option value="all">Any time</option>
+              <option value="morning">Morning</option>
+              <option value="afternoon">Afternoon</option>
+              <option value="evening">Evening</option>
+            </select>
+          </label>
+
+          {maxPrice > 0 && (
+            <label className="tfs-filter-strip__price">
+              <span>Max fare <strong>${priceLimit}</strong></span>
+              <input type="range" min={Math.min(...flights.map((flight) => Math.floor(Number(flight.price?.total || 0))).filter(Boolean)) || 0} max={maxPrice} value={priceLimit} onChange={(event) => setPriceLimit(Number(event.target.value))} />
+            </label>
+          )}
+
+          <button type="button" className="tfs-filter-reset" onClick={resetFilters}>Reset filters</button>
+        </section>
+
+        <div className="tfs-results-heading-row">
+          <div>
+            <h2>Departing flights</h2>
+            <p>Compare times, duration and connection length before selecting.</p>
           </div>
+          <label className="tfs-results-sort">
+            <span>Sort by</span>
+            <select value={sortBy} onChange={(event) => setSortBy(event.target.value)}>
+              <option value="best">Best flights</option>
+              <option value="cheapest">Cheapest</option>
+              <option value="fastest">Fastest</option>
+              <option value="earliest">Earliest departure</option>
+              <option value="latest">Latest departure</option>
+            </select>
+          </label>
         </div>
 
+        <div className="tfs-flight-list">
+          {sortedFlights.length === 0 ? (
+            <div className="no-results-card">
+              <div className="no-results-icon-circle"><i className="fas fa-filter" /></div>
+              <h3>No flights match these filters</h3>
+              <p>Reset the filters or modify the route to see more options.</p>
+              <button type="button" className="btn-outline-modify" onClick={resetFilters}>Reset filters</button>
+            </div>
+          ) : sortedFlights.map((flight, index) => (
+            <FlightResultRow
+              key={flight.id}
+              flight={flight}
+              index={index}
+              travelersCount={searchParams.adults + searchParams.children + searchParams.infants}
+              actionLabel="Select flight"
+              isExpanded={expandedFlightId === flight.id}
+              onToggleExpand={() => setExpandedFlightId((current) => current === flight.id ? null : flight.id)}
+              onSelect={handleSelectFlight}
+            />
+          ))}
+        </div>
       </div>
+
+      <ModifySearchModal
+        isOpen={isModifySearchOpen}
+        onClose={() => setIsModifySearchOpen(false)}
+        initialSearch={searchParams || {}}
+        onUpdateSearch={handleUpdateSearchFromResults}
+        isCheckoutPage={false}
+      />
     </div>
   );
 }
 
-export default SearchResults;
+class SearchResultsErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error, info) {
+    console.error('FLIGHT_RESULTS_RENDER_ERROR', { message: error?.message, componentStack: info?.componentStack });
+  }
+
+  render() {
+    if (!this.state.hasError) return this.props.children;
+    return (
+      <div className="search-results-page">
+        <div className="tfs-results-shell">
+          <div className="search-error-card tfs-search-error" role="alert">
+            <h2>We could not display these flight results</h2>
+            <p>The results page encountered an unexpected display error. No replacement route was loaded.</p>
+            <div className="tfs-search-error__actions">
+              <button type="button" className="btn-primary" onClick={() => window.location.reload()}>Reload page</button>
+              <button type="button" className="btn-outline-modify" onClick={() => { window.location.href = '/'; }}>Start new search</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+}
+
+export default function SearchResults() {
+  return <SearchResultsErrorBoundary><SearchResultsContent /></SearchResultsErrorBoundary>;
+}

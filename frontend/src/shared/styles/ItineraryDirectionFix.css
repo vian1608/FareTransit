@@ -1,0 +1,8 @@
+/* Keep every route-direction plane aligned with the left-to-right itinerary flow.
+   ItineraryTimeline.js currently applies rotate(90deg) inline; !important here
+   intentionally overrides that inline transform so the aircraft points toward
+   the next airport instead of downward. */
+.itinerary-timeline-container .fa-plane {
+  transform: rotate(0deg) !important;
+  transform-origin: center !important;
+}

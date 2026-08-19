@@ -12,7 +12,7 @@ export const flightReviews = [
     id: 'flight-2',
     name: 'James Porter',
     location: 'Austin, TX',
-    experience: 'Urgent business logistics',
+    experience: 'Urgent business travel support',
     rating: 5,
     text: 'A board meeting was moved up by three days. Their consultants compared several itineraries, explained trade-offs clearly, and stayed on the line until we had a workable plan.',
     date: 'February 2026',

@@ -1,0 +1,334 @@
+/* Shared phone-conversion system for Flights, Hotels, and Car Rentals. */
+.support-call-cta {
+  --call-accent: #8b1538;
+  --call-accent-dark: #680e28;
+  --call-accent-rgb: 139, 21, 56;
+  --call-soft: #fff7fa;
+  --call-ink: #4a1025;
+  box-sizing: border-box;
+  text-decoration: none;
+  font-family: inherit;
+}
+
+.support-call-cta--flights {
+  --call-accent: #8b1538;
+  --call-accent-dark: #680e28;
+  --call-accent-rgb: 139, 21, 56;
+  --call-soft: #fff7fa;
+  --call-ink: #4a1025;
+}
+
+.support-call-cta--hotels {
+  --call-accent: #178f8a;
+  --call-accent-dark: #0f5c63;
+  --call-accent-rgb: 23, 143, 138;
+  --call-soft: #eef8f6;
+  --call-ink: #103f42;
+}
+
+.support-call-cta--cars {
+  --call-accent: #1e88e5;
+  --call-accent-dark: #0d6fca;
+  --call-accent-rgb: 30, 136, 229;
+  --call-soft: #eef6fd;
+  --call-ink: #0d2b45;
+}
+
+.support-call-cta--card,
+.support-call-cta--inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-height: 56px;
+  padding: 0.48rem 0.5rem 0.48rem 0.62rem;
+  border: 1px solid rgba(var(--call-accent-rgb), 0.26);
+  border-radius: 12px;
+  background: linear-gradient(135deg, #fff 0%, var(--call-soft) 100%);
+  color: var(--call-ink);
+  box-shadow: 0 6px 18px rgba(var(--call-accent-rgb), 0.08);
+  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+}
+
+.support-call-cta--card {
+  width: min(390px, 100%);
+}
+
+.support-call-cta--inline {
+  min-height: 50px;
+  width: auto;
+  max-width: 390px;
+}
+
+.support-call-cta--card:hover,
+.support-call-cta--inline:hover {
+  color: var(--call-ink);
+  border-color: rgba(var(--call-accent-rgb), 0.48);
+  box-shadow: 0 10px 24px rgba(var(--call-accent-rgb), 0.14);
+  transform: translateY(-1px);
+}
+
+.support-call-cta:focus-visible {
+  outline: 3px solid rgba(var(--call-accent-rgb), 0.22);
+  outline-offset: 3px;
+}
+
+.support-call-cta__icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  flex: 0 0 40px;
+  background: var(--call-accent);
+  color: #fff;
+  font-size: 0.96rem;
+  box-shadow: 0 5px 12px rgba(var(--call-accent-rgb), 0.22);
+}
+
+.support-call-cta__copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1 1 auto;
+  line-height: 1.18;
+}
+
+.support-call-cta__copy strong {
+  color: var(--call-ink);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.support-call-cta__copy small {
+  margin-top: 0.18rem;
+  color: #64748b;
+  font-size: 0.68rem;
+  font-weight: 550;
+  white-space: nowrap;
+}
+
+.support-call-cta__action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 126px;
+  min-height: 42px;
+  padding: 0.35rem 0.62rem;
+  border-radius: 9px;
+  background: linear-gradient(135deg, var(--call-accent), var(--call-accent-dark));
+  color: #fff;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.support-call-cta__action strong {
+  font-size: 0.76rem;
+  font-weight: 850;
+}
+
+.support-call-cta__action span {
+  margin-top: 0.15rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.support-call-cta--compact .support-call-cta__copy small {
+  display: none;
+}
+
+/* Flight homepage still uses a legacy search-card component. The global support
+   layer portals this CTA into the card so it can share the same conversion
+   pattern without touching the flight-search state machine. */
+.flights-inquiry-card {
+  position: relative;
+}
+
+.support-call-cta--flight-search-portal {
+  position: absolute;
+  top: 0.92rem;
+  right: 1.05rem;
+  z-index: 8;
+  width: min(350px, 42%);
+  min-height: 50px;
+}
+
+.support-call-cta--flight-search-portal .support-call-cta__copy small {
+  display: none;
+}
+
+.support-call-cta--flight-search-portal .support-call-cta__icon {
+  width: 36px;
+  height: 36px;
+  flex-basis: 36px;
+}
+
+.support-call-cta--flight-search-portal .support-call-cta__action {
+  min-height: 38px;
+  min-width: 120px;
+}
+
+/* Result-page CTA is intentionally compact: it helps when a customer feels
+   overwhelmed by options but does not compete with filters or selection. */
+.support-call-cta--results-portal {
+  margin-left: auto;
+}
+
+.tfs-results-heading-row:has(.support-call-cta--results-portal),
+.hotel-results-header:has(.support-call-cta--results-portal),
+.car-controls-bar:has(.support-call-cta--results-portal) {
+  flex-wrap: wrap;
+}
+
+/* Checkout/payment support appears within the page at the decision point in
+   addition to the always-available sticky phone control. */
+.support-call-cta--journey-portal {
+  margin-top: 1rem;
+}
+
+.booking-hero-premium__inner > .support-call-cta--journey-portal {
+  margin-left: auto;
+  margin-right: auto;
+  text-align: left;
+}
+
+.consulting-payment-header > .support-call-cta--journey-portal {
+  margin-left: auto;
+  margin-right: auto;
+  text-align: left;
+}
+
+/* Always-available desktop assistance. */
+.support-call-sticky {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 4600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-height: 58px;
+  padding: 0.52rem 0.62rem;
+  border: 1px solid rgba(var(--call-accent-rgb), 0.26);
+  border-radius: 15px;
+  background: #fff;
+  color: var(--call-ink);
+  box-shadow: 0 14px 38px rgba(15, 23, 42, 0.2);
+  transition: transform 0.16s ease, box-shadow 0.16s ease;
+}
+
+.support-call-sticky:hover {
+  color: var(--call-ink);
+  transform: translateY(-2px);
+  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.24);
+}
+
+.support-call-sticky .support-call-cta__icon {
+  width: 42px;
+  height: 42px;
+  flex-basis: 42px;
+}
+
+.support-call-sticky .support-call-cta__copy strong {
+  font-size: 0.78rem;
+}
+
+.support-call-sticky .support-call-cta__copy small {
+  font-size: 0.68rem;
+}
+
+.support-call-sticky .support-call-cta__action {
+  min-width: 118px;
+}
+
+@media (max-width: 900px) {
+  .product-search-card__heading .support-call-cta--card {
+    width: min(350px, 100%);
+  }
+
+  .support-call-cta--card .support-call-cta__copy small {
+    display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  body:has(.support-call-sticky) .App {
+    padding-bottom: calc(62px + env(safe-area-inset-bottom));
+  }
+
+  .product-search-card__heading .support-call-cta--card {
+    width: 100%;
+  }
+
+  .support-call-cta--card {
+    min-height: 52px;
+  }
+
+  .support-call-cta--card .support-call-cta__copy {
+    display: flex;
+  }
+
+  .support-call-cta--card .support-call-cta__action {
+    min-width: 116px;
+  }
+
+  /* On small screens the sticky bottom bar is the easiest and largest phone
+     target. Avoid duplicating an absolutely-positioned flight-card CTA. */
+  .support-call-cta--flight-search-portal {
+    display: none !important;
+  }
+
+  .support-call-cta--results-portal,
+  .support-call-cta--journey-portal {
+    width: 100%;
+    max-width: none;
+    margin: 0.35rem 0 0;
+  }
+
+  .support-call-sticky {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    min-height: 62px;
+    padding: 0.45rem max(12px, env(safe-area-inset-right)) calc(0.45rem + env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+    border-width: 1px 0 0;
+    border-radius: 0;
+    box-shadow: 0 -8px 28px rgba(15, 23, 42, 0.16);
+  }
+
+  .support-call-sticky .support-call-cta__copy small {
+    display: none;
+  }
+
+  .support-call-sticky .support-call-cta__action {
+    margin-left: auto;
+    min-width: 132px;
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 420px) {
+  .support-call-cta__copy strong {
+    font-size: 0.72rem;
+  }
+
+  .support-call-cta__action {
+    min-width: 112px;
+  }
+
+  .support-call-sticky .support-call-cta__copy {
+    display: none;
+  }
+
+  .support-call-sticky .support-call-cta__action {
+    flex: 1 1 auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .support-call-cta,
+  .support-call-sticky {
+    transition: none !important;
+  }
+}

@@ -1,0 +1,353 @@
+/* ── Travel Assistance Page ── */
+.travel-assistance-page {
+  width: 100%;
+  color: #1e293b;
+}
+
+.ta-hero {
+  background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%);
+  padding: 4rem 0 3.5rem 0;
+  color: #ffffff;
+  text-align: center;
+}
+
+.ta-hero__content {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.ta-eyebrow {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.12);
+  color: #f59e0b;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 0.35rem 0.85rem;
+  border-radius: 20px;
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.ta-hero h1 {
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 800;
+  margin-bottom: 1rem;
+  line-height: 1.15;
+  color: #ffffff;
+}
+
+.ta-lead {
+  font-size: 1.15rem;
+  line-height: 1.6;
+  color: #cbd5e1;
+  margin-bottom: 2rem;
+}
+
+/* ── Embedded Search Section ── */
+.ta-search-section {
+  margin-top: -2.5rem;
+  padding-bottom: 3.5rem;
+}
+
+.compact-assistance-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 1.25rem 1.5rem;
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.5rem;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05);
+}
+
+.assistance-card-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.assistance-card-icon {
+  font-size: 1.75rem;
+  color: #8b1538;
+  background: #faf5f7;
+  padding: 0.85rem;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.assistance-card-left h3 {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.05rem;
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.assistance-card-left p {
+  margin: 0;
+  font-size: 0.88rem;
+  color: #475569;
+}
+
+.assistance-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-shrink: 0;
+}
+
+.btn-compact-phone {
+  background-color: #8b1538;
+  color: #ffffff;
+  padding: 0.75rem 1.25rem;
+  border-radius: 10px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: all 0.2s ease;
+}
+
+.btn-compact-phone:hover {
+  background-color: #6b0f2a;
+}
+
+.btn-compact-inquiry {
+  background-color: #f1f5f9;
+  color: #1e293b;
+  padding: 0.75rem 1.25rem;
+  border-radius: 10px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.btn-compact-inquiry:hover {
+  background-color: #e2e8f0;
+}
+
+/* ── Section Blocks ── */
+.ta-section {
+  padding: 4rem 0;
+}
+
+.ta-section--light {
+  background-color: #f8fafc;
+}
+
+.ta-section--dark {
+  background-color: #0f172a;
+  color: #ffffff;
+}
+
+.ta-section__header {
+  text-align: center;
+  max-width: 650px;
+  margin: 0 auto 3rem auto;
+}
+
+.ta-section__header h2 {
+  font-size: 2rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+  color: #0f172a;
+}
+
+.ta-section__header--light h2 {
+  color: #ffffff;
+}
+
+.ta-section__header p {
+  font-size: 1.05rem;
+  color: #64748b;
+
+}
+
+.ta-section__header--light p {
+  color: #cbd5e1;
+}
+
+/* ── Grids & Cards ── */
+.ta-grid {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.ta-grid--4 {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.ta-grid--3 {
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.ta-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.75rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+
+.ta-card__icon {
+  font-size: 1.5rem;
+  color: #8b1538;
+  margin-bottom: 1rem;
+}
+
+.ta-card h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: #0f172a;
+}
+
+.ta-card p {
+  font-size: 0.9rem;
+  color: #475569;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.ta-feature {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  background: #ffffff;
+  padding: 1.5rem;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.ta-feature__icon {
+  font-size: 1.4rem;
+  color: #8b1538;
+  margin-top: 0.2rem;
+}
+
+.ta-feature h3 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-bottom: 0.35rem;
+  color: #0f172a;
+}
+
+.ta-feature p {
+  font-size: 0.88rem;
+  color: #475569;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ── Steps ── */
+.ta-steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 2rem;
+}
+
+.ta-step {
+  text-align: center;
+}
+
+.ta-step__num {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #8b1538;
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem auto;
+}
+
+.ta-step h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.ta-step p {
+  font-size: 0.9rem;
+  color: #cbd5e1;
+  line-height: 1.5;
+}
+
+/* ── FAQ & Disclosure ── */
+.ta-faq-container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.ta-faq-container h2 {
+  text-align: center;
+  font-size: 2rem;
+  font-weight: 800;
+  margin-bottom: 2rem;
+  color: #0f172a;
+}
+
+.ta-faq-item {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.ta-faq-item h4 {
+  margin: 0 0 0.4rem 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.ta-faq-item p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #475569;
+  line-height: 1.55;
+}
+
+.independent-service-footer-notice {
+  text-align: center;
+  font-size: 0.83rem;
+  color: #64748b;
+  margin-top: 2.5rem;
+  padding: 1rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+}
+
+.ta-cta-box {
+  background: #faf5f7;
+  padding: 4rem 0;
+  border-top: 1px solid #f0d5de;
+}
+
+@media (max-width: 768px) {
+  .compact-assistance-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .assistance-card-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .btn-compact-phone,
+  .btn-compact-inquiry {
+    width: 100%;
+    justify-content: center;
+  }
+}

@@ -1,0 +1,179 @@
+/* Admin dashboard list + header enhancements.
+   Keep the admin brand row on the same 1540px / 22px horizontal geometry
+   as .adv2-shell and the dedicated booking workspace. */
+
+.adv2-header {
+  transition: box-shadow 180ms ease, background 180ms ease;
+}
+
+.adv2-header__inner {
+  width: 100% !important;
+  max-width: 1540px !important;
+  min-height: 64px;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  padding: 12px 22px !important;
+  transition: min-height 180ms ease, padding 180ms ease, gap 180ms ease;
+}
+
+.adv2-brand {
+  min-width: 0;
+  white-space: nowrap;
+  transition: transform 180ms ease, font-size 180ms ease;
+}
+
+.adv2-header__actions {
+  min-width: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  transition: gap 180ms ease;
+}
+
+.adv2-header--compact {
+  box-shadow: 0 8px 24px rgba(15, 39, 70, 0.2) !important;
+}
+
+.adv2-header--compact .adv2-header__inner {
+  min-height: 54px;
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
+}
+
+.adv2-header--compact .adv2-brand {
+  transform: translateY(-1px);
+}
+
+/* Booking list viewport: keep the header visible and roughly 15 booking rows
+   on screen. Pages still contain up to 20 records; the remaining rows are
+   reached by scrolling inside the booking card. */
+.adv2-bookings-scroll {
+  --adv2-booking-row-height: 48px;
+  --adv2-booking-header-height: 38px;
+  max-height: calc(var(--adv2-booking-header-height) + (15 * var(--adv2-booking-row-height)));
+  overflow-x: auto !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  border-top: 1px solid #edf1f6;
+  border-bottom: 1px solid #edf1f6;
+}
+
+.adv2-bookings-scroll .adv2-table {
+  margin: 0;
+}
+
+.adv2-bookings-scroll .adv2-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  box-shadow: 0 1px 0 #dfe6ef;
+}
+
+.adv2-bookings-scroll .adv2-table tbody tr {
+  min-height: var(--adv2-booking-row-height);
+}
+
+/* React-safe serial column. The wrapper only sets data-booking-serial on each
+   existing <tr>; generated table cells render visually without inserting or
+   reordering React-managed <td> elements. */
+.adv2-bookings-scroll .adv2-table thead tr::before,
+.adv2-bookings-scroll .adv2-table tbody tr::before {
+  display: table-cell;
+  width: 54px;
+  min-width: 54px;
+  max-width: 54px;
+  padding: 10px 11px;
+  text-align: center;
+  vertical-align: middle;
+  border-bottom: 1px solid #edf1f6;
+  font-variant-numeric: tabular-nums;
+}
+
+.adv2-bookings-scroll .adv2-table thead tr::before {
+  content: '#';
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  background: #f7f9fc;
+  color: #5b6b80;
+  text-transform: uppercase;
+  letter-spacing: .35px;
+  font-size: 10px;
+  font-weight: 800;
+  box-shadow: 0 1px 0 #dfe6ef;
+}
+
+.adv2-bookings-scroll .adv2-table tbody tr::before {
+  content: attr(data-booking-serial);
+  color: #5d6d82;
+  font-size: 12px;
+  font-weight: 800;
+  background: #fff;
+}
+
+.adv2-bookings-scroll .adv2-table tbody tr:hover::before {
+  background: #fbfcfe;
+}
+
+/* Pagination remains outside the scroller so it is always reachable and does
+   not move with the table rows. */
+.adv2-card > .adv2-pagination {
+  position: relative;
+  z-index: 2;
+  background: #fff;
+  border-top: 1px solid #edf1f6;
+}
+
+@media (max-width: 900px) {
+  .adv2-header__inner {
+    min-height: 58px;
+    gap: 10px;
+  }
+
+  .adv2-header__actions {
+    gap: 6px;
+  }
+
+  .adv2-header__actions .adv2-badge {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .adv2-header__inner {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .adv2-brand {
+    flex: 1 1 auto;
+    font-size: 14px;
+  }
+
+  .adv2-header__actions {
+    margin-left: 0 !important;
+    flex: 0 0 auto;
+  }
+
+  .adv2-header__actions .adv2-button {
+    min-height: 34px;
+    padding: 7px 10px;
+    font-size: 12px;
+  }
+
+  .adv2-bookings-scroll {
+    --adv2-booking-row-height: 52px;
+    max-height: calc(var(--adv2-booking-header-height) + (15 * var(--adv2-booking-row-height)));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .adv2-header,
+  .adv2-header__inner,
+  .adv2-brand,
+  .adv2-header__actions {
+    transition: none !important;
+  }
+}

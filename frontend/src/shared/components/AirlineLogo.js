@@ -1,15 +1,19 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import './AirlineLogo.css';
 
 const publicUrl = process.env.PUBLIC_URL || '';
 
-function AirlineLogo({ slug, airlineName, className = '' }) {
+function AirlineLogo({ slug, airlineName = 'Airline', className = '', src = '' }) {
   const [failedSources, setFailedSources] = useState(0);
 
-  const sources = [
-    `${publicUrl}/assets/logos/${slug}.png`,
-    `${publicUrl}/logo/${slug}.png`,
-  ];
+  const sources = useMemo(() => {
+    const normalizedSlug = String(slug || '').trim();
+    return [
+      src,
+      normalizedSlug ? `${publicUrl}/assets/logos/${normalizedSlug}.png` : '',
+      normalizedSlug ? `${publicUrl}/logo/${normalizedSlug}.png` : '',
+    ].filter(Boolean);
+  }, [slug, src]);
 
   const handleError = () => {
     setFailedSources((n) => n + 1);
@@ -17,9 +21,9 @@ function AirlineLogo({ slug, airlineName, className = '' }) {
 
   if (failedSources >= sources.length) {
     return (
-      <div className={`airline-logo-fallback ${className}`} aria-label={`${airlineName} logo`}>
-        <span className="airline-logo-fallback__text">{airlineName}</span>
-      </div>
+      <span className={`airline-logo-fallback ${className}`} aria-label={`${airlineName} logo unavailable`} role="img">
+        <i className="fas fa-plane" aria-hidden="true" />
+      </span>
     );
   }
 

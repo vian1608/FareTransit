@@ -1,0 +1,223 @@
+/* ── Booking For Parents Page ── */
+.booking-for-parents-page {
+  width: 100%;
+  color: #1e293b;
+}
+
+.bfp-hero {
+  background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%);
+  padding: 4rem 0 3.5rem 0;
+  color: #ffffff;
+  text-align: center;
+}
+
+.bfp-hero__content {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.bfp-eyebrow {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.12);
+  color: #f59e0b;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 0.35rem 0.85rem;
+  border-radius: 20px;
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.bfp-hero h1 {
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 800;
+  margin-bottom: 1rem;
+  line-height: 1.15;
+  color: #ffffff;
+}
+
+.bfp-lead {
+  font-size: 1.15rem;
+  line-height: 1.6;
+  color: #cbd5e1;
+  margin-bottom: 2rem;
+}
+
+/* ── Embedded Search & Family Banner ── */
+.bfp-search-section {
+  margin-top: -2.5rem;
+  padding-bottom: 3.5rem;
+}
+
+.family-assistance-banner {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 14px;
+  padding: 1.25rem 1.5rem;
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.5rem;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+}
+
+.family-banner-icon {
+  font-size: 1.75rem;
+  color: #166534;
+  background: #dcfce7;
+  padding: 0.85rem;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.family-assistance-banner h3 {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.05rem;
+  color: #14532d;
+  font-weight: 700;
+}
+
+.family-assistance-banner p {
+  margin: 0;
+  font-size: 0.88rem;
+  color: #166534;
+}
+
+.btn-family-call {
+  background-color: #8b1538;
+  color: #ffffff;
+  padding: 0.75rem 1.25rem;
+  border-radius: 10px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.btn-family-call:hover {
+  background-color: #6b0f2a;
+}
+
+/* ── Section Blocks ── */
+.bfp-section {
+  padding: 4rem 0;
+}
+
+.bfp-section--light {
+  background-color: #f8fafc;
+}
+
+.bfp-section__header {
+  text-align: center;
+  max-width: 650px;
+  margin: 0 auto 3rem auto;
+}
+
+.bfp-section__header h2 {
+  font-size: 2rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+  color: #0f172a;
+}
+
+.bfp-section__header p {
+  font-size: 1.05rem;
+  color: #64748b;
+}
+
+.bfp-grid {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.bfp-grid--4 {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.bfp-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.75rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+
+.bfp-card__icon {
+  font-size: 1.5rem;
+  color: #8b1538;
+  margin-bottom: 1rem;
+}
+
+.bfp-card h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: #0f172a;
+}
+
+.bfp-card p {
+  font-size: 0.9rem;
+  color: #475569;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.bfp-steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 2rem;
+}
+
+.bfp-step {
+  text-align: center;
+}
+
+.bfp-step__num {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #8b1538;
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem auto;
+}
+
+.bfp-step h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.bfp-step p {
+  font-size: 0.9rem;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.bfp-cta-box {
+  background: #faf5f7;
+  padding: 4rem 0;
+  border-top: 1px solid #f0d5de;
+}
+
+@media (max-width: 768px) {
+  .family-assistance-banner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .btn-family-call {
+    width: 100%;
+    justify-content: center;
+  }
+}

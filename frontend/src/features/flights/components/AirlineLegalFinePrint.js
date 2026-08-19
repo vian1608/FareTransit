@@ -11,7 +11,7 @@ function AirlineLegalFinePrint() {
         <span className="airline-legal-fineprint__brand">FareTransit LLC</span>
         <span className="airline-legal-fineprint__consultancy">
           {' '}
-          is an independent logistics consultancy and does not issue tickets directly.
+          is an independent flight-search and reservation-assistance service and is not affiliated with or endorsed by individual airlines.
         </span>
         <span className="airline-legal-fineprint__marks">
           {' '}

@@ -1,491 +1,487 @@
 import env from '../../config/env.mjs';
+import { calculateFlightDiscount } from '../../shared/utils/pricing.helper.mjs';
+import { GLOBAL_AIRPORTS, rankAirportSuggestions, searchAndRankLocalAirports } from '../../modules/flights/airport-ranker.mjs';
+
+const PROVIDER_TIMEOUT_MS = 20000;
+
+function isIataCode(value) {
+  return /^[A-Z]{3}$/.test(String(value || '').trim().toUpperCase());
+}
+
+function splitSupplierDateTime(value, fallbackDate = '') {
+  const text = String(value || '').trim();
+  if (!text) return { date: fallbackDate, time: '' };
+  const [date = fallbackDate, time = ''] = text.split(/\s+/);
+  return { date, time };
+}
+
+function durationFromMinutes(value) {
+  const minutes = Number(value);
+  if (!Number.isFinite(minutes) || minutes <= 0) return '';
+  const hours = Math.floor(minutes / 60);
+  const remainder = Math.round(minutes % 60);
+  if (!hours) return `${remainder}m`;
+  if (!remainder) return `${hours}h`;
+  return `${hours}h ${remainder}m`;
+}
 
 class SerpApiService {
   constructor() {
-    this.apiKey = env.serpapiApiKey || '8df31a2da9a24a9565d2fa7d5dcd096a5f5542c1a42e42cf9f5d604e17871498';
+    this.apiKey = env.serpapiApiKey || '';
   }
 
   extractAirportCode(input) {
     if (!input) return '';
     if (typeof input === 'object') {
-      if (input.code) return input.code.toUpperCase();
-      if (input.id) return input.id.toUpperCase();
+      const code = String(input.code || input.iata || input.id || '').trim().toUpperCase();
+      return isIataCode(code) ? code : '';
     }
-    const inputStr = String(input);
-    const match = inputStr.match(/\(([A-Z]{3,4})\)/i);
-    return match ? match[1].toUpperCase() : inputStr.trim().toUpperCase().substring(0, 3);
+
+    const text = String(input).trim();
+    if (isIataCode(text)) return text.toUpperCase();
+    const parenthetical = text.match(/\(([A-Z]{3})\)/i);
+    return parenthetical ? parenthetical[1].toUpperCase() : '';
   }
 
-  // Maps UI Cabin Class to SerpAPI travel_class code
-  mapTravelClass(cabin) {
-    const c = (cabin || 'economy').toLowerCase();
-    if (c.includes('premium')) return '2';
-    if (c.includes('business')) return '3';
-    if (c.includes('first')) return '4';
-    return '1'; // Economy default
+  mapTravelClass(cabinClass) {
+    if (!cabinClass) return '1';
+    const value = String(cabinClass).toLowerCase();
+    if (value.includes('premium')) return '2';
+    if (value.includes('business')) return '3';
+    if (value.includes('first')) return '4';
+    return '1';
   }
 
-  // Autocomplete airports using SerpAPI google_flights_autocomplete engine
   async autocompleteAirports(query) {
-    if (!query || query.length < 2) {
-      return this.getMockAirportSuggestions(query || '');
+    if (!query || String(query).trim().length < 1) {
+      return GLOBAL_AIRPORTS.filter((airport) => isIataCode(airport.code)).slice(0, 10);
     }
 
-    const localResults = searchLocalAirports(query);
+    const localResults = searchAndRankLocalAirports(query).filter((airport) => isIataCode(airport.code));
+    const apiResults = [];
 
-    let apiResults = [];
-    try {
-      const params = new URLSearchParams({
-        engine: 'google_flights_autocomplete',
-        q: query,
-        api_key: this.apiKey,
-        exclude_regions: 'true',
-        hl: 'en',
-        gl: 'us'
-      });
+    if (this.apiKey) {
+      try {
+        const params = new URLSearchParams({
+          engine: 'google_flights_autocomplete',
+          q: query,
+          api_key: this.apiKey,
+          exclude_regions: 'true',
+          hl: 'en',
+          gl: 'us',
+        });
 
-      const response = await fetch(`https://serpapi.com/search.json?${params.toString()}`);
-      const data = await response.json();
+        const response = await fetch(`https://serpapi.com/search.json?${params.toString()}`, {
+          signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS),
+        });
+        const data = await response.json();
 
-      if (response.ok && data.suggestions) {
-        data.suggestions.forEach(suggestion => {
-          if (suggestion.type === 'airport' && suggestion.id) {
-            const descInfo = parseDescription(suggestion.description);
-            apiResults.push({
-              code: suggestion.id.toUpperCase(),
-              name: suggestion.name,
-              city: descInfo.city,
-              state: descInfo.state,
-              country: descInfo.country
-            });
-          } else if (suggestion.type === 'city' && suggestion.airports) {
-            suggestion.airports.forEach(airport => {
-              if (airport.id) {
+        if (response.ok && Array.isArray(data.suggestions)) {
+          data.suggestions.forEach((suggestion) => {
+            if (suggestion.type === 'airport' && isIataCode(suggestion.id)) {
+              const descInfo = parseDescription(suggestion.description);
+              apiResults.push({
+                code: suggestion.id.toUpperCase(),
+                name: suggestion.name,
+                city: descInfo.city,
+                state: descInfo.state,
+                country: descInfo.country,
+              });
+            } else if (suggestion.type === 'city' && Array.isArray(suggestion.airports)) {
+              suggestion.airports.forEach((airport) => {
+                if (!isIataCode(airport.id)) return;
                 const descInfo = parseDescription(suggestion.name);
                 apiResults.push({
                   code: airport.id.toUpperCase(),
                   name: airport.name,
                   city: descInfo.city,
                   state: descInfo.state,
-                  country: descInfo.country
+                  country: descInfo.country,
                 });
-              }
-            });
-          }
-        });
+              });
+            }
+          });
+        }
+      } catch (error) {
+        console.warn('SerpAPI autocomplete failed:', error.message);
       }
-    } catch (error) {
-      console.warn('SerpAPI autocomplete failed:', error.message);
     }
 
-    // Merge lists to avoid duplicates (prioritize local results because they have perfect names & state details)
-    const mergedMap = new Map();
-    
-    // Add local results first
-    localResults.forEach(item => {
-      mergedMap.set(item.code, item);
+    const merged = new Map();
+    [...localResults, ...apiResults].forEach((item) => {
+      const code = String(item?.code || '').toUpperCase();
+      if (!isIataCode(code)) return;
+      const matchingLocal = GLOBAL_AIRPORTS.find((airport) => airport.code === code);
+      if (!merged.has(code)) merged.set(code, matchingLocal || { ...item, code });
     });
 
-    // Add API results if not already present
-    apiResults.forEach(item => {
-      if (!mergedMap.has(item.code)) {
-        const matchingLocal = LOCAL_AIRPORTS.find(la => la.code === item.code);
-        if (matchingLocal) {
-          mergedMap.set(item.code, matchingLocal);
-        } else {
-          mergedMap.set(item.code, item);
-        }
-      }
-    });
-
-    const finalResults = Array.from(mergedMap.values());
-    return finalResults.length > 0 ? finalResults : this.getMockAirportSuggestions(query);
+    const candidates = [...merged.values()];
+    const ranked = rankAirportSuggestions(candidates, query).filter((airport) => isIataCode(airport.code));
+    return ranked.length > 0
+      ? ranked
+      : rankAirportSuggestions(GLOBAL_AIRPORTS.filter((airport) => isIataCode(airport.code)), query);
   }
 
-  // Search flights using SerpAPI google_flights engine
   async searchFlights(searchParams) {
+    const isProduction = (process.env.NODE_ENV || 'development') === 'production';
+    const demoAllowed = process.env.DEMO_FLIGHTS === 'true' || !isProduction;
+    const fromCode = this.extractAirportCode(searchParams.from);
+    const toCode = this.extractAirportCode(searchParams.to);
+    const departureToken = String(searchParams.departureToken || '').trim();
+    const isReturnSelection = Boolean(departureToken);
+
+    if (!fromCode || !toCode || fromCode === toCode) {
+      const err = new Error('Flight search requires two different valid 3-letter IATA airport codes.');
+      err.code = 'INVALID_AIRPORT_CODE';
+      err.status = 400;
+      throw err;
+    }
+
+    const departureDate = searchParams.departure;
+    const returnDate = searchParams.returnDate;
+    const isRoundTrip = Boolean(returnDate);
+
+    if (isReturnSelection && !isRoundTrip) {
+      const err = new Error('A return date is required to continue the selected round-trip itinerary.');
+      err.code = 'RETURN_DATE_REQUIRED';
+      err.status = 400;
+      throw err;
+    }
+
+    const formatSearchParams = isReturnSelection
+      ? {
+          ...searchParams,
+          from: toCode,
+          to: fromCode,
+          departure: returnDate || departureDate,
+          resultStage: 'return',
+          tripScope: 'roundtrip_total',
+        }
+      : {
+          ...searchParams,
+          from: fromCode,
+          to: toCode,
+          resultStage: isRoundTrip ? 'outbound' : 'oneway',
+          tripScope: isRoundTrip ? 'roundtrip_total' : 'oneway_total',
+        };
+
+    if (!this.apiKey) {
+      if (isProduction) {
+        const err = new Error('Flight search is temporarily unavailable. Please try again or contact support.');
+        err.code = 'FLIGHT_SEARCH_UNAVAILABLE';
+        err.status = 503;
+        throw err;
+      }
+      if (demoAllowed) {
+        console.warn('[SerpAPI] SERPAPI_API_KEY not configured — serving demo flights (non-production only).');
+        return this.getMockFlightOffers(formatSearchParams);
+      }
+      const err = new Error('Flight search API key not configured.');
+      err.code = 'FLIGHT_SEARCH_UNAVAILABLE';
+      err.status = 503;
+      throw err;
+    }
+
     try {
-      const fromCode = this.extractAirportCode(searchParams.from);
-      const toCode = this.extractAirportCode(searchParams.to);
-      const departureDate = searchParams.departure;
-      const returnDate = searchParams.returnDate;
-      const isRoundTrip = !!returnDate;
-      
-      const cabinClass = this.mapTravelClass(searchParams.travelClass);
-      
-      // Parse passenger counts
-      const adults = parseInt(searchParams.adults || 1, 10);
-      const children = parseInt(searchParams.children || 0, 10);
-      const infants = parseInt(searchParams.infants || 0, 10);
+      const adults = Number.parseInt(searchParams.adults || 1, 10);
+      const children = Number.parseInt(searchParams.children || 0, 10);
+      const infantsInSeat = Number.parseInt(searchParams.infantsInSeat || 0, 10);
+      const infantsOnLap = Number.parseInt(
+        searchParams.infantsOnLap ?? searchParams.infants ?? 0,
+        10,
+      );
 
       const params = new URLSearchParams({
         engine: 'google_flights',
         departure_id: fromCode,
         arrival_id: toCode,
         outbound_date: departureDate,
-        type: isRoundTrip ? '1' : '2', // 1 = roundtrip, 2 = oneway
-        travel_class: cabinClass,
+        type: isRoundTrip ? '1' : '2',
+        travel_class: this.mapTravelClass(searchParams.travelClass),
         adults: adults.toString(),
         api_key: this.apiKey,
         hl: 'en',
         gl: 'us',
-        currency: searchParams.currency || 'USD'
+        currency: searchParams.currency || 'USD',
       });
 
-      if (isRoundTrip) {
-        params.append('return_date', returnDate);
-      }
-      if (children > 0) {
-        params.append('children', children.toString());
-      }
-      if (infants > 0) {
-        // google_flights uses infants_on_lap by default
-        params.append('infants_on_lap', infants.toString());
-      }
+      if (isRoundTrip) params.append('return_date', returnDate);
+      if (departureToken) params.append('departure_token', departureToken);
+      if (children > 0) params.append('children', children.toString());
+      if (infantsInSeat > 0) params.append('infants_in_seat', infantsInSeat.toString());
+      if (infantsOnLap > 0) params.append('infants_on_lap', infantsOnLap.toString());
 
-      const response = await fetch(`https://serpapi.com/search.json?${params.toString()}`);
+      const response = await fetch(`https://serpapi.com/search.json?${params.toString()}`, {
+        signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS),
+      });
       const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'SerpAPI flight search request failed');
 
-      if (!response.ok) {
-        throw new Error(data.error || 'SerpAPI flight search request failed');
-      }
-
-      return this.formatSerpFlightOffers(data, searchParams);
+      return this.formatSerpFlightOffers(data, formatSearchParams);
     } catch (error) {
-      console.error('[Supplier Error] SerpAPI flight search failed:', error.stack || error.message);
-      if (env.nodeEnv === 'production') {
-        throw new Error('Supplier search failed: live connections offline.');
+      if (isProduction) {
+        const err = new Error('Live flight search is temporarily unavailable. Please try again shortly.');
+        err.code = 'FLIGHT_SEARCH_UNAVAILABLE';
+        err.status = 503;
+        err.cause = error;
+        throw err;
       }
-      return this.getMockFlightOffers(searchParams);
+      console.warn('[SerpAPI] Live flight search notice (non-production):', error.message);
+      return this.getMockFlightOffers(formatSearchParams);
     }
   }
 
-  // Format SerpAPI response to our frontend expected schema, applying the 0.90 discount rule
   formatSerpFlightOffers(data, searchParams) {
-    const bestFlights = data.best_flights || [];
-    const otherFlights = data.other_flights || [];
-    const allItineraries = [...bestFlights, ...otherFlights];
+    const allItineraries = [...(data.best_flights || []), ...(data.other_flights || [])];
+    if (allItineraries.length === 0) return { flights: [], meta: { isMock: false, count: 0 } };
 
-    if (allItineraries.length === 0) {
-      return { flights: [], meta: { isMock: false } };
-    }
+    const requestedFrom = this.extractAirportCode(searchParams.from);
+    const requestedTo = this.extractAirportCode(searchParams.to);
+    const passengerCount = Math.max(
+      1,
+      Number.parseInt(searchParams.adults || 1, 10)
+        + Number.parseInt(searchParams.children || 0, 10)
+        + Number.parseInt(searchParams.infants || 0, 10),
+    );
+    const tripScope = searchParams.tripScope || (searchParams.returnDate ? 'roundtrip_total' : 'oneway_total');
+    const selectionStage = searchParams.resultStage || (searchParams.returnDate ? 'outbound' : 'oneway');
 
     const formattedFlights = allItineraries.map((itinerary, index) => {
-      const segments = itinerary.flights || [];
-      if (segments.length === 0) return null;
+      const supplierSegments = Array.isArray(itinerary.flights) ? itinerary.flights : [];
+      if (supplierSegments.length === 0) return null;
 
-      const firstSeg = segments[0];
-      const lastSeg = segments[segments.length - 1];
-      
-      // Calculatestops and layovers
-      const stopsCount = segments.length - 1;
-      const layovers = (itinerary.layovers || []).map(layover => ({
-        airportCode: layover.id,
-        airportName: layover.name,
-        duration: layover.duration // in minutes
-      }));
+      const firstSeg = supplierSegments[0];
+      const lastSeg = supplierSegments[supplierSegments.length - 1];
+      const actualFrom = this.extractAirportCode(firstSeg.departure_airport?.id);
+      const actualTo = this.extractAirportCode(lastSeg.arrival_airport?.id);
 
-      // Price logic: Website Price = Original Price * 0.90
-      const originalPrice = parseFloat(itinerary.price || 0);
-      const websitePrice = Math.round(originalPrice * 0.90);
+      if (!actualFrom || !actualTo || actualFrom !== requestedFrom || actualTo !== requestedTo) {
+        console.warn('[SerpAPI] Dropping mismatched itinerary', {
+          requested: `${requestedFrom}-${requestedTo}`,
+          received: `${actualFrom || '???'}-${actualTo || '???'}`,
+        });
+        return null;
+      }
 
-      // Extract duration in minutes and format to "Xh Ym"
-      const totalDurationMin = itinerary.total_duration || segments.reduce((sum, s) => sum + (s.duration || 0), 0);
-      const hours = Math.floor(totalDurationMin / 60);
-      const minutes = totalDurationMin % 60;
-      const durationStr = `${hours}h ${minutes}m`;
+      const layovers = (itinerary.layovers || [])
+        .map((layover) => ({
+          airportCode: this.extractAirportCode(layover.id),
+          airportName: layover.name || '',
+          duration: Number.isFinite(Number(layover.duration)) ? Number(layover.duration) : layover.duration,
+        }))
+        .filter((layover) => layover.airportCode);
 
-      // Extract airline details from first segment
+      const rawOriginalPrice = Number.parseFloat(itinerary.price || 0);
+      const priceCalc = calculateFlightDiscount({
+        originalPrice: rawOriginalPrice,
+        isMock: false,
+        currency: searchParams.currency || 'USD',
+      });
+
+      const totalDurationMinutes = Number(itinerary.total_duration)
+        || supplierSegments.reduce((sum, segment) => sum + (Number(segment.duration) || 0), 0);
+      const duration = durationFromMinutes(totalDurationMinutes) || 'N/A';
       const airlineName = firstSeg.airline || 'Unknown Airline';
-      const flightNumber = segments.map(s => s.flight_number || '').filter(Boolean).join(', ') || 'N/A';
-      
-      // Format dates & times
-      const depDate = firstSeg.departure_airport?.time?.split(' ')[0] || searchParams.departure;
-      const depTime = firstSeg.departure_airport?.time?.split(' ')[1] || 'N/A';
-      const arrDate = lastSeg.arrival_airport?.time?.split(' ')[0] || searchParams.departure;
-      const arrTime = lastSeg.arrival_airport?.time?.split(' ')[1] || 'N/A';
+      const flightNumber = supplierSegments.map((segment) => segment.flight_number || '').filter(Boolean).join(', ');
+      const dep = splitSupplierDateTime(firstSeg.departure_airport?.time, searchParams.departure);
+      const arr = splitSupplierDateTime(lastSeg.arrival_airport?.time, searchParams.departure);
+
+      const segments = supplierSegments.map((segment, segmentIndex) => {
+        const segmentDep = splitSupplierDateTime(segment.departure_airport?.time, searchParams.departure);
+        const segmentArr = splitSupplierDateTime(segment.arrival_airport?.time, searchParams.departure);
+        const layoverAfter = layovers[segmentIndex] || null;
+
+        return {
+          departure: {
+            airport: this.extractAirportCode(segment.departure_airport?.id),
+            city: segment.departure_airport?.name || '',
+            time: segmentDep.time,
+            date: segmentDep.date,
+          },
+          arrival: {
+            airport: this.extractAirportCode(segment.arrival_airport?.id),
+            city: segment.arrival_airport?.name || '',
+            time: segmentArr.time,
+            date: segmentArr.date,
+          },
+          duration: durationFromMinutes(segment.duration),
+          airline: segment.airline || airlineName,
+          flightNumber: segment.flight_number || '',
+          class: segment.travel_class || firstSeg.travel_class || searchParams.travelClass || 'Economy',
+          aircraft: segment.airplane || '',
+          layoverAfter: segmentIndex < supplierSegments.length - 1 && layoverAfter
+            ? {
+                airport: layoverAfter.airportCode,
+                name: layoverAfter.airportName,
+                duration: durationFromMinutes(layoverAfter.duration) || String(layoverAfter.duration || ''),
+                durationMinutes: Number.isFinite(Number(layoverAfter.duration)) ? Number(layoverAfter.duration) : null,
+              }
+            : null,
+        };
+      }).filter((segment) => segment.departure.airport && segment.arrival.airport);
 
       return {
-        id: itinerary.booking_token || `serp-flight-${index}`,
+        id: itinerary.booking_token || itinerary.departure_token || `serp-flight-${index}`,
+        isMock: false,
+        departureToken: itinerary.departure_token || null,
+        bookingToken: itinerary.booking_token || null,
         price: {
-          total: websitePrice.toFixed(2),
-          originalApiPrice: originalPrice.toFixed(2),
-          currency: searchParams.currency || 'USD',
-          formatted: `$${websitePrice.toFixed(2)}`
+          total: priceCalc.finalPrice,
+          originalApiPrice: priceCalc.originalPrice,
+          discountPercent: priceCalc.discountPercent,
+          discountAmount: priceCalc.discountAmount,
+          finalPrice: priceCalc.finalPrice,
+          currency: priceCalc.currency,
+          formatted: priceCalc.formattedFinal,
+          formattedOriginal: priceCalc.formattedOriginal,
+          formattedDiscount: priceCalc.formattedDiscount,
+          priceScope: 'party_total',
+          passengerCount,
+          tripScope,
+          selectionStage,
         },
         airline: airlineName,
         airline_logo: firstSeg.airline_logo || 'https://www.gstatic.com/flights/airline_logos/70px/airline.png',
-        flightNumber: flightNumber,
+        flightNumber,
         departure: {
-          airport: firstSeg.departure_airport?.id || 'Origin',
-          city: firstSeg.departure_airport?.name || 'Origin City',
-          time: depTime,
-          date: depDate
+          airport: actualFrom,
+          city: firstSeg.departure_airport?.name || actualFrom,
+          time: dep.time || 'N/A',
+          date: dep.date || searchParams.departure,
         },
         arrival: {
-          airport: lastSeg.arrival_airport?.id || 'Destination',
-          city: lastSeg.arrival_airport?.name || 'Destination City',
-          time: arrTime,
-          date: arrDate
+          airport: actualTo,
+          city: lastSeg.arrival_airport?.name || actualTo,
+          time: arr.time || 'N/A',
+          date: arr.date || searchParams.departure,
         },
-        duration: durationStr,
-        stops: stopsCount,
-        layovers: layovers,
+        duration,
+        stops: Math.max(0, supplierSegments.length - 1),
+        layovers,
+        segments,
         class: firstSeg.travel_class || searchParams.travelClass || 'Economy',
-        aircraft: firstSeg.airplane || 'Boeing / Airbus',
+        aircraft: firstSeg.airplane || '',
         fareType: 'Standard Cabin Select',
         refundableStatus: itinerary.extensions?.join(', ').toLowerCase().includes('refundable') ? 'Refundable (Fees Apply)' : 'Non-Refundable',
-        baggageAllowance: itinerary.extensions?.join(', ').toLowerCase().includes('carry-on') ? 'Carry-on Included' : 'Standard Baggage Rules Apply'
+        baggageAllowance: itinerary.extensions?.join(', ').toLowerCase().includes('carry-on') ? 'Carry-on Included' : 'Standard Baggage Rules Apply',
       };
     }).filter(Boolean);
 
     return {
       flights: formattedFlights,
-      meta: { count: formattedFlights.length, isMock: false }
+      meta: { count: formattedFlights.length, isMock: false },
     };
   }
 
-  // Mock Flight offers fallback generator
   getMockFlightOffers(searchParams) {
     const fromCode = this.extractAirportCode(searchParams.from);
     const toCode = this.extractAirportCode(searchParams.to);
     const departureDate = searchParams.departure || new Date().toISOString().split('T')[0];
     const travelClass = searchParams.travelClass || 'Economy';
-    const passengers = parseInt(searchParams.adults || 1, 10) + parseInt(searchParams.children || 0, 10);
+    const passengerCount = Math.max(
+      1,
+      Number.parseInt(searchParams.adults || 1, 10)
+        + Number.parseInt(searchParams.children || 0, 10)
+        + Number.parseInt(searchParams.infants || 0, 10),
+    );
+    const tripScope = searchParams.tripScope || (searchParams.returnDate ? 'roundtrip_total' : 'oneway_total');
+    const selectionStage = searchParams.resultStage || (searchParams.returnDate ? 'outbound' : 'oneway');
+    const isRoundTripTotal = tripScope === 'roundtrip_total';
 
     const baseAirlines = [
       { name: 'Delta Air Lines', code: 'DL', basePrice: 280, logo: 'https://www.gstatic.com/flights/airline_logos/70px/DL.png' },
       { name: 'United Airlines', code: 'UA', basePrice: 250, logo: 'https://www.gstatic.com/flights/airline_logos/70px/UA.png' },
       { name: 'American Airlines', code: 'AA', basePrice: 260, logo: 'https://www.gstatic.com/flights/airline_logos/70px/AA.png' },
-      { name: 'JetBlue Airways', code: 'B6', basePrice: 220, logo: 'https://www.gstatic.com/flights/airline_logos/70px/B6.png' }
+      { name: 'JetBlue Airways', code: 'B6', basePrice: 220, logo: 'https://www.gstatic.com/flights/airline_logos/70px/B6.png' },
     ];
 
-    const flights = baseAirlines.map((airline, idx) => {
-      let multiplier = 1.0;
-      const c = travelClass.toLowerCase();
-      if (c.includes('business')) multiplier = 3.5;
-      else if (c.includes('premium')) multiplier = 1.8;
-      else if (c.includes('first')) multiplier = 8.0;
+    const flights = baseAirlines.map((airline, index) => {
+      let multiplier = 1;
+      const cabin = String(travelClass).toLowerCase();
+      if (cabin.includes('business')) multiplier = 3.5;
+      else if (cabin.includes('premium')) multiplier = 1.8;
+      else if (cabin.includes('first')) multiplier = 8;
 
-      const originalPrice = (airline.basePrice + (idx * 30)) * multiplier * passengers;
-      const websitePrice = Math.round(originalPrice * 0.90);
-
+      const tripMultiplier = isRoundTripTotal ? 2 : 1;
+      const rawPrice = (airline.basePrice + (index * 30)) * multiplier * passengerCount * tripMultiplier;
+      const priceCalc = calculateFlightDiscount({ originalPrice: rawPrice, isMock: true, currency: 'USD' });
       const depTimes = ['06:00', '08:45', '13:15', '17:30'];
       const arrTimes = ['09:15', '12:00', '16:30', '20:45'];
-      const durations = ['3h 15m', '3h 15m', '3h 15m', '3h 15m'];
-      const stops = idx === 0 ? 0 : 1;
+      const stops = index === 0 ? 0 : 1;
+      const departureToken = selectionStage === 'outbound' ? `mock-departure-${airline.code}-${index}` : null;
+      const bookingToken = selectionStage === 'return' ? `mock-booking-${airline.code}-${index}` : null;
 
       return {
-        id: `mock-flight-${airline.code}-${idx}`,
+        id: bookingToken || departureToken || `mock-flight-${airline.code}-${index}`,
+        isMock: true,
+        departureToken,
+        bookingToken,
         price: {
-          total: websitePrice.toFixed(2),
-          originalApiPrice: originalPrice.toFixed(2),
-          currency: 'USD',
-          formatted: `$${websitePrice.toFixed(2)}`
+          total: priceCalc.finalPrice,
+          originalApiPrice: priceCalc.originalPrice,
+          discountPercent: 0,
+          discountAmount: '0.00',
+          finalPrice: priceCalc.finalPrice,
+          currency: priceCalc.currency,
+          formatted: priceCalc.formattedFinal,
+          formattedOriginal: priceCalc.formattedOriginal,
+          formattedDiscount: '$0.00',
+          priceScope: 'party_total',
+          passengerCount,
+          tripScope,
+          selectionStage,
         },
         airline: airline.name,
         airline_logo: airline.logo,
-        flightNumber: `${airline.code}${100 + Math.floor(Math.random() * 899)}`,
-        departure: {
-          airport: fromCode,
-          city: searchParams.from.split('(')[0].trim(),
-          time: depTimes[idx % depTimes.length],
-          date: departureDate
-        },
-        arrival: {
-          airport: toCode,
-          city: searchParams.to.split('(')[0].trim(),
-          time: arrTimes[idx % arrTimes.length],
-          date: departureDate
-        },
-        duration: durations[idx % durations.length],
-        stops: stops,
-        layovers: stops > 0 ? [{ airportCode: 'ORD', airportName: 'Chicago O\'Hare International', duration: 45 }] : [],
+        flightNumber: `${airline.code}${100 + index}`,
+        departure: { airport: fromCode, city: fromCode, time: depTimes[index], date: departureDate },
+        arrival: { airport: toCode, city: toCode, time: arrTimes[index], date: departureDate },
+        duration: '3h 15m',
+        stops,
+        layovers: stops ? [{ airportCode: 'ORD', airportName: "Chicago O'Hare International", duration: 45 }] : [],
+        segments: [],
         class: travelClass,
-        aircraft: 'Boeing 737-800',
-        fareType: 'ESTIMATED FARE (Offline Fallback)',
-        refundableStatus: 'Offline Sample (Not Bookable)',
-        baggageAllowance: 'Offline Sample (Not Bookable)',
-        isMock: true
+        aircraft: index % 2 === 0 ? 'Boeing 737-800' : 'Airbus A320',
+        fareType: 'Standard Cabin',
+        refundableStatus: 'Unavailable Online / Call Desk',
+        baggageAllowance: '1 Carry-on Included',
       };
     });
 
-    return {
-      flights,
-      meta: { count: flights.length, isMock: true }
-    };
+    return { flights, meta: { count: flights.length, isMock: true } };
   }
 
-  // Fallback airport suggestions
   getMockAirportSuggestions(query) {
-    if (!query) {
-      return LOCAL_AIRPORTS.slice(0, 10);
-    }
-    return searchLocalAirports(query);
+    const q = String(query || '').toLowerCase();
+    return LOCAL_AIRPORTS.filter((item) =>
+      item.code.toLowerCase().includes(q)
+      || item.name.toLowerCase().includes(q)
+      || item.city.toLowerCase().includes(q));
   }
-}
-
-function parseDescription(description) {
-  if (!description) return { city: '', state: '', country: '' };
-  const parts = description.split(',').map(s => s.trim());
-  if (parts.length === 2) {
-    const isState = parts[1].length === 2 && parts[1] === parts[1].toUpperCase();
-    if (isState) {
-      return { city: parts[0], state: parts[1], country: 'United States' };
-    } else {
-      return { city: parts[0], state: '', country: parts[1] };
-    }
-  } else if (parts.length > 2) {
-    // Check if the last part is US and second last is state
-    const lastPart = parts[parts.length - 1];
-    const secondLast = parts[parts.length - 2];
-    if (lastPart === 'United States' || lastPart === 'USA') {
-      return { city: parts[0], state: secondLast, country: 'United States' };
-    }
-    return { city: parts[0], state: secondLast.length <= 3 ? secondLast : '', country: lastPart };
-  }
-  return { city: description, state: '', country: '' };
-}
-
-function searchLocalAirports(query) {
-  if (!query) return [];
-  const q = query.toLowerCase().trim();
-  return LOCAL_AIRPORTS.filter(airport => {
-    return (
-      airport.code.toLowerCase().includes(q) ||
-      airport.name.toLowerCase().includes(q) ||
-      airport.city.toLowerCase().includes(q) ||
-      (airport.state && airport.state.toLowerCase().includes(q)) ||
-      airport.country.toLowerCase().includes(q)
-    );
-  });
 }
 
 const LOCAL_AIRPORTS = [
-  { code: 'ATL', name: 'Hartsfield-Jackson Atlanta International Airport', city: 'Atlanta', state: 'GA', country: 'United States' },
-  { code: 'AUS', name: 'Austin-Bergstrom International Airport', city: 'Austin', state: 'TX', country: 'United States' },
-  { code: 'BWI', name: 'Baltimore/Washington International Airport', city: 'Baltimore', state: 'MD', country: 'United States' },
-  { code: 'BOS', name: 'Logan International Airport', city: 'Boston', state: 'MA', country: 'United States' },
-  { code: 'CLT', name: 'Charlotte Douglas International Airport', city: 'Charlotte', state: 'NC', country: 'United States' },
-  { code: 'ORD', name: 'O\'Hare International Airport', city: 'Chicago', state: 'IL', country: 'United States' },
-  { code: 'MDW', name: 'Midway International Airport', city: 'Chicago', state: 'IL', country: 'United States' },
-  { code: 'CVG', name: 'Cincinnati/Northern Kentucky International Airport', city: 'Cincinnati', state: 'OH', country: 'United States' },
-  { code: 'CLE', name: 'Cleveland Hopkins International Airport', city: 'Cleveland', state: 'OH', country: 'United States' },
-  { code: 'CMH', name: 'John Glenn Columbus International Airport', city: 'Columbus', state: 'OH', country: 'United States' },
-  { code: 'DFW', name: 'Dallas/Fort Worth International Airport', city: 'Dallas/Fort Worth', state: 'TX', country: 'United States' },
-  { code: 'DAL', name: 'Dallas Love Field', city: 'Dallas', state: 'TX', country: 'United States' },
-  { code: 'DEN', name: 'Denver International Airport', city: 'Denver', state: 'CO', country: 'United States' },
-  { code: 'DTW', name: 'Detroit Metro Wayne County Airport', city: 'Detroit', state: 'MI', country: 'United States' },
-  { code: 'FLL', name: 'Fort Lauderdale-Hollywood International Airport', city: 'Fort Lauderdale', state: 'FL', country: 'United States' },
-  { code: 'RSW', name: 'Southwest Florida International Airport', city: 'Fort Myers', state: 'FL', country: 'United States' },
-  { code: 'HNL', name: 'Daniel K. Inouye International Airport', city: 'Honolulu', state: 'HI', country: 'United States' },
-  { code: 'IAH', name: 'George Bush Intercontinental Airport', city: 'Houston', state: 'TX', country: 'United States' },
-  { code: 'HOU', name: 'William P. Hobby Airport', city: 'Houston', state: 'TX', country: 'United States' },
-  { code: 'IND', name: 'Indianapolis International Airport', city: 'Indianapolis', state: 'IN', country: 'United States' },
-  { code: 'JAX', name: 'Jacksonville International Airport', city: 'Jacksonville', state: 'FL', country: 'United States' },
-  { code: 'MCI', name: 'Kansas City International Airport', city: 'Kansas City', state: 'MO', country: 'United States' },
-  { code: 'LAS', name: 'Harry Reid International Airport', city: 'Las Vegas', state: 'NV', country: 'United States' },
-  { code: 'LAX', name: 'Los Angeles International Airport', city: 'Los Angeles', state: 'CA', country: 'United States' },
-  { code: 'SNA', name: 'John Wayne Airport', city: 'Orange County', state: 'CA', country: 'United States' },
-  { code: 'SDF', name: 'Louisville Muhammad Ali International Airport', city: 'Louisville', state: 'KY', country: 'United States' },
-  { code: 'MEM', name: 'Memphis International Airport', city: 'Memphis', state: 'TN', country: 'United States' },
-  { code: 'MIA', name: 'Miami International Airport', city: 'Miami', state: 'FL', country: 'United States' },
-  { code: 'MKE', name: 'Milwaukee Mitchell International Airport', city: 'Milwaukee', state: 'WI', country: 'United States' },
-  { code: 'MSP', name: 'Minneapolis-Saint Paul International Airport', city: 'Minneapolis/St. Paul', state: 'MN', country: 'United States' },
-  { code: 'BNA', name: 'Nashville International Airport', city: 'Nashville', state: 'TN', country: 'United States' },
-  { code: 'MSY', name: 'Louis Armstrong New Orleans International Airport', city: 'New Orleans', state: 'LA', country: 'United States' },
-  { code: 'JFK', name: 'John F. Kennedy International Airport', city: 'New York', state: 'NY', country: 'United States' },
+  { code: 'JFK', name: 'John F. Kennedy International', city: 'New York', state: 'NY', country: 'United States' },
   { code: 'LGA', name: 'LaGuardia Airport', city: 'New York', state: 'NY', country: 'United States' },
-  { code: 'EWR', name: 'Newark Liberty International Airport', city: 'Newark', state: 'NJ', country: 'United States' },
-  { code: 'OAK', name: 'San Francisco Bay Oakland International Airport', city: 'Oakland', state: 'CA', country: 'United States' },
-  { code: 'MCO', name: 'Orlando International Airport', city: 'Orlando', state: 'FL', country: 'United States' },
-  { code: 'PHL', name: 'Philadelphia International Airport', city: 'Philadelphia', state: 'PA', country: 'United States' },
-  { code: 'PHX', name: 'Phoenix Sky Harbor International Airport', city: 'Phoenix', state: 'AZ', country: 'United States' },
-  { code: 'PIT', name: 'Pittsburgh International Airport', city: 'Pittsburgh', state: 'PA', country: 'United States' },
-  { code: 'PDX', name: 'Portland International Airport', city: 'Portland', state: 'OR', country: 'United States' },
-  { code: 'RDU', name: 'Raleigh-Durham International Airport', city: 'Raleigh/Durham', state: 'NC', country: 'United States' },
-  { code: 'RIC', name: 'Richmond International Airport', city: 'Richmond', state: 'VA', country: 'United States' },
-  { code: 'SMF', name: 'Sacramento International Airport', city: 'Sacramento', state: 'CA', country: 'United States' },
-  { code: 'SLC', name: 'Salt Lake City International Airport', city: 'Salt Lake City', state: 'UT', country: 'United States' },
-  { code: 'SAN', name: 'San Diego International Airport', city: 'San Diego', state: 'CA', country: 'United States' },
-  { code: 'SFO', name: 'San Francisco International Airport', city: 'San Francisco', state: 'CA', country: 'United States' },
-  { code: 'SJC', name: 'San Jose Mineta International Airport', city: 'San Jose', state: 'CA', country: 'United States' },
-  { code: 'SEA', name: 'Seattle-Tacoma International Airport', city: 'Seattle', state: 'WA', country: 'United States' },
-  { code: 'STL', name: 'St. Louis Lambert International Airport', city: 'St. Louis', state: 'MO', country: 'United States' },
-  { code: 'TPA', name: 'Tampa International Airport', city: 'Tampa', state: 'FL', country: 'United States' },
-  { code: 'DCA', name: 'Ronald Reagan Washington National Airport', city: 'Washington', state: 'DC', country: 'United States' },
-  { code: 'IAD', name: 'Washington Dulles International Airport', city: 'Washington', state: 'DC', country: 'United States' },
-  { code: 'YYZ', name: 'Toronto Pearson International Airport', city: 'Toronto', state: 'ON', country: 'Canada' },
-  { code: 'YVR', name: 'Vancouver International Airport', city: 'Vancouver', state: 'BC', country: 'Canada' },
-  { code: 'YUL', name: 'Montréal-Trudeau International Airport', city: 'Montreal', state: 'QC', country: 'Canada' },
-  { code: 'YYC', name: 'Calgary International Airport', city: 'Calgary', state: 'AB', country: 'Canada' },
-  { code: 'MEX', name: 'Aeropuerto Internacional Benito Juárez', city: 'Mexico City', state: '', country: 'Mexico' },
-  { code: 'CUN', name: 'Cancún International Airport', city: 'Cancún', state: '', country: 'Mexico' },
-  { code: 'GDL', name: 'Miguel Hidalgo y Costilla Guadalajara International Airport', city: 'Guadalajara', state: '', country: 'Mexico' },
-  { code: 'AMS', name: 'Amsterdam Airport Schiphol', city: 'Amsterdam', state: '', country: 'Netherlands' },
-  { code: 'ATH', name: 'Athens International Airport', city: 'Athens', state: '', country: 'Greece' },
-  { code: 'BCN', name: 'Josep Tarradellas Barcelona-El Prat Airport', city: 'Barcelona', state: '', country: 'Spain' },
-  { code: 'BER', name: 'Berlin Brandenburg Airport', city: 'Berlin', state: '', country: 'Germany' },
-  { code: 'BRU', name: 'Brussels Airport', city: 'Brussels', state: '', country: 'Belgium' },
-  { code: 'CDG', name: 'Charles de Gaulle Airport', city: 'Paris', state: '', country: 'France' },
-  { code: 'ORY', name: 'Paris Orly Airport', city: 'Paris', state: '', country: 'France' },
-  { code: 'DUB', name: 'Dublin Airport', city: 'Dublin', state: '', country: 'Ireland' },
-  { code: 'EDI', name: 'Edinburgh Airport', city: 'Edinburgh', state: '', country: 'United Kingdom' },
-  { code: 'FRA', name: 'Frankfurt Airport', city: 'Frankfurt', state: '', country: 'Germany' },
-  { code: 'GVA', name: 'Geneva Airport', city: 'Geneva', state: '', country: 'Switzerland' },
-  { code: 'IST', name: 'Istanbul Airport', city: 'Istanbul', state: '', country: 'Turkey' },
-  { code: 'LCY', name: 'London City Airport', city: 'London', state: '', country: 'United Kingdom' },
-  { code: 'LGW', name: 'London Gatwick Airport', city: 'London', state: '', country: 'United Kingdom' },
-  { code: 'LHR', name: 'London Heathrow Airport', city: 'London', state: '', country: 'United Kingdom' },
-  { code: 'STN', name: 'London Stansted Airport', city: 'London', state: '', country: 'United Kingdom' },
-  { code: 'MAD', name: 'Adolfo Suárez Madrid-Barajas Airport', city: 'Madrid', state: '', country: 'Spain' },
-  { code: 'MUC', name: 'Munich Airport', city: 'Munich', state: '', country: 'Germany' },
-  { code: 'FCO', name: 'Rome Fiumicino Airport', city: 'Rome', state: '', country: 'Italy' },
-  { code: 'ZRH', name: 'Zurich Airport', city: 'Zurich', state: '', country: 'Switzerland' },
-  { code: 'VIE', name: 'Vienna International Airport', city: 'Vienna', state: '', country: 'Austria' },
-  { code: 'WAW', name: 'Warsaw Chopin Airport', city: 'Warsaw', state: '', country: 'Poland' },
-  { code: 'BKK', name: 'Suvarnabhumi Airport', city: 'Bangkok', state: '', country: 'Thailand' },
-  { code: 'PEK', name: 'Beijing Capital International Airport', city: 'Beijing', state: '', country: 'China' },
-  { code: 'PVG', name: 'Shanghai Pudong International Airport', city: 'Shanghai', state: '', country: 'China' },
-  { code: 'HKG', name: 'Hong Kong International Airport', city: 'Hong Kong', state: '', country: 'Hong Kong' },
-  { code: 'DEL', name: 'Indira Gandhi International Airport', city: 'New Delhi', state: '', country: 'India' },
-  { code: 'BOM', name: 'Chhatrapati Shivaji Maharaj International Airport', city: 'Mumbai', state: '', country: 'India' },
-  { code: 'CGK', name: 'Soekarno-Hatta International Airport', city: 'Jakarta', state: '', country: 'Indonesia' },
-  { code: 'KUL', name: 'Kuala Lumpur International Airport', city: 'Kuala Lumpur', state: '', country: 'Malaysia' },
-  { code: 'MNL', name: 'Ninoy Aquino International Airport', city: 'Manila', state: '', country: 'Philippines' },
-  { code: 'ICN', name: 'Seoul Incheon International Airport', city: 'Seoul', state: '', country: 'South Korea' },
-  { code: 'SIN', name: 'Singapore Changi Airport', city: 'Singapore', state: '', country: 'Singapore' },
-  { code: 'TPE', name: 'Taiwan Taoyuan International Airport', city: 'Taipei', state: '', country: 'Taiwan' },
-  { code: 'NRT', name: 'Narita International Airport', city: 'Tokyo', state: '', country: 'Japan' },
-  { code: 'HND', name: 'Haneda Airport', city: 'Tokyo', state: '', country: 'Japan' },
-  { code: 'DXB', name: 'Dubai International Airport', city: 'Dubai', state: '', country: 'United Arab Emirates' },
-  { code: 'DOH', name: 'Hamad International Airport', city: 'Doha', state: '', country: 'Qatar' },
-  { code: 'AUH', name: 'Zayed International Airport', city: 'Abu Dhabi', state: '', country: 'United Arab Emirates' },
-  { code: 'TLV', name: 'Ben Gurion Airport', city: 'Tel Aviv', state: '', country: 'Israel' },
-  { code: 'RUH', name: 'King Khalid International Airport', city: 'Riyadh', state: '', country: 'Saudi Arabia' },
-  { code: 'JED', name: 'King Abdulaziz International Airport', city: 'Jeddah', state: '', country: 'Saudi Arabia' },
-  { code: 'CAI', name: 'Cairo International Airport', city: 'Cairo', state: '', country: 'Egypt' },
-  { code: 'CPT', name: 'Cape Town International Airport', city: 'Cape Town', state: '', country: 'South Africa' },
-  { code: 'ADD', name: 'Addis Ababa Bole International Airport', city: 'Addis Ababa', state: '', country: 'Ethiopia' },
-  { code: 'NBO', name: 'Jomo Kenyatta International Airport', city: 'Nairobi', state: '', country: 'Kenya' },
-  { code: 'LOS', name: 'Murtala Muhammed International Airport', city: 'Lagos', state: '', country: 'Nigeria' },
-  { code: 'JNB', name: 'O. R. Tambo International Airport', city: 'Johannesburg', state: '', country: 'South Africa' },
-  { code: 'CMN', name: 'Mohammed V International Airport', city: 'Casablanca', state: '', country: 'Morocco' },
-  { code: 'EZE', name: 'Ministro Pistarini International Airport', city: 'Buenos Aires', state: '', country: 'Argentina' },
-  { code: 'GRU', name: 'São Paulo/Guarulhos International Airport', city: 'São Paulo', state: '', country: 'Brazil' },
-  { code: 'GIG', name: 'Rio de Janeiro/Galeão International Airport', city: 'Rio de Janeiro', state: '', country: 'Brazil' },
-  { code: 'SCL', name: 'Arturo Merino Benítez International Airport', city: 'Santiago', state: '', country: 'Chile' },
-  { code: 'BOG', name: 'El Dorado International Airport', city: 'Bogotá', state: '', country: 'Colombia' },
-  { code: 'LIM', name: 'Jorge Chávez International Airport', city: 'Lima', state: '', country: 'Peru' },
-  { code: 'SJU', name: 'Luis Muñoz Marín International Airport', city: 'San Juan', state: '', country: 'Puerto Rico' },
-  { code: 'NAS', name: 'Lynden Pindling International Airport', city: 'Nassau', state: '', country: 'Bahamas' },
-  { code: 'MBJ', name: 'Sangster International Airport', city: 'Montego Bay', state: '', country: 'Jamaica' },
-  { code: 'PTY', name: 'Tocumen International Airport', city: 'Panama City', state: '', country: 'Panama' },
-  { code: 'SYD', name: 'Sydney Kingsford Smith Airport', city: 'Sydney', state: '', country: 'Australia' },
-  { code: 'MEL', name: 'Melbourne Airport', city: 'Melbourne', state: '', country: 'Australia' },
-  { code: 'BNE', name: 'Brisbane Airport', city: 'Brisbane', state: '', country: 'Australia' },
-  { code: 'AKL', name: 'Auckland Airport', city: 'Auckland', state: '', country: 'New Zealand' },
-  { code: 'PPT', name: 'Fa\'a\'ā International Airport', city: 'Papeete', state: '', country: 'French Polynesia' }
+  { code: 'EWR', name: 'Newark Liberty International', city: 'Newark', state: 'NJ', country: 'United States' },
+  { code: 'LAX', name: 'Los Angeles International', city: 'Los Angeles', state: 'CA', country: 'United States' },
+  { code: 'SFO', name: 'San Francisco International', city: 'San Francisco', state: 'CA', country: 'United States' },
+  { code: 'MIA', name: 'Miami International', city: 'Miami', state: 'FL', country: 'United States' },
+  { code: 'SEA', name: 'Seattle-Tacoma International', city: 'Seattle', state: 'WA', country: 'United States' },
+  { code: 'ORD', name: "Chicago O'Hare International", city: 'Chicago', state: 'IL', country: 'United States' },
+  { code: 'BOS', name: 'Boston Logan International', city: 'Boston', state: 'MA', country: 'United States' },
+  { code: 'IAD', name: 'Washington Dulles International', city: 'Washington', state: 'DC', country: 'United States' },
+  { code: 'DCA', name: 'Ronald Reagan Washington National', city: 'Washington', state: 'DC', country: 'United States' },
+  { code: 'DFW', name: 'Dallas/Fort Worth International', city: 'Dallas', state: 'TX', country: 'United States' },
+  { code: 'ATL', name: 'Hartsfield-Jackson Atlanta International', city: 'Atlanta', state: 'GA', country: 'United States' },
 ];
 
-export default new SerpApiService();
+function parseDescription(description) {
+  if (!description) return { city: '', state: '', country: 'United States' };
+  const parts = description.split(',').map((part) => part.trim());
+  if (parts.length >= 2) return { city: parts[0], state: parts[1], country: parts[2] || 'United States' };
+  return { city: description, state: '', country: 'United States' };
+}
+
+export const serpapiService = new SerpApiService();
+export default serpapiService;

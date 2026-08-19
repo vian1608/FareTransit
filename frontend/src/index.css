@@ -1,2 +1,41 @@
-/* Import styles from original CSS file */
+/* Use the same clean modern UI typography across the entire site. */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+/* Import legacy styles first, then normalize them through the shared design system. */
 @import url('./shared/styles/styles.css');
+@import url('./shared/styles/TfsDesignSystem.css');
+@import url('./shared/styles/MobileFlightSearchOptimization.css');
+@import url('./shared/styles/MobilePassengerSelector.css');
+@import url('./shared/styles/GlobalSliderControls.css');
+@import url('./shared/styles/HotelTheme.css');
+@import url('./shared/styles/HeroImageClarity.css');
+@import url('./shared/styles/CarTheme.css');
+@import url('./shared/components/ProductSearchCard.css');
+@import url('./shared/styles/FlightSearchCompact.css');
+@import url('./shared/components/SupportCallCTA.css');
+
+:root {
+  --tfs-font-ui: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+html,
+body,
+#root {
+  font-family: var(--tfs-font-ui);
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+/* Keep every phone/call icon across the public site facing the intended direction.
+   This applies to Call Now buttons, phone CTAs, mobile header call actions, and
+   decorative phone icons without having to patch each page independently. */
+i[class*="fa-phone"] {
+  display: inline-block;
+  transform: scaleX(-1) !important;
+  transform-origin: center;
+}

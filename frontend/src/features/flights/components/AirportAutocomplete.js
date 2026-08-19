@@ -1,66 +1,122 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { airportAPI } from '../../../shared/api/api';
+import { buildAirportSelection, normalizeIataCode } from '../utils/airportIdentity';
 import './AirportAutocomplete.css';
 
+export function formatAirportLabel(airport) {
+  if (!airport) return '';
+
+  if (typeof airport === 'string') {
+    const text = airport.trim();
+    const code = normalizeIataCode(text);
+    const clean = text.replace(/\s*\([A-Z]{3}\)\s*$/i, '').trim();
+    return clean && code ? `${clean} (${code})` : (clean || code || text);
+  }
+
+  const code = normalizeIataCode(airport);
+  let city = String(airport.city || airport.municipality || airport.name || '').trim();
+  if (code) {
+    city = city.replace(/\([^)]*\)/g, '').replace(new RegExp(`\\b${code}\\b`, 'gi'), '').trim();
+  }
+
+  if (city && code) return `${city} (${code})`;
+  return city || code || '';
+}
+
+export function isResolvedAirport(value) {
+  return Boolean(normalizeIataCode(value)) && value?.unresolved !== true;
+}
+
 const LOCAL_FALLBACK_AIRPORTS = [
-  { code: 'ATL', name: 'Hartsfield-Jackson Atlanta International Airport', city: 'Atlanta', state: 'GA', country: 'United States' },
-  { code: 'AUS', name: 'Austin-Bergstrom International Airport', city: 'Austin', state: 'TX', country: 'United States' },
-  { code: 'BWI', name: 'Baltimore/Washington International Airport', city: 'Baltimore', state: 'MD', country: 'United States' },
-  { code: 'BOS', name: 'Logan International Airport', city: 'Boston', state: 'MA', country: 'United States' },
-  { code: 'CLT', name: 'Charlotte Douglas International Airport', city: 'Charlotte', state: 'NC', country: 'United States' },
-  { code: 'ORD', name: 'O\'Hare International Airport', city: 'Chicago', state: 'IL', country: 'United States' },
-  { code: 'MDW', name: 'Midway International Airport', city: 'Chicago', state: 'IL', country: 'United States' },
-  { code: 'CVG', name: 'Cincinnati/Northern Kentucky International Airport', city: 'Cincinnati', state: 'OH', country: 'United States' },
-  { code: 'CLE', name: 'Cleveland Hopkins International Airport', city: 'Cleveland', state: 'OH', country: 'United States' },
-  { code: 'CMH', name: 'John Glenn Columbus International Airport', city: 'Columbus', state: 'OH', country: 'United States' },
-  { code: 'DFW', name: 'Dallas/Fort Worth International Airport', city: 'Dallas/Fort Worth', state: 'TX', country: 'United States' },
-  { code: 'DAL', name: 'Dallas Love Field', city: 'Dallas', state: 'TX', country: 'United States' },
-  { code: 'DEN', name: 'Denver International Airport', city: 'Denver', state: 'CO', country: 'United States' },
-  { code: 'DTW', name: 'Detroit Metro Wayne County Airport', city: 'Detroit', state: 'MI', country: 'United States' },
-  { code: 'FLL', name: 'Fort Lauderdale-Hollywood International Airport', city: 'Fort Lauderdale', state: 'FL', country: 'United States' },
-  { code: 'RSW', name: 'Southwest Florida International Airport', city: 'Fort Myers', state: 'FL', country: 'United States' },
-  { code: 'HNL', name: 'Daniel K. Inouye International Airport', city: 'Honolulu', state: 'HI', country: 'United States' },
-  { code: 'IAH', name: 'George Bush Intercontinental Airport', city: 'Houston', state: 'TX', country: 'United States' },
-  { code: 'HOU', name: 'William P. Hobby Airport', city: 'Houston', state: 'TX', country: 'United States' },
-  { code: 'IND', name: 'Indianapolis International Airport', city: 'Indianapolis', state: 'IN', country: 'United States' },
-  { code: 'JAX', name: 'Jacksonville International Airport', city: 'Jacksonville', state: 'FL', country: 'United States' },
-  { code: 'MCI', name: 'Kansas City International Airport', city: 'Kansas City', state: 'MO', country: 'United States' },
-  { code: 'LAS', name: 'Harry Reid International Airport', city: 'Las Vegas', state: 'NV', country: 'United States' },
-  { code: 'LAX', name: 'Los Angeles International Airport', city: 'Los Angeles', state: 'CA', country: 'United States' },
-  { code: 'SNA', name: 'John Wayne Airport', city: 'Orange County', state: 'CA', country: 'United States' },
-  { code: 'SDF', name: 'Louisville Muhammad Ali International Airport', city: 'Louisville', state: 'KY', country: 'United States' },
-  { code: 'MEM', name: 'Memphis International Airport', city: 'Memphis', state: 'TN', country: 'United States' },
-  { code: 'MIA', name: 'Miami International Airport', city: 'Miami', state: 'FL', country: 'United States' },
-  { code: 'MKE', name: 'Milwaukee Mitchell International Airport', city: 'Milwaukee', state: 'WI', country: 'United States' },
-  { code: 'MSP', name: 'Minneapolis-Saint Paul International Airport', city: 'Minneapolis/St. Paul', state: 'MN', country: 'United States' },
-  { code: 'BNA', name: 'Nashville International Airport', city: 'Nashville', state: 'TN', country: 'United States' },
-  { code: 'MSY', name: 'Louis Armstrong New Orleans International Airport', city: 'New Orleans', state: 'LA', country: 'United States' },
   { code: 'JFK', name: 'John F. Kennedy International Airport', city: 'New York', state: 'NY', country: 'United States' },
   { code: 'LGA', name: 'LaGuardia Airport', city: 'New York', state: 'NY', country: 'United States' },
   { code: 'EWR', name: 'Newark Liberty International Airport', city: 'Newark', state: 'NJ', country: 'United States' },
-  { code: 'OAK', name: 'San Francisco Bay Oakland International Airport', city: 'Oakland', state: 'CA', country: 'United States' },
-  { code: 'MCO', name: 'Orlando International Airport', city: 'Orlando', state: 'FL', country: 'United States' },
-  { code: 'PHL', name: 'Philadelphia International Airport', city: 'Philadelphia', state: 'PA', country: 'United States' },
-  { code: 'PHX', name: 'Phoenix Sky Harbor International Airport', city: 'Phoenix', state: 'AZ', country: 'United States' },
-  { code: 'PIT', name: 'Pittsburgh International Airport', city: 'Pittsburgh', state: 'PA', country: 'United States' },
-  { code: 'PDX', name: 'Portland International Airport', city: 'Portland', state: 'OR', country: 'United States' },
-  { code: 'RDU', name: 'Raleigh-Durham International Airport', city: 'Raleigh/Durham', state: 'NC', country: 'United States' },
-  { code: 'RIC', name: 'Richmond International Airport', city: 'Richmond', state: 'VA', country: 'United States' },
-  { code: 'SMF', name: 'Sacramento International Airport', city: 'Sacramento', state: 'CA', country: 'United States' },
-  { code: 'SLC', name: 'Salt Lake City International Airport', city: 'Salt Lake City', state: 'UT', country: 'United States' },
-  { code: 'SAN', name: 'San Diego International Airport', city: 'San Diego', state: 'CA', country: 'United States' },
-  { code: 'SFO', name: 'San Francisco International Airport', city: 'San Francisco', state: 'CA', country: 'United States' },
-  { code: 'SJC', name: 'San Jose Mineta International Airport', city: 'San Jose', state: 'CA', country: 'United States' },
-  { code: 'SEA', name: 'Seattle-Tacoma International Airport', city: 'Seattle', state: 'WA', country: 'United States' },
-  { code: 'STL', name: 'St. Louis Lambert International Airport', city: 'St. Louis', state: 'MO', country: 'United States' },
+  { code: 'GEG', name: 'Spokane International Airport', city: 'Spokane', state: 'WA', country: 'United States' },
   { code: 'TPA', name: 'Tampa International Airport', city: 'Tampa', state: 'FL', country: 'United States' },
-  { code: 'DCA', name: 'Ronald Reagan Washington National Airport', city: 'Washington', state: 'DC', country: 'United States' },
+  { code: 'LAX', name: 'Los Angeles International Airport', city: 'Los Angeles', state: 'CA', country: 'United States' },
+  { code: 'BUR', name: 'Hollywood Burbank Airport', city: 'Los Angeles', state: 'CA', country: 'United States' },
+  { code: 'SNA', name: 'John Wayne Airport', city: 'Orange County', state: 'CA', country: 'United States' },
+  { code: 'SFO', name: 'San Francisco International Airport', city: 'San Francisco', state: 'CA', country: 'United States' },
+  { code: 'SEA', name: 'Seattle-Tacoma International Airport', city: 'Seattle', state: 'WA', country: 'United States' },
+  { code: 'ORD', name: "O'Hare International Airport", city: 'Chicago', state: 'IL', country: 'United States' },
+  { code: 'MDW', name: 'Chicago Midway International Airport', city: 'Chicago', state: 'IL', country: 'United States' },
+  { code: 'ATL', name: 'Hartsfield-Jackson Atlanta International Airport', city: 'Atlanta', state: 'GA', country: 'United States' },
+  { code: 'MIA', name: 'Miami International Airport', city: 'Miami', state: 'FL', country: 'United States' },
+  { code: 'FLL', name: 'Fort Lauderdale-Hollywood International Airport', city: 'Fort Lauderdale', state: 'FL', country: 'United States' },
+  { code: 'MCO', name: 'Orlando International Airport', city: 'Orlando', state: 'FL', country: 'United States' },
+  { code: 'DFW', name: 'Dallas/Fort Worth International Airport', city: 'Dallas/Fort Worth', state: 'TX', country: 'United States' },
+  { code: 'DAL', name: 'Dallas Love Field', city: 'Dallas', state: 'TX', country: 'United States' },
+  { code: 'DEN', name: 'Denver International Airport', city: 'Denver', state: 'CO', country: 'United States' },
+  { code: 'BOS', name: 'Logan International Airport', city: 'Boston', state: 'MA', country: 'United States' },
   { code: 'IAD', name: 'Washington Dulles International Airport', city: 'Washington', state: 'DC', country: 'United States' },
-  { code: 'YYZ', name: 'Toronto Pearson International Airport', city: 'Toronto', state: 'ON', country: 'Canada' },
-  { code: 'YVR', name: 'Vancouver International Airport', city: 'Vancouver', state: 'BC', country: 'Canada' },
-  { code: 'YUL', name: 'Montréal-Trudeau International Airport', city: 'Montreal', state: 'QC', country: 'Canada' },
-  { code: 'YYC', name: 'Calgary International Airport', city: 'Calgary', state: 'AB', country: 'Canada' }
+  { code: 'DCA', name: 'Ronald Reagan Washington National Airport', city: 'Washington', state: 'DC', country: 'United States' },
+  { code: 'BWI', name: 'Baltimore/Washington International Thurgood Marshall Airport', city: 'Baltimore/Washington', state: 'MD', country: 'United States' },
+  { code: 'IAH', name: 'George Bush Intercontinental Airport', city: 'Houston', state: 'TX', country: 'United States' },
+  { code: 'HOU', name: 'William P. Hobby Airport', city: 'Houston', state: 'TX', country: 'United States' },
+  { code: 'LHR', name: 'London Heathrow Airport', city: 'London', country: 'United Kingdom' },
+  { code: 'LGW', name: 'London Gatwick Airport', city: 'London', country: 'United Kingdom' },
+  { code: 'LCY', name: 'London City Airport', city: 'London', country: 'United Kingdom' },
+  { code: 'STN', name: 'London Stansted Airport', city: 'London', country: 'United Kingdom' },
+  { code: 'CDG', name: 'Paris Charles de Gaulle Airport', city: 'Paris', country: 'France' },
+  { code: 'ORY', name: 'Paris Orly Airport', city: 'Paris', country: 'France' },
+  { code: 'FCO', name: 'Leonardo da Vinci–Fiumicino Airport', city: 'Rome', country: 'Italy' },
+  { code: 'CIA', name: 'Giovan Battista Pastine International Airport', city: 'Rome', country: 'Italy' },
+  { code: 'MXP', name: 'Milan Malpensa Airport', city: 'Milan', country: 'Italy' },
+  { code: 'LIN', name: 'Milan Linate Airport', city: 'Milan', country: 'Italy' },
+  { code: 'DXB', name: 'Dubai International Airport', city: 'Dubai', country: 'United Arab Emirates' },
+  { code: 'HND', name: 'Tokyo Haneda Airport', city: 'Tokyo', country: 'Japan' },
+  { code: 'NRT', name: 'Tokyo Narita Airport', city: 'Tokyo', country: 'Japan' },
+  { code: 'SYD', name: 'Sydney Kingsford Smith Airport', city: 'Sydney', country: 'Australia' },
 ];
+
+function scoreAirportMatch(airport, queryStr) {
+  const q = String(queryStr || '').trim().toLowerCase();
+  if (!q) return 0;
+  const code = normalizeIataCode(airport);
+  if (!code) return 0;
+
+  const city = String(airport.city || airport.municipality || '').toLowerCase();
+  const name = String(airport.name || '').toLowerCase();
+  const state = String(airport.state || '').toLowerCase();
+  const country = String(airport.country || '').toLowerCase();
+  const qUpper = q.toUpperCase();
+
+  if (code === qUpper) return 12000;
+  if (code.startsWith(qUpper)) return 9500;
+  if (city === q) return 8000;
+  if (city.startsWith(q)) return 6500;
+  if (city.includes(q)) return 5200;
+  if (name === q) return 4700;
+  if (name.startsWith(q)) return 4000;
+  if (name.includes(q)) return 3000;
+  if (state.includes(q)) return 1000;
+  if (country.includes(q)) return 700;
+  return 0;
+}
+
+function rankAirportSuggestions(airports, queryStr) {
+  return (Array.isArray(airports) ? airports : [])
+    .filter((airport) => normalizeIataCode(airport))
+    .map((airport) => ({ airport, score: scoreAirportMatch(airport, queryStr) }))
+    .filter(({ score }) => score > 0)
+    .sort((a, b) => b.score - a.score || normalizeIataCode(a.airport).localeCompare(normalizeIataCode(b.airport)))
+    .map(({ airport }) => airport);
+}
+
+export function groupAirportSuggestionsByCity(airports = []) {
+  const groups = new Map();
+  airports.forEach((airport) => {
+    const code = normalizeIataCode(airport);
+    if (!code) return;
+    const city = String(airport.city || airport.municipality || airport.name || code).trim();
+    const country = String(airport.country || '').trim();
+    const state = String(airport.state || '').trim();
+    const key = `${city.toLowerCase()}|${state.toLowerCase()}|${country.toLowerCase()}`;
+    if (!groups.has(key)) groups.set(key, { city, state, country, airports: [] });
+    groups.get(key).airports.push({ ...airport, code });
+  });
+  return [...groups.values()];
+}
 
 function AirportAutocomplete({ label, id, value, onChange, placeholder, excludeCode, required = false }) {
   const [query, setQuery] = useState('');
@@ -71,221 +127,236 @@ function AirportAutocomplete({ label, id, value, onChange, placeholder, excludeC
   const [activeIndex, setActiveIndex] = useState(-1);
   const containerRef = useRef(null);
   const debounceTimer = useRef(null);
+  const requestSerial = useRef(0);
 
-  // Sync display query with external value (e.g. from parent/sessionStorage)
   useEffect(() => {
-    if (value) {
-      setQuery(value);
-    } else {
-      setQuery('');
-    }
+    setQuery(value ? formatAirportLabel(value) : '');
   }, [value]);
 
-  // Handle click outside to close suggestions
   useEffect(() => {
-    function handleClickOutside(event) {
-      if (containerRef.current && !containerRef.current.contains(event.target)) {
-        setShowSuggestions(false);
-      }
-    }
+    const handleClickOutside = (event) => {
+      if (containerRef.current && !containerRef.current.contains(event.target)) setShowSuggestions(false);
+    };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const searchLocalFallback = (searchVal) => {
-    const q = searchVal.toLowerCase().trim();
-    if (!q) return [];
-    return LOCAL_FALLBACK_AIRPORTS.filter(airport => 
-      airport.code.toLowerCase().includes(q) ||
-      airport.name.toLowerCase().includes(q) ||
-      airport.city.toLowerCase().includes(q) ||
-      airport.country.toLowerCase().includes(q)
-    );
-  };
+  useEffect(() => () => {
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    requestSerial.current += 1;
+  }, []);
 
-  // Fetch suggestions with debounce
-  const fetchSuggestions = (searchVal) => {
-    const trimmedVal = (searchVal || '').trim();
-    if (!trimmedVal || trimmedVal.length < 2) {
+  // The homepage used to keep an old IATA validation warning visible even after
+  // both airport fields had been corrected. Keep that message in sync with the
+  // actual resolved field state without suppressing any other form error.
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      const form = containerRef.current?.closest('form');
+      if (!form) return;
+      const airportFields = [...form.querySelectorAll('.airport-autocomplete-container[data-airport-resolved]')];
+      if (airportFields.length < 2) return;
+      const allResolved = airportFields.every((field) => field.dataset.airportResolved === 'true');
+      form.querySelectorAll('.inquiry-form__message--error').forEach((node) => {
+        if (/valid 3-letter IATA airport codes/i.test(node.textContent || '')) {
+          node.hidden = allResolved;
+        }
+      });
+    });
+    return () => cancelAnimationFrame(frame);
+  });
+
+  const excluded = normalizeIataCode(excludeCode);
+  const groupedSuggestions = useMemo(() => groupAirportSuggestionsByCity(suggestions), [suggestions]);
+  const flatSelectableSuggestions = useMemo(
+    () => groupedSuggestions.flatMap((group) => group.airports),
+    [groupedSuggestions]
+  );
+
+  const fetchSuggestions = async (searchVal) => {
+    const trimmed = String(searchVal || '').trim();
+    if (trimmed.length < 2) {
       setSuggestions([]);
       setErrorMsg('');
       return;
     }
 
+    const serial = ++requestSerial.current;
     setLoading(true);
     setErrorMsg('');
-    
-    airportAPI.search(trimmedVal)
-      .then(response => {
-        if (response && response.success) {
-          const list = response.data || [];
-          const filtered = list.filter(item => item.code !== excludeCode);
-          setSuggestions(filtered);
-          setErrorMsg('');
-        } else {
-          // If response not success, trigger catch block
-          throw new Error('API returned unsuccessful response');
-        }
-      })
-      .catch(err => {
-        if (process.env.NODE_ENV === 'development') {
-          console.error('Failed to fetch airport suggestions from API:', err);
-        }
-        
-        // Use local fallback
-        const localList = searchLocalFallback(trimmedVal);
-        const filteredLocal = localList.filter(item => item.code !== excludeCode);
-        setSuggestions(filteredLocal);
 
-        // Show a helpful warning/error message without breaking the dropdown
-        setErrorMsg('Unable to reach flight servers. Using offline fallback.');
-      })
-      .finally(() => {
+    try {
+      const response = await airportAPI.search(trimmed);
+      if (serial !== requestSerial.current) return;
+
+      const apiList = response?.success && Array.isArray(response.data) ? response.data : [];
+      const validApiList = apiList.filter((item) => normalizeIataCode(item) && normalizeIataCode(item) !== excluded);
+      const localList = LOCAL_FALLBACK_AIRPORTS.filter((item) => normalizeIataCode(item) !== excluded);
+      const merged = new Map();
+
+      [...localList, ...validApiList].forEach((item) => {
+        const code = normalizeIataCode(item);
+        if (!code) return;
+        const existing = merged.get(code) || {};
+        merged.set(code, { ...existing, ...item, code });
+      });
+
+      const ranked = rankAirportSuggestions([...merged.values()], trimmed).slice(0, 12);
+      setSuggestions(ranked);
+      if (ranked.length === 0 && !normalizeIataCode(trimmed)) {
+        setErrorMsg('No matching airport found. Try a city, airport name, or exact 3-letter airport code.');
+      }
+    } catch {
+      if (serial !== requestSerial.current) return;
+      const ranked = rankAirportSuggestions(LOCAL_FALLBACK_AIRPORTS, trimmed)
+        .filter((item) => normalizeIataCode(item) !== excluded)
+        .slice(0, 12);
+      setSuggestions(ranked);
+      if (ranked.length === 0 && !normalizeIataCode(trimmed)) {
+        setErrorMsg('Airport suggestions are temporarily unavailable. Try an exact 3-letter airport code.');
+      }
+    } finally {
+      if (serial === requestSerial.current) {
         setLoading(false);
         setActiveIndex(-1);
-      });
+      }
+    }
   };
 
-  const handleInputChange = (e) => {
-    const val = e.target.value;
+  const emitSelection = (selection) => {
+    if (typeof onChange === 'function') onChange(selection, selection);
+  };
+
+  const handleInputChange = (event) => {
+    const val = event.target.value;
     setQuery(val);
-    onChange(val, null); // Clear parent object representation until fully selected
     setShowSuggestions(true);
+    setErrorMsg('');
 
-    if (debounceTimer.current) {
-      clearTimeout(debounceTimer.current);
-    }
+    const exactLocal = LOCAL_FALLBACK_AIRPORTS.find((airport) => normalizeIataCode(airport) === val.trim().toUpperCase());
+    const nextSelection = buildAirportSelection(val, exactLocal || null);
+    emitSelection(nextSelection);
 
-    debounceTimer.current = setTimeout(() => {
-      fetchSuggestions(val);
-    }, 250);
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => fetchSuggestions(val), 220);
   };
 
   const handleSelectSuggestion = (suggestion) => {
-    const selectedText = `${suggestion.city} (${suggestion.code})`;
-    setQuery(selectedText);
-    onChange(selectedText, suggestion);
+    const code = normalizeIataCode(suggestion);
+    if (!code) return;
+    const canonical = {
+      ...suggestion,
+      code,
+      city: suggestion.city || suggestion.municipality || suggestion.name || code,
+      name: suggestion.name || suggestion.city || suggestion.municipality || code,
+      unresolved: false,
+    };
+    setQuery(formatAirportLabel(canonical));
+    emitSelection(canonical);
+    setSuggestions([]);
     setShowSuggestions(false);
     setErrorMsg('');
+    setActiveIndex(-1);
   };
 
-  // Keyboard navigation
-  const handleKeyDown = (e) => {
-    if (!showSuggestions) {
-      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-        setShowSuggestions(true);
-      }
+  const handleKeyDown = (event) => {
+    if (event.key === 'Escape') {
+      setShowSuggestions(false);
       return;
     }
 
-    switch (e.key) {
-      case 'Escape':
-        e.preventDefault();
-        setShowSuggestions(false);
-        break;
-      case 'ArrowDown':
-        e.preventDefault();
-        setActiveIndex(prev => (prev + 1) % (suggestions.length || 1));
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        setActiveIndex(prev => (prev - 1 + (suggestions.length || 1)) % (suggestions.length || 1));
-        break;
-      case 'Enter':
-        e.preventDefault();
-        if (activeIndex >= 0 && activeIndex < suggestions.length) {
-          handleSelectSuggestion(suggestions[activeIndex]);
-        } else if (suggestions.length > 0) {
-          handleSelectSuggestion(suggestions[0]);
-        }
-        break;
-      case 'Tab':
-        setShowSuggestions(false);
-        break;
-      default:
-        break;
+    if (!showSuggestions) return;
+
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      setActiveIndex((current) => (current + 1) % Math.max(flatSelectableSuggestions.length, 1));
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      setActiveIndex((current) => (current - 1 + Math.max(flatSelectableSuggestions.length, 1)) % Math.max(flatSelectableSuggestions.length, 1));
+    } else if (event.key === 'Enter' && flatSelectableSuggestions.length > 0) {
+      event.preventDefault();
+      handleSelectSuggestion(flatSelectableSuggestions[activeIndex >= 0 ? activeIndex : 0]);
     }
   };
 
-  // Helper to highlight matching characters
-  const highlightMatch = (text, queryText) => {
-    if (!text || !queryText) return text;
-    const cleanQuery = queryText.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
-    const parts = text.split(new RegExp(`(${cleanQuery})`, 'gi'));
-    return parts.map((part, index) => 
-      part.toLowerCase() === queryText.toLowerCase() 
-        ? <strong key={index} className="autocomplete-highlight">{part}</strong> 
-        : part
-    );
-  };
-
-  const hasSuggestions = suggestions.length > 0;
-  const showEmptyMessage = showSuggestions && !loading && query.trim().length >= 2 && !hasSuggestions && !errorMsg;
+  let selectableIndex = -1;
 
   return (
-    <div className="airport-autocomplete-container" ref={containerRef}>
-      <label htmlFor={id} className="autocomplete-label">{label}</label>
+    <div
+      className="airport-autocomplete-container"
+      ref={containerRef}
+      data-airport-resolved={isResolvedAirport(value) ? 'true' : 'false'}
+    >
+      {label && <label htmlFor={id} className="autocomplete-label">{label}</label>}
       <div className="autocomplete-input-wrapper">
-        <i className="fas fa-plane-departure input-icon"></i>
+        <i className="fas fa-plane-departure input-icon" aria-hidden="true" />
         <input
           type="text"
           id={id}
           value={query}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
-          onFocus={() => setShowSuggestions(true)}
-          placeholder={placeholder}
+          onFocus={() => {
+            setShowSuggestions(true);
+            if (query.trim().length >= 2) fetchSuggestions(query);
+          }}
+          placeholder={placeholder || 'City, airport name, or code'}
           required={required}
           autoComplete="off"
           className="autocomplete-input"
+          aria-autocomplete="list"
+          aria-expanded={showSuggestions}
+          aria-describedby={`${id}-search-help`}
         />
-        {loading && <i className="fas fa-circle-notch fa-spin input-loading-icon"></i>}
+        {loading && <i className="fas fa-circle-notch fa-spin input-loading-icon" />}
       </div>
+      <span id={`${id}-search-help`} className="airport-search-help">Search by city, airport name, or 3-letter code</span>
 
-      {showSuggestions && (hasSuggestions || showEmptyMessage || errorMsg) && (
-        <ul className="autocomplete-suggestions-list" role="listbox">
+      {showSuggestions && (groupedSuggestions.length > 0 || errorMsg) && (
+        <div className="autocomplete-suggestions-list" role="listbox" aria-label="Airport suggestions">
           {errorMsg && (
-            <li className="suggestion-error-banner">
-              <i className="fas fa-exclamation-triangle"></i>
-              <span>{errorMsg}</span>
-            </li>
+            <div className="suggestion-error-banner" role="status">
+              <i className="fas fa-exclamation-triangle" /> <span>{errorMsg}</span>
+            </div>
           )}
-          
-          {hasSuggestions ? (
-            suggestions.map((item, idx) => {
-              const isActive = idx === activeIndex;
-              return (
-                <li 
-                  key={item.code} 
-                  id={`${id}-suggestion-${idx}`}
-                  role="option"
-                  aria-selected={isActive}
-                  onClick={() => handleSelectSuggestion(item)}
-                  onMouseEnter={() => setActiveIndex(idx)}
-                  className={`suggestion-item ${isActive ? 'active' : ''}`}
-                >
-                  <div className="suggestion-icon">
-                    <i className="fas fa-plane"></i>
-                  </div>
-                  <div className="suggestion-details">
-                    <span className="suggestion-name">{highlightMatch(item.name, query)}</span>
-                    <span className="suggestion-location">
-                      <strong>{highlightMatch(item.code, query)}</strong> · {highlightMatch(item.city, query)}
-                      {item.state ? `, ${highlightMatch(item.state, query)}` : ''} · {highlightMatch(item.country, query)}
-                    </span>
-                  </div>
-                </li>
-              );
-            })
-          ) : (
-            showEmptyMessage && (
-              <li className="suggestion-empty-item">
-                <i className="fas fa-exclamation-circle empty-icon"></i>
-                <span>No airports found</span>
-              </li>
-            )
-          )}
-        </ul>
+
+          {groupedSuggestions.map((group) => (
+            <section className="airport-suggestion-group" key={`${group.city}-${group.state}-${group.country}`}>
+              <div className="airport-suggestion-city" aria-hidden="true">
+                <span className="airport-suggestion-city__icon"><i className="fas fa-map-marker-alt" /></span>
+                <span>
+                  <strong>{group.city}</strong>
+                  <small>{[group.state, group.country].filter(Boolean).join(', ')}</small>
+                </span>
+              </div>
+              <div className="airport-suggestion-airports">
+                {group.airports.map((item) => {
+                  selectableIndex += 1;
+                  const index = selectableIndex;
+                  const code = normalizeIataCode(item);
+                  return (
+                    <button
+                      key={code}
+                      type="button"
+                      role="option"
+                      aria-selected={index === activeIndex}
+                      onMouseEnter={() => setActiveIndex(index)}
+                      onClick={() => handleSelectSuggestion(item)}
+                      className={`suggestion-item ${index === activeIndex ? 'active' : ''}`}
+                    >
+                      <div className="suggestion-icon"><i className="fas fa-plane" /></div>
+                      <div className="suggestion-details">
+                        <span className="suggestion-name">{item.name || group.city}</span>
+                        <span className="suggestion-location">
+                          <strong>{code}</strong>{item.state ? ` · ${item.state}` : ''}{item.country ? ` · ${item.country}` : ''}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          ))}
+        </div>
       )}
     </div>
   );

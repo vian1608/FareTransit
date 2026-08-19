@@ -1,0 +1,7 @@
+/* Production safety overrides for controls that are not backed by a complete workflow yet. */
+
+/* SeniorTravelPage currently collects a single outbound leg (plus optional return).
+   Do not expose Multi-City until a real multi-leg builder/payload is implemented. */
+.senior-travel-page #trip-type-multi-city {
+  display: none !important;
+}

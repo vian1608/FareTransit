@@ -1,1 +1,521 @@
 @import '../pages/SearchResultsPage.css';
+
+.tfs-flight-option {
+  background: #fff;
+  border: 1px solid #dbe3ef;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, .03);
+  transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+
+.tfs-flight-option:hover {
+  border-color: #c6d2e2;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, .07);
+}
+
+.tfs-flight-option.is-expanded {
+  border-color: #bcc9d9;
+  box-shadow: 0 12px 34px rgba(15, 23, 42, .08);
+}
+
+.tfs-flight-option__summary {
+  display: grid;
+  grid-template-columns: minmax(145px, 1.05fr) minmax(150px, 1.05fr) minmax(105px, .72fr) minmax(140px, .9fr) auto minmax(138px, .85fr) auto 30px;
+  gap: 20px;
+  align-items: center;
+  min-height: 132px;
+  padding: 24px 22px;
+  cursor: pointer;
+  outline: none;
+}
+
+.tfs-flight-option__summary:focus-visible {
+  box-shadow: inset 0 0 0 3px rgba(139, 21, 56, .18);
+}
+
+.tfs-flight-carrier {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  min-width: 0;
+}
+
+.carrier-logo,
+.carrier-logo-fallback {
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+}
+
+.carrier-logo-fallback {
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: #f1f5f9;
+  color: #475569;
+  font-weight: 800;
+  font-size: .78rem;
+}
+
+.tfs-flight-carrier > div:last-child,
+.tfs-flight-schedule,
+.tfs-flight-duration,
+.tfs-flight-stops,
+.tfs-flight-price {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.tfs-flight-carrier strong,
+.tfs-flight-schedule__times,
+.tfs-flight-duration strong,
+.tfs-flight-stops strong {
+  color: #172033;
+  font-weight: 750;
+}
+
+.tfs-flight-carrier strong {
+  font-size: .98rem;
+  line-height: 1.25;
+}
+
+.tfs-flight-carrier span {
+  margin-top: 4px;
+  color: #64748b;
+  font-size: .78rem;
+  line-height: 1.35;
+}
+
+.tfs-flight-schedule__times {
+  font-size: 1.02rem;
+  white-space: nowrap;
+}
+
+.tfs-flight-schedule__times sup {
+  margin-left: 2px;
+  color: #64748b;
+  font-size: .63rem;
+}
+
+.tfs-flight-schedule__codes {
+  margin-top: 6px;
+  color: #55657b;
+  font-size: .88rem;
+  font-weight: 700;
+  letter-spacing: .02em;
+}
+
+.tfs-flight-schedule__dates,
+.tfs-flight-duration span,
+.tfs-flight-stops span {
+  margin-top: 3px;
+  color: #718096;
+  font-size: .76rem;
+  line-height: 1.35;
+}
+
+.tfs-flight-duration strong {
+  font-size: .96rem;
+}
+
+.tfs-flight-duration span {
+  font-weight: 650;
+}
+
+.tfs-flight-stops strong {
+  font-size: .9rem;
+  line-height: 1.35;
+}
+
+.tfs-flight-stops.is-nonstop strong {
+  color: #078a57;
+}
+
+.tfs-flight-cabin span {
+  display: inline-flex;
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: #f2f5f9;
+  color: #475569;
+  font-size: .75rem;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.tfs-flight-price {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.tfs-flight-price__original {
+  color: #94a3b8;
+  font-size: .75rem;
+  text-decoration: line-through;
+}
+
+.tfs-flight-price > strong {
+  margin-top: 1px;
+  color: #111827;
+  font-size: 1.28rem;
+  line-height: 1.1;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.tfs-flight-price__caption {
+  margin-top: 4px;
+  color: #718096;
+  font-size: .68rem;
+  white-space: nowrap;
+}
+
+.tfs-flight-price__saving {
+  margin-top: 4px;
+  color: #087f55;
+  font-size: .72rem;
+  font-weight: 750;
+}
+
+.tfs-flight-select {
+  border: 1px solid #9b153d;
+  border-radius: 999px;
+  padding: 10px 15px;
+  background: #fff;
+  color: #8b1538;
+  font: inherit;
+  font-size: .78rem;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background .18s ease, color .18s ease, transform .18s ease;
+}
+
+.tfs-flight-select:hover {
+  background: #8b1538;
+  color: #fff;
+}
+
+.tfs-flight-select:active {
+  transform: scale(.97);
+}
+
+.tfs-flight-expand {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 38px;
+  border: 0;
+  background: transparent;
+  color: #8291a6;
+  cursor: pointer;
+}
+
+.tfs-flight-option__details {
+  border-top: 1px solid #e4eaf2;
+  background: #fff;
+}
+
+.tfs-flight-detail-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 20px 24px;
+  background: #fbfcfe;
+  border-bottom: 1px solid #edf1f6;
+}
+
+.tfs-flight-detail-heading > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tfs-flight-detail-heading strong {
+  color: #172033;
+  font-size: 1rem;
+}
+
+.tfs-flight-detail-heading span {
+  color: #64748b;
+  font-size: .78rem;
+}
+
+.tfs-flight-select--detail {
+  background: #8b1538;
+  color: #fff;
+}
+
+.tfs-flight-segments,
+.tfs-flight-aggregate-details {
+  padding: 8px 24px 20px;
+}
+
+.tfs-flight-segment {
+  padding: 24px 0 20px;
+}
+
+.tfs-flight-segment + .tfs-flight-segment {
+  border-top: 1px solid #eef2f7;
+}
+
+.tfs-flight-segment__route,
+.tfs-flight-aggregate-route {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(90px, .55fr) minmax(180px, 1fr);
+  gap: 18px;
+  align-items: center;
+}
+
+.tfs-flight-segment__route > div:first-child,
+.tfs-flight-aggregate-route > div:first-child {
+  text-align: left;
+}
+
+.tfs-flight-segment__route > div:last-child,
+.tfs-flight-aggregate-route > div:last-child {
+  text-align: right;
+}
+
+.tfs-flight-segment__route > div:not(.tfs-flight-segment__line),
+.tfs-flight-aggregate-route > div:not(.tfs-flight-aggregate-line) {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tfs-flight-segment__route strong,
+.tfs-flight-aggregate-route strong {
+  color: #111827;
+  font-size: 1.08rem;
+}
+
+.tfs-flight-segment__route span,
+.tfs-flight-aggregate-route span {
+  color: #334155;
+  font-size: .84rem;
+  line-height: 1.4;
+}
+
+.tfs-flight-segment__route small,
+.tfs-flight-aggregate-route small {
+  color: #8491a3;
+  font-size: .72rem;
+}
+
+.tfs-flight-segment__line {
+  position: relative;
+  height: 1px;
+  background: #cfd8e5;
+}
+
+.tfs-flight-segment__line::before,
+.tfs-flight-segment__line::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  border: 2px solid #94a3b8;
+  border-radius: 50%;
+  background: #fff;
+  transform: translateY(-50%);
+}
+
+.tfs-flight-segment__line::before { left: 0; }
+.tfs-flight-segment__line::after { right: 0; }
+
+.tfs-flight-segment__line i {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  padding: 0 8px;
+  background: #fff;
+  color: #8b1538;
+  font-size: .72rem;
+}
+
+.tfs-flight-segment__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px 14px;
+  margin-top: 15px;
+  color: #64748b;
+  font-size: .75rem;
+}
+
+.tfs-flight-segment__meta span:not(:last-child)::after {
+  content: '·';
+  margin-left: 14px;
+  color: #b0bac8;
+}
+
+.tfs-flight-layover {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 13px 16px;
+  border: 1px solid #eadfe3;
+  border-radius: 10px;
+  background: #fbf7f8;
+  color: #5b3442;
+  font-size: .8rem;
+}
+
+.tfs-flight-layover i {
+  color: #8b1538;
+}
+
+.tfs-flight-layover strong {
+  color: #70112d;
+}
+
+.tfs-flight-layover-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.tfs-flight-aggregate-route {
+  padding-top: 20px;
+}
+
+.tfs-flight-aggregate-line {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  color: #64748b;
+  font-size: .74rem;
+}
+
+.tfs-flight-aggregate-line i {
+  display: block;
+  width: 100%;
+  height: 1px;
+  background: #cfd8e5;
+}
+
+.tfs-flight-source-note {
+  margin: 18px 0 0;
+  padding: 11px 13px;
+  border-radius: 9px;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: .75rem;
+  line-height: 1.5;
+}
+
+.tfs-flight-fare-notes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 20px;
+  padding: 14px 24px 18px;
+  border-top: 1px solid #edf1f6;
+  color: #5d6b7e;
+  font-size: .76rem;
+}
+
+.tfs-flight-fare-notes i {
+  margin-right: 6px;
+  color: #8b1538;
+}
+
+@media (max-width: 1180px) {
+  .tfs-flight-option__summary {
+    grid-template-columns: minmax(135px, 1fr) minmax(145px, 1fr) minmax(95px, .7fr) minmax(125px, .85fr) minmax(125px, .8fr) 30px;
+    gap: 14px;
+  }
+
+  .tfs-flight-cabin,
+  .tfs-flight-select {
+    display: none;
+  }
+}
+
+@media (max-width: 820px) {
+  .tfs-flight-option__summary {
+    grid-template-columns: 1fr 1fr auto;
+    grid-template-areas:
+      'carrier price expand'
+      'schedule schedule schedule'
+      'duration stops stops'
+      'select select select';
+    gap: 14px 16px;
+    min-height: auto;
+    padding: 18px;
+  }
+
+  .tfs-flight-carrier { grid-area: carrier; }
+  .tfs-flight-schedule { grid-area: schedule; }
+  .tfs-flight-duration { grid-area: duration; }
+  .tfs-flight-stops { grid-area: stops; align-items: flex-end; text-align: right; }
+  .tfs-flight-price { grid-area: price; }
+  .tfs-flight-expand { grid-area: expand; }
+  .tfs-flight-select { grid-area: select; display: block; width: 100%; border-radius: 10px; background: #8b1538; color: #fff; }
+  .tfs-flight-cabin { display: none; }
+
+  .tfs-flight-schedule {
+    padding: 13px 0;
+    border-top: 1px solid #edf1f6;
+    border-bottom: 1px solid #edf1f6;
+  }
+
+  .tfs-flight-schedule__times { font-size: 1.12rem; }
+
+  .tfs-flight-segment__route,
+  .tfs-flight-aggregate-route {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .tfs-flight-segment__route > div:last-child,
+  .tfs-flight-aggregate-route > div:last-child {
+    text-align: left;
+  }
+
+  .tfs-flight-segment__line,
+  .tfs-flight-aggregate-line {
+    width: 2px;
+    min-height: 28px;
+    margin-left: 7px;
+    background: #cfd8e5;
+  }
+
+  .tfs-flight-segment__line::before,
+  .tfs-flight-segment__line::after,
+  .tfs-flight-segment__line i,
+  .tfs-flight-aggregate-line span,
+  .tfs-flight-aggregate-line i {
+    display: none;
+  }
+
+  .tfs-flight-detail-heading { align-items: flex-start; }
+  .tfs-flight-select--detail { display: inline-flex; width: auto; }
+}
+
+@media (max-width: 520px) {
+  .tfs-flight-option__summary {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    padding: 15px;
+  }
+
+  .carrier-logo,
+  .carrier-logo-fallback {
+    width: 32px;
+    height: 32px;
+  }
+
+  .tfs-flight-carrier strong { font-size: .9rem; }
+  .tfs-flight-price > strong { font-size: 1.12rem; }
+  .tfs-flight-duration strong,
+  .tfs-flight-stops strong { font-size: .82rem; }
+  .tfs-flight-segments,
+  .tfs-flight-aggregate-details { padding-left: 16px; padding-right: 16px; }
+  .tfs-flight-detail-heading,
+  .tfs-flight-fare-notes { padding-left: 16px; padding-right: 16px; }
+}

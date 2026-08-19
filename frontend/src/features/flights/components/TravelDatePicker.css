@@ -1,15 +1,22 @@
+#datepicker-portal-root {
+  position: relative;
+  z-index: 10030;
+}
+
 .traveldate-container {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.35rem;
   position: relative;
   width: 100%;
 }
 
 .traveldate-label {
-  font-size: 0.88rem;
-  font-weight: 600;
-  color: #334155;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #475569;
 }
 
 .traveldate-input-wrapper {
@@ -20,21 +27,36 @@
 
 .traveldate-input {
   width: 100%;
-  min-height: 48px;
-  border: 1px solid #cbd5e1;
-  border-radius: 10px;
-  padding: 0.65rem 2.5rem 0.65rem 1rem;
+  height: 50px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 0 2.5rem 0 1rem;
   font-size: 0.98rem;
   font-family: inherit;
+  font-weight: 600;
   color: #0f172a;
   background-color: #fff;
-  transition: all 0.15s ease;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+  box-sizing: border-box;
 }
 
 .traveldate-input:focus {
   outline: none;
   border-color: #8b1538;
-  box-shadow: 0 0 0 3.5px rgba(139, 21, 56, 0.12);
+  box-shadow: 0 0 0 3px rgba(139, 21, 56, 0.12);
+}
+
+.traveldate-input--error {
+  border-color: #dc2626 !important;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.09);
+}
+
+.traveldate-input-error {
+  margin-top: 2px;
+  color: #b91c1c;
+  font-size: 0.78rem;
+  font-weight: 650;
+  line-height: 1.35;
 }
 
 .traveldate-icon-btn {
@@ -42,7 +64,7 @@
   right: 10px;
   background: none;
   border: none;
-  color: #94a3b8;
+  color: #64748b;
   font-size: 1.1rem;
   cursor: pointer;
   padding: 5px;
@@ -52,52 +74,89 @@
   color: #8b1538;
 }
 
-/* Popover via Portal */
+/* Popover via Portal directly into #datepicker-portal-root or document.body */
 .traveldate-popover {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.1);
-  padding: 1rem;
-  animation: travelFadeIn 0.2s ease-out;
+  position: fixed;
+  z-index: 10030 !important;
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 16px !important;
+  box-shadow: 0 24px 54px rgba(15, 23, 42, 0.22) !important;
+  padding: 1.1rem !important;
+  animation: travelFadeIn 0.2s cubic-bezier(.16, 1, .3, 1);
   font-family: inherit;
+  pointer-events: auto !important;
+  box-sizing: border-box !important;
 }
 
 @keyframes travelFadeIn {
-  from { opacity: 0; transform: translateY(-5px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(-7px) scale(.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .traveldate-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 8px;
   margin-bottom: 1rem;
 }
 
-.traveldate-header button {
+.traveldate-header > button {
   background: #f1f5f9;
-  border: none;
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
   color: #475569;
   cursor: pointer;
-  font-weight: bold;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  flex: 0 0 auto;
 }
 
-.traveldate-header button:hover:not(:disabled) {
-  background: #e2e8f0;
+.traveldate-header > button:hover:not(:disabled) {
+  background: #8b1538;
+  color: #ffffff;
+  border-color: #8b1538;
+  transform: translateY(-1px);
 }
 
-.traveldate-header button:disabled {
+.traveldate-header > button:disabled {
   opacity: 0.3;
   cursor: not-allowed;
 }
 
-.traveldate-month-year {
-  font-weight: 700;
+.traveldate-title-controls {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.traveldate-period-button {
+  appearance: none;
+  border: 0;
+  background: transparent;
   color: #0f172a;
+  font-weight: 850;
+  font-size: 0.95rem;
+  line-height: 1;
+  padding: 8px 9px;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: background-color .16s ease, color .16s ease, transform .16s ease;
+}
+
+.traveldate-period-button:hover {
+  background: #f8eaf0;
+  color: #8b1538;
+  transform: translateY(-1px);
 }
 
 .traveldate-weekdays {
@@ -113,7 +172,7 @@
 .traveldate-days {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 2px;
+  gap: 3px;
 }
 
 .traveldate-day {
@@ -123,8 +182,9 @@
   font-size: 0.85rem;
   font-weight: 600;
   color: #1e293b;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
+  transition: all 0.15s ease;
 }
 
 .traveldate-day.empty {
@@ -133,19 +193,135 @@
 
 .traveldate-day:hover:not(:disabled):not(.empty) {
   background: #f1f5f9;
+  color: #8b1538;
+  transform: translateY(-1px);
 }
 
-.traveldate-day.selected {
-  background: #8b1538;
-  color: #fff;
+.traveldate-day.selected,
+.traveldate-choice.selected {
+  background: #8b1538 !important;
+  color: #ffffff !important;
+  border-color: #8b1538 !important;
+  font-weight: 800;
+  box-shadow: 0 7px 16px rgba(139, 21, 56, .18);
 }
 
 .traveldate-day.today {
   color: #8b1538;
-  border: 1px solid #8b1538;
+  border: 1.5px solid #8b1538;
 }
 
-.traveldate-day:disabled {
+.traveldate-day:disabled,
+.traveldate-choice:disabled {
   color: #cbd5e1;
   cursor: not-allowed;
+  opacity: .55;
+}
+
+.traveldate-month-grid,
+.traveldate-year-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  min-height: 230px;
+  align-content: start;
+  animation: travelPickerGridIn .18s ease both;
+}
+
+@keyframes travelPickerGridIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.traveldate-choice {
+  min-height: 48px;
+  border: 1px solid #e2e8f0;
+  border-radius: 11px;
+  background: #f8fafc;
+  color: #263247;
+  font-size: .88rem;
+  font-weight: 750;
+  cursor: pointer;
+  transition: background-color .16s ease, border-color .16s ease, color .16s ease, transform .16s ease, box-shadow .16s ease;
+}
+
+.traveldate-choice:hover:not(:disabled) {
+  background: #fff6f8;
+  border-color: #d8a7b7;
+  color: #8b1538;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(15, 23, 42, .06);
+}
+
+/* Product-specific portal theme: car rentals keep Road Trip Blue even though
+   this shared picker is also used by the flight flow. These selectors are
+   intentionally more specific than the legacy flight defaults above because
+   the popover is rendered through a portal outside the car form DOM tree. */
+.traveldate-container.traveldate-container--cars .traveldate-input:focus {
+  border-color: #1e88e5 !important;
+  box-shadow: 0 0 0 3px rgba(30, 136, 229, 0.13) !important;
+}
+
+.traveldate-container.traveldate-container--cars .traveldate-icon-btn,
+.traveldate-container.traveldate-container--cars .traveldate-icon-btn:hover {
+  color: #1e88e5 !important;
+}
+
+.traveldate-popover.traveldate-popover--cars .traveldate-header > button:hover:not(:disabled) {
+  background: #1e88e5 !important;
+  border-color: #1e88e5 !important;
+  color: #fff !important;
+}
+
+.traveldate-popover.traveldate-popover--cars .traveldate-period-button:hover {
+  background: #eef6fd !important;
+  color: #0d6fca !important;
+}
+
+.traveldate-popover.traveldate-popover--cars .traveldate-day:hover:not(:disabled):not(.empty) {
+  background: #eef6fd !important;
+  color: #0d6fca !important;
+}
+
+.traveldate-popover.traveldate-popover--cars .traveldate-day.selected,
+.traveldate-popover.traveldate-popover--cars .traveldate-choice.selected {
+  background: #1e88e5 !important;
+  border-color: #1e88e5 !important;
+  color: #fff !important;
+  box-shadow: 0 7px 16px rgba(30, 136, 229, 0.22) !important;
+}
+
+.traveldate-popover.traveldate-popover--cars .traveldate-day.today {
+  color: #0d6fca !important;
+  border-color: #1e88e5 !important;
+}
+
+.traveldate-popover.traveldate-popover--cars .traveldate-choice:hover:not(:disabled) {
+  background: #eef6fd !important;
+  border-color: #9dccf4 !important;
+  color: #0d6fca !important;
+}
+
+@media (max-width: 480px) {
+  .traveldate-popover {
+    padding: .9rem !important;
+  }
+
+  .traveldate-month-grid,
+  .traveldate-year-grid {
+    gap: 6px;
+  }
+
+  .traveldate-choice {
+    min-height: 44px;
+    font-size: .82rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .traveldate-popover,
+  .traveldate-month-grid,
+  .traveldate-year-grid {
+    animation: none !important;
+  }
 }

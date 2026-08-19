@@ -12,6 +12,7 @@
 
 .accordion-section--open {
   box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+  overflow: visible !important;
 }
 
 /* Header */
@@ -54,6 +55,13 @@
   font-weight: 700;
   font-size: 0.82rem;
   flex-shrink: 0;
+  transition: background-color 0.25s ease, transform 0.2s ease;
+}
+
+.accordion-step-badge--complete {
+  background: #059669 !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.3);
 }
 
 .accordion-section-title {
@@ -85,6 +93,10 @@
               padding-bottom 0.3s ease;
   padding-left: 1.5rem;
   padding-right: 1.5rem;
+}
+
+.accordion-section-body--open {
+  overflow: visible !important;
 }
 
 /* Responsive */

@@ -6,31 +6,30 @@
   "main": "src/server.mjs",
   "scripts": {
     "start": "node src/server.mjs",
-    "dev": "nodemon src/server.mjs"
+    "dev": "nodemon src/server.mjs",
+    "test": "node tests/pricing.test.mjs && node tests/flight_party_total_contract.test.mjs && node tests/infant_passenger_search_contract.test.mjs && node tests/voucher_system_contract.test.mjs && node tests/tokenized_journey_url_contract.test.mjs && node tests/airport_swap_control_contract.test.mjs && node tests/supabase_egress_hardening_contract.test.mjs && node tests/booking_end_to_end_integrity_contract.test.mjs && node tests/automated_preproduction_safety_checks.test.mjs && node tests/customer_booking_six_pax_submission.test.mjs && node tests/checkout_passenger_confirmation_regression.test.mjs && node tests/google_ads_lead_conversion_complete.test.mjs && node tests/admin_create_booking_workflow.test.mjs && node tests/admin_dashboard_button_reliability.test.mjs && node tests/admin_booking_detail_route.test.mjs && node tests/booking_confirmation_full_details.test.mjs && node tests/booking_confirmation_template_contract.test.mjs && node tests/sitewide_ui_address_modernization.test.mjs && node tests/customer_date_modal_recovery_contract.test.mjs && node tests/flight_results_integrity_and_loading_contract.test.mjs && node tests/airport_city_search_contract.test.mjs && node tests/booking_itinerary_stack_and_back_navigation.test.mjs && node tests/inquiry_lead_persistence_google_ads.test.mjs && node tests/seo_indexing_contract.test.mjs && node tests/full_site_hardening_contract.test.mjs && node tests/public_ui_consistency_contract.test.mjs && node tests/global_booking_consistency_contract.test.mjs && node tests/backoffice_rbac_contract.test.mjs && node tests/hotel_serpapi_crm_contract.test.mjs && node tests/secure_payment_vault_contract.test.mjs",
+    "verify:production-ready": "node tests/pricing.test.mjs && node tests/flight_party_total_contract.test.mjs && node tests/infant_passenger_search_contract.test.mjs && node tests/voucher_system_contract.test.mjs && node tests/tokenized_journey_url_contract.test.mjs && node tests/airport_swap_control_contract.test.mjs && node tests/supabase_egress_hardening_contract.test.mjs && node tests/booking_end_to_end_integrity_contract.test.mjs && node tests/automated_preproduction_safety_checks.test.mjs && node tests/customer_booking_six_pax_submission.test.mjs && node tests/checkout_passenger_confirmation_regression.test.mjs && node tests/google_ads_lead_conversion_complete.test.mjs && node tests/admin_create_booking_workflow.test.mjs && node tests/admin_dashboard_button_reliability.test.mjs && node tests/booking_confirmation_full_details.test.mjs && node tests/booking_confirmation_template_contract.test.mjs && node tests/admin_booking_detail_route.test.mjs && node tests/sitewide_ui_address_modernization.test.mjs && node tests/customer_date_modal_recovery_contract.test.mjs && node tests/flight_results_integrity_and_loading_contract.test.mjs && node tests/airport_city_search_contract.test.mjs && node tests/booking_itinerary_stack_and_back_navigation.test.mjs && node tests/inquiry_lead_persistence_google_ads.test.mjs && node tests/seo_indexing_contract.test.mjs && node tests/full_site_hardening_contract.test.mjs && node tests/public_ui_consistency_contract.test.mjs && node tests/global_booking_consistency_contract.test.mjs && node tests/backoffice_rbac_contract.test.mjs && node tests/hotel_serpapi_crm_contract.test.mjs && node tests/secure_payment_vault_contract.test.mjs"
   },
-  "keywords": [
-    "flight",
-    "booking",
-    "api"
-  ],
+  "keywords": ["flight", "booking", "api"],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@supabase/supabase-js": "^2.50.0",
+    "@whop/sdk": "^0.0.42",
     "axios": "^1.6.2",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
+    "handlebars": "^4.7.9",
     "jsonwebtoken": "^9.0.2",
     "mysql2": "^3.23.0",
     "nodemailer": "^6.9.7",
+    "pdfkit": "^0.19.1",
     "pg": "^8.22.0",
     "razorpay": "^2.9.2",
     "resend": "^4.5.2",
     "sequelize": "^6.37.8"
   },
-  "devDependencies": {
-    "nodemon": "^3.0.2"
-  }
+  "devDependencies": { "nodemon": "^3.0.2" }
 }

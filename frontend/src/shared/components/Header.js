@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_HREF } from '../constants/supportContact';
 import './Header.css';
+import './HeaderLayoutOverrides.css';
 
 function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -41,25 +43,45 @@ function Header() {
   const closeMenu = () => setMenuOpen(false);
 
   const isFlightsActive = location.pathname === '/';
-  const isRailActive = location.pathname.startsWith('/amtrak');
+  const isHotelsActive = location.pathname.startsWith('/hotels');
+  const isCarsActive = location.pathname.startsWith('/car-rentals');
   const isContactActive = location.pathname === '/contact';
-  const isRailTheme = isRailActive;
+  const isAdminRoute = location.pathname.startsWith('/admin');
+
+  // Keep each public travel section visually distinct. The key intentionally
+  // changes with the product so the existing icon-swap animation replays when
+  // a traveler moves between Flights, Hotels, and Car Rentals.
+  const sectionTheme = isHotelsActive ? 'hotels' : isCarsActive ? 'cars' : 'flights';
+  const logoIcon = isHotelsActive ? 'fa-hotel' : isCarsActive ? 'fa-car' : 'fa-plane-departure';
+  const headerThemeClass = isHotelsActive ? 'header--hotels' : isCarsActive ? 'header--cars' : 'header--flights';
 
   return (
     <header
-      className={`header ${isRailTheme ? 'header--rail' : 'header--flights'} ${scrolled ? 'header--scrolled' : ''}`}
+      className={`header ${headerThemeClass} ${isAdminRoute ? 'header--admin-route' : ''} ${scrolled ? 'header--scrolled' : ''}`}
     >
       <div className="container header-inner">
         <div className="logo">
           <i
-            key={isRailTheme ? 'rail-icon' : 'flight-icon'}
-            className={`fas logo-icon ${isRailTheme ? 'fa-train' : 'fa-plane-departure'}`}
+            key={`${sectionTheme}-icon`}
+            className={`fas logo-icon ${logoIcon}`}
             aria-hidden="true"
           />
           <Link to="/" className="logo-link" onClick={closeMenu}>
             <h1>FareTransit</h1>
           </Link>
         </div>
+
+        {!isAdminRoute && (
+          <a
+            className="header-mobile-call"
+            href={SUPPORT_PHONE_HREF}
+            aria-label={`Call FareTransit at ${SUPPORT_PHONE_DISPLAY}`}
+            onClick={closeMenu}
+          >
+            <i className="fas fa-phone-alt" aria-hidden="true" />
+            <span>Call Now</span>
+          </a>
+        )}
 
         <button
           type="button"
@@ -89,10 +111,16 @@ function Header() {
               Flights
             </Link>
             <Link
-              to="/amtrak"
-              className={`header-nav-link ${isRailActive ? 'header-nav-link--active' : ''}`}
+              to="/hotels"
+              className={`header-nav-link ${isHotelsActive ? 'header-nav-link--active' : ''}`}
             >
-              Rail (Amtrak)
+              Hotels
+            </Link>
+            <Link
+              to="/car-rentals"
+              className={`header-nav-link ${isCarsActive ? 'header-nav-link--active' : ''}`}
+            >
+              Car Rentals
             </Link>
             <Link
               to="/my-bookings"

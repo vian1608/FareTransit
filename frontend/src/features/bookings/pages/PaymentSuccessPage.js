@@ -1,454 +1,504 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { paymentAPI, bookingAPI, inquiryAPI } from '../../../shared/api/api';
-import { SUPPORT_PHONE_DISPLAY, BUSINESS_ADDRESS_SHORT, BUSINESS_ADDRESS_CITY, BUSINESS_ADDRESS_STATE_CODE } from '../../../shared/constants/supportContact';
+import { bookingAPI } from '../../../shared/api/api';
+import AirlineLogo from '../../../shared/components/AirlineLogo';
 import './PaymentSuccessPage.css';
 
-function PaymentSuccess() {
+const displayText = (value, fallback = '') => {
+  if (value === null || value === undefined || value === '') return fallback;
+  if (typeof value === 'string' || typeof value === 'number') return String(value);
+  if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+  if (typeof value === 'object') {
+    const preferred = value.name || value.label || value.code || value.value || value.formatted;
+    if (preferred !== undefined && preferred !== null && typeof preferred !== 'object') return String(preferred);
+  }
+  return fallback;
+};
+
+const safeArray = value => Array.isArray(value) ? value : [];
+
+const AIRLINE_LOGO_SLUGS = {
+  'delta': 'delta',
+  'delta air lines': 'delta',
+  'delta airlines': 'delta',
+  'klm': 'klm',
+  'klm royal dutch airlines': 'klm',
+  'american airlines': 'american-airlines',
+  'united': 'united',
+  'united airlines': 'united',
+  'southwest': 'southwest',
+  'southwest airlines': 'southwest',
+  'lufthansa': 'lufthansa',
+  'british airways': 'british-airways',
+  'air france': 'air-france',
+  'alaska airlines': 'alaska-airlines',
+  'singapore airlines': 'singapore-airlines',
+  'cathay pacific': 'cathay-pacific',
+  'emirates': 'emirates',
+  'hawaiian airlines': 'hawaiian',
+};
+
+const airlineNameFor = (segment = {}) => displayText(
+  segment.airlineName || segment.carrier_name || segment.airline || segment.carrier,
+  'Airline',
+);
+
+const airlineLogoSlugFor = (segment = {}) => {
+  const key = airlineNameFor(segment).trim().toLowerCase();
+  return AIRLINE_LOGO_SLUGS[key] || key
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+};
+
+function PaymentSuccessPage() {
+  const params = useParams();
   const [searchParams] = useSearchParams();
-  const sessionId = searchParams.get('session_id');
-  const type = searchParams.get('type');
+
+  const confirmationCodeParam = params.confirmationCode || searchParams.get('code') || searchParams.get('booking_id');
+  const userEmailParam = searchParams.get('email');
 
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [sessionDetails, setSessionDetails] = useState(null);
-  const [bookingRef, setBookingRef] = useState('');
-  const [isProcessingRecord, setIsProcessingRecord] = useState(false);
-  const [bookingDataFromDb, setBookingDataFromDb] = useState(null);
+  const [booking, setBooking] = useState(null);
+  const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {
-    if (!sessionId) {
-      setError('Invalid checkout session. Missing session identifier.');
-      setLoading(false);
-      return;
-    }
+    let isMounted = true;
 
-    const fetchSession = async () => {
+    async function fetchBookingDetails() {
+      if (!confirmationCodeParam) {
+        if (isMounted) {
+          setErrorMsg('We could not load your reservation details. Please contact support with your booking reference.');
+          setLoading(false);
+        }
+        return;
+      }
+
       try {
         setLoading(true);
-        const data = await paymentAPI.getStripeSessionStatus(sessionId);
-        if (data.success) {
-          if (data.status === 'paid' || data.status === 'no_payment_required') {
-            setSessionDetails(data);
-            // Process the transaction record (once)
-            await processRecord(data);
-          } else {
-            setError('Payment was not completed successfully. Current status: ' + data.status);
+        let res;
+        try {
+          res = await bookingAPI.getConfirmationDTO(confirmationCodeParam);
+        } catch (dtoErr) {
+          res = await bookingAPI.getByReference(confirmationCodeParam);
+        }
+
+        if (res && res.success && res.data) {
+          if (isMounted) {
+            setBooking(res.data);
             setLoading(false);
           }
         } else {
-          setError('Failed to retrieve secure checkout status.');
-          setLoading(false);
+          if (isMounted) {
+            setErrorMsg('We could not load your reservation details. Please contact support with your booking reference.');
+            setLoading(false);
+          }
         }
       } catch (err) {
-        console.error('Session retrieval failed:', err);
-        setError('Unable to fetch transaction confirmation. Please contact support.');
-        setLoading(false);
+        console.error('Error loading confirmation booking:', err);
+        if (isMounted) {
+          setErrorMsg('We could not load your reservation details. Please contact support with your booking reference.');
+          setLoading(false);
+        }
       }
+    }
+
+    fetchBookingDetails();
+
+    return () => {
+      isMounted = false;
     };
-
-    fetchSession();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionId, type]);
-
-  // Fetch full details from database once confirmation code is available
-  useEffect(() => {
-    if (bookingRef) {
-      const fetchBookingFromDb = async () => {
-        try {
-          const res = await bookingAPI.getByReference(bookingRef);
-          if (res.success) {
-            setBookingDataFromDb(res.data);
-          }
-        } catch (err) {
-          console.error('Failed to fetch detailed booking from database:', err);
-        }
-      };
-      fetchBookingFromDb();
-    }
-  }, [bookingRef]);
-
-  const processRecord = async (session) => {
-    if (isProcessingRecord) return;
-    setIsProcessingRecord(true);
-
-    const storageKey = `processed_${type}_${sessionId}`;
-    const alreadyProcessed = sessionStorage.getItem(storageKey);
-
-    if (alreadyProcessed) {
-      if (type === 'booking') {
-        setBookingRef(alreadyProcessed);
-      }
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const metadata = session.metadata;
-
-      if (type === 'booking') {
-        let bookingData = {};
-        const pendingData = JSON.parse(sessionStorage.getItem('pendingPassenger') || 'null');
-        const flightData = JSON.parse(sessionStorage.getItem('selectedFlight') || 'null');
-        const returnFlightData = JSON.parse(sessionStorage.getItem('returnFlight') || 'null');
-
-        if (pendingData && flightData) {
-          // Reconstruct using rich sessionStorage data (multi-passenger support!)
-          const customerName = `${pendingData.primaryContact.firstName} ${pendingData.primaryContact.lastName}`;
-          
-          // Combine outbound and inbound flights inside flight object
-          const flightObj = {
-            ...flightData,
-            returnFlight: returnFlightData,
-            billingAddress: pendingData.billingAddress,
-            specialRequests: pendingData.specialRequests
-          };
-
-          const originalOut = parseFloat(flightData.price?.originalApiPrice || 0);
-          const originalRet = returnFlightData ? parseFloat(returnFlightData.price?.originalApiPrice || 0) : 0;
-
-          const pricingTotalStr = sessionStorage.getItem('pricingTotal');
-          const displayedPrice = pricingTotalStr ? parseFloat(pricingTotalStr) : session.amount_total;
-
-          bookingData = {
-            customerName,
-            email: pendingData.primaryContact.email,
-            phone: pendingData.primaryContact.phone,
-            passengers: pendingData.passengers,
-            flight: flightObj,
-            originalApiPrice: (originalOut + originalRet).toFixed(2),
-            displayedWebsitePrice: displayedPrice.toFixed(2),
-            paymentStatus: 'paid',
-            transactionId: sessionId,
-            currency: 'USD',
-            status: 'PENDING'
-          };
-        } else {
-          // Fallback to legacy metadata for single traveler if sessionStorage is cleared
-          const flightDetails = {
-            airline: metadata.flight_airline,
-            flightNumber: metadata.flight_number,
-            departure: {
-              airport: metadata.flight_route.split(' to ')[0],
-              date: metadata.flight_dep_time.split(' ')[0],
-              time: metadata.flight_dep_time.split(' ')[1]
-            },
-            arrival: {
-              airport: metadata.flight_route.split(' to ')[1],
-              date: metadata.flight_arr_time.split(' ')[0],
-              time: metadata.flight_arr_time.split(' ')[1]
-            },
-            class: metadata.flight_class,
-            stops: parseInt(metadata.flight_stops || '0')
-          };
-
-          bookingData = {
-            customerName: `${metadata.firstName} ${metadata.lastName}`,
-            email: metadata.email,
-            phone: metadata.phone,
-            passengers: [{
-              firstName: metadata.firstName,
-              lastName: metadata.lastName,
-              role: 'adult',
-              gender: metadata.gender,
-              dateOfBirth: metadata.dateOfBirth,
-              nationality: metadata.nationality,
-              passportNumber: metadata.passportNumber,
-              passportExpiry: metadata.passportExpiry
-            }],
-            flight: flightDetails,
-            originalApiPrice: (session.amount_total * 1.11).toFixed(2), // generic fallback estimation
-            displayedWebsitePrice: session.amount_total.toFixed(2),
-            paymentStatus: 'paid',
-            transactionId: sessionId,
-            currency: 'USD',
-            status: 'PENDING'
-          };
-        }
-
-        // Create booking in the backend
-        const res = await bookingAPI.create(bookingData);
-        if (res.success) {
-          const ref = res.data.confirmation_code || res.data.bookingReference;
-          setBookingRef(ref);
-          sessionStorage.setItem(storageKey, ref);
-        } else {
-          throw new Error('Failed to record flight booking on backend');
-        }
-      } else if (type === 'consulting') {
-        // Send consulting payment details to inquiries logs
-        await inquiryAPI.submitConsulting(
-          {
-            name: metadata.name,
-            email: metadata.email,
-            phone: metadata.phone,
-            origin: metadata.origin,
-            destination: metadata.destination,
-            notes: metadata.notes,
-          },
-          'consulting-payment'
-        );
-        sessionStorage.setItem(storageKey, 'completed');
-      }
-    } catch (err) {
-      console.error('Record writing failed:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [confirmationCodeParam]);
 
   const handlePrint = () => {
     window.print();
   };
 
+  // ── 1. LOADING STATE ───────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="success-loading-container">
-        <i className="fas fa-circle-notch fa-spin"></i>
-        <p>Verifying secure transaction...</p>
+      <div className="confirmation-page-wrapper">
+        <Helmet>
+          <title>Loading Reservation Confirmation | FareTransit</title>
+        </Helmet>
+        <div className="confirmation-card confirmation-card--loading">
+          <i className="fas fa-circle-notch fa-spin confirmation-spinner"></i>
+          <p className="confirmation-loading-text">Loading your reservation details...</p>
+        </div>
       </div>
     );
   }
 
-  if (error) {
+  // ── 2. ERROR / NOT FOUND STATE ─────────────────────────────────────────────
+  if (errorMsg || !booking) {
     return (
-      <div className="success-error-container">
-        <div className="error-icon-circle">
-          <i className="fas fa-times-circle"></i>
-        </div>
-        <h2>Transaction Error</h2>
-        <p>{error}</p>
-        <div className="action-buttons no-print">
-          <Link to="/" className="btn-secondary">Go to Homepage</Link>
-          <Link to="/booking" className="btn-primary">Try Payment Again</Link>
+      <div className="confirmation-page-wrapper">
+        <Helmet>
+          <title>Reservation Not Found | FareTransit</title>
+        </Helmet>
+        <div className="confirmation-card confirmation-card--error">
+          <div className="confirmation-error-icon">
+            <i className="fas fa-exclamation-circle"></i>
+          </div>
+          <h2 className="confirmation-error-title">Reservation Lookup Failed</h2>
+          <p className="confirmation-error-desc">
+            {errorMsg || 'We could not load your reservation details. Please contact support with your booking reference.'}
+          </p>
+          <div className="confirmation-actions">
+            <Link to="/" className="btn-confirm btn-confirm--primary">
+              Return to Home
+            </Link>
+            <a href="mailto:support@faretransit.com" className="btn-confirm btn-confirm--secondary">
+              Contact Support
+            </a>
+          </div>
         </div>
       </div>
     );
   }
 
-  const { metadata, amount_total } = sessionDetails;
-  
-  // Choose the price from DB or Stripe session total
-  const displayedPrice = bookingDataFromDb ? parseFloat(bookingDataFromDb.amount) : amount_total;
+  // ── 3. DATA EXTRACTION & DERIVED VALUES ──────────────────────────────────
+  // ── 3. DATA EXTRACTION & DERIVED VALUES ──────────────────────────────────
+  const isPaid = (booking.booking?.paymentStatus || booking.payment_status || booking.paymentStatus || '').toLowerCase() === 'paid';
+  const passengerName = displayText(booking.booking?.passengerName || booking.passenger_name || booking.passengerName, 'Valued Traveler');
+  const firstName = passengerName.split(' ')[0] || 'Traveler';
+  const code = displayText(booking.booking?.confirmationCode || booking.confirmation_code || booking.confirmationCode || booking.bookingId || confirmationCodeParam, 'Reservation');
+  const email = displayText(booking.booking?.email || booking.email || userEmailParam, 'Email unavailable');
+  const phone = displayText(booking.booking?.phone || booking.phone, 'N/A');
+  const bookingDate = (booking.booking?.bookingDate || booking.created_at)
+    ? new Date(booking.booking?.bookingDate || booking.created_at).toLocaleDateString('en-US', {
+        year: 'numeric', month: 'long', day: 'numeric'
+      })
+    : new Date().toLocaleDateString('en-US');
+
+  const paymentStatusDisplay = isPaid ? 'Paid' : 'Pending';
+  const bookingStatusDisplay = displayText(booking.booking?.status || booking.status, 'PENDING').toUpperCase();
+
+  // Email Delivery Status Notice (Authoritative backend status)
+  const emailDeliveryStatus = booking.emailDelivery?.status || booking.emailDeliveryStatus || (booking.authorization_email_sent_at ? 'SENT' : 'UNATTEMPTED');
+
+  let emailNoticeMessage = '';
+  let emailNoticeType = 'info';
+  if (emailDeliveryStatus === 'SENT') {
+    emailNoticeType = 'success';
+    emailNoticeMessage = `Your booking confirmation has been sent to ${email}.`;
+  } else if (emailDeliveryStatus === 'FAILED') {
+    emailNoticeType = 'warn';
+    const errDetail = booking.emailDelivery?.errorMessage || '';
+    emailNoticeMessage = `Your reservation is saved. Confirmation email delivery notice: ${errDetail || 'Provider attempt logged'}.`;
+  } else {
+    emailNoticeType = 'info';
+    emailNoticeMessage = `Email delivery status is unavailable. Please retain your confirmation code: ${code}.`;
+  }
+
+  // Itinerary Segments (Authored solely from backend flights list)
+  const itineraryOutbound = safeArray(booking.itinerary?.outbound);
+  const itineraryReturn = safeArray(booking.itinerary?.return);
+  const flightsList = safeArray(booking.flights).length > 0
+    ? safeArray(booking.flights)
+    : (itineraryOutbound.length > 0 ? itineraryOutbound : safeArray(booking.itinerary_segments));
+
+  const outboundSegments = itineraryOutbound.length > 0
+    ? itineraryOutbound
+    : flightsList.filter(f => displayText(f?.leg || f?.journey_direction).toLowerCase() === 'outbound' || (!f?.leg && flightsList.indexOf(f) === 0));
+
+  const returnSegments = itineraryReturn.length > 0
+    ? itineraryReturn
+    : flightsList.filter(f => displayText(f?.leg || f?.journey_direction).toLowerCase() === 'return' || (!f?.leg && flightsList.indexOf(f) > 0));
+
+  const allSegments = [...outboundSegments, ...returnSegments];
+
+  const isSegmentValid = (seg) => {
+    const origin = seg.departureAirport || seg.originCode || seg.departure_airport || seg.origin_airport;
+    const dest = seg.arrivalAirport || seg.destinationCode || seg.arrival_airport || seg.destination_airport;
+    const carrier = seg.airlineName || seg.carrier_name || seg.airline;
+    const fn = seg.flightNumber || seg.flight_number;
+    return !!(origin && dest && carrier && fn);
+  };
+
+  const isItineraryComplete = allSegments.length > 0 && allSegments.every(isSegmentValid);
+
+  // Price Calculation & Validation (Section 8 rule: Positive numeric total or unavailable)
+  const rawPrice = parseFloat(booking.booking?.totalAmount ?? booking.totalAmount ?? booking.total_amount ?? booking.customer_price ?? 0);
+  const hasValidPrice = !isNaN(rawPrice) && rawPrice > 0;
+  const currency = displayText(booking.booking?.currency || booking.currency, 'USD').toUpperCase();
+  const totalPriceDisplay = hasValidPrice ? `$${rawPrice.toFixed(2)} ${currency}` : 'Reservation amount unavailable';
+
+  // Payment Method Metadata Reference (Section 2, 5, 6 rules)
+  const rawCardRef = booking.cardReference || booking.paymentMethod || booking.payment_method || {};
+  const cardRef = rawCardRef && typeof rawCardRef === 'object' && !Array.isArray(rawCardRef) ? rawCardRef : {};
+  const cardholderName = displayText(cardRef.cardholderName || cardRef.cardholder_name || booking.passenger_name, passengerName);
+  const cardBrand = displayText(cardRef.cardBrand || cardRef.card_brand || cardRef.brand, '');
+  const rawLast4 = String(cardRef.last4 || cardRef.card_last4 || cardRef.cardLast4 || '').replace(/\D/g, '');
+  const validLast4 = /^\d{4}$/.test(rawLast4) ? rawLast4 : null;
+
+  let cardDisplay = '';
+  if (cardBrand && validLast4) {
+    cardDisplay = `${cardBrand} ending in ${validLast4}`;
+  } else if (validLast4) {
+    cardDisplay = `Card ending in ${validLast4}`;
+  } else {
+    cardDisplay = 'Card ending unavailable';
+  }
+
+  const expMonth = cardRef.expMonth || cardRef.card_exp_month || cardRef.cardExpMonth;
+  const expYear = cardRef.expYear || cardRef.card_exp_year || cardRef.cardExpYear;
+  const expDisplay = (expMonth && expYear) ? `${expMonth}/${expYear}` : 'N/A';
+
+  const billingAddr = displayText(cardRef.billingAddress) || [
+    cardRef.billing_address_line1 || cardRef.billingAddressLine1,
+    cardRef.billing_address_line2 || cardRef.billingAddressLine2,
+    cardRef.billing_city || cardRef.billingCity,
+    cardRef.billing_state || cardRef.billingState,
+    cardRef.billing_postal_code || cardRef.billingPostalCode,
+    cardRef.billing_country || cardRef.billingCountry
+  ].filter(Boolean).join(', ') || 'On File';
+
+  const billingPhone = displayText(cardRef.billingPhone || cardRef.billing_phone, phone);
 
   return (
-    <div className="payment-success-page">
+    <div className="confirmation-page-wrapper">
       <Helmet>
-        <title>Payment Successful | FareTransit</title>
+        <title>{isPaid ? 'Booking & Payment Confirmed' : 'Reservation Received'} | FareTransit</title>
       </Helmet>
 
-      <div className="success-inner-wrapper">
-        
-        {/* Print-friendly Invoice Header */}
-        <div className="invoice-print-header">
-          <h2>FareTransit LLC</h2>
-          <p>Temporary Booking Confirmation Receipt</p>
-          <small>{BUSINESS_ADDRESS_SHORT} · support@faretransit.com</small>
+      <div className="confirmation-container no-print-padding">
+        <div className="confirmation-context-nav no-print">
+          <Link to="/my-bookings" className="confirmation-context-back">
+            <i className="fas fa-arrow-left" aria-hidden="true"></i>
+            Back to My Bookings
+          </Link>
         </div>
 
-        {/* Success Card Header */}
-        <div className="success-card-header no-print">
-          <div className="success-checkmark-wrapper">
-            <svg className="checkmark-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
-              <circle className="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
-              <path className="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
-            </svg>
+        {/* ── 1. Header Banner & Success Checkmark ──────────────────────── */}
+        <div className="confirmation-header-banner">
+          <div className="confirmation-checkmark-circle">
+            <span className="confirmation-checkmark-symbol">&#10003;</span>
           </div>
-          <h2>Thank you!</h2>
-          <p style={{ fontSize: '1.15rem', color: '#1e293b', fontWeight: 'bold', margin: '0.5rem 0' }}>Your reservation request has been received successfully.</p>
-          <p style={{ maxWidth: '600px', margin: '0 auto', color: '#475569' }}>Our travel specialists will verify your itinerary and manually issue your ticket shortly. A confirmation email has been sent.</p>
+
+          <h1 className="confirmation-hero-title">
+            {isPaid ? 'Booking and Payment Confirmed' : 'Reservation Received'}
+          </h1>
+
+          <p className="confirmation-hero-subtitle">
+            {isPaid
+              ? `Thank you, ${firstName}. Your payment was successful and your reservation has been confirmed.`
+              : `Thank you, ${firstName}. Your reservation details have been received. Our team will process the booking and provide the final confirmation.`}
+          </p>
+
+          <div className="confirmation-status-row">
+            <div className={`status-badge status-badge--${isPaid ? 'paid' : 'pending'}`}>
+              <i className={`fas ${isPaid ? 'fa-check-circle' : 'fa-clock'}`}></i>
+              Payment Status: {paymentStatusDisplay}
+            </div>
+            <div className="status-badge status-badge--info">
+              <i className="fas fa-ticket-alt"></i>
+              Booking Status: {bookingStatusDisplay}
+            </div>
+          </div>
+        </div>
+
+        {/* ── 2. Prominent Reservation Details Card ──────────────────────── */}
+        <div className="reservation-details-card">
           
-          <div className="booking-status-badge-container" style={{ margin: '1.5rem 0' }}>
-            <span style={{ fontSize: '0.8rem', color: '#64748b', display: 'block', textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.05em' }}>Booking Status</span>
-            <strong style={{ fontSize: '1.15rem', color: '#d97706', display: 'inline-block', padding: '6px 20px', backgroundColor: '#fef3c7', borderRadius: '30px', border: '1px solid #fcd34d', marginTop: '6px', fontWeight: '700' }}>
-              {bookingDataFromDb?.status === 'DONE' ? 'Confirmed & Done' : 'Pending Confirmation'}
-            </strong>
+          {/* Section: Booking Information */}
+          <div className="res-section">
+            <h3 className="res-section-title">
+              <i className="fas fa-info-circle"></i> Booking Information
+            </h3>
+            <div className="res-grid-two">
+              <div className="res-field">
+                <span className="res-field-label">Confirmation Code / Booking ID</span>
+                <strong className="res-field-code">{code}</strong>
+              </div>
+              <div className="res-field">
+                <span className="res-field-label">Booking Date</span>
+                <span className="res-field-val">{bookingDate}</span>
+              </div>
+              <div className="res-field">
+                <span className="res-field-label">Primary Passenger</span>
+                <span className="res-field-val">{passengerName}</span>
+              </div>
+              <div className="res-field">
+                <span className="res-field-label">Contact Email</span>
+                <span className="res-field-val">{email}</span>
+              </div>
+              <div className="res-field">
+                <span className="res-field-label">Contact Phone</span>
+                <span className="res-field-val">{phone}</span>
+              </div>
+            </div>
           </div>
+
+          <hr className="res-divider" />
+
+          {/* Section: Flight Itinerary */}
+          <div className="res-section">
+            <h3 className="res-section-title">
+              <i className="fas fa-plane-departure"></i> Flight Itinerary
+            </h3>
+
+            {!isItineraryComplete ? (
+              <div className="incomplete-itinerary-alert">
+                <i className="fas fa-exclamation-triangle"></i> Itinerary details are currently incomplete.
+              </div>
+            ) : (
+              <div className="itinerary-segments-list">
+                {outboundSegments.length > 0 && (
+                  <div className="itinerary-leg-group">
+                    <h4 className="leg-group-title"><i className="fas fa-plane"></i> Outbound Flight</h4>
+                    {outboundSegments.map((seg, idx) => (
+                      <div key={idx} className="segment-card">
+                        <div className="segment-header">
+                          <span className="segment-airline">
+                            <AirlineLogo
+                              slug={airlineLogoSlugFor(seg)}
+                              src={displayText(seg.airlineLogoUrl || seg.airline_logo_url)}
+                              airlineName={airlineNameFor(seg)}
+                              className="segment-logo"
+                            />
+                            <strong>{airlineNameFor(seg)}</strong>
+                            <span className="segment-flight-number">{displayText(seg.flightNumber || seg.flight_number || 'N/A')}</span>
+                          </span>
+                          <span className="segment-cabin">{displayText(seg.cabinClass || seg.cabin || 'Economy')}</span>
+                        </div>
+                        <div className="segment-route">
+                          <div className="route-point">
+                            <span className="airport-code">{displayText(seg.departureAirport || seg.originCode || seg.departure_airport || seg.origin_airport)}</span>
+                            <span className="city-name">{displayText(seg.originName || seg.originCity || seg.origin_city || '')}</span>
+                            <span className="time-date">{seg.departureDate || seg.departure_date} {seg.departureTime || seg.departure_time || ''}</span>
+                          </div>
+                          <div className="route-arrow">
+                            <i className="fas fa-arrow-right"></i>
+                            <span className="stops-count">{seg.stops === 0 ? 'Non-stop' : `${seg.stops} stop(s)`}</span>
+                          </div>
+                          <div className="route-point">
+                            <span className="airport-code">{displayText(seg.arrivalAirport || seg.destinationCode || seg.arrival_airport || seg.destination_airport)}</span>
+                            <span className="city-name">{displayText(seg.destinationName || seg.destinationCity || seg.destination_city || '')}</span>
+                            <span className="time-date">{seg.arrivalDate || seg.arrival_date} {seg.arrivalTime || seg.arrival_time || ''}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {returnSegments.length > 0 && (
+                  <div className="itinerary-leg-group" style={{ marginTop: '1.25rem' }}>
+                    <h4 className="leg-group-title"><i className="fas fa-undo"></i> Return Flight</h4>
+                    {returnSegments.map((seg, idx) => (
+                      <div key={idx} className="segment-card">
+                        <div className="segment-header">
+                          <span className="segment-airline">
+                            <AirlineLogo
+                              slug={airlineLogoSlugFor(seg)}
+                              src={displayText(seg.airlineLogoUrl || seg.airline_logo_url)}
+                              airlineName={airlineNameFor(seg)}
+                              className="segment-logo"
+                            />
+                            <strong>{airlineNameFor(seg)}</strong>
+                            <span className="segment-flight-number">{displayText(seg.flightNumber || seg.flight_number || 'N/A')}</span>
+                          </span>
+                          <span className="segment-cabin">{displayText(seg.cabinClass || seg.cabin || 'Economy')}</span>
+                        </div>
+                        <div className="segment-route">
+                          <div className="route-point">
+                            <span className="airport-code">{displayText(seg.departureAirport || seg.originCode || seg.departure_airport || seg.origin_airport)}</span>
+                            <span className="city-name">{displayText(seg.originName || seg.originCity || seg.origin_city || '')}</span>
+                            <span className="time-date">{seg.departureDate || seg.departure_date} {seg.departureTime || seg.departure_time || ''}</span>
+                          </div>
+                          <div className="route-arrow">
+                            <i className="fas fa-arrow-right"></i>
+                            <span className="stops-count">{seg.stops === 0 ? 'Non-stop' : `${seg.stops} stop(s)`}</span>
+                          </div>
+                          <div className="route-point">
+                            <span className="airport-code">{displayText(seg.arrivalAirport || seg.destinationCode || seg.arrival_airport || seg.destination_airport)}</span>
+                            <span className="city-name">{displayText(seg.destinationName || seg.destinationCity || seg.destination_city || '')}</span>
+                            <span className="time-date">{seg.arrivalDate || seg.arrival_date} {seg.arrivalTime || seg.arrival_time || ''}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <hr className="res-divider" />
+
+          {/* Section: Price Details */}
+          <div className="res-section">
+            <h3 className="res-section-title">
+              <i className="fas fa-dollar-sign"></i> Price Details
+            </h3>
+            <div className="price-summary-box">
+              <div className="price-row price-row--total">
+                <span>Total Reservation Amount:</span>
+                <strong>{totalPriceDisplay}</strong>
+              </div>
+            </div>
+          </div>
+
+          <hr className="res-divider" />
+
+          {/* Section: Card and Billing Reference (Masked Metadata Only) */}
+          <div className="res-section">
+            <h3 className="res-section-title">
+              <i className="fas fa-credit-card"></i> Card & Billing Reference
+            </h3>
+            <div className="res-grid-two">
+              <div className="res-field">
+                <span className="res-field-label">Cardholder Name</span>
+                <span className="res-field-val">{cardholderName}</span>
+              </div>
+              <div className="res-field">
+                <span className="res-field-label">Payment Method</span>
+                <span className="res-field-val">{cardDisplay}</span>
+              </div>
+              <div className="res-field">
+                <span className="res-field-label">Expiration</span>
+                <span className="res-field-val">{expDisplay}</span>
+              </div>
+              <div className="res-field">
+                <span className="res-field-label">Billing Phone</span>
+                <span className="res-field-val">{billingPhone}</span>
+              </div>
+              <div className="res-field" style={{ gridColumn: 'span 2' }}>
+                <span className="res-field-label">Billing Address</span>
+                <span className="res-field-val">{billingAddr}</span>
+              </div>
+            </div>
+          </div>
+
         </div>
 
-        {/* Receipt / Invoice Details */}
-        <div className="receipt-main-card">
-          <div className="receipt-section-header">
-            <h3>Receipt & Order Summary</h3>
-            <span className="receipt-badge">Paid</span>
-          </div>
-
-          <div className="receipt-details-grid">
-            <div className="details-item">
-              <span className="details-label">Amount Charged</span>
-              <strong className="amount-highlight">${displayedPrice.toFixed(2)} USD</strong>
-            </div>
-            <div className="details-item">
-              <span className="details-label">Payment Gateway</span>
-              <span>Stripe (PCI Compliant)</span>
-            </div>
-            <div className="details-item">
-              <span className="details-label">Transaction Reference</span>
-              <span className="ref-code">{sessionId.substring(0, 20)}...</span>
-            </div>
-            <div className="details-item">
-              <span className="details-label">Billing Name</span>
-              <span>{bookingDataFromDb?.passenger_name || (type === 'booking' ? `${metadata.firstName} ${metadata.lastName}` : metadata.name)}</span>
-            </div>
-          </div>
-
-          {/* Conditional view: Flight Booking Temporary Confirmation Ticket */}
-          {type === 'booking' && (() => {
-            const isAmtrak = (bookingDataFromDb?.flight_details?.airline || metadata.flight_airline || '').toLowerCase().includes('amtrak');
-            const passengers = bookingDataFromDb?.traveller_details || [];
-            
-            return (
-              <div className="receipt-item-details-box">
-                <div className="ticket-label-overlay">
-                  TEMPORARY BOOKING CONFIRMATION
-                </div>
-                
-                <div className="boarding-pass-visual">
-                  <div className="boarding-pass-header" style={{ borderBottom: isAmtrak ? '2px dashed var(--color-secondary)' : '2px dashed var(--color-primary)' }}>
-                    <span>{isAmtrak ? 'Operator' : 'Carrier'}: <strong>{bookingDataFromDb?.flight_details?.airline || metadata.flight_airline}</strong></span>
-                    <span>{isAmtrak ? 'Train' : 'Flight'}: <strong>{bookingDataFromDb?.flight_details?.flightNumber || metadata.flight_number}</strong></span>
-                    {bookingRef && <span className="ref-tag">Confirmation Code: <strong>{bookingRef}</strong></span>}
-                  </div>
-                  
-                  <div className="boarding-pass-route">
-                    <div className="route-terminal">
-                      <h4>{bookingDataFromDb?.flight_details?.departure?.airport || metadata.flight_route?.split(' to ')[0]}</h4>
-                      <span>Departure</span>
-                      <small>{bookingDataFromDb?.flight_details?.departure?.date} {bookingDataFromDb?.flight_details?.departure?.time || metadata.flight_dep_time}</small>
-                    </div>
-                    
-                    <div className="route-flight-symbol">
-                      <i className={`fas ${isAmtrak ? 'fa-subway' : 'fa-plane'}`} style={{ color: isAmtrak ? 'var(--color-secondary)' : 'var(--color-primary)' }}></i>
-                      <span className="flight-dot-line"></span>
-                    </div>
-  
-                    <div className="route-terminal">
-                      <h4>{bookingDataFromDb?.flight_details?.arrival?.airport || metadata.flight_route?.split(' to ')[1]}</h4>
-                      <span>Arrival</span>
-                      <small>{bookingDataFromDb?.flight_details?.arrival?.date} {bookingDataFromDb?.flight_details?.arrival?.time || metadata.flight_arr_time}</small>
-                    </div>
-                  </div>
-
-                  <div className="boarding-pass-passenger">
-                    <div>
-                      <span>Primary Contact</span>
-                      <strong>{bookingDataFromDb?.passenger_name || `${metadata.firstName} ${metadata.lastName}`}</strong>
-                    </div>
-                    <div>
-                      <span>Contact Info</span>
-                      <strong style={{ fontSize: '0.85rem' }}>
-                        {bookingDataFromDb?.email || metadata.email}<br/>
-                        {bookingDataFromDb?.phone || metadata.phone}
-                      </strong>
-                    </div>
-                    <div>
-                      <span>{isAmtrak ? 'Seat Class' : 'Cabin Class'}</span>
-                      <strong>{bookingDataFromDb?.flight_details?.class || metadata.flight_class}</strong>
-                    </div>
-                    <div>
-                      <span>Travelers</span>
-                      <strong>{passengers.length || 1}</strong>
-                    </div>
-                  </div>
-
-                  {passengers.length > 0 && (
-                    <div className="boarding-pass-manifest">
-                      <div className="manifest-header">Passenger Manifest</div>
-                      <table className="manifest-table">
-                        <thead>
-                          <tr>
-                            <th>#</th>
-                            <th>Name</th>
-                            <th>DOB</th>
-                            <th>Gender</th>
-                            <th>Passport</th>
-                            <th>Nationality</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {passengers.map((p, idx) => (
-                            <tr key={idx}>
-                              <td data-label="No.">{idx + 1}</td>
-                              <td data-label="Name"><strong>{p.firstName} {p.middleName || ''} {p.lastName}</strong></td>
-                              <td data-label="DOB">{p.dateOfBirth}</td>
-                              <td data-label="Gender" style={{ textTransform: 'capitalize' }}>{p.gender}</td>
-                              <td data-label="Passport">{p.passportNumber || 'N/A'}</td>
-                              <td data-label="Nationality">{p.nationality || 'N/A'}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
-
-                <div className="next-steps-info">
-                  <strong>Notice of Reservation:</strong>
-                  <ul>
-                    <li>Your {isAmtrak ? 'train transit reservation' : 'flight reservation'} is registered under reference <strong>{bookingRef || 'Pending'}</strong>.</li>
-                    <li>This is a temporary confirmation showing details recorded after successful checkout. Your final airline ticket is being issued.</li>
-                    <li>A detailed confirmation itinerary and {isAmtrak ? 'train ticket receipt' : 'flight e-ticket'} has been sent to <strong>{bookingDataFromDb?.email || metadata.email}</strong>.</li>
-                    <li>For support or changes, call us anytime at {SUPPORT_PHONE_DISPLAY}.</li>
-                  </ul>
-                </div>
-              </div>
-            );
-          })()}
-
-          {/* Conditional view: Consulting Payment */}
-          {type === 'consulting' && (
-            <div className="receipt-item-details-box">
-              <div className="receipt-sub-header">
-                <i className="fas fa-concierge-bell"></i> Consulting Service Plan
-              </div>
-              
-              <div className="consulting-receipt-visual">
-                <h4>{metadata.plan_name}</h4>
-                <p>Urgent travel logistics advisory, itinerary coordination, and support services.</p>
-                <div className="consulting-meta-row">
-                  <div>
-                    <span>Associated Email</span>
-                    <strong>{metadata.email}</strong>
-                  </div>
-                  <div>
-                    <span>Contact Number</span>
-                    <strong>{metadata.phone || 'Not provided'}</strong>
-                  </div>
-                </div>
-              </div>
-
-              <div className="next-steps-info">
-                <strong>What Happens Next:</strong>
-                <ul>
-                  <li>An advisor has been assigned to your travel request and is reviewing your details.</li>
-                  <li>We will contact you via email or phone at <strong>{metadata.phone || metadata.email}</strong> within 2 hours.</li>
-                  <li>If you require immediate dispatch, call our hotline at {SUPPORT_PHONE_DISPLAY}.</li>
-                </ul>
-              </div>
-            </div>
-          )}
+        {/* ── 3. Email Delivery Status Notice ─────────────────────────────── */}
+        <div className={`email-notice-box email-notice-box--${emailNoticeType}`}>
+          <i className={`fas ${emailNoticeType === 'success' ? 'fa-envelope-open-text' : (emailNoticeType === 'warn' ? 'fa-exclamation-triangle' : 'fa-info-circle')}`}></i>
+          <span>{emailNoticeMessage}</span>
         </div>
 
-        {/* Buttons */}
-        <div className="action-buttons-wrapper no-print">
-          <button onClick={handlePrint} className="success-btn success-btn-secondary">
-            <i className="fas fa-print"></i> View / Download Temporary Ticket
+        {/* ── 4. Action Buttons ────────────────────────────────────────────── */}
+        <div className="confirmation-actions-bar no-print">
+          <Link to="/my-bookings" className="btn-confirm btn-confirm--primary">
+            <i className="fas fa-suitcase"></i> View My Booking
+          </Link>
+          <button type="button" onClick={handlePrint} className="btn-confirm btn-confirm--secondary">
+            <i className="fas fa-print"></i> Print Reservation
           </button>
-          <Link to="/my-bookings" className="success-btn success-btn-accent">
-            <i className="fas fa-calendar-check"></i> Go to My Bookings
+          <Link to="/" className="btn-confirm btn-confirm--outline">
+            <i className="fas fa-home"></i> Return to Home
           </Link>
-          <Link to="/" className="success-btn success-btn-primary">
-            Go to Homepage
-          </Link>
+          <a href="mailto:support@faretransit.com" className="btn-confirm btn-confirm--outline">
+            <i className="fas fa-headset"></i> Contact Support
+          </a>
         </div>
 
-        <div className="success-footer">
-          <p>FareTransit LLC · {BUSINESS_ADDRESS_CITY}, {BUSINESS_ADDRESS_STATE_CODE} · support@faretransit.com</p>
-        </div>
       </div>
     </div>
   );
 }
 
-export default PaymentSuccess;
+export default PaymentSuccessPage;
