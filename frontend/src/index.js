@@ -33,6 +33,9 @@ installFareBreakdownUX();
 installMobileBookingUX();
 installPrimaryContactSyncUX();
 
+// Build marker used to verify that the current FareTransit frontend bundle is live.
+document.documentElement.dataset.faretransitBuild = 'compact-hero-2026-08-20';
+
 // CRM launches the EXISTING create-flight workflow with a leadId query parameter.
 // Patch only that single request path so the successful legacy create call is
 // linked back to CRM without rewriting the production booking form itself.
