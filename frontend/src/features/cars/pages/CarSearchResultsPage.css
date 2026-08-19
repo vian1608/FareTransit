@@ -1,0 +1,262 @@
+.car-results-page {
+  background-color: #f8fafc;
+  min-height: 80vh;
+  padding-bottom: 3rem;
+}
+
+.car-results-summary-bar {
+  background: #0f172a;
+  color: #ffffff;
+  padding: 1.25rem 0;
+  border-bottom: 1px solid #1e293b;
+}
+
+.car-summary-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.summary-title-line {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.summary-title-line i {
+  color: #8b1538;
+  font-size: 1.3rem;
+}
+
+.summary-title-line h2 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+}
+
+.summary-dates-sub {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  margin: 0.35rem 0 0 0;
+}
+
+.edit-search-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #8b1538;
+  color: #ffffff;
+  font-size: 0.88rem;
+  font-weight: 600;
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.edit-search-toggle-btn:hover {
+  background: #a31a44;
+}
+
+.car-edit-search-drawer {
+  background: #f1f5f9;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 1.25rem 0;
+}
+
+.car-results-container {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.car-filter-sidebar {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.25rem;
+  height: fit-content;
+}
+
+.filter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #f1f5f9;
+  margin-bottom: 1rem;
+}
+
+.filter-header h3 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.filter-header h3 i {
+  color: #8b1538;
+}
+
+.reset-filters-btn {
+  background: none;
+  border: none;
+  color: #8b1538;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.reset-filters-btn:hover {
+  text-decoration: underline;
+}
+
+.filter-group {
+  margin-bottom: 1.25rem;
+
+}
+
+.filter-group h4 {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #334155;
+  margin: 0 0 0.5rem 0;
+}
+
+.filter-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: #475569;
+  margin-bottom: 0.4rem;
+  cursor: pointer;
+}
+
+.filter-checkbox-label input[type="checkbox"] {
+  accent-color: #8b1538;
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+}
+
+.car-results-main {
+  display: flex;
+  flex-direction: column;
+}
+
+.car-controls-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.75rem 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.results-count-text {
+  font-size: 0.9rem;
+  color: #475569;
+}
+
+.sort-select-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.88rem;
+  color: #475569;
+}
+
+.car-sort-select {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.88rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #1e293b;
+
+}
+
+.car-loading-state,
+.car-error-state,
+.car-empty-state {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 3rem 2rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.car-loading-icon {
+  font-size: 2.5rem;
+  color: #8b1538;
+}
+
+.car-error-state i,
+.car-empty-state i {
+  font-size: 2.5rem;
+  color: #94a3b8;
+}
+
+.error-req-id {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.retry-search-btn,
+.reset-filters-btn-large {
+  background: #8b1538;
+  color: #ffffff;
+  font-weight: 600;
+  padding: 0.65rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 0.5rem;
+}
+
+.load-more-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.load-more-btn {
+  background: #1e293b;
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 0.75rem 2rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.load-more-btn:hover {
+  background: #0f172a;
+}
+
+@media (max-width: 900px) {
+  .car-results-container {
+    grid-template-columns: 1fr;
+  }
+
+  .car-filter-sidebar {
+    order: 2;
+  }
+}

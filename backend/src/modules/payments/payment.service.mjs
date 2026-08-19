@@ -1,5 +1,6 @@
 import stripeService from '../../integrations/stripe/stripe.service.mjs';
 import env from '../../config/env.mjs';
+import { calculateBookingTotal } from '../../shared/utils/pricing.helper.mjs';
 
 // Predefined catalog for pricing verification
 export const CONSULTING_PLANS = {
@@ -24,18 +25,35 @@ export const paymentService = {
 
     let resolvedAmount = parseFloat(amount);
     
-    // Server-calculated pricing validation
+    // Server-calculated pricing validation using pricing.helper.mjs
     if (type === 'consulting') {
       const planKey = String(planName || '').toLowerCase().split(' ')[0];
       if (CONSULTING_PLANS[planKey]) {
         resolvedAmount = CONSULTING_PLANS[planKey].price;
       } else {
-        // Fallback checks
         if (isNaN(resolvedAmount) || resolvedAmount <= 0) {
           throw new Error('Invalid payment amount calculated by server');
         }
       }
     } else if (type === 'booking') {
+      if (payload.flight?.isMock || payload.returnFlight?.isMock || payload.isMock) {
+        const err = new Error('Offline / sample flight routes cannot be booked online. Please contact our support team.');
+        err.code = 'MOCK_FLIGHT_NOT_BOOKABLE';
+        throw err;
+      }
+
+      if (payload.flight) {
+        const pricing = calculateBookingTotal({
+          outboundFlight: payload.flight,
+          returnFlight: payload.returnFlight,
+          passengersCount: payload.passengersCount || 1,
+          currency: payload.currency || 'USD'
+        });
+        resolvedAmount = pricing.customerPriceNum;
+      } else {
+        resolvedAmount = parseFloat(amount);
+      }
+
       if (isNaN(resolvedAmount) || resolvedAmount <= 0) {
         throw new Error('Invalid booking total amount calculated by server');
       }
@@ -55,7 +73,7 @@ export const paymentService = {
       metadata.phone = payload.phone || '';
       metadata.origin = payload.origin || '';
       metadata.destination = payload.destination || '';
-      metadata.notes = (payload.notes || '').substring(0, 400); // Stripe 500 limit
+      metadata.notes = (payload.notes || '').substring(0, 400);
       metadata.plan_name = planName || '';
     } else if (type === 'booking') {
       const { passenger, flight } = payload;

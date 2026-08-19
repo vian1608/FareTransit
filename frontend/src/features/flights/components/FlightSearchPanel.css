@@ -1,0 +1,73 @@
+.flight-search-panel-wrapper {
+  width: 100%;
+  margin: 0 auto;
+}
+
+.flight-search-title {
+  margin: 0 0 0.5rem 0;
+  color: #1e293b;
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.airline-prefill-banner {
+  background-color: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e40af;
+  padding: 0.6rem 0.85rem;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.btn-primary-search {
+  width: 100%;
+  min-height: 64px;
+  background: linear-gradient(135deg, #8b1538 0%, #680e28 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 14px;
+  font-size: 1.15rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(139, 21, 56, 0.25);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+}
+
+.btn-primary-search:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(139, 21, 56, 0.35);
+}
+
+.btn-primary-search:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.airline-intent-disclosure {
+  font-size: 0.78rem;
+  color: #64748b;
+  text-align: center;
+  margin-top: 1.25rem;
+  line-height: 1.45;
+}
+
+@media (max-width: 768px) {
+  .flight-search-title {
+    font-size: 1.4rem;
+  }
+
+  .btn-primary-search {
+    min-height: 56px;
+    font-size: 1.05rem;
+  }
+}

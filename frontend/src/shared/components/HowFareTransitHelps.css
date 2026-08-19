@@ -1,0 +1,294 @@
+/* ── How FareTransit Helps Modern Consolidated Section ── */
+.how-helps-section {
+  padding: 3rem 0;
+  background-color: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+  box-sizing: border-box;
+  overflow-x: clip;
+}
+
+.how-helps-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.how-helps-header h2 {
+  font-size: clamp(1.85rem, 4vw, 2.1rem);
+  color: #1e293b;
+  font-weight: 800;
+  line-height: 1.18;
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+}
+
+.how-helps-sub {
+  color: #475569;
+  font-size: clamp(0.95rem, 2.5vw, 1.05rem);
+  line-height: 1.45;
+  max-width: 580px;
+  margin: 0 auto;
+}
+
+/* ── 3-Column Segmented Control Tab Row ── */
+.how-helps-tablist {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto 1.5rem;
+  padding: 5px;
+  background: #f1f5f9;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  box-sizing: border-box;
+  gap: 4px;
+}
+
+.how-helps-tab {
+  min-width: 0;
+  min-height: 48px;
+  height: 48px;
+  padding: 0 0.35rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #334155;
+  background: transparent;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  outline-offset: 2px;
+  box-sizing: border-box;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.how-helps-tab:hover {
+  color: #8b1538;
+}
+
+.how-helps-tab--active {
+  color: #ffffff !important;
+  background: #8b1538 !important;
+  box-shadow: 0 2px 6px rgba(139, 21, 56, 0.28);
+}
+
+.how-helps-tab:focus-visible {
+  outline: 2px solid #8b1538;
+}
+
+.tab-label-desktop {
+  display: inline;
+}
+
+.tab-label-mobile {
+  display: none;
+}
+
+/* ── Tab Panel & Stage ── */
+.how-helps-panel {
+  position: relative;
+  max-width: 440px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.how-helps-carousel {
+  position: relative;
+  width: 100%;
+  touch-action: pan-y;
+  box-sizing: border-box;
+}
+
+.how-helps-card-stage {
+  width: 100%;
+  height: 220px;
+  min-height: 220px;
+  max-height: 220px;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.how-helps-card {
+  height: 100%;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 1.25rem 1.25rem 1rem;
+  text-align: center;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+  animation: cardFadeIn 0.3s ease;
+}
+
+@keyframes cardFadeIn {
+  from {
+    opacity: 0.5;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.how-helps-icon {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  background: #faf5f7;
+  color: #8b1538;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+  margin-bottom: 0.35rem;
+  border: 1px solid rgba(139, 21, 56, 0.15);
+}
+
+.how-helps-card h3 {
+  font-size: 1.22rem;
+  color: #1e293b;
+  font-weight: 700;
+  margin-top: 0;
+  margin-bottom: 0.3rem;
+  line-height: 1.22;
+}
+
+.how-helps-card p {
+  font-size: 0.95rem;
+  color: #475569;
+  line-height: 1.45;
+  margin: 0;
+  max-width: 390px;
+}
+
+.how-helps-card-counter {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #64748b;
+  margin-top: 0.4rem;
+}
+
+/* ── Integrated Bottom Navigation Row ── */
+.how-helps-nav-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  margin-top: 1rem;
+}
+
+.how-helps-arrow {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 50%;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #8b1538;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06);
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.how-helps-arrow:hover {
+  background: #8b1538;
+  color: #ffffff;
+  border-color: #8b1538;
+}
+
+/* ── Pagination Dots ── */
+.how-helps-dots {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.how-helps-dot {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: #cbd5e1;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.how-helps-dot--active {
+  background: #8b1538;
+  width: 24px;
+  height: 8px;
+  border-radius: 999px;
+}
+
+/* ── Responsive Viewport Adjustments ── */
+@media (max-width: 480px) {
+  .tab-label-desktop {
+    display: none;
+  }
+
+  .tab-label-mobile {
+    display: inline;
+  }
+
+  .how-helps-tab {
+    font-size: 0.84rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .how-helps-section {
+    padding: 2.25rem 0;
+  }
+
+  .how-helps-tablist {
+    max-width: 100%;
+    padding: 4px;
+    gap: 3px;
+  }
+
+  .how-helps-tab {
+    font-size: 0.8rem;
+    padding: 0 0.15rem;
+    min-height: 44px;
+    height: 44px;
+  }
+
+  .how-helps-card-stage {
+    height: 230px;
+    min-height: 230px;
+    max-height: 230px;
+  }
+
+  .how-helps-card {
+    padding: 1rem 0.85rem;
+    border-radius: 16px;
+  }
+
+  .how-helps-card h3 {
+    font-size: 1.1rem;
+  }
+
+  .how-helps-card p {
+    font-size: 0.88rem;
+  }
+}

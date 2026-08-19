@@ -1,0 +1,199 @@
+.senior-search-card {
+  max-width: 1120px;
+  margin: 0 auto;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.07);
+  padding: 26px;
+}
+
+.senior-search-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.senior-search-kicker {
+  display: block;
+  color: #8b1236;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.senior-search-heading h2 {
+  margin: 0 0 6px;
+  color: #111827;
+  font-size: 1.65rem;
+  line-height: 1.2;
+}
+
+.senior-search-heading p {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+.senior-search-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.senior-search-options {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.senior-search-options label,
+.senior-search-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.senior-search-options label > span,
+.senior-search-field > span {
+  color: #475569;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.senior-search-options select,
+.senior-search-field input[type="date"] {
+  width: 100%;
+  height: 46px;
+  box-sizing: border-box;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #fff;
+  color: #0f172a;
+  padding: 0 12px;
+  font: inherit;
+  font-size: 0.94rem;
+}
+
+.senior-search-options select:focus,
+.senior-search-field input[type="date"]:focus {
+  outline: none;
+  border-color: #8b1236;
+  box-shadow: 0 0 0 3px rgba(139, 18, 54, 0.1);
+}
+
+.senior-search-route-row {
+  display: grid;
+  grid-template-columns: 1.35fr 1.35fr 0.9fr 0.9fr;
+  gap: 12px;
+  align-items: end;
+}
+
+.senior-search-airport-field .airport-autocomplete-container {
+  width: 100%;
+  margin: 0;
+  position: relative;
+}
+
+.senior-search-airport-field .autocomplete-input-wrapper,
+.senior-search-airport-field .autocomplete-input {
+  min-height: 46px;
+}
+
+.senior-search-airport-field .autocomplete-suggestions-list {
+  z-index: 50;
+}
+
+.senior-search-field.is-disabled {
+  opacity: 0.5;
+}
+
+.senior-search-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.senior-search-action-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  padding-top: 4px;
+}
+
+.senior-search-action-row p {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.86rem;
+}
+
+.senior-search-action-row button {
+  min-width: 210px;
+  height: 48px;
+  border: 0;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #8b1236 0%, #a52040 100%);
+  color: #fff;
+  font-size: 0.98rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  box-shadow: 0 7px 18px rgba(139, 18, 54, 0.2);
+}
+
+.senior-search-action-row button:hover:not(:disabled) {
+  filter: brightness(1.04);
+  transform: translateY(-1px);
+}
+
+.senior-search-action-row button:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+@media (max-width: 980px) {
+  .senior-search-options {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .senior-search-route-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .senior-search-card {
+    padding: 18px 14px;
+    border-radius: 14px;
+  }
+
+  .senior-search-options,
+  .senior-search-route-row {
+    grid-template-columns: 1fr;
+  }
+
+  .senior-search-action-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .senior-search-action-row button {
+    width: 100%;
+  }
+}

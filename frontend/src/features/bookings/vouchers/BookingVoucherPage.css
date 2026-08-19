@@ -1,0 +1,202 @@
+.tfs-voucher-portal-host {
+  width: 100%;
+}
+
+.tfs-voucher-checkout {
+  margin: 1rem 0 1.25rem;
+  padding: 1rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.tfs-voucher-checkout__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.tfs-voucher-checkout__header h4 {
+  margin: 0.1rem 0 0;
+  font-size: 1rem;
+  color: #0f172a;
+}
+
+.tfs-voucher-checkout__header > i {
+  color: #8b1538;
+  font-size: 1.15rem;
+}
+
+.tfs-voucher-checkout__eyebrow {
+  display: block;
+  color: #64748b;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.tfs-voucher-checkout__controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.6rem;
+}
+
+.tfs-voucher-checkout__controls input {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 0.9rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  background: #fff;
+  color: #0f172a;
+  font-size: 0.95rem;
+  font-weight: 650;
+  letter-spacing: 0.03em;
+  box-sizing: border-box;
+}
+
+.tfs-voucher-checkout__controls input:focus {
+  outline: none;
+  border-color: #8b1538;
+  box-shadow: 0 0 0 3px rgba(139, 21, 56, 0.1);
+}
+
+.tfs-voucher-checkout__controls button,
+.tfs-voucher-applied button {
+  min-height: 46px;
+  padding: 0 1.1rem;
+  border: 0;
+  border-radius: 9px;
+  background: #1e3a5f;
+  color: #fff;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.tfs-voucher-checkout__controls button:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.tfs-voucher-checkout__rule {
+  margin: 0.65rem 0 0;
+  color: #64748b;
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.tfs-voucher-applied {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.8rem;
+  border: 1px solid #86efac;
+  border-radius: 10px;
+  background: #f0fdf4;
+}
+
+.tfs-voucher-applied > div {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.tfs-voucher-applied__code {
+  color: #047857;
+  font-size: 0.75rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+}
+
+.tfs-voucher-applied strong {
+  color: #065f46;
+  font-size: 1rem;
+}
+
+.tfs-voucher-applied small {
+  color: #64748b;
+  line-height: 1.35;
+}
+
+.tfs-voucher-applied button {
+  min-height: 38px;
+  background: #fff;
+  color: #8b1538;
+  border: 1px solid #e2a8b9;
+}
+
+.tfs-voucher-message {
+  margin: 0.65rem 0 0;
+  padding: 0.55rem 0.7rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.tfs-voucher-message--success {
+  color: #065f46;
+  background: #ecfdf5;
+}
+
+.tfs-voucher-message--error {
+  color: #991b1b;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+}
+
+.tfs-voucher-price-example {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #dbe4ef;
+  color: #475569;
+  font-size: 0.76rem;
+}
+
+.tfs-voucher-price-example span {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.tfs-voucher-price-example strong {
+  color: #0f172a;
+}
+
+.tfs-voucher-price-example__final strong {
+  color: #047857;
+}
+
+.tfs-voucher-sidebar-row {
+  color: #047857;
+  font-weight: 700;
+}
+
+@media (max-width: 640px) {
+  .tfs-voucher-checkout {
+    margin: 0.75rem 0 1rem;
+    padding: 0.85rem;
+  }
+
+  .tfs-voucher-checkout__controls {
+    grid-template-columns: 1fr;
+  }
+
+  .tfs-voucher-checkout__controls button {
+    width: 100%;
+  }
+
+  .tfs-voucher-applied {
+    align-items: flex-start;
+  }
+
+  .tfs-voucher-price-example {
+    grid-template-columns: 1fr;
+    gap: 0.35rem;
+  }
+}

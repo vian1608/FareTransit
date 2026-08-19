@@ -1,39 +1,51 @@
+/* ── Main Hero Slider Container (Fixed Height Across All Slides) ── */
 .hero-slider {
   position: relative;
-  min-height: min(520px, 85vh);
+  height: 490px;
+  min-height: 490px;
+  max-height: 490px;
   color: #fff;
   overflow: hidden;
+  box-sizing: border-box;
 }
 
-/* Lighter than header — visually differentiated intro slide */
 .hero-slider--flights {
-  --hero-accent: #1464F4;
+  --hero-accent: #8b1538;
   --hero-gradient: linear-gradient(
     135deg,
-    rgba(11, 31, 51, 0.94) 0%,
-    rgba(20, 100, 244, 0.88) 50%,
-    rgba(11, 31, 51, 0.92) 100%
+    rgba(155, 45, 75, 0.92) 0%,
+    rgba(125, 30, 58, 0.88) 45%,
+    rgba(100, 35, 60, 0.85) 100%
   );
 }
 
 .hero-slider--rail {
-  --hero-accent: #0EA5A4;
+  --hero-accent: #1e3a5f;
   --hero-gradient: linear-gradient(
     135deg,
-    rgba(11, 31, 51, 0.94) 0%,
-    rgba(14, 165, 164, 0.88) 50%,
-    rgba(11, 31, 51, 0.92) 100%
+    rgba(45, 85, 130, 0.9) 0%,
+    rgba(30, 58, 95, 0.86) 45%,
+    rgba(25, 50, 85, 0.84) 100%
   );
 }
 
+/* ── Absolute Background Image Slides Layer ── */
 .hero-slider__slides {
   position: absolute;
   inset: 0;
+  width: 100%;
+  height: 490px;
+  min-height: 490px;
+  max-height: 490px;
 }
 
 .hero-slider__slide {
   position: absolute;
   inset: 0;
+  width: 100%;
+  height: 490px;
+  min-height: 490px;
+  max-height: 490px;
   opacity: 0;
   visibility: hidden;
   transition: opacity 0.65s ease, visibility 0.65s ease;
@@ -51,93 +63,45 @@
   object-fit: cover;
   object-position: center;
   display: block;
-}
-
-.hero-slider__slide--photo .hero-slider__slide-img {
-  opacity: 0.82;
-}
-
-.hero-slider__slide-bg--gradient {
-  width: 100%;
-  height: 100%;
-  background: var(--hero-gradient);
-}
-
-/* Intro slide: photo visible through softened brand overlay */
-.hero-slider__slide-img--intro {
-  opacity: 0.55;
-}
-
-.hero-slider__slide-bg--intro {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  background: var(--hero-gradient);
-  opacity: 0.78;
-}
-
-.hero-slider--flights .hero-slider__slide-bg--intro {
-  background: linear-gradient(
-    135deg,
-    rgba(155, 45, 75, 0.88) 0%,
-    rgba(125, 30, 58, 0.8) 50%,
-    rgba(80, 25, 45, 0.85) 100%
-  );
-}
-
-.hero-slider--rail .hero-slider__slide-bg--intro {
-  background: linear-gradient(
-    135deg,
-    rgba(45, 85, 130, 0.88) 0%,
-    rgba(30, 58, 95, 0.8) 50%,
-    rgba(20, 45, 75, 0.85) 100%
-  );
+  opacity: 0.48;
 }
 
 .hero-slider__slide-bg--overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    135deg,
-    rgba(15, 23, 42, 0.62) 0%,
-    rgba(15, 23, 42, 0.42) 50%,
-    rgba(15, 23, 42, 0.58) 100%
-  );
+  width: 100%;
+  height: 100%;
 }
 
 .hero-slider--flights .hero-slider__slide-bg--overlay {
   background: linear-gradient(
     135deg,
-    rgba(107, 15, 42, 0.62) 0%,
-    rgba(139, 21, 56, 0.38) 50%,
-    rgba(15, 23, 42, 0.52) 100%
+    rgba(107, 15, 42, 0.86) 0%,
+    rgba(139, 21, 56, 0.74) 50%,
+    rgba(15, 23, 42, 0.82) 100%
   );
 }
 
 .hero-slider--rail .hero-slider__slide-bg--overlay {
   background: linear-gradient(
     135deg,
-    rgba(15, 39, 68, 0.65) 0%,
-    rgba(30, 58, 95, 0.42) 50%,
-    rgba(15, 23, 42, 0.55) 100%
+    rgba(15, 39, 68, 0.88) 0%,
+    rgba(30, 58, 95, 0.76) 50%,
+    rgba(15, 23, 42, 0.82) 100%
   );
 }
 
-.hero-slider__slide-caption {
-  display: none;
-}
-
+/* ── Foreground UI Layer ── */
 .hero-slider__ui {
   position: relative;
   z-index: 10;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-  min-height: min(520px, 85vh);
-  /* Use block padding only — shorthand padding: Y 0 wipes .container horizontal padding */
-  padding-top: 2rem;
-  padding-bottom: 2.5rem;
+  height: 490px;
+  min-height: 490px;
+  max-height: 490px;
+  padding-top: 1.25rem;
+  padding-bottom: 3rem;
   box-sizing: border-box;
 }
 
@@ -146,7 +110,15 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 1.5rem;
+  height: 100%;
+  position: relative;
+}
+
+.hero-slider__content-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .hero-slider__content {
@@ -154,14 +126,10 @@
   animation: heroContentIn 0.5s ease;
 }
 
-.hero-slider__content--image {
-  max-width: 680px;
-}
-
 @keyframes heroContentIn {
   from {
     opacity: 0;
-    transform: translateY(12px);
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
@@ -169,136 +137,104 @@
   }
 }
 
-/* Fixed offer strip — always visible below the sliding hero */
-.hero-stack {
-  position: relative;
-}
-
-.hero-offer-bar {
-  position: relative;
-  z-index: 15;
-  color: #fff;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
-}
-
-.hero-offer-bar--flights {
-  background: linear-gradient(90deg, var(--color-primary-dark) 0%, var(--color-primary) 50%, var(--color-primary-dark) 100%);
-}
-
-.hero-offer-bar--rail {
-  background: linear-gradient(90deg, var(--color-primary-dark) 0%, var(--color-secondary) 50%, var(--color-primary-dark) 100%);
-}
-
-.hero-offer-bar__inner {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.75rem 0;
-}
-
-.hero-offer-bar__tag {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: 0.35rem 0.65rem;
-  font-size: 0.9rem;
-  line-height: 1.35;
-}
-
-.hero-offer-bar__label {
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  font-size: 0.72rem;
-  padding: 0.2rem 0.5rem;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.2);
-}
-
-.hero-offer-bar--flights .hero-offer-bar__label {
-  background: rgba(255, 220, 180, 0.3);
-}
-
-.hero-offer-bar--rail .hero-offer-bar__label {
-  background: rgba(180, 210, 255, 0.28);
-}
-
-.hero-offer-bar__highlight {
-  font-weight: 700;
-  font-size: 1.05rem;
-}
-
-.hero-offer-bar__detail {
-  opacity: 0.92;
-}
-
 .hero-slider__eyebrow {
-  font-size: 0.9rem;
-  letter-spacing: 0.04em;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
-  opacity: 0.88;
-  margin-bottom: 0.75rem;
+  color: #fce7f3;
+  opacity: 0.95;
+  margin-top: 0;
+  margin-bottom: 0.4rem;
 }
 
-.hero-slider__content h1 {
-  font-size: clamp(1.75rem, 4vw, 2.5rem);
-  line-height: 1.2;
-  margin-bottom: 1rem;
-  font-weight: 700;
+.hero-slider--rail .hero-slider__eyebrow {
+  color: #e0f2fe;
 }
 
-.hero-slider__image-title {
-  font-family: 'Inter', sans-serif;
-  font-size: clamp(1.5rem, 4.5vw, 2.35rem);
+.hero-slider__title {
+  font-size: clamp(1.5rem, 3.2vw, 2.15rem);
+  line-height: 1.22;
   font-weight: 700;
-  line-height: 1.28;
-  letter-spacing: -0.02em;
-  margin: 0;
-  text-shadow:
-    0 2px 16px rgba(0, 0, 0, 0.45),
-    0 4px 32px rgba(0, 0, 0, 0.35);
+  color: #ffffff;
+  margin-top: 0;
+  margin-bottom: 0.6rem;
+  max-width: 700px;
 }
 
 .hero-slider__lead {
-  font-size: 1.1rem;
-  line-height: 1.65;
+  font-size: 0.98rem;
+  line-height: 1.55;
+  color: #f1f5f9;
   opacity: 0.92;
-  margin-bottom: 1.5rem;
+  margin-top: 0;
+  margin-bottom: 0.85rem;
+  max-width: 760px;
 }
 
-.hero-slider__actions {
+.hero-lead-desktop {
+  display: inline;
+}
+
+.hero-lead-mobile {
+  display: none;
+}
+
+/* ── Trust Badges (No Hero Buttons) ── */
+.hero-trust-statement {
+  margin-top: 0.4rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.hero-trust-badges {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
+  gap: 0.45rem 0.75rem;
 }
 
+.hero-trust-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: #fef3c7;
+  background: rgba(15, 23, 42, 0.45);
+  padding: 0.3rem 0.65rem;
+  border-radius: 6px;
+  border: 1px solid rgba(226, 184, 77, 0.35);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* ── Controls (Locked in fixed bottom position) ── */
 .hero-slider__controls {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 1.25rem;
-  margin-top: auto;
-  padding-top: 0.5rem;
+  z-index: 12;
+  margin: 0;
+  padding: 0;
+  width: auto;
 }
 
-/* Icon-only arrows — no outer circle */
 .hero-slider__arrow {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: auto;
-  height: auto;
   min-width: 44px;
   min-height: 44px;
   padding: 0.5rem;
   border: none;
-  border-radius: 0;
   background: transparent;
   color: #fff;
   cursor: pointer;
-  font-size: 1.35rem;
+  font-size: 1.3rem;
   opacity: 0.85;
   transition: opacity 0.2s ease, transform 0.2s ease;
 }
@@ -306,7 +242,6 @@
 .hero-slider__arrow:hover {
   opacity: 1;
   transform: scale(1.12);
-  background: transparent;
 }
 
 .hero-slider__arrow:active {
@@ -335,21 +270,110 @@
   transform: scale(1.2);
 }
 
-@media (max-width: 640px) {
-  /* ── Compact hero: ~45% shorter than desktop ── */
-  .hero-slider {
-    min-height: 270px;
+/* ── Fixed Offer Strip Below Hero ── */
+.hero-stack {
+  position: relative;
+}
+
+.hero-offer-bar {
+  position: relative;
+  z-index: 15;
+  color: #fff;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+}
+
+.hero-offer-bar--flights {
+  background: linear-gradient(90deg, #6b0f2a 0%, #8b1538 50%, #6b0f2a 100%);
+}
+
+.hero-offer-bar--rail {
+  background: linear-gradient(90deg, #0f2744 0%, #1e3a5f 50%, #0f2744 100%);
+}
+
+.hero-offer-bar__inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.65rem 0;
+}
+
+.hero-offer-bar__tag {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem 0.65rem;
+  font-size: 0.88rem;
+  line-height: 1.35;
+}
+
+.hero-offer-bar__label {
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(255, 220, 180, 0.3);
+}
+
+.hero-offer-bar--rail .hero-offer-bar__label {
+  background: rgba(180, 210, 255, 0.28);
+}
+
+.hero-offer-bar__highlight {
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.hero-offer-bar__detail {
+  opacity: 0.92;
+}
+
+/* ── Tablet Responsive (max-width: 1024px) ── */
+@media (max-width: 1024px) {
+  .hero-slider,
+  .hero-slider__slides,
+  .hero-slider__slide,
+  .hero-slider__ui {
+    height: 440px;
+    min-height: 440px;
+    max-height: 440px;
   }
 
   .hero-slider__ui {
-    min-height: 270px;
-    padding-top: 0.75rem;
-    padding-bottom: 1rem;
-    gap: 0.75rem;
+    padding-top: 1rem;
+    padding-bottom: 3rem;
   }
 
-  .hero-slider__main {
-    gap: 0.75rem;
+  .hero-slider__title {
+    font-size: 1.65rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .hero-slider__lead {
+    font-size: 0.92rem;
+    margin-bottom: 0.65rem;
+  }
+}
+
+/* ── Mobile Responsive (max-width: 767px) ── */
+@media (max-width: 767px) {
+  .hero-slider,
+  .hero-slider__slides,
+  .hero-slider__slide,
+  .hero-slider__ui {
+    height: 480px;
+    min-height: 480px;
+    max-height: 480px;
+  }
+
+  .hero-slider__ui {
+    padding-top: 0.85rem;
+    padding-bottom: 3.25rem;
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
   }
 
   .hero-slider__eyebrow {
@@ -357,93 +381,96 @@
     margin-bottom: 0.25rem;
   }
 
-  .hero-slider__content h1 {
-    font-size: clamp(1.2rem, 5vw, 1.6rem);
-    margin-bottom: 0.4rem;
+  .hero-slider__title {
+    font-size: clamp(1.25rem, 5.2vw, 1.55rem);
     line-height: 1.25;
+    margin-bottom: 0.35rem;
   }
 
   .hero-slider__lead {
-    font-size: 0.85rem;
+    font-size: 0.88rem;
+    line-height: 1.42;
     margin-bottom: 0.5rem;
-    line-height: 1.5;
-    opacity: 0.88;
-    /* Limit to 2 lines on small screens */
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
   }
 
-  .hero-slider__content--image {
-    max-width: 100%;
+  .hero-lead-desktop {
+    display: none;
   }
 
-  .hero-slider__image-title {
-    font-size: clamp(1.1rem, 5vw, 1.45rem);
-    line-height: 1.3;
+  .hero-lead-mobile {
+    display: inline;
   }
 
-  .hero-slider__actions {
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 0.4rem;
+  /* Hide middle 2 chips on mobile (keep Human Assistance & Secure Reservation) */
+  .hero-trust-badge--desktop-only {
+    display: none !important;
   }
 
-  .hero-slider__actions .flights-btn,
-  .hero-slider__actions .amtrak-btn {
-    flex: 1;
-    min-width: 130px;
-    padding: 0.55rem 0.75rem;
-    font-size: 0.85rem;
-    min-height: 40px;
+  .hero-trust-badges {
+    gap: 0.35rem 0.5rem;
   }
 
-  /* Compact controls */
+  .hero-trust-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    white-space: normal;
+  }
+
   .hero-slider__controls {
-    margin-top: 0.25rem;
-    padding-top: 0;
+    bottom: 12px;
     gap: 0.75rem;
   }
 
   .hero-slider__arrow {
-    font-size: 1rem;
-    min-width: 36px;
-    min-height: 36px;
+    font-size: 1.1rem;
+    min-width: 38px;
+    min-height: 38px;
   }
 
   .hero-slider__dot {
-    width: 7px;
-    height: 7px;
+    width: 8px;
+    height: 8px;
   }
 
-  /* Offer bar compact */
   .hero-offer-bar__inner {
-    padding: 0.45rem 0;
+    padding: 0.5rem 0.75rem;
   }
 
   .hero-offer-bar__tag {
-    font-size: 0.75rem;
-    gap: 0.25rem 0.4rem;
-  }
-
-  .hero-offer-bar__highlight {
-    font-size: 0.85rem;
+    flex-direction: column;
+    gap: 0.2rem;
+    text-align: center;
+    font-size: 0.8rem;
   }
 
   .hero-offer-bar__label {
     font-size: 0.65rem;
     padding: 0.15rem 0.4rem;
   }
+
+  .hero-offer-bar__highlight {
+    font-size: 0.88rem;
+  }
+
+  .hero-offer-bar__detail {
+    font-size: 0.78rem;
+  }
 }
 
+/* ── Extra Small Mobile Responsive (max-width: 380px) ── */
 @media (max-width: 380px) {
   .hero-slider,
+  .hero-slider__slides,
+  .hero-slider__slide,
   .hero-slider__ui {
-    min-height: 240px;
+    height: 500px;
+    min-height: 500px;
+    max-height: 500px;
   }
 
-  .hero-slider__content h1 {
-    font-size: 1.1rem;
+  .hero-slider__title {
+    font-size: 1.15rem;
   }
 }
+
+

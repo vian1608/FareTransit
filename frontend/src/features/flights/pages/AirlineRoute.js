@@ -4,6 +4,7 @@ import { useParams, Navigate } from 'react-router-dom';
 import airlinesData from '../../../shared/data/airlinesData.json';
 import airlineKeywords from '../../../shared/data/airline-keywords.json';
 import { inquiryAPI } from '../../../shared/api/api';
+import { trackLeadConversion } from '../../../shared/utils/analytics';
 import './AirlineRoute.css';
 
 const AirlineRoute = () => {
@@ -60,13 +61,25 @@ const AirlineRoute = () => {
         notes: `Airline: ${airline.name} Booking Request`,
       };
 
-      const result = await inquiryAPI.submitConsulting(payload, 'flights');
+      console.info('[Lead] Submitting');
+      const rawResponse = await inquiryAPI.submitConsulting(payload, 'flights');
+      const result = rawResponse?.data ?? rawResponse;
       
-      setSubmitStatus('success');
-      setSubmitMessage(
-        result.message || 'Flight query received. Our team will reach out with itinerary quotes shortly.'
-      );
-      setFormData({ passengerName: '', passengerEmail: '', passengerPhone: '', originCity: '', destinationCity: '', passengerCount: '1' });
+      if (result?.success || result?.emailed || result?.leadId || result?.messageId) {
+        console.info('[Lead] Backend save confirmed', { leadId: result?.leadId || result?.messageId || result?.id });
+        setSubmitStatus('success');
+        setSubmitMessage(
+          result.message || 'Flight query received. Our team will reach out with itinerary quotes shortly.'
+        );
+        setFormData({ passengerName: '', passengerEmail: '', passengerPhone: '', originCity: '', destinationCity: '', passengerCount: '1' });
+        trackLeadConversion({
+          leadId: result?.leadId || result?.messageId || result?.id,
+          value: 1.0,
+          currency: 'USD',
+        });
+      } else {
+        throw new Error(result?.message || 'Inquiry submission failed');
+      }
     } catch (error) {
       setSubmitStatus('error');
       setSubmitMessage('Unable to submit your request right now. Please call us directly.');

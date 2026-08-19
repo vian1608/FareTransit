@@ -1,394 +1,301 @@
-import React, { useState, useEffect } from 'react';
-import './FlightResultRow.css'; // Dedicated CSS or shared styling references
+import React, { useEffect, useMemo, useState } from 'react';
+import { prepareFlightForBooking } from '../../../shared/pricing/bookingPriceContract';
+import './FlightResultRow.css';
 
-
-
-// Helper to get initials for fallback logo
 function getInitials(name) {
-  if (!name) return 'FL';
-  const parts = name.split(' ').filter(Boolean);
-  if (parts.length >= 2) {
-    return (parts[0][0] + parts[1][0]).toUpperCase();
-  }
-  return name.substring(0, 2).toUpperCase();
+  const words = String(name || 'Flight').split(/\s+/).filter(Boolean);
+  return words.slice(0, 2).map((word) => word[0]).join('').toUpperCase() || 'FL';
 }
 
-// AirlineLogo Component with Safe Fallbacks
+function validAirportCode(value) {
+  const code = String(value || '').trim().toUpperCase();
+  return /^[A-Z]{3}$/.test(code) ? code : '';
+}
+
+function formatMinutes(value) {
+  const minutes = Number(value);
+  if (!Number.isFinite(minutes) || minutes <= 0) return '';
+  const hours = Math.floor(minutes / 60);
+  const mins = Math.round(minutes % 60);
+  if (!hours) return `${mins}m`;
+  if (!mins) return `${hours}h`;
+  return `${hours}h ${mins}m`;
+}
+
+function formatDateShort(value) {
+  if (!value || value === 'N/A') return '';
+  const parsed = new Date(String(value).includes('T') ? value : `${value}T00:00:00`);
+  if (Number.isNaN(parsed.getTime())) return String(value);
+  return parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function dayOffset(departureDate, arrivalDate) {
+  if (!departureDate || !arrivalDate) return 0;
+  const dep = new Date(`${String(departureDate).slice(0, 10)}T00:00:00`);
+  const arr = new Date(`${String(arrivalDate).slice(0, 10)}T00:00:00`);
+  if (Number.isNaN(dep.getTime()) || Number.isNaN(arr.getTime())) return 0;
+  return Math.max(0, Math.round((arr - dep) / 86400000));
+}
+
 export function AirlineLogo({ logoUrl, name }) {
-  const [error, setError] = useState(!logoUrl);
+  const [failed, setFailed] = useState(!logoUrl);
+  useEffect(() => setFailed(!logoUrl), [logoUrl]);
 
-  useEffect(() => {
-    setError(!logoUrl);
-  }, [logoUrl]);
-
-  if (error) {
-    return (
-      <div className="carrier-logo-fallback" title={name}>
-        {getInitials(name)}
-      </div>
-    );
+  if (failed) {
+    return <div className="carrier-logo-fallback" title={name}>{getInitials(name)}</div>;
   }
 
-  return (
-    <img 
-      src={logoUrl} 
-      alt={name} 
-      className="carrier-logo"
-      onError={() => setError(true)}
-    />
-  );
+  return <img src={logoUrl} alt={`${name || 'Airline'} logo`} className="carrier-logo" onError={() => setFailed(true)} />;
 }
 
-// Safe data normalization for cards rendering
-export function normalizeFlight(flight, idx) {
+export function normalizeFlight(flight, idx = 0) {
   if (!flight) return null;
-  const parsedPrice = parseFloat(flight.price?.total || 0);
+
+  const rawTotal = Number.parseFloat(flight.price?.total ?? flight.price?.finalPrice ?? 0);
+  const rawOriginal = Number.parseFloat(flight.price?.originalApiPrice ?? flight.price?.original ?? rawTotal);
+  const total = Number.isFinite(rawTotal) ? rawTotal : 0;
+  const original = Number.isFinite(rawOriginal) && rawOriginal > 0 ? rawOriginal : total;
+  const discountAmount = Math.max(0, Number.parseFloat(flight.price?.discountAmount ?? (original - total)) || 0);
+  const discountPercent = Number.isFinite(Number(flight.price?.discountPercent)) ? Number(flight.price.discountPercent) : 0;
+
   return {
-    id: flight.id || `normalized-flight-${idx}-${Math.random()}`,
-    airline: flight.airline || 'Unknown Airline',
+    ...flight,
+    id: flight.id || `flight-${idx}`,
+    airline: flight.airline || 'Airline',
     airline_logo: flight.airline_logo || '',
-    flightNumber: flight.flightNumber || 'N/A',
-    price: {
-      total: parsedPrice,
-      formatted: flight.price?.formatted || `$${parsedPrice.toFixed(2)}`
-    },
+    flightNumber: flight.flightNumber || '',
     departure: {
-      airport: flight.departure?.airport || 'N/A',
-      city: flight.departure?.city || 'Origin',
+      airport: validAirportCode(flight.departure?.airport) || '---',
+      city: flight.departure?.city || '',
       time: flight.departure?.time || 'N/A',
-      date: flight.departure?.date || 'N/A'
+      date: flight.departure?.date || '',
     },
     arrival: {
-      airport: flight.arrival?.airport || 'N/A',
-      city: flight.arrival?.city || 'Destination',
+      airport: validAirportCode(flight.arrival?.airport) || '---',
+      city: flight.arrival?.city || '',
       time: flight.arrival?.time || 'N/A',
-      date: flight.arrival?.date || 'N/A'
+      date: flight.arrival?.date || '',
     },
     duration: flight.duration || 'N/A',
-    stops: typeof flight.stops === 'number' ? flight.stops : 0,
+    stops: Number.isInteger(flight.stops) ? flight.stops : Math.max(0, (flight.segments?.length || 1) - 1),
     class: flight.class || 'Economy',
     aircraft: flight.aircraft || '',
     layovers: Array.isArray(flight.layovers) ? flight.layovers : [],
-    isTrain: !!flight.isTrain,
-    refundableStatus: flight.refundableStatus || 'Non-Refundable',
-    baggageAllowance: flight.baggageAllowance || 'Standard Baggage Rules Apply',
-    segments: flight.segments || []
+    segments: Array.isArray(flight.segments) ? flight.segments : [],
+    refundableStatus: flight.refundableStatus || 'Check fare rules before purchase',
+    baggageAllowance: flight.baggageAllowance || 'Check airline baggage rules',
+    price: {
+      ...flight.price,
+      total,
+      finalPrice: total.toFixed(2),
+      originalApiPrice: original.toFixed(2),
+      discountAmount: discountAmount.toFixed(2),
+      discountPercent,
+      currency: flight.price?.currency || 'USD',
+    },
   };
 }
 
-// Helper to parse or generate segments for the timeline
-export function getFlightSegments(flight) {
-  if (!flight) return [];
-  
-  // If exact segments are available from SerpAPI response
-  if (Array.isArray(flight.segments) && flight.segments.length > 0) {
-    return flight.segments.map((seg, sIdx) => ({
-      from: seg.departure?.airport || flight.departure.airport,
-      fromCity: seg.departure?.city || (sIdx === 0 ? flight.departure.city : ''),
-      fromTime: seg.departure?.time || 'N/A',
-      fromDate: seg.departure?.date || flight.departure.date,
-      to: seg.arrival?.airport || flight.arrival.airport,
-      toCity: seg.arrival?.city || (sIdx === flight.segments.length - 1 ? flight.arrival.city : ''),
-      toTime: seg.arrival?.time || 'N/A',
-      toDate: seg.arrival?.date || flight.arrival.date,
-      airline: seg.carrier || flight.airline,
-      flightNumber: seg.number ? `${seg.carrier || ''}${seg.number}` : flight.flightNumber,
-      aircraft: seg.aircraft || flight.aircraft || 'Boeing / Airbus',
-      class: flight.class || 'Economy',
-      duration: seg.duration || 'N/A',
-      layoverAfter: flight.layovers?.[sIdx] ? {
-        airport: flight.layovers[sIdx].airportCode,
-        name: flight.layovers[sIdx].airportName || flight.layovers[sIdx].airportCode,
-        duration: `${Math.floor(flight.layovers[sIdx].duration / 60)}h ${flight.layovers[sIdx].duration % 60}m`,
-        durationMinutes: flight.layovers[sIdx].duration
-      } : null
-    }));
-  }
-
-  // Dynamic fallback when segments are empty
-  const segments = [];
-  if (!flight.layovers || flight.layovers.length === 0) {
-    segments.push({
-      from: flight.departure.airport,
-      fromCity: flight.departure.city,
-      fromTime: flight.departure.time,
-      fromDate: flight.departure.date,
-      to: flight.arrival.airport,
-      toCity: flight.arrival.city,
-      toTime: flight.arrival.time,
-      toDate: flight.arrival.date,
-      airline: flight.airline,
-      flightNumber: flight.flightNumber,
-      aircraft: flight.aircraft || 'Boeing / Airbus',
-      class: flight.class,
-      duration: flight.duration,
-      layoverAfter: null
-    });
-  } else {
-    let currentFrom = {
-      airport: flight.departure.airport,
-      city: flight.departure.city,
-      time: flight.departure.time,
-      date: flight.departure.date
-    };
-
-    flight.layovers.forEach((layover, index) => {
-      segments.push({
-        from: currentFrom.airport,
-        fromCity: currentFrom.city,
-        fromTime: currentFrom.time,
-        fromDate: currentFrom.date,
-        to: layover.airportCode,
-        toCity: layover.airportName || layover.airportCode,
-        toTime: 'Connection',
-        toDate: currentFrom.date,
-        airline: flight.airline,
-        flightNumber: flight.flightNumber.split(',')[index]?.trim() || flight.flightNumber,
-        aircraft: flight.aircraft || 'Boeing / Airbus',
-        class: flight.class,
-        duration: 'Flight segment',
-        layoverAfter: {
-          airport: layover.airportCode,
-          name: layover.airportName || layover.airportCode,
-          duration: `${Math.floor(layover.duration / 60)}h ${layover.duration % 60}m`,
-          durationMinutes: layover.duration
-        }
-      });
-
-      currentFrom = {
-        airport: layover.airportCode,
-        city: layover.airportName || layover.airportCode,
-        time: 'Departure',
-        date: currentFrom.date
-      };
-    });
-
-    // Add final segment
-    segments.push({
-      from: currentFrom.airport,
-      fromCity: currentFrom.city,
-      fromTime: currentFrom.time,
-      fromDate: currentFrom.date,
-      to: flight.arrival.airport,
-      toCity: flight.arrival.city,
-      toTime: flight.arrival.time,
-      toDate: flight.arrival.date,
-      airline: flight.airline,
-      flightNumber: flight.flightNumber.split(',')[flight.layovers.length]?.trim() || flight.flightNumber,
-      aircraft: flight.aircraft || 'Boeing / Airbus',
-      class: flight.class,
-      duration: 'Flight segment',
-      layoverAfter: null
-    });
-  }
-
-  return segments;
+function layoverSummary(layover) {
+  const code = validAirportCode(layover?.airportCode || layover?.airport || layover?.id);
+  const duration = typeof layover?.duration === 'number' ? formatMinutes(layover.duration) : String(layover?.duration || '').trim();
+  const name = layover?.airportName || layover?.name || '';
+  return { code, duration, name };
 }
 
-function FlightResultRow({ flight, isExpanded, onToggleExpand, onSelect, actionLabel = "Select Flight", isRail = false, travelersCount = 1 }) {
-  const segments = getFlightSegments(flight);
-  
-  // Construct short connection/layover string
-  let stopsText = 'Nonstop';
-  if (flight.stops === 1 && flight.layovers?.[0]) {
-    stopsText = `1 stop · ${flight.layovers[0].airportCode} · ${Math.floor(flight.layovers[0].duration / 60)}h ${flight.layovers[0].duration % 60}m`;
-  } else if (flight.stops > 1) {
-    const layoverCodes = flight.layovers.map(l => l.airportCode).join(', ');
-    stopsText = `${flight.stops} stops · ${layoverCodes}`;
-  }
+function normalizeSegment(segment, fallbackFlight) {
+  const departure = segment?.departure || segment?.departure_airport || {};
+  const arrival = segment?.arrival || segment?.arrival_airport || {};
+  return {
+    from: validAirportCode(departure.airport || departure.id || segment?.from),
+    fromName: departure.city || departure.name || segment?.fromCity || '',
+    fromTime: departure.time || segment?.fromTime || '',
+    fromDate: departure.date || segment?.fromDate || '',
+    to: validAirportCode(arrival.airport || arrival.id || segment?.to),
+    toName: arrival.city || arrival.name || segment?.toCity || '',
+    toTime: arrival.time || segment?.toTime || '',
+    toDate: arrival.date || segment?.toDate || '',
+    duration: segment?.duration || '',
+    airline: segment?.airline || fallbackFlight.airline,
+    flightNumber: segment?.flightNumber || segment?.flight_number || '',
+    aircraft: segment?.aircraft || segment?.airplane || '',
+    class: segment?.class || segment?.travel_class || fallbackFlight.class,
+    layoverAfter: segment?.layoverAfter || null,
+  };
+}
 
-  // Check if connection is overnight or very tight (< 45 min)
-  const isTightConnection = flight.layovers?.some(l => l.duration < 45);
+export function getFlightSegments(flight) {
+  if (!flight || !Array.isArray(flight.segments) || flight.segments.length === 0) return [];
+  return flight.segments
+    .map((segment) => normalizeSegment(segment, flight))
+    .filter((segment) => segment.from && segment.to);
+}
+
+export function FlightResultRow({
+  flight: rawFlight,
+  isExpanded = false,
+  onToggleExpand,
+  onSelect,
+  actionLabel = 'Select Flight',
+  travelersCount = 1,
+  index = 0,
+}) {
+  const flight = useMemo(() => normalizeFlight(rawFlight, index), [rawFlight, index]);
+  if (!flight) return null;
+
+  const segments = getFlightSegments(flight);
+  const layovers = flight.layovers.map(layoverSummary).filter((item) => item.code || item.name);
+  const overnightOffset = dayOffset(flight.departure.date, flight.arrival.date);
+  const stopLabel = flight.stops === 0 ? 'Nonstop' : `${flight.stops} stop${flight.stops === 1 ? '' : 's'}`;
+  const layoverCodes = layovers.map((item) => item.code).filter(Boolean).join(', ');
+  const firstLayover = layovers[0];
+  const hasDiscount = Number(flight.price.discountAmount) > 0;
+  const totalTravelers = Math.max(1, Number.parseInt(travelersCount || 1, 10));
+
+  const handleSelect = (event) => {
+    event?.stopPropagation?.();
+    if (typeof onSelect === 'function') {
+      onSelect(prepareFlightForBooking(flight, totalTravelers));
+    }
+  };
 
   return (
-    <div className={`flight-row-card ${isExpanded ? 'expanded' : ''} ${isRail ? 'flight-row-card--rail' : ''}`}>
-      {/* Collapsed Header comparison row */}
-      <div 
-        className="flight-row-header-summary" 
-        onClick={onToggleExpand}
+    <article className={`tfs-flight-option ${isExpanded ? 'is-expanded' : ''}`}>
+      <div
+        className="tfs-flight-option__summary"
         role="button"
-        aria-expanded={isExpanded}
-        aria-controls={`details-${flight.id}`}
         tabIndex={0}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            onToggleExpand();
+        aria-expanded={isExpanded}
+        onClick={onToggleExpand}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            onToggleExpand?.();
           }
         }}
       >
-        {/* 1. Logo & Carrier */}
-        <div className="col-carrier">
+        <div className="tfs-flight-carrier">
           <AirlineLogo logoUrl={flight.airline_logo} name={flight.airline} />
-          <div className="carrier-info-text">
-            <span className="carrier-name">{flight.airline}</span>
-            <span className="carrier-flight-number-sub">{flight.flightNumber}</span>
+          <div>
+            <strong>{flight.airline}</strong>
+            {flight.flightNumber && <span>{flight.flightNumber}</span>}
           </div>
         </div>
 
-        {/* 2. Times & Airport Codes */}
-        <div className="col-times">
-          <span className="route-times">{flight.departure.time} – {flight.arrival.time}</span>
-          <span className="route-airports-codes">
-            <span>{flight.departure.airport}</span>
-            <span className="route-date-sub">{flight.departure.date}</span>
-            <span> – </span>
-            <span>{flight.arrival.airport}</span>
-            <span className="route-date-sub">{flight.arrival.date}</span>
+        <div className="tfs-flight-schedule">
+          <strong className="tfs-flight-schedule__times">
+            {flight.departure.time} – {flight.arrival.time}
+            {overnightOffset > 0 && <sup>+{overnightOffset}</sup>}
+          </strong>
+          <span className="tfs-flight-schedule__codes">{flight.departure.airport} – {flight.arrival.airport}</span>
+          <span className="tfs-flight-schedule__dates">
+            {formatDateShort(flight.departure.date)}{flight.arrival.date && flight.arrival.date !== flight.departure.date ? ` → ${formatDateShort(flight.arrival.date)}` : ''}
           </span>
         </div>
 
-        {/* 3. Duration */}
-        <div className="col-duration">
-          <span className="journey-duration">{flight.duration}</span>
-          <span className="secondary-label">{flight.departure.city} to {flight.arrival.city}</span>
+        <div className="tfs-flight-duration">
+          <strong>{flight.duration}</strong>
+          <span>{flight.departure.airport}–{flight.arrival.airport}</span>
         </div>
 
-        {/* 4. Stops & Layover summary */}
-        <div className="col-stops">
-          <span className={`stops-count-label ${flight.stops > 0 ? 'has-stops' : 'nonstop'} ${isTightConnection ? 'warning-text' : ''}`}>
-            {stopsText}
-          </span>
+        <div className={`tfs-flight-stops ${flight.stops === 0 ? 'is-nonstop' : ''}`}>
+          <strong>{stopLabel}{layoverCodes ? ` · ${layoverCodes}` : ''}</strong>
+          {firstLayover?.duration && <span>{firstLayover.duration}{firstLayover.code ? ` in ${firstLayover.code}` : ' layover'}</span>}
+          {layovers.length > 1 && <span>{layovers.slice(1).map((item) => `${item.duration || ''} ${item.code || item.name}`.trim()).join(' · ')}</span>}
         </div>
 
-        {/* 5. Class */}
-        <div className="col-class">
-          <span className="cabin-class-badge">{flight.class}</span>
+        <div className="tfs-flight-cabin"><span>{flight.class}</span></div>
+
+        <div className="tfs-flight-price">
+          {hasDiscount && <span className="tfs-flight-price__original">${flight.price.originalApiPrice}</span>}
+          <strong>${flight.price.finalPrice}</strong>
+          <span className="tfs-flight-price__caption">fare total · {totalTravelers} traveler{totalTravelers === 1 ? '' : 's'}</span>
+          {hasDiscount && <span className="tfs-flight-price__saving">Save ${flight.price.discountAmount}</span>}
         </div>
 
-        {/* 6. Price & Chevron toggle */}
-        <div className="col-price-action">
-          <div className="price-block">
-            <span className="row-price">{flight.price.formatted}</span>
-            <span className="row-fare-badge">Web Fare Only</span>
-          </div>
-          <button 
-            type="button" 
-            className="mobile-select-btn" 
-            onClick={(e) => {
-              e.stopPropagation(); // Avoid triggering details toggle
-              onSelect(flight);
-            }}
-          >
-            Select
-          </button>
-          <i className={`fas fa-chevron-${isExpanded ? 'up' : 'down'} row-expand-chevron`}></i>
-        </div>
+        <button type="button" className="tfs-flight-select" onClick={handleSelect}>{actionLabel}</button>
+        <button
+          type="button"
+          className="tfs-flight-expand"
+          aria-label={isExpanded ? 'Collapse flight details' : 'Expand flight details'}
+          onClick={(event) => { event.stopPropagation(); onToggleExpand?.(); }}
+        >
+          <i className={`fas fa-chevron-${isExpanded ? 'up' : 'down'}`} />
+        </button>
       </div>
 
-      {/* Expandable Dropdown Section */}
       {isExpanded && (
-        <div id={`details-${flight.id}`} className="flight-row-expanded-details animate-slide-down">
-          <div className="expanded-details-grid">
-            {/* Timeline layout */}
-            <div className="itinerary-timeline-column">
-              <div className="vertical-timeline-container">
-                {segments.map((segment, segIdx) => {
-                  const isConnectionTight = segment.layoverAfter && segment.layoverAfter.durationMinutes < 45;
-                  return (
-                    <React.Fragment key={segIdx}>
-                      {/* Segment Start node */}
-                      <div className="timeline-node start">
-                        <div className="timeline-dot"></div>
-                        <div className="timeline-time-airport">
-                          <strong className="timeline-time">{segment.fromTime}</strong>
-                          <span className="timeline-airport-name">
-                            · {segment.fromCity} ({segment.from}) · {segment.fromDate}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Segment journey travel bar */}
-                      <div className="timeline-segment-travel">
-                        <div className="timeline-connecting-bar"></div>
-                        <div className="timeline-segment-info-grid">
-                          <div className="segment-carrier-detail">
-                            <i className={`fas ${isRail ? 'fa-subway' : 'fa-plane'} segment-type-icon`}></i>
-                            <span>Travel time: {segment.duration} · {segment.airline} · {segment.flightNumber}</span>
-                          </div>
-                          <div className="segment-aircraft-class">
-                            <span>Class: {segment.class} · Aircraft: {segment.aircraft}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Segment End node */}
-                      <div className="timeline-node end">
-                        <div className="timeline-dot"></div>
-                        <div className="timeline-time-airport">
-                          <strong className="timeline-time">{segment.toTime}</strong>
-                          <span className="timeline-airport-name">
-                            · {segment.toCity} ({segment.to}) · {segment.toDate}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Connection/Layover alert bar */}
-                      {segment.layoverAfter && (
-                        <div className={`timeline-connection-row ${isConnectionTight ? 'tight-warning' : ''}`}>
-                          <div className="timeline-connecting-bar dashed"></div>
-                          <div className="connection-details-box">
-                            <i className="fas fa-clock connection-clock-icon"></i>
-                            <span>
-                              {segment.layoverAfter.duration} connection in {segment.layoverAfter.name} ({segment.layoverAfter.airport})
-                              {isConnectionTight && ' (Tight Connection Alert)'}
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                    </React.Fragment>
-                  );
-                })}
-              </div>
+        <div className="tfs-flight-option__details">
+          <div className="tfs-flight-detail-heading">
+            <div>
+              <strong>Flight details</strong>
+              <span>{flight.departure.airport} to {flight.arrival.airport} · {flight.duration}</span>
             </div>
+            <button type="button" className="tfs-flight-select tfs-flight-select--detail" onClick={handleSelect}>{actionLabel}</button>
+          </div>
 
-            {/* Selection & Fare details Column */}
-            <div className="expanded-fare-restrictions-column">
-              <div className="fare-details-card">
-                <h4>Fare and Booking Details</h4>
-                
-                <div className="fare-amenities-list">
-                  <div className="amenity-item">
-                    <i className="fas fa-suitcase-rolling amenity-icon"></i>
-                    <div>
-                      <h5>Baggage Allowance</h5>
-                      <p>{flight.baggageAllowance}</p>
+          {segments.length > 0 ? (
+            <div className="tfs-flight-segments">
+              {segments.map((segment, segmentIndex) => {
+                const matchingLayover = layovers[segmentIndex];
+                const explicitLayover = segment.layoverAfter ? layoverSummary(segment.layoverAfter) : matchingLayover;
+                return (
+                  <React.Fragment key={`${segment.from}-${segment.to}-${segmentIndex}`}>
+                    <div className="tfs-flight-segment">
+                      <div className="tfs-flight-segment__route">
+                        <div><strong>{segment.fromTime || '—'}</strong><span>{segment.fromName || segment.from} ({segment.from})</span><small>{formatDateShort(segment.fromDate)}</small></div>
+                        <div className="tfs-flight-segment__line"><i className="fas fa-plane" /></div>
+                        <div><strong>{segment.toTime || '—'}</strong><span>{segment.toName || segment.to} ({segment.to})</span><small>{formatDateShort(segment.toDate)}</small></div>
+                      </div>
+                      <div className="tfs-flight-segment__meta">
+                        <span><strong>{segment.airline}</strong>{segment.flightNumber ? ` · ${segment.flightNumber}` : ''}</span>
+                        {segment.duration && <span>{segment.duration}</span>}
+                        {segment.aircraft && <span>{segment.aircraft}</span>}
+                        {segment.class && <span>{segment.class}</span>}
+                      </div>
                     </div>
-                  </div>
-                  <div className="amenity-item">
-                    <i className="fas fa-undo-alt amenity-icon"></i>
-                    <div>
-                      <h5>Refundability</h5>
-                      <p>{flight.refundableStatus}</p>
-                    </div>
-                  </div>
-                  <div className="amenity-item">
-                    <i className="fas fa-ticket-alt amenity-icon"></i>
-                    <div>
-                      <h5>Fare Category</h5>
-                      <p>Standard cabin ticket including 24/7 client logistical support.</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="fare-total-price-block">
-                  <span className="fare-label">Total Price ({travelersCount} traveler{travelersCount > 1 ? 's' : ''})</span>
-                  <span className="fare-total-price">{flight.price.formatted}</span>
-                </div>
-
-                <button 
-                  type="button" 
-                  className="expanded-select-flight-btn"
-                  onClick={() => onSelect(flight)}
-                >
-                  {actionLabel}
-                </button>
-              </div>
+                    {segmentIndex < segments.length - 1 && explicitLayover && (
+                      <div className="tfs-flight-layover">
+                        <i className="far fa-clock" />
+                        <strong>{explicitLayover.duration || 'Connection'}</strong>
+                        <span>layover in {explicitLayover.name || explicitLayover.code}{explicitLayover.code && explicitLayover.name ? ` (${explicitLayover.code})` : ''}</span>
+                      </div>
+                    )}
+                  </React.Fragment>
+                );
+              })}
             </div>
+          ) : (
+            <div className="tfs-flight-aggregate-details">
+              <div className="tfs-flight-aggregate-route">
+                <div><strong>{flight.departure.time}</strong><span>{flight.departure.city || flight.departure.airport} ({flight.departure.airport})</span><small>{formatDateShort(flight.departure.date)}</small></div>
+                <div className="tfs-flight-aggregate-line"><span>{flight.duration}</span><i /></div>
+                <div><strong>{flight.arrival.time}</strong><span>{flight.arrival.city || flight.arrival.airport} ({flight.arrival.airport})</span><small>{formatDateShort(flight.arrival.date)}</small></div>
+              </div>
+              {layovers.length > 0 && (
+                <div className="tfs-flight-layover-list">
+                  {layovers.map((layover, layoverIndex) => (
+                    <div className="tfs-flight-layover" key={`${layover.code}-${layoverIndex}`}>
+                      <i className="far fa-clock" />
+                      <strong>{layover.duration || 'Connection'}</strong>
+                      <span>layover in {layover.name || layover.code}{layover.code && layover.name ? ` (${layover.code})` : ''}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <p className="tfs-flight-source-note">
+                Per-segment timing was not included in this supplier response, so FareTransit is showing only verified route and layover information instead of estimating segment times.
+              </p>
+            </div>
+          )}
+
+          <div className="tfs-flight-fare-notes">
+            <span><i className="fas fa-suitcase-rolling" /> {flight.baggageAllowance}</span>
+            <span><i className="fas fa-undo-alt" /> {flight.refundableStatus}</span>
           </div>
         </div>
       )}
-    </div>
+    </article>
   );
 }
 

@@ -1,0 +1,21 @@
+node_modules
+.env
+.env.local
+.env.production
+*.json
+!package.json
+!package-lock.json
+!tsconfig.json
+!vercel.json
+build
+dist
+.DS_Store
+backend/backups/
+*.sql
+*.jsonl
+the-final-seat-*.json
+urgent.json
+
+# FareTransit schema migrations
+!backend/migrations/
+!backend/migrations/*.sql

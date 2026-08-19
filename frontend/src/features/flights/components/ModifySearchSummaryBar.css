@@ -1,0 +1,75 @@
+/* ═══════════════════════════════════════════════════════════════
+   MODIFY SEARCH SUMMARY BAR STYLES — THE FINAL SEAT
+   ═══════════════════════════════════════════════════════════════ */
+
+.modify-search-summary-bar {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 0.85rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
+  margin-bottom: 1.5rem;
+}
+
+.summary-info-chips {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.chip--route {
+  background: #fdf2f8;
+  border-color: #fbcfe8;
+  color: #8b1236;
+  font-size: 0.95rem;
+}
+
+.btn-modify-search-trigger {
+  background: #8b1236;
+  color: #ffffff;
+  border: none;
+  padding: 9px 18px;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  transition: background 0.2s ease;
+}
+
+.btn-modify-search-trigger:hover {
+  background: #7f0d2f;
+}
+
+@media (max-width: 640px) {
+  .modify-search-summary-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .btn-modify-search-trigger {
+    width: 100%;
+    justify-content: center;
+  }
+}

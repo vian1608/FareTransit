@@ -1,0 +1,73 @@
+/* Compact the default Flight search card so it matches the Hotel and Car card height. */
+
+/* The page already has product navigation in the header/hero, so these nested tabs are redundant. */
+.flights-page #inquiry .search-tabs-header {
+  display: none !important;
+}
+
+/* Trim marketing copy that adds height above the actual search controls. */
+.flights-page #inquiry .flights-inquiry__intro,
+.flights-page #inquiry .search-urgent-hint {
+  display: none !important;
+}
+
+/* Keep only the concise product heading. */
+.flights-page #inquiry .inquiry-main-panel > .flights-inquiry-card {
+  padding: 1rem !important;
+}
+
+.flights-page #inquiry .inquiry-main-panel > .flights-inquiry-card > h2 {
+  margin: 0.1rem 0 0.75rem !important;
+}
+
+/* Tighten the control rows without changing any search behavior. */
+.flights-page #inquiry .search-meta-row {
+  margin-bottom: 0.8rem !important;
+}
+
+.flights-page #inquiry .airport-search-help {
+  display: none !important;
+}
+
+.flights-page #inquiry .flights-form > .flights-form__row {
+  margin-top: 0.8rem !important;
+  gap: 1rem !important;
+}
+
+.flights-page #inquiry .search-booking-for-someone-else {
+  margin-top: 0.6rem !important;
+  padding-top: 0.55rem !important;
+}
+
+.flights-page #inquiry .search-booking-for-someone-else + div {
+  margin-top: 0.75rem !important;
+}
+
+.flights-page #inquiry .flights-btn--cta {
+  margin-top: 0 !important;
+  min-height: 52px !important;
+  padding: 0.8rem 1rem !important;
+}
+
+/* Avoid excessive whitespace below the overlapping search card. */
+.flights-page #inquiry {
+  padding-bottom: 1.5rem !important;
+}
+
+@media (max-width: 768px) {
+  .flights-page #inquiry .inquiry-main-panel > .flights-inquiry-card {
+    padding: 0.85rem !important;
+  }
+
+  .flights-page #inquiry .inquiry-main-panel > .flights-inquiry-card > h2 {
+    margin-bottom: 0.65rem !important;
+  }
+
+  .flights-page #inquiry .search-meta-row {
+    margin-bottom: 0.7rem !important;
+  }
+
+  .flights-page #inquiry .flights-form > .flights-form__row {
+    margin-top: 0.7rem !important;
+  }
+}

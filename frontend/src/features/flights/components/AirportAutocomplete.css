@@ -1,13 +1,17 @@
 .airport-autocomplete-container {
   position: relative;
   width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .autocomplete-label {
   display: block;
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: #334155;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #475569;
   margin-bottom: 0.35rem;
 }
 
@@ -15,6 +19,9 @@
   position: relative;
   display: flex;
   align-items: center;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .autocomplete-input-wrapper .input-icon {
@@ -28,25 +35,26 @@
   z-index: 2;
 }
 
-/* Force left padding override on the form input specifically for desktop, tablet, and mobile screens */
-.flights-form__group .autocomplete-input-wrapper .autocomplete-input {
-  padding: 0 12px 0 42px !important;
-  height: 48px;
-  width: 100%;
-  box-sizing: border-box;
-  font-size: 1rem;
-  font-family: inherit;
-  color: #1e293b;
-  background-color: #ffffff;
-  border: 1px solid #cbd5e1;
-  border-radius: 10px;
-  outline: none;
-  transition: all 0.2s ease-in-out;
+.autocomplete-input {
+  width: 100% !important;
+  min-width: 0 !important;
+  height: 50px !important;
+  padding: 0 40px 0 44px !important;
+  font-size: 0.98rem !important;
+  font-family: inherit !important;
+  font-weight: 600 !important;
+  color: #0f172a !important;
+  background-color: #ffffff !important;
+  border: 1.5px solid #cbd5e1 !important;
+  border-radius: 12px !important;
+  outline: none !important;
+  box-sizing: border-box !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
 }
 
-.flights-form__group .autocomplete-input-wrapper .autocomplete-input:focus {
-  border-color: #8b1538;
-  box-shadow: 0 0 0 3px rgba(139, 21, 56, 0.12);
+.autocomplete-input:focus {
+  border-color: #8b1538 !important;
+  box-shadow: 0 0 0 3px rgba(139, 21, 56, 0.12) !important;
 }
 
 .input-loading-icon {
@@ -59,53 +67,122 @@
   font-size: 0.9rem;
 }
 
+.airport-search-help {
+  display: block;
+  margin: 6px 2px 0;
+  color: #7b8798;
+  font-size: 0.7rem;
+  line-height: 1.3;
+}
+
 .autocomplete-suggestions-list {
   position: absolute;
   top: calc(100% + 6px);
   left: 0;
   right: 0;
-  z-index: 1050; /* Ensure dropdown displays on top of other form fields */
+  z-index: 10020;
   background-color: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
-  max-height: 280px;
+  border: 1px solid #dce3ec;
+  border-radius: 14px;
+  box-shadow: 0 18px 45px -12px rgba(15, 23, 42, 0.22), 0 8px 20px -10px rgba(15, 23, 42, 0.12);
+  max-height: 360px;
   overflow-y: auto;
-  list-style: none;
-  padding: 6px;
+  padding: 7px;
   margin: 0;
-  animation: autocompleteFadeIn 0.15s ease-out;
+  animation: autocompleteFadeIn 0.16s cubic-bezier(.2,.8,.2,1);
 }
 
 @keyframes autocompleteFadeIn {
   from {
     opacity: 0;
-    transform: translateY(-6px);
+    transform: translateY(-6px) scale(.99);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
 }
 
+.airport-suggestion-group {
+  padding: 3px 0 7px;
+}
+
+.airport-suggestion-group + .airport-suggestion-group {
+  border-top: 1px solid #edf1f5;
+  padding-top: 8px;
+}
+
+.airport-suggestion-city {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px 7px;
+  color: #334155;
+  background: linear-gradient(90deg, #f8fafc 0%, rgba(248,250,252,.35) 100%);
+  border-radius: 9px;
+}
+
+.airport-suggestion-city__icon {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: #eef2f7;
+  color: #64748b;
+  flex: 0 0 auto;
+}
+
+.airport-suggestion-city > span:last-child {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  text-align: left;
+}
+
+.airport-suggestion-city strong {
+  color: #1e293b;
+  font-size: .84rem;
+  line-height: 1.25;
+}
+
+.airport-suggestion-city small {
+  margin-top: 2px;
+  color: #8290a3;
+  font-size: .68rem;
+}
+
+.airport-suggestion-airports {
+  display: grid;
+  gap: 2px;
+  margin-top: 4px;
+}
+
 .suggestion-item {
+  appearance: none;
+  width: 100%;
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 12px;
+  padding: 10px 12px 10px 18px;
   cursor: pointer;
-  border-radius: 8px;
-  transition: all 0.15s ease;
-  margin-bottom: 2px;
-}
-
-.suggestion-item:last-child {
-  margin-bottom: 0;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  font: inherit;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+  text-align: left;
 }
 
 .suggestion-item:hover,
 .suggestion-item.active {
-  background-color: #f1f5f9;
+  background-color: #f3f6f9;
+  transform: translateX(2px);
+}
+
+.suggestion-item:focus-visible {
+  outline: 2px solid rgba(139, 21, 56, .3);
+  outline-offset: -2px;
 }
 
 .suggestion-icon {
@@ -136,7 +213,7 @@
 
 .suggestion-name {
   font-size: 0.9rem;
-  font-weight: 600;
+  font-weight: 650;
   color: #1e293b;
   white-space: nowrap;
   overflow: hidden;
@@ -147,10 +224,21 @@
 .suggestion-location {
   font-size: 0.75rem;
   color: #64748b;
-  margin-top: 2px;
+  margin-top: 3px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.suggestion-location strong {
+  display: inline-flex;
+  padding: 2px 6px;
+  margin-right: 2px;
+  border-radius: 6px;
+  background: #eef2f7;
+  color: #3b485b;
+  font-size: .7rem;
+  letter-spacing: .04em;
 }
 
 .autocomplete-highlight {
@@ -181,13 +269,30 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 12px;
+  padding: 9px 11px;
   background-color: #fffbeb;
   border: 1px solid #fef3c7;
-  border-radius: 6px;
-  color: #d97706;
-  font-size: 0.8rem;
+  border-radius: 8px;
+  color: #b45309;
+  font-size: 0.78rem;
   font-weight: 600;
   margin-bottom: 6px;
 }
 
+@media (max-width: 600px) {
+  .autocomplete-suggestions-list {
+    max-height: min(420px, 55vh);
+  }
+
+  .airport-search-help {
+    font-size: .68rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .autocomplete-suggestions-list,
+  .suggestion-item {
+    animation: none !important;
+    transition: none !important;
+  }
+}

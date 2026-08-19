@@ -1,0 +1,289 @@
+/* Shared search-card system for Flights, Hotels, and Car Rentals. */
+.product-search-card {
+  --psc-accent: #8b1538;
+  --psc-accent-dark: #680e28;
+  --psc-accent-rgb: 139, 21, 56;
+  --psc-soft: #faf5f7;
+  --psc-ink: #1e293b;
+  width: 100%;
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, 0.09);
+  border-radius: 18px;
+  padding: 1.15rem;
+  box-sizing: border-box;
+  box-shadow: 0 20px 48px rgba(15, 23, 42, 0.11);
+}
+
+.product-search-card--flights {
+  --psc-accent: #8b1538;
+  --psc-accent-dark: #680e28;
+  --psc-accent-rgb: 139, 21, 56;
+  --psc-soft: #faf5f7;
+  --psc-ink: #1e293b;
+}
+
+.product-search-card--hotels {
+  --psc-accent: #178f8a;
+  --psc-accent-dark: #0f5c63;
+  --psc-accent-rgb: 23, 143, 138;
+  --psc-soft: #eef8f6;
+  --psc-ink: #18383b;
+}
+
+.product-search-card--cars {
+  --psc-accent: #1e88e5;
+  --psc-accent-dark: #0d6fca;
+  --psc-accent-rgb: 30, 136, 229;
+  --psc-soft: #eef6fd;
+  --psc-ink: #0d2b45;
+}
+
+.product-search-card__heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.15rem 0.25rem 0.9rem;
+}
+
+.product-search-card__heading-copy {
+  min-width: 0;
+}
+
+.product-search-card__eyebrow {
+  display: inline-block;
+  color: var(--psc-accent);
+  font-size: 0.73rem;
+  font-weight: 850;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.product-search-card__heading h2 {
+  margin: 0.16rem 0 0;
+  color: var(--psc-ink);
+  font-size: 1.45rem;
+  line-height: 1.15;
+  font-weight: 800;
+}
+
+.product-search-card__trust-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: #50677a;
+  font-size: 0.8rem;
+  font-weight: 650;
+  text-align: right;
+}
+
+.product-search-card__trust-note i {
+  color: var(--psc-accent);
+}
+
+.product-search-card__body {
+  min-width: 0;
+}
+
+.product-search-card form {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.product-search-card input:not([type="checkbox"]):not([type="radio"]),
+.product-search-card select,
+.product-search-card textarea,
+.product-search-card .custom-select-trigger,
+.product-search-card .passenger-trigger-btn {
+  border-color: #cdd9e5;
+}
+
+.product-search-card input:not([type="checkbox"]):not([type="radio"]):focus,
+.product-search-card select:focus,
+.product-search-card textarea:focus,
+.product-search-card .custom-select-trigger:focus-visible,
+.product-search-card .passenger-trigger-btn:focus-visible,
+.product-search-card .passenger-trigger-btn.active {
+  outline: none;
+  border-color: var(--psc-accent) !important;
+  box-shadow: 0 0 0 3px rgba(var(--psc-accent-rgb), 0.12) !important;
+}
+
+.product-search-card input[type="checkbox"],
+.product-search-card input[type="radio"] {
+  accent-color: var(--psc-accent) !important;
+}
+
+.product-search-card .custom-select-option.selected,
+.product-search-card .custom-select-option .check-icon {
+  color: var(--psc-accent) !important;
+}
+
+.product-search-card .custom-select-option.selected {
+  background: var(--psc-soft) !important;
+}
+
+.product-search-card .product-search-primary,
+.product-search-card .flights-btn--cta,
+.product-search-card .hotel-search-button,
+.product-search-card .car-search-submit-btn {
+  width: 100%;
+  min-height: 52px;
+  border: 0;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--psc-accent) 0%, var(--psc-accent-dark) 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 8px 20px rgba(var(--psc-accent-rgb), 0.22) !important;
+  font-weight: 750;
+}
+
+.product-search-card .product-search-primary:hover:not(:disabled),
+.product-search-card .flights-btn--cta:hover:not(:disabled),
+.product-search-card .hotel-search-button:hover:not(:disabled),
+.product-search-card .car-search-submit-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 26px rgba(var(--psc-accent-rgb), 0.3) !important;
+}
+
+/* Flight homepage uses a legacy form component. Give the active flight tab the
+   same full-width card geometry without changing its search behavior. */
+#inquiry .inquiry-split-layout:has(.search-tabs-header .tab-btn:first-child.active) {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+#inquiry .inquiry-split-layout:has(.search-tabs-header .tab-btn:first-child.active) .inquiry-side-panel {
+  display: none !important;
+}
+
+#inquiry .inquiry-split-layout:has(.search-tabs-header .tab-btn:first-child.active) .inquiry-main-panel > .flights-inquiry-card {
+  --psc-accent: #8b1538;
+  --psc-accent-dark: #680e28;
+  --psc-accent-rgb: 139, 21, 56;
+  --psc-soft: #faf5f7;
+  --psc-ink: #1e293b;
+  border-radius: 18px !important;
+  padding: 1.15rem !important;
+  border: 1px solid rgba(15, 23, 42, 0.09) !important;
+  box-shadow: 0 20px 48px rgba(15, 23, 42, 0.11) !important;
+}
+
+#inquiry .inquiry-split-layout:has(.search-tabs-header .tab-btn:first-child.active) .inquiry-main-panel > .flights-inquiry-card > h2 {
+  margin: 0.2rem 0 0.45rem !important;
+  color: var(--psc-ink) !important;
+  font-size: 1.45rem !important;
+  line-height: 1.15 !important;
+}
+
+#inquiry .inquiry-split-layout:has(.search-tabs-header .tab-btn:first-child.active) .inquiry-main-panel > .flights-inquiry-card > h2::before {
+  content: 'FIND A FLIGHT';
+  display: block;
+  margin-bottom: 0.22rem;
+  color: var(--psc-accent);
+  font-size: 0.73rem;
+  font-weight: 850;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+#inquiry .inquiry-split-layout:has(.search-tabs-header .tab-btn:first-child.active) .flights-form input:not([type="checkbox"]):focus,
+#inquiry .inquiry-split-layout:has(.search-tabs-header .tab-btn:first-child.active) .flights-form textarea:focus,
+#inquiry .inquiry-split-layout:has(.search-tabs-header .tab-btn:first-child.active) .flights-form .custom-select-trigger:focus-visible,
+#inquiry .inquiry-split-layout:has(.search-tabs-header .tab-btn:first-child.active) .passenger-trigger-btn:focus-visible,
+#inquiry .inquiry-split-layout:has(.search-tabs-header .tab-btn:first-child.active) .passenger-trigger-btn.active {
+  border-color: #8b1538 !important;
+  box-shadow: 0 0 0 3px rgba(139, 21, 56, 0.12) !important;
+}
+
+#inquiry .inquiry-split-layout:has(.search-tabs-header .tab-btn:first-child.active) .flights-btn--cta {
+  width: 100% !important;
+  min-height: 52px !important;
+  border: 0 !important;
+  border-radius: 10px !important;
+  background: linear-gradient(135deg, #8b1538 0%, #680e28 100%) !important;
+  box-shadow: 0 8px 20px rgba(139, 21, 56, 0.22) !important;
+}
+
+/* Flights, Hotels and Cars use one shared public shell width. This overrides
+   the legacy 1260px flight inquiry container so every product search card has
+   the same left/right edges at the same viewport size. */
+.flights-page #inquiry .container,
+.hotel-page .hotel-search-section .container,
+.car-rentals-home-page .car-search-shell .container {
+  width: 100% !important;
+  max-width: var(--tfs-public-shell, 1440px) !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  padding-left: 24px !important;
+  padding-right: 24px !important;
+  box-sizing: border-box !important;
+}
+
+/* Flights and Hotels now use the same physical placement as the Car Rentals
+   search card: the white card overlaps the bottom edge of the hero by 34px.
+   Their old offer/discount strip is intentionally hidden so there is no band
+   between the hero and the overlapping card. */
+.flights-page .hero-offer-bar,
+.hotel-page .hero-offer-bar {
+  display: none !important;
+}
+
+.flights-page #inquiry {
+  position: relative;
+  z-index: 20;
+  margin-top: -34px !important;
+  padding-top: 0 !important;
+}
+
+.hotel-page .hotel-search-section {
+  position: relative;
+  z-index: 20;
+  margin-top: -34px !important;
+  padding-top: 0 !important;
+}
+
+/* Keep the search card itself above the hero edge, while leaving carousel
+   arrows/dots visibly above the card just like the Car Rentals page. */
+.flights-page #inquiry .container,
+.hotel-page .hotel-search-section .container,
+.car-search-shell .container {
+  position: relative;
+  z-index: 21;
+}
+
+.hero-slider__controls {
+  bottom: 58px !important;
+  z-index: 30 !important;
+}
+
+@media (max-width: 760px) {
+  .product-search-card {
+    padding: 0.85rem;
+    border-radius: 14px;
+  }
+
+  .product-search-card__heading {
+    align-items: flex-start;
+    flex-direction: column;
+    padding-bottom: 0.75rem;
+  }
+
+  .product-search-card__trust-note {
+    text-align: left;
+  }
+
+  .flights-page #inquiry,
+  .hotel-page .hotel-search-section {
+    margin-top: -18px !important;
+  }
+
+  .flights-page #inquiry .container,
+  .hotel-page .hotel-search-section .container,
+  .car-rentals-home-page .car-search-shell .container {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+
+  .hero-slider__controls {
+    bottom: 50px !important;
+  }
+}

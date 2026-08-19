@@ -1,0 +1,123 @@
+/* Mobile traveler selector: use a deliberate bottom sheet instead of an anchored
+   desktop popover that can cover airport/date controls and spill outside the form. */
+
+@media (max-width: 640px) {
+  .passenger-popover {
+    position: fixed !important;
+    top: auto !important;
+    left: 12px !important;
+    right: 12px !important;
+    bottom: max(12px, env(safe-area-inset-bottom)) !important;
+    width: auto !important;
+    max-width: 420px !important;
+    max-height: min(68dvh, 520px) !important;
+    margin: 0 auto !important;
+    padding: 16px !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 18px !important;
+    background: #ffffff !important;
+    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.28), 0 8px 24px rgba(15, 23, 42, 0.16) !important;
+    z-index: 10060 !important;
+  }
+
+  .passenger-popover::before {
+    content: 'Travelers';
+    display: block;
+    margin: 0 0 10px;
+    color: #0f172a;
+    font-size: 1.05rem;
+    font-weight: 800;
+    line-height: 1.2;
+  }
+
+  .passenger-row {
+    min-height: 58px !important;
+    margin: 0 !important;
+    padding: 9px 0 !important;
+    gap: 12px !important;
+    border-bottom: 1px solid #edf2f7;
+  }
+
+  .passenger-row:last-of-type {
+    border-bottom: 0;
+  }
+
+  .passenger-label {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .passenger-type {
+    font-size: 0.9rem !important;
+    line-height: 1.2 !important;
+  }
+
+  .passenger-age-desc {
+    margin-top: 2px;
+    font-size: 0.72rem !important;
+    line-height: 1.2 !important;
+  }
+
+  .passenger-counters {
+    flex: 0 0 auto;
+    gap: 9px !important;
+  }
+
+  .counter-btn {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+    padding: 0 !important;
+    border-radius: 10px !important;
+    font-size: 1rem !important;
+    font-weight: 700 !important;
+  }
+
+  .counter-value {
+    min-width: 22px !important;
+    font-size: 0.95rem !important;
+  }
+
+  .passenger-popup-close {
+    min-height: 46px !important;
+    margin-top: 12px !important;
+    padding: 0 16px !important;
+    border-radius: 11px !important;
+    background: linear-gradient(135deg, #8b1538 0%, #6b0f2a 100%) !important;
+    color: #ffffff !important;
+    font-size: 0.95rem !important;
+    font-weight: 800 !important;
+    box-shadow: 0 5px 14px rgba(139, 21, 56, 0.2);
+  }
+
+  /* Keep dropdowns and date pickers below the traveler sheet while it is open. */
+  .custom-select-dropdown,
+  .autocomplete-suggestions-list,
+  .traveldate-popover {
+    z-index: 10030;
+  }
+}
+
+@media (max-width: 360px) {
+  .passenger-popover {
+    left: 8px !important;
+    right: 8px !important;
+    padding: 14px !important;
+    max-height: 72dvh !important;
+  }
+
+  .passenger-row {
+    min-height: 54px !important;
+    padding: 7px 0 !important;
+  }
+
+  .counter-btn {
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    min-height: 34px !important;
+  }
+}

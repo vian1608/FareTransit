@@ -5,7 +5,7 @@ const CONTENT = {
   rail: {
     title: 'Seamless Direct Rail Advisory',
     subtitle:
-      'Our passenger support model delivers ticket clarity and stress-free logistics in three easy steps.',
+      'Our passenger support model delivers ticket clarity and stress-free travel support in three easy steps.',
     steps: [
       {
         title: 'Specify Route',
@@ -22,21 +22,21 @@ const CONTENT = {
     ],
   },
   flight: {
-    title: 'Seamless Direct Flight Advisory',
+    title: 'Personal Booking Assistance',
     subtitle:
-      'Our passenger support model delivers itinerary clarity and stress-free air logistics in three easy steps.',
+      'Our team helps you compare practical flight options and complete your reservation with clear guidance.',
     steps: [
       {
-        title: 'Specify Itinerary',
-        text: 'Enter your origin, destination, travel dates, and cabin preferences in the inquiry form above.',
+        title: 'Share Your Travel Details',
+        text: 'Enter your route, dates, passenger count and travel preferences.',
       },
       {
-        title: 'Call the Desk',
-        text: 'Use our hotline to speak directly with a flight logistics advisor for domestic and international routing.',
+        title: 'Review Suitable Options',
+        text: 'Compare price, connections, baggage and total travel time.',
       },
       {
-        title: 'Travel with Advisory',
-        text: 'Receive coordinated options by email and 24/7 disruption guidance through your day of travel.',
+        title: 'Complete Your Reservation',
+        text: 'Receive clear booking details and support when you need it.',
       },
     ],
   },
@@ -46,11 +46,10 @@ function SeamlessAdvisorySection({ variant = 'rail' }) {
   const { title, subtitle, steps } = CONTENT[variant] || CONTENT.rail;
   const [activeStep, setActiveStep] = useState(0);
   const touchStartX = useRef(null);
-  const touchEndX = useRef(null);
 
   const goTo = (index) => {
-    if (index < 0 || index >= steps.length) return;
-    setActiveStep(index);
+    if (!steps.length) return;
+    setActiveStep(((index % steps.length) + steps.length) % steps.length);
   };
 
   const handleTouchStart = (e) => {
@@ -58,12 +57,13 @@ function SeamlessAdvisorySection({ variant = 'rail' }) {
   };
 
   const handleTouchEnd = (e) => {
-    touchEndX.current = e.changedTouches[0].clientX;
-    const diff = touchStartX.current - touchEndX.current;
+    if (touchStartX.current === null) return;
+    const touchEndX = e.changedTouches[0].clientX;
+    const diff = touchStartX.current - touchEndX;
     if (Math.abs(diff) > 40) {
-      if (diff > 0) goTo(activeStep + 1); // swipe left → next
-      else goTo(activeStep - 1);           // swipe right → prev
+      goTo(activeStep + (diff > 0 ? 1 : -1));
     }
+    touchStartX.current = null;
   };
 
   return (
@@ -74,7 +74,6 @@ function SeamlessAdvisorySection({ variant = 'rail' }) {
           <p>{subtitle}</p>
         </div>
 
-        {/* ── Desktop: grid layout ── */}
         <div className="seamless-advisory__steps seamless-advisory__steps--desktop">
           {steps.map((step, index) => (
             <div className="seamless-advisory__step" key={step.title}>
@@ -85,7 +84,6 @@ function SeamlessAdvisorySection({ variant = 'rail' }) {
           ))}
         </div>
 
-        {/* ── Mobile: single-card swipe carousel ── */}
         <div
           className="seamless-advisory__carousel"
           onTouchStart={handleTouchStart}
@@ -97,22 +95,39 @@ function SeamlessAdvisorySection({ variant = 'rail' }) {
             <p>{steps[activeStep].text}</p>
           </div>
 
-          {/* Dot navigation */}
-          <div className="seamless-advisory__carousel-dots">
-            {steps.map((_, i) => (
-              <button
-                key={i}
-                className={`seamless-advisory__dot${i === activeStep ? ' seamless-advisory__dot--active' : ''}`}
-                onClick={() => goTo(i)}
-                aria-label={`Step ${i + 1}`}
-              />
-            ))}
-          </div>
+          <div className="seamless-advisory__carousel-nav" aria-label="Step navigation">
+            <button
+              type="button"
+              className="seamless-advisory__carousel-arrow"
+              onClick={() => goTo(activeStep - 1)}
+              aria-label="Previous step"
+            >
+              <i className="fas fa-chevron-left" aria-hidden="true" />
+            </button>
 
-          {/* Step counter hint */}
-          <p className="seamless-advisory__swipe-hint">
-            Step {activeStep + 1} of {steps.length} · Swipe to navigate
-          </p>
+            <div className="seamless-advisory__carousel-dots" role="tablist" aria-label="Steps">
+              {steps.map((step, i) => (
+                <button
+                  key={step.title}
+                  type="button"
+                  role="tab"
+                  aria-selected={i === activeStep}
+                  className={`seamless-advisory__dot${i === activeStep ? ' seamless-advisory__dot--active' : ''}`}
+                  onClick={() => goTo(i)}
+                  aria-label={`Step ${i + 1}: ${step.title}`}
+                />
+              ))}
+            </div>
+
+            <button
+              type="button"
+              className="seamless-advisory__carousel-arrow"
+              onClick={() => goTo(activeStep + 1)}
+              aria-label="Next step"
+            >
+              <i className="fas fa-chevron-right" aria-hidden="true" />
+            </button>
+          </div>
         </div>
       </div>
     </section>

@@ -1,5 +1,7 @@
 import axios from 'axios';
 import config from '../../../../config/api-config.mjs';
+import { searchAndRankLocalAirports } from '../../modules/flights/airport-ranker.mjs';
+
 
 class AmadeusService {
   constructor() {
@@ -87,7 +89,16 @@ class AmadeusService {
 
       return this.formatFlightOffers(response.data);
     } catch (error) {
-      console.warn('Amadeus API failed or not configured, falling back to simulated flight offers:', error.message);
+      const isProduction = (process.env.NODE_ENV || 'development') === 'production';
+      if (isProduction) {
+        // INTEGRITY: Never fall back to fake flights in production on API failure
+        const err = new Error('Amadeus live flight search is temporarily unavailable.');
+        err.code = 'FLIGHT_SEARCH_UNAVAILABLE';
+        err.status = 503;
+        err.cause = error;
+        throw err;
+      }
+      console.warn('Amadeus API failed or not configured, falling back to simulated flight offers (non-production only):', error.message);
       return this.getMockFlightOffers(searchParams);
     }
   }
@@ -279,29 +290,13 @@ class AmadeusService {
 
   // Mock airport suggestions (fallback)
   getMockAirportSuggestions(query) {
-    const mockAirports = [
-      { code: 'JFK', name: 'John F. Kennedy International', city: 'New York', country: 'United States' },
-      { code: 'LAX', name: 'Los Angeles International', city: 'Los Angeles', country: 'United States' },
-      { code: 'LHR', name: 'London Heathrow', city: 'London', country: 'United Kingdom' },
-      { code: 'CDG', name: 'Charles de Gaulle', city: 'Paris', country: 'France' },
-      { code: 'DXB', name: 'Dubai International', city: 'Dubai', country: 'UAE' },
-      { code: 'SIN', name: 'Singapore Changi', city: 'Singapore', country: 'Singapore' },
-      { code: 'NRT', name: 'Narita International', city: 'Tokyo', country: 'Japan' },
-      { code: 'SYD', name: 'Sydney Kingsford Smith', city: 'Sydney', country: 'Australia' }
-    ];
-
-    if (!query) return mockAirports;
-
-    const queryLower = query.toLowerCase();
-    return mockAirports.filter(airport => 
-      airport.code.toLowerCase().includes(queryLower) ||
-      airport.name.toLowerCase().includes(queryLower) ||
-      airport.city.toLowerCase().includes(queryLower)
-    ).map(airport => ({
+    const ranked = searchAndRankLocalAirports(query || '');
+    return ranked.map(airport => ({
       ...airport,
       display: `${airport.name} (${airport.code})`
     }));
   }
 }
+
 
 export default new AmadeusService();

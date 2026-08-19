@@ -1,0 +1,402 @@
+/*
+ * FareTransit — shared modern interaction system
+ * Loaded after legacy/page CSS so admin and customer routes share one visual language.
+ * Progressive enhancement only: no workflow or business logic lives here.
+ */
+
+:root {
+  --tfs-primary: #8b1538;
+  --tfs-primary-strong: #6f0f2c;
+  --tfs-admin-primary: #0f639f;
+  --tfs-ink: #172033;
+  --tfs-muted: #66768c;
+  --tfs-border: rgba(148, 163, 184, .28);
+  --tfs-surface: rgba(255, 255, 255, .96);
+  --tfs-surface-soft: #f7f9fc;
+  --tfs-radius-sm: 10px;
+  --tfs-radius-md: 13px;
+  --tfs-radius-lg: 18px;
+  --tfs-radius-xl: 24px;
+  --tfs-shadow-xs: 0 1px 2px rgba(15, 23, 42, .035);
+  --tfs-shadow-sm: 0 7px 22px rgba(15, 23, 42, .065);
+  --tfs-shadow-md: 0 16px 44px rgba(15, 23, 42, .10);
+  --tfs-shadow-float: 0 22px 65px rgba(15, 23, 42, .16);
+  --tfs-ease: cubic-bezier(.2, .8, .2, 1);
+  --tfs-ease-spring: cubic-bezier(.16, 1, .3, 1);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Route entry motion: subtle and quick, never theatrical. */
+.tfs-route-stage {
+  min-height: 1px;
+  animation: tfs-route-enter .30s var(--tfs-ease-spring) both;
+  transform-origin: 50% 0;
+}
+
+@keyframes tfs-route-enter {
+  from { opacity: .01; transform: translateY(8px) scale(.997); filter: saturate(.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); filter: saturate(1); }
+}
+
+/* Modern controls shared by client and admin pages. */
+button,
+[role="button"],
+input[type="button"],
+input[type="submit"],
+input[type="reset"] {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:not(.nav-toggle):not(.carousel-dot):not(.slider-dot),
+[role="button"]:not(.accordion-section-header),
+.btn,
+.adv2-button,
+.abx-button,
+.abaddr-button {
+  border-radius: var(--tfs-radius-md);
+  transition:
+    transform .18s var(--tfs-ease),
+    box-shadow .20s ease,
+    border-color .18s ease,
+    background-color .18s ease,
+    color .18s ease,
+    opacity .18s ease;
+}
+
+button:not(:disabled):not(.nav-toggle):not(.carousel-dot):not(.slider-dot):hover,
+.btn:not(:disabled):hover,
+.adv2-button:not(:disabled):hover,
+.abx-button:not(:disabled):hover,
+.abaddr-button:not(:disabled):hover {
+  transform: translateY(-1px);
+}
+
+button:not(:disabled):active,
+.btn:not(:disabled):active,
+.adv2-button:not(:disabled):active,
+.abx-button:not(:disabled):active,
+.abaddr-button:not(:disabled):active {
+  transform: translateY(0) scale(.985);
+}
+
+button:focus-visible,
+[role="button"]:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid rgba(31, 116, 170, .20);
+  outline-offset: 2px;
+}
+
+/* Forms: one contemporary field shape across legacy and rebuilt pages. */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+select,
+textarea {
+  border-radius: 12px;
+  transition: border-color .18s ease, box-shadow .18s ease, background-color .18s ease, transform .18s ease;
+}
+
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):hover:not(:disabled),
+select:hover:not(:disabled),
+textarea:hover:not(:disabled) {
+  border-color: rgba(100, 116, 139, .52);
+}
+
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+select:focus,
+textarea:focus {
+  box-shadow: 0 0 0 4px rgba(31, 116, 170, .10), var(--tfs-shadow-xs);
+}
+
+select {
+  cursor: pointer;
+}
+
+/* Remove the older moving shine treatment from navigation and use a calmer glass hover. */
+.nav-link {
+  border-radius: 12px !important;
+  transition: background-color .18s ease, transform .18s var(--tfs-ease), box-shadow .18s ease !important;
+}
+
+.nav-link::before { display: none !important; }
+.nav-link:hover { box-shadow: 0 7px 20px rgba(0, 0, 0, .12) !important; }
+
+/* Cards / sheets — shared depth without making every element look floating. */
+.adv2-card,
+.adv2-panel,
+.adv2-editor-section,
+.adv2-kpi,
+.adv2-detail,
+.abx-panel,
+.abx-passenger-editor,
+.abx-flight,
+.accordion-section,
+.card-payment-container,
+.card-details-box,
+.billing-address-box,
+.passenger-card-block,
+.booking-itinerary-top-panel__inner,
+.booking-form-area,
+.search-form,
+.flight-card,
+.car-card,
+.car-result-card,
+.auth-card,
+.policy-card {
+  border-color: var(--tfs-border) !important;
+  box-shadow: var(--tfs-shadow-xs);
+}
+
+.adv2-card,
+.adv2-panel,
+.adv2-editor-section,
+.adv2-kpi,
+.adv2-detail,
+.abx-panel,
+.abx-passenger-editor,
+.accordion-section {
+  border-radius: var(--tfs-radius-lg) !important;
+}
+
+.adv2-kpi,
+.adv2-card,
+.abx-panel,
+.accordion-section,
+.flight-card,
+.car-result-card {
+  transition: transform .22s var(--tfs-ease), box-shadow .22s ease, border-color .22s ease;
+}
+
+.adv2-kpi:hover,
+.flight-card:hover,
+.car-result-card:hover {
+  box-shadow: var(--tfs-shadow-sm);
+  border-color: rgba(113, 128, 150, .36) !important;
+}
+
+/* Admin dashboard: softer, denser, modern rather than flat enterprise-grey. */
+.theme-admin .main,
+.theme-admin .adv2-page {
+  background:
+    radial-gradient(circle at 12% -8%, rgba(15, 105, 170, .075), transparent 31rem),
+    radial-gradient(circle at 92% 10%, rgba(139, 21, 56, .045), transparent 28rem),
+    #f5f7fb !important;
+}
+
+.adv2-toolbar,
+.adv2-card,
+.adv2-detail,
+.adv2-editor-section,
+.adv2-kpi {
+  background: rgba(255, 255, 255, .965) !important;
+}
+
+.adv2-toolbar {
+  border-radius: 16px !important;
+  box-shadow: 0 8px 28px rgba(15, 39, 70, .055);
+}
+
+.adv2-button {
+  min-height: 39px !important;
+  padding: 9px 14px !important;
+  border-radius: 11px !important;
+  letter-spacing: -.05px;
+}
+
+.adv2-button--primary {
+  background: linear-gradient(135deg, #126ca8, #0d578d) !important;
+  box-shadow: 0 8px 18px rgba(15, 105, 170, .16);
+}
+
+.adv2-button--danger {
+  background: linear-gradient(135deg, #b11243, #8e0f36) !important;
+  box-shadow: 0 8px 18px rgba(177, 18, 67, .13);
+}
+
+.adv2-button--secondary {
+  background: linear-gradient(180deg, #f8fafc, #eef3f8) !important;
+  border: 1px solid #d7e0ea !important;
+}
+
+.adv2-button--tab {
+  border-radius: 11px !important;
+}
+
+.adv2-button--tab.active {
+  background: linear-gradient(135deg, #173d65, #102f51) !important;
+  box-shadow: 0 7px 16px rgba(15, 39, 70, .15);
+}
+
+.adv2-field input,
+.adv2-field select,
+.adv2-field textarea,
+.adv2-search,
+.adv2-select {
+  min-height: 41px;
+  border-radius: 11px !important;
+  border-color: #d5dee9 !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, .02);
+}
+
+.adv2-table tbody tr {
+  transition: background-color .16s ease, transform .16s ease;
+}
+
+.adv2-table tbody tr:hover td {
+  background: #f8fbfe !important;
+}
+
+.adv2-badge {
+  border-radius: 999px !important;
+  padding: 4px 9px !important;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, .035);
+}
+
+/* Admin operational collapse: animate content instead of instantaneous display:none. */
+.admin-booking-detail-route .adv2-editor-section__header,
+.admin-booking-detail-route .adv2-segment-card__head {
+  cursor: pointer;
+  user-select: none;
+  transition: background-color .18s ease, color .18s ease;
+}
+
+.admin-booking-detail-route .adv2-editor-section__header:hover,
+.admin-booking-detail-route .adv2-segment-card__head:hover {
+  background: linear-gradient(90deg, #f6f9fc, #fbfcfe);
+}
+
+.admin-booking-detail-route .adv2-editor-section__body,
+.admin-booking-detail-route .adv2-editor-section__footer {
+  display: block !important;
+  max-height: 6500px;
+  opacity: 1;
+  transform: translateY(0);
+  overflow: hidden;
+  transition:
+    max-height .42s var(--tfs-ease-spring),
+    opacity .20s ease,
+    transform .34s var(--tfs-ease-spring),
+    padding-top .34s var(--tfs-ease-spring),
+    padding-bottom .34s var(--tfs-ease-spring);
+}
+
+.admin-booking-detail-route .adv2-editor-section.abx-collapsed .adv2-editor-section__body,
+.admin-booking-detail-route .adv2-editor-section.abx-collapsed .adv2-editor-section__footer {
+  display: block !important;
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-7px);
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  border-width: 0 !important;
+  pointer-events: none;
+}
+
+/* Native details used by booking workspace: smooth modern open/close where supported. */
+.abx-panel > summary,
+.abx-passenger-editor > summary,
+.abx-flight > summary {
+  transition: background-color .18s ease, color .18s ease, box-shadow .18s ease;
+}
+
+.abx-panel > summary:hover,
+.abx-passenger-editor > summary:hover,
+.abx-flight > summary:hover {
+  background: linear-gradient(90deg, rgba(245, 249, 252, .95), rgba(251, 252, 254, .9));
+}
+
+.abx-chevron,
+.accordion-chevron {
+  transition: transform .34s var(--tfs-ease-spring) !important;
+}
+
+/* Shared customer accordion gets a cleaner elevated header + spring motion. */
+.accordion-section-header {
+  border-radius: 16px;
+  transition: background-color .20s ease, box-shadow .20s ease, transform .18s var(--tfs-ease);
+}
+
+.accordion-section-header:hover {
+  background: linear-gradient(135deg, rgba(250, 250, 252, .95), rgba(246, 248, 251, .96));
+}
+
+.accordion-section--open .accordion-section-header {
+  box-shadow: inset 0 -1px 0 rgba(148, 163, 184, .16);
+}
+
+.accordion-section-body {
+  transition:
+    max-height .46s var(--tfs-ease-spring),
+    opacity .24s ease,
+    padding-top .38s var(--tfs-ease-spring),
+    padding-bottom .38s var(--tfs-ease-spring) !important;
+}
+
+/* Modals: glass backdrop + short scale/slide entrance. */
+.adv2-modal-backdrop,
+.modal-backdrop,
+.modal-overlay {
+  backdrop-filter: blur(7px) saturate(105%);
+  animation: tfs-backdrop-in .18s ease both;
+}
+
+.adv2-modal,
+.modal-content,
+.modal-card,
+.email-preview-modal {
+  border-radius: 20px !important;
+  box-shadow: var(--tfs-shadow-float) !important;
+  animation: tfs-modal-in .26s var(--tfs-ease-spring) both;
+}
+
+@keyframes tfs-backdrop-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes tfs-modal-in { from { opacity: 0; transform: translateY(10px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+/* Alerts and dropdown surfaces should feel like sheets rather than old square boxes. */
+.adv2-alert,
+.booking-global-error,
+.field-error,
+.alert,
+.error-message,
+.success-message {
+  border-radius: 13px !important;
+}
+
+.dropdown-menu,
+.autocomplete-dropdown,
+.suggestions-dropdown,
+.address-suggestions-dropdown {
+  border-radius: 15px !important;
+  box-shadow: var(--tfs-shadow-md) !important;
+  border-color: rgba(148, 163, 184, .30) !important;
+}
+
+/* Improve touch targets without turning the site into giant pills. */
+@media (pointer: coarse) {
+  button,
+  .btn,
+  .adv2-button,
+  .abx-button {
+    min-height: 44px;
+  }
+}
+
+/* Accessibility: motion is a preference, not a requirement. */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

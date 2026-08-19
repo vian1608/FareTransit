@@ -6,6 +6,20 @@
   min-height: 100vh;
   font-family: inherit;
   color: #1e293b; /* Charcoal/dark navy text for maximum readability */
+  opacity: 1 !important;
+}
+
+.search-error-card {
+  display: block !important;
+  opacity: 1 !important;
+  max-width: 600px;
+  margin: 3rem auto;
+  text-align: center;
+  padding: 2.5rem;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 4px 25px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
 }
 
 .search-results-page--rail {
@@ -689,6 +703,132 @@
   font-weight: 700;
   text-transform: uppercase;
   margin-top: 2px;
+}
+
+/* ─── Premium Discount Chip / Badge System ─────────────────────────────── */
+
+/* Collapsed card row — price column layout */
+.fare-price-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.18rem;
+}
+
+.fare-savings-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.original-supplier-fare {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #94a3b8;
+  text-decoration: line-through;
+  letter-spacing: 0.01em;
+}
+
+.final-fare-price {
+  font-size: 1.28rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+}
+
+/* The "10% OFF" emerald gradient pill */
+.discount-promo-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #fff;
+  background: linear-gradient(135deg, #059669 0%, #10b981 55%, #34d399 100%);
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.35), inset 0 1px 0 rgba(255,255,255,0.18);
+  white-space: nowrap;
+  user-select: none;
+  animation: chipPulse 3s ease-in-out infinite;
+}
+
+@keyframes chipPulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(5, 150, 105, 0.35), inset 0 1px 0 rgba(255,255,255,0.18); }
+  50%       { box-shadow: 0 2px 14px rgba(5, 150, 105, 0.55), inset 0 1px 0 rgba(255,255,255,0.22); }
+}
+
+.savings-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #047857;
+  white-space: nowrap;
+}
+
+/* Expanded panel — premium fare breakdown card */
+.fare-breakdown-premium {
+  background: linear-gradient(135deg, #f8fafc 0%, #f0fdf4 100%);
+  border: 1px solid #d1fae5;
+  border-radius: 12px;
+  padding: 1rem 1.15rem;
+  margin-bottom: 1.1rem;
+}
+
+.fare-breakdown-premium__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.88rem;
+  color: #64748b;
+  margin-bottom: 0.35rem;
+}
+
+.fare-breakdown-premium__row--discount {
+  color: #047857;
+  font-weight: 700;
+}
+
+.fare-breakdown-premium__row--total {
+  border-top: 1px dashed #a7f3d0;
+  padding-top: 0.6rem;
+  margin-top: 0.5rem;
+  font-weight: 800;
+  font-size: 1.08rem;
+  color: #0f172a;
+}
+
+.fare-breakdown-premium__chip-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.6rem;
+}
+
+.fare-breakdown-premium__label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+/* Mock / offline badge (amber, no pulse) */
+.mock-fare-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #92400e;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 1px solid #fcd34d;
+  white-space: nowrap;
 }
 
 .row-expand-chevron {

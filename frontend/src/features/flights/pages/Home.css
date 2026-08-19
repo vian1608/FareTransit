@@ -709,54 +709,60 @@
     max-width: 100% !important;
   }
 
-  /* ── COMPACT Support card on mobile ── */
+  /* ── Responsive Support card on mobile ── */
   .support-inquiry-card {
-    padding: 1rem !important;
-    border-radius: 12px !important;
+    padding: 1.25rem !important;
+    border-radius: 14px !important;
     width: 100% !important;
+    margin-top: 1rem !important;
+    box-sizing: border-box !important;
   }
 
-  /* Hide the large paragraph and benefits heading on mobile */
-  .support-inquiry-card > div > p,
-  .support-inquiry-card .benefits-list h3 {
-    display: none !important;
-  }
-
-  /* Compact heading */
   .support-inquiry-card h2 {
-    font-size: 1rem !important;
-    margin-bottom: 0.4rem !important;
+    font-size: clamp(1.15rem, 4.5vw, 1.45rem) !important;
+    margin-bottom: 0.5rem !important;
+    font-weight: 800 !important;
+    color: #1e293b !important;
+  }
+
+  .support-inquiry-card > div > p {
+    display: block !important;
+    font-size: 0.88rem !important;
+    line-height: 1.5 !important;
+    color: #475569 !important;
+    margin-bottom: 0.85rem !important;
+  }
+
+  .support-inquiry-card .benefits-list {
+    margin-top: 0.75rem !important;
+  }
+
+  .support-inquiry-card .benefits-list h3 {
+    display: block !important;
+    font-size: 0.9rem !important;
+    margin-bottom: 0.5rem !important;
     font-weight: 700 !important;
   }
 
-  /* Compact benefits list — show as inline chips */
-  .support-inquiry-card .benefits-list {
-    margin-top: 0.5rem !important;
-  }
-
   .support-inquiry-card .benefits-list ul {
-    flex-direction: row !important;
-    flex-wrap: wrap !important;
-    gap: 0.35rem !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.5rem !important;
   }
 
   .support-inquiry-card .benefits-list li {
-    font-size: 0.78rem !important;
-    background: #f1f5f9;
-    border-radius: 20px;
-    padding: 0.2rem 0.6rem;
-    display: flex;
-    align-items: center;
-    gap: 0.3rem;
+    font-size: 0.82rem !important;
+    color: #475569 !important;
+    display: flex !important;
+    align-items: flex-start !important;
+    gap: 0.5rem !important;
   }
 
   .call-btn {
     width: 100% !important;
-    margin-top: 0.75rem !important;
-    margin-bottom: 0.25rem !important;
+    margin-top: 1rem !important;
     min-height: 48px !important;
-    height: auto !important;
-    font-size: 1rem !important;
+    font-size: 0.95rem !important;
     padding: 0.75rem 1rem !important;
   }
 }
@@ -820,5 +826,246 @@
   .flights-inquiry__intro {
     font-size: 0.85rem;
     margin-bottom: 1rem;
+  }
+}
+
+/* ── Who We Help Section ── */
+.who-we-help-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.5rem;
+}
+
+.who-we-help-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.75rem 1.25rem;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.who-we-help-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+}
+
+.who-icon-wrapper {
+  width: 52px;
+  height: 52px;
+  background: #f1f5f9;
+  color: #8b1538;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.35rem;
+  margin-bottom: 1rem;
+}
+
+.who-we-help-card h3 {
+  font-size: 1.15rem;
+  color: #1e293b;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.who-we-help-card p {
+  font-size: 0.92rem;
+  color: #64748b;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* ── Compare More Than Price Grid ── */
+.compare-more-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+}
+
+.compare-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  transition: background 0.2s ease;
+}
+
+.compare-card:hover {
+  background: #f1f5f9;
+}
+
+.compare-icon {
+  font-size: 1.4rem;
+  color: #8b1538;
+  margin-bottom: 0.75rem;
+  display: block;
+}
+
+.compare-card h4 {
+  font-size: 1.05rem;
+  color: #1e293b;
+  font-weight: 700;
+  margin-bottom: 0.35rem;
+}
+
+.compare-card p {
+  font-size: 0.9rem;
+  color: #64748b;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* ── Trust Section ── */
+.trust-bullets-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+  text-align: left;
+}
+
+.trust-bullet {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1rem;
+  color: #f1f5f9;
+  font-weight: 500;
+}
+
+/* ── Expectations Section ── */
+.expectations-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.5rem;
+}
+
+.expectation-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.exp-icon {
+  width: 48px;
+  height: 48px;
+  background: #fffaf0;
+  color: #b45309;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.expectation-card h4 {
+  font-size: 1.05rem;
+  color: #1e293b;
+  font-weight: 700;
+  margin-bottom: 0.4rem;
+}
+
+.expectation-card p {
+  font-size: 0.9rem;
+  color: #64748b;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* ── Mobile Page Length Consolidation Rules ── */
+@media (max-width: 767px) {
+  .who-we-help-section,
+  .why-choose-section,
+  .compare-more-section {
+    display: none !important;
+  }
+}
+
+
+
+/* Airport origin/destination swap control */
+.airport-swap-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 48px minmax(0, 1fr);
+  gap: 0.7rem;
+  align-items: center;
+  width: 100%;
+}
+
+.airport-swap-row .flights-form__group {
+  min-width: 0;
+}
+
+.airport-swap-button {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #8b1538;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: center;
+  align-self: center;
+  margin-top: 1.55rem;
+  padding: 0;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.10);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease, background 0.18s ease;
+  z-index: 2;
+}
+
+.airport-swap-button i {
+  font-size: 1rem;
+  margin: 0;
+  transition: transform 0.22s ease;
+}
+
+.airport-swap-button:hover:not(:disabled),
+.airport-swap-button:focus-visible:not(:disabled) {
+  border-color: #8b1538;
+  background: #fff8fa;
+  box-shadow: 0 6px 16px rgba(139, 21, 56, 0.18);
+  outline: none;
+}
+
+.airport-swap-button:hover:not(:disabled) i {
+  transform: rotate(180deg);
+}
+
+.airport-swap-button:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.airport-swap-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.airport-swap-row--inquiry .airport-swap-button {
+  margin-top: 0.4rem;
+}
+
+@media (max-width: 768px) {
+  .airport-swap-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.45rem;
+  }
+
+  .airport-swap-button,
+  .airport-swap-row--inquiry .airport-swap-button {
+    margin: -0.05rem auto;
+    transform: rotate(90deg);
+  }
+
+  .airport-swap-button:active:not(:disabled) {
+    transform: rotate(90deg) scale(0.96);
   }
 }

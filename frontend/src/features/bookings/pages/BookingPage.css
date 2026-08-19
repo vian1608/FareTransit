@@ -40,7 +40,7 @@
   padding: 0 2rem;
 }
 
-/* ── Page header ── */
+/* ── Page header (legacy fallback) ── */
 .booking-page-header {
   margin-bottom: 2rem;
 }
@@ -56,6 +56,336 @@
   font-size: 0.98rem;
   margin: 0;
   line-height: 1.5;
+}
+
+/* ═══════════════════════════════════════
+   PREMIUM BOOKING HERO SECTION
+   ═══════════════════════════════════════ */
+.booking-hero-premium {
+  background: linear-gradient(135deg, #0f2744 0%, #1e3a5f 45%, #0a1e38 100%);
+  position: relative;
+  overflow: hidden;
+  padding: 2.5rem 0 2rem;
+}
+
+/* Subtle diagonal stripe overlay for texture */
+.booking-hero-premium::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 28px,
+    rgba(255, 255, 255, 0.018) 28px,
+    rgba(255, 255, 255, 0.018) 29px
+  );
+  pointer-events: none;
+}
+
+/* Soft glow accent top-right */
+.booking-hero-premium::after {
+  content: '';
+  position: absolute;
+  top: -60px;
+  right: -80px;
+  width: 320px;
+  height: 320px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(139, 21, 56, 0.22) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.booking-hero-premium__inner {
+  position: relative;
+  z-index: 1;
+  max-width: 1260px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.booking-hero-premium__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.65);
+  margin-bottom: 0.75rem;
+}
+
+.booking-hero-premium__eyebrow i {
+  font-size: 0.75rem;
+  color: #f59e0b;
+}
+
+.booking-hero-premium h1 {
+  font-size: clamp(1.55rem, 3.8vw, 2.35rem);
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+  margin: 0 0 0.75rem 0;
+}
+
+.booking-hero-premium h1 .highlight-gold {
+  color: #f59e0b;
+}
+
+.booking-hero-premium__subtitle {
+  font-size: clamp(0.9rem, 2.2vw, 1.05rem);
+  color: rgba(255, 255, 255, 0.78);
+  line-height: 1.65;
+  max-width: 680px;
+  margin: 0 0 1.5rem 0;
+}
+
+/* Trust badges row */
+.booking-hero-premium__badges {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.booking-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 20px;
+  padding: 0.3rem 0.8rem;
+  backdrop-filter: blur(4px);
+}
+
+.booking-hero-badge i {
+  font-size: 0.72rem;
+  color: #34d399;
+}
+
+.booking-hero-badge--discount i {
+  color: #f59e0b;
+}
+
+/* Responsive Hero Header & Mobile Compact Displays */
+.hero-eyebrow-desktop,
+.hero-title-desktop,
+.hero-sub-desktop,
+.hero-badges-desktop {
+  display: block;
+}
+
+.hero-eyebrow-mobile,
+.hero-title-mobile,
+.hero-sub-mobile,
+.hero-badges-mobile {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .hero-eyebrow-desktop,
+  .hero-title-desktop,
+  .hero-sub-desktop,
+  .hero-badges-desktop {
+    display: none !important;
+  }
+
+  .hero-eyebrow-mobile,
+  .hero-sub-mobile {
+    display: block !important;
+  }
+
+  .hero-title-mobile {
+    display: block !important;
+    font-size: clamp(1.65rem, 6vw, 2.1rem) !important;
+    font-weight: 800 !important;
+    line-height: 1.15 !important;
+    margin: 0 0 0.5rem 0 !important;
+    color: #ffffff !important;
+  }
+
+  .hero-badges-mobile {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    margin-top: 0.75rem !important;
+  }
+
+  .booking-hero-premium {
+    padding: 1.75rem 0 1.5rem !important;
+  }
+
+  .booking-hero-premium__inner {
+    padding: 0 1.25rem !important;
+  }
+
+  .booking-hero-premium__subtitle {
+    font-size: 0.95rem !important;
+    line-height: 1.45 !important;
+    margin-bottom: 0.75rem !important;
+  }
+
+  .booking-itinerary-top-panel {
+    padding: 1.25rem 0 !important;
+  }
+
+  .booking-itinerary-top-panel__inner {
+    padding: 0 1.25rem !important;
+  }
+
+  .booking-itinerary-top-grid,
+  .booking-itinerary-top-grid--roundtrip,
+  .booking-itinerary-top-grid--single {
+    grid-template-columns: 1fr !important;
+    gap: 0.85rem !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .booking-itinerary-pricing-summary {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    padding: 1.15rem 1.25rem !important;
+    border-radius: 16px !important;
+  }
+}
+
+/* ═══════════════════════════════════════
+   ITINERARY TOP PANEL (above form)
+   ═══════════════════════════════════════ */
+.booking-itinerary-top-panel {
+  background: #fff;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 1.5rem 0;
+}
+
+.booking-itinerary-top-panel__inner {
+  max-width: 1260px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.booking-itinerary-top-panel__title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #64748b;
+  margin: 0 0 1rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.booking-itinerary-top-panel__title i {
+  color: #1e3a5f;
+  font-size: 0.85rem;
+}
+
+.booking-itinerary-top-grid {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.booking-itinerary-top-grid--roundtrip {
+  grid-template-columns: 1fr 1fr auto;
+}
+
+.booking-itinerary-top-grid--single {
+  grid-template-columns: 1fr auto;
+}
+
+.booking-itinerary-pricing-summary {
+  background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+  border: 1px solid #a7f3d0;
+  border-radius: 16px;
+  padding: 1.1rem 1.25rem;
+  min-width: 200px;
+  box-sizing: border-box;
+}
+
+.booking-itinerary-pricing-summary__original {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  text-decoration: line-through;
+  margin-bottom: 0.15rem;
+}
+
+.booking-itinerary-pricing-summary__discounted {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin-bottom: 0.4rem;
+}
+
+.booking-itinerary-pricing-summary__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 20px;
+  margin-bottom: 0.5rem;
+}
+
+.booking-itinerary-pricing-summary__saving {
+  font-size: 0.78rem;
+  color: #047857;
+  font-weight: 600;
+}
+
+/* Responsive: collapse to single column on tablet/mobile */
+@media (max-width: 960px) {
+  .booking-itinerary-top-grid,
+  .booking-itinerary-top-grid--single {
+    grid-template-columns: 1fr;
+  }
+  .booking-itinerary-pricing-summary {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .booking-hero-premium {
+    padding: 1.75rem 0 1.5rem;
+  }
+  .booking-hero-premium h1 {
+    font-size: 1.5rem;
+  }
+  .booking-hero-premium__subtitle {
+    font-size: 0.9rem;
+  }
+  .booking-hero-premium__badges {
+    gap: 0.6rem;
+  }
+  .booking-hero-badge {
+    font-size: 0.72rem;
+    padding: 0.25rem 0.65rem;
+  }
+  .booking-itinerary-top-panel {
+    padding: 1.1rem 0;
+  }
+  .booking-itinerary-top-panel__inner {
+    padding: 0 1rem;
+  }
 }
 
 /* ── Error alert ── */
@@ -267,7 +597,7 @@ input.input-synced:focus {
 }
 
 /* ═══════════════════════════════════════
-   PAYMENT SECTION
+   PAYMENT SECTION & BILLING AUTOCOMPLETE
    ═══════════════════════════════════════ */
 .payment-card-group {
   background: #f8fafc;
@@ -293,6 +623,63 @@ input.input-synced:focus {
   padding-right: 2.5rem;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.5px;
+}
+
+/* ── Billing Address Compact Notice ── */
+.billing-address-compact-notice {
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  margin-top: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  align-items: flex-start;
+}
+
+.btn-add-billing {
+  background: #ffffff;
+  border: 1.5px solid #8b1538;
+  color: #8b1538;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.92rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.btn-add-billing:hover {
+  background: #faf5f7;
+  color: #6b0f2a;
+  transform: translateY(-1px);
+}
+
+.compact-subtext {
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.billing-address-expanded-box {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-top: 1.25rem;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
+  transition: all 0.3s ease;
+}
+
+.field-error-text {
+  color: #dc2626;
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+  display: block;
+  font-weight: 600;
 }
 
 /* ═══════════════════════════════════════
@@ -558,4 +945,168 @@ input.input-synced:focus {
   .summary-sticky-card {
     padding: 1rem;
   }
+}
+
+/* ═══════════════════════════════════════
+   CARD PAYMENT & BILLING ADDRESS SECTION
+   ═══════════════════════════════════════ */
+.card-payment-container {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 0.5rem;
+}
+
+.card-payment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+}
+
+.security-badge-group {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.secure-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #047857;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+}
+
+.card-brand-logos {
+  display: flex;
+  gap: 0.6rem;
+  font-size: 1.75rem;
+  color: #475569;
+}
+
+.card-details-box, .billing-address-box {
+  background: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.payment-sub-heading {
+  margin: 0 0 1.25rem 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1e3a5f;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 0.65rem;
+}
+
+.card-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.card-input-wrapper input {
+  padding-right: 3.5rem !important;
+  font-family: inherit;
+  font-size: 1.05rem;
+  letter-spacing: 1px;
+}
+
+.card-brand-icon {
+  position: absolute;
+  right: 1rem;
+  font-size: 1.6rem;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+}
+
+.form-row-two {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.form-row-three {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.cch-tooltip {
+  margin-left: 0.4rem;
+  color: #64748b;
+  cursor: help;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 640px) {
+  .form-row-two, .form-row-three {
+    grid-template-columns: 1fr;
+  }
+
+  .card-payment-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+
+/* React-owned passenger accordion hardening */
+.passenger-card-title {
+  width: 100%;
+  border: 0;
+  text-align: left;
+  font: inherit;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  cursor: pointer;
+}
+.passenger-card-title-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 0;
+}
+.passenger-card-title .tfs-pax-mobile-state {
+  margin-left: auto;
+  font-weight: 800;
+  font-size: 0.78rem;
+}
+.passenger-card-title .tfs-pax-state-complete {
+  color: #047857;
+}
+.passenger-card-title .tfs-pax-mobile-chevron {
+  flex: 0 0 auto;
+  transition: transform 160ms ease;
+}
+.passenger-card-block.tfs-pax-collapsed > :not(.passenger-card-title) {
+  display: none !important;
+}
+.passenger-card-block.tfs-pax-collapsed .tfs-pax-mobile-chevron {
+  transform: rotate(-90deg);
+}
+.passenger-card-block.tfs-passenger-card-error {
+  border-color: #dc2626 !important;
+  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.10) !important;
 }

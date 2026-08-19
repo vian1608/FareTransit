@@ -1,9 +1,15 @@
 import React from 'react';
+import { Helmet } from 'react-helmet-async';
 import '../styles/InfoPages.css';
 
 function TermsAndConditions() {
   return (
     <div className="info-page">
+      <Helmet>
+        <title>Terms & Conditions | FareTransit</title>
+        <meta name="description" content="Read the terms and conditions for FareTransit LLC travel-search, reservation-assistance, itinerary-support, and consulting services." />
+        <link rel="canonical" href="https://www.faretransit.com/terms" />
+      </Helmet>
       <div className="container">
         <div className="info-card">
           <h1>Terms & Conditions</h1>
@@ -11,54 +17,32 @@ function TermsAndConditions() {
 
           <section>
             <h2>1. Scope of Services</h2>
-            <p>
-              FareTransit LLC provides travel planning, logistics advisory, and itinerary support
-              services. We help customers evaluate and organize travel options based on urgency,
-              budget, and operational needs.
-            </p>
+            <p>FareTransit LLC provides flight search, reservation assistance, and itinerary support services. We help customers evaluate and organize travel options based on urgency, budget, and travel needs.</p>
           </section>
 
           <section>
-            <h2>2. Consultancy Disclaimer</h2>
-            <p>
-              FareTransit LLC is an independent travel consultancy and is not an airline, air
-              carrier, or ticket issuer. Final ticketing and transport fulfillment are subject to
-              third-party provider terms.
-            </p>
+            <h2>2. Independent Service Disclaimer</h2>
+            <p>FareTransit LLC is an independent flight-search and reservation-assistance service and is not an airline, air carrier, or official ticket issuer. Final ticketing and transport fulfillment are subject to third-party provider terms.</p>
           </section>
 
           <section>
             <h2>3. Customer Responsibilities</h2>
-            <p>
-              You are responsible for providing accurate traveler details, valid identification,
-              passport and visa compliance, and timely responses to advisory communications.
-            </p>
+            <p>You are responsible for providing accurate traveler details, valid identification, passport and visa compliance, and timely responses to advisory communications.</p>
           </section>
 
           <section>
             <h2>4. Payments and Fees</h2>
-            <p>
-              Consulting and service coordination fees, where applicable, are disclosed during the
-              inquiry and quote process. Payment confirms acceptance of the agreed service scope.
-            </p>
+            <p>Consulting and service coordination fees, where applicable, are disclosed during the inquiry and quote process. Payment confirms acceptance of the agreed service scope.</p>
           </section>
 
           <section>
             <h2>5. Limitation of Liability</h2>
-            <p>
-              We are not liable for delays, cancellations, overbooking, weather events, or supplier
-              actions outside our control. Our role is to advise and coordinate based on available
-              information.
-            </p>
+            <p>We are not liable for delays, cancellations, overbooking, weather events, or supplier actions outside our control. Our role is to advise and coordinate based on available information.</p>
           </section>
 
           <section>
             <h2>6. Contact for Legal Requests</h2>
-            <p>
-              For legal, billing, or compliance queries, contact us at
-              {' '}
-              <a href="mailto:support@faretransit.com">support@faretransit.com</a>.
-            </p>
+            <p>For legal, billing, or compliance queries, contact us at{' '}<a href="mailto:support@faretransit.com">support@faretransit.com</a>.</p>
           </section>
         </div>
       </div>
@@ -67,4 +51,3 @@ function TermsAndConditions() {
 }
 
 export default TermsAndConditions;
-

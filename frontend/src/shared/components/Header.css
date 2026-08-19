@@ -7,12 +7,12 @@
 
 /* Flights — solid, high-contrast branding */
 .header.header--flights {
-  background: linear-gradient(135deg, var(--color-primary-dark) 0%, var(--qa-burgundy-dark) 100%);
-  box-shadow: 0 4px 22px rgba(19, 46, 39, 0.45);
+  background: linear-gradient(135deg, #9e1840 0%, #8b1538 45%, #6b0f2a 100%);
+  box-shadow: 0 4px 22px rgba(107, 15, 42, 0.45);
 }
 
 .header.header--flights .logo-icon {
-  color: var(--color-secondary);
+  color: #f5d78e;
   opacity: 1;
   filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.3));
 }
@@ -69,14 +69,19 @@
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.28);
 }
 
-
-
 .header-inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1.5rem;
   width: 100%;
+}
+
+/* Admin pages use the same 1540px / 22px horizontal geometry as the admin body. */
+.header--admin-route .container {
+  max-width: 1540px;
+  padding-left: 22px;
+  padding-right: 22px;
 }
 
 .logo-link {
@@ -156,8 +161,6 @@
 .header .header-auth__signin {
   color: rgba(255, 255, 255, 0.9);
 }
-
-
 
 .nav-toggle {
   display: none;
@@ -252,7 +255,7 @@
     width: 100%;
     margin: 0;
     padding: 0.5rem 0;
-    background: linear-gradient(135deg, var(--color-primary-dark) 0%, var(--qa-burgundy-dark) 100%);
+    background: linear-gradient(135deg, #8b1538 0%, #6b0f2a 100%);
     border-radius: 0 0 8px 8px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
     z-index: 1001;
@@ -261,8 +264,6 @@
     -webkit-overflow-scrolling: touch;
     flex: none;
     justify-content: flex-start;
-    
-    /* Animation state for smooth mobile slide-down menu */
     transform: translateY(-10px);
     opacity: 0;
     pointer-events: none;
@@ -309,8 +310,6 @@
     border-bottom-color: transparent;
   }
 
-
-
   .nav-backdrop {
     display: block;
     position: fixed;
@@ -320,6 +319,13 @@
     border: none;
     padding: 0;
     cursor: pointer;
+  }
+}
+
+@media (max-width: 640px) {
+  .header--admin-route .container {
+    padding-left: 16px;
+    padding-right: 16px;
   }
 }
 

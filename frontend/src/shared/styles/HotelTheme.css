@@ -1,0 +1,311 @@
+/*
+ * Hotel section theme — selected palette: Coastal Serenity.
+ * This file intentionally centralizes hotel-specific color decisions so search,
+ * request, shared shell, and secure-payment surfaces stay visually consistent.
+ */
+:root {
+  --tfs-hotel-deep-teal: #0f5c63;
+  --tfs-hotel-coastal-teal: #178f8a;
+  --tfs-hotel-soft-sand: #f0e6c3;
+  --tfs-hotel-muted-ivory: #f7f6f2;
+  --tfs-hotel-elegant-slate: #45525e;
+  --tfs-hotel-teal-rgb: 23, 143, 138;
+  --tfs-hotel-deep-rgb: 15, 92, 99;
+}
+
+/* ─────────────────────────────────────────────
+   Shared public header
+   ───────────────────────────────────────────── */
+.header.header--hotels {
+  background: linear-gradient(120deg, var(--tfs-hotel-deep-teal) 0%, #116d70 54%, var(--tfs-hotel-coastal-teal) 100%);
+  box-shadow: 0 6px 22px rgba(var(--tfs-hotel-deep-rgb), 0.28);
+}
+
+.header.header--hotels .logo-icon {
+  color: var(--tfs-hotel-soft-sand);
+  opacity: 1;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.24));
+  animation: headerIconSwap 0.45s ease;
+}
+
+/* Car icon should keep the same product-swap motion while its palette stays
+   unchanged until a car theme is selected. */
+.header.header--cars .logo-icon {
+  animation: headerIconSwap 0.45s ease;
+}
+
+.header.header--hotels .logo h1 {
+  color: #fff;
+  background: none;
+  -webkit-text-fill-color: #fff;
+  background-clip: unset;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+.header.header--hotels .header-nav-link--active,
+.header.header--hotels .header-nav-link--active:hover {
+  border-bottom-color: var(--tfs-hotel-soft-sand);
+}
+
+.header.header--hotels.header--scrolled {
+  box-shadow: 0 3px 14px rgba(var(--tfs-hotel-deep-rgb), 0.34);
+}
+
+.header.header--hotels .header-mobile-call {
+  background: var(--tfs-hotel-soft-sand);
+  color: var(--tfs-hotel-deep-teal);
+}
+
+@media (max-width: 768px) {
+  .header.header--hotels .nav {
+    background: linear-gradient(145deg, var(--tfs-hotel-deep-teal), #0a474d);
+  }
+}
+
+/* ─────────────────────────────────────────────
+   Hotel hero + product switcher
+   HotelSearchPage currently shares the flight HeroSlider variant, therefore
+   scope by .hotel-page rather than altering flight visuals globally.
+   ───────────────────────────────────────────── */
+.hotel-page .hero-slider__slide-bg--overlay {
+  background: linear-gradient(
+    135deg,
+    rgba(15, 92, 99, 0.9) 0%,
+    rgba(23, 143, 138, 0.72) 50%,
+    rgba(69, 82, 94, 0.82) 100%
+  ) !important;
+}
+
+.hotel-page .hero-slider__eyebrow {
+  color: var(--tfs-hotel-soft-sand);
+}
+
+.hotel-page .hero-trust-statement {
+  border-top-color: rgba(240, 230, 195, 0.34);
+}
+
+.hotel-page .hero-trust-badge {
+  color: #fff9e8;
+  background: rgba(15, 92, 99, 0.62);
+  border-color: rgba(240, 230, 195, 0.34);
+}
+
+.hotel-page .service-nav {
+  background: rgba(247, 246, 242, 0.14);
+  border-color: rgba(240, 230, 195, 0.34);
+  box-shadow: 0 10px 28px rgba(15, 92, 99, 0.13);
+}
+
+.hotel-page .service-nav__item:hover {
+  background: rgba(247, 246, 242, 0.16);
+}
+
+.hotel-page .service-nav__item--active,
+.hotel-page .service-nav__item--active:hover {
+  background: var(--tfs-hotel-muted-ivory);
+  color: var(--tfs-hotel-deep-teal);
+  box-shadow: 0 3px 12px rgba(15, 92, 99, 0.18);
+}
+
+.hotel-page .hero-offer-bar--flights {
+  background: linear-gradient(90deg, var(--tfs-hotel-deep-teal) 0%, var(--tfs-hotel-coastal-teal) 52%, var(--tfs-hotel-deep-teal) 100%);
+}
+
+.hotel-page .hero-offer-bar__label {
+  background: rgba(240, 230, 195, 0.22);
+  color: #fffdf6;
+}
+
+/* ─────────────────────────────────────────────
+   Search, results, booking request, and modal
+   ───────────────────────────────────────────── */
+.hotel-page {
+  background: var(--tfs-hotel-muted-ivory);
+  color: var(--tfs-hotel-elegant-slate);
+}
+
+/* Keep the hotel search card fully below the offer strip. The previous negative
+   margin pulled the card underneath the strip and clipped its first row/labels. */
+.hotel-page .hotel-search-section {
+  margin-top: 0;
+  padding-top: 24px;
+  position: relative;
+  z-index: 3;
+}
+
+.hotel-page .hotel-search-card,
+.hotel-page .hotel-result-card,
+.hotel-page .hotel-modal {
+  border-color: rgba(15, 92, 99, 0.14);
+  box-shadow: 0 16px 44px rgba(15, 92, 99, 0.1);
+}
+
+.hotel-page .hotel-field,
+.hotel-page .hotel-booking-grid label {
+  color: var(--tfs-hotel-elegant-slate);
+}
+
+.hotel-page .hotel-field input:focus,
+.hotel-page .hotel-field select:focus,
+.hotel-page .hotel-booking-form input:focus,
+.hotel-page .hotel-booking-form select:focus {
+  outline-color: rgba(var(--tfs-hotel-teal-rgb), 0.2);
+  border-color: var(--tfs-hotel-coastal-teal);
+  box-shadow: 0 0 0 3px rgba(var(--tfs-hotel-teal-rgb), 0.08);
+}
+
+.hotel-page .hotel-search-button,
+.hotel-page .hotel-request-button,
+.hotel-page .hotel-load-more {
+  background: var(--tfs-hotel-coastal-teal);
+  box-shadow: 0 7px 18px rgba(var(--tfs-hotel-teal-rgb), 0.18);
+  transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hotel-page .hotel-search-button:hover:not(:disabled),
+.hotel-page .hotel-request-button:hover:not(:disabled),
+.hotel-page .hotel-load-more:hover:not(:disabled) {
+  background: var(--tfs-hotel-deep-teal);
+  transform: translateY(-1px);
+  box-shadow: 0 9px 22px rgba(var(--tfs-hotel-deep-rgb), 0.22);
+}
+
+.hotel-page .hotel-eyebrow,
+.hotel-page .hotel-class {
+  color: var(--tfs-hotel-deep-teal);
+}
+
+.hotel-page .hotel-result-heading h2,
+.hotel-page .hotel-price strong,
+.hotel-page .hotel-results-header h2 {
+  color: #18383b;
+}
+
+.hotel-page .hotel-rating strong {
+  color: var(--tfs-hotel-deep-teal);
+}
+
+.hotel-page .hotel-amenities span {
+  background: #e9f5f3;
+  color: var(--tfs-hotel-deep-teal);
+  border: 1px solid rgba(var(--tfs-hotel-teal-rgb), 0.12);
+}
+
+.hotel-page .hotel-result-footer {
+  border-top-color: rgba(15, 92, 99, 0.12);
+}
+
+.hotel-page .hotel-loading,
+.hotel-page .hotel-empty {
+  border-color: rgba(15, 92, 99, 0.15);
+}
+
+.hotel-page .hotel-modal-backdrop {
+  background: rgba(24, 56, 59, 0.68);
+}
+
+.hotel-page .hotel-modal {
+  border-top: 4px solid var(--tfs-hotel-coastal-teal);
+}
+
+.hotel-page .hotel-modal-close:hover {
+  color: var(--tfs-hotel-deep-teal);
+}
+
+@media (max-width: 760px) {
+  .hotel-page .hotel-search-section {
+    margin-top: 0;
+    padding-top: 16px;
+  }
+}
+
+/* Shared advisory section rendered inside Hotels. */
+.hotel-page .seamless-advisory--flight {
+  background: #eef6f4;
+}
+
+.hotel-page .seamless-advisory--flight .seamless-advisory__heading h2,
+.hotel-page .seamless-advisory--flight .seamless-advisory__step h3,
+.hotel-page .seamless-advisory--flight .seamless-advisory__carousel-card h3 {
+  color: var(--tfs-hotel-deep-teal);
+}
+
+.hotel-page .seamless-advisory--flight .seamless-advisory__number {
+  background: var(--tfs-hotel-coastal-teal);
+  box-shadow: 0 8px 18px rgba(var(--tfs-hotel-teal-rgb), 0.22);
+}
+
+.hotel-page .seamless-advisory--flight .seamless-advisory__dot--active {
+  background: var(--tfs-hotel-coastal-teal);
+}
+
+/* ─────────────────────────────────────────────
+   Shared footer while traveler remains in Hotels
+   ───────────────────────────────────────────── */
+.footer.footer--hotels {
+  background: linear-gradient(145deg, #33434b 0%, var(--tfs-hotel-elegant-slate) 48%, #263c40 100%);
+  border-top-color: var(--tfs-hotel-coastal-teal);
+}
+
+.footer.footer--hotels .footer-section a:hover,
+.footer.footer--hotels .footer-section__toggle:hover {
+  color: var(--tfs-hotel-soft-sand);
+}
+
+/* ─────────────────────────────────────────────
+   Hotel-linked secure payment / authorization
+   SecurePaymentPage adds this class from authorization.context.entityType.
+   ───────────────────────────────────────────── */
+.secure-payment-page.secure-payment-page--hotels {
+  background: linear-gradient(180deg, #eef6f4 0%, var(--tfs-hotel-muted-ivory) 100%);
+  color: #18383b;
+}
+
+.secure-payment-page--hotels .secure-payment-card {
+  border-color: rgba(15, 92, 99, 0.16);
+  box-shadow: 0 20px 64px rgba(15, 92, 99, 0.11);
+}
+
+.secure-payment-page--hotels .secure-payment-brand {
+  color: var(--tfs-hotel-deep-teal);
+}
+
+.secure-payment-page--hotels .secure-payment-brand span {
+  color: var(--tfs-hotel-coastal-teal);
+}
+
+.secure-payment-page--hotels .secure-payment-summary,
+.secure-payment-page--hotels .secure-payment-existing-card {
+  background: #f5faf8;
+  border-color: rgba(15, 92, 99, 0.14);
+}
+
+.secure-payment-page--hotels .secure-payment-card input:focus {
+  border-color: var(--tfs-hotel-coastal-teal);
+  box-shadow: 0 0 0 3px rgba(var(--tfs-hotel-teal-rgb), 0.11);
+}
+
+.secure-payment-page--hotels .secure-payment-submit {
+  background: var(--tfs-hotel-coastal-teal);
+}
+
+.secure-payment-page--hotels .secure-payment-submit:hover:not(:disabled) {
+  background: var(--tfs-hotel-deep-teal);
+}
+
+.secure-payment-page--hotels .secure-payment-security {
+  border-top-color: rgba(15, 92, 99, 0.16);
+}
+
+.secure-payment-page--hotels .secure-payment-check {
+  background: #e7f6f2;
+  color: var(--tfs-hotel-deep-teal);
+}
+
+/* If a hotel flow later uses the generic tokenized payment page, this class is
+   already available for the same palette without another visual redesign. */
+.consulting-payment-page.consulting-payment-page--hotels {
+  --consulting-accent: var(--tfs-hotel-coastal-teal);
+  --consulting-accent-dark: var(--tfs-hotel-deep-teal);
+  background: linear-gradient(180deg, #eef6f4 0%, var(--tfs-hotel-muted-ivory) 100%);
+}

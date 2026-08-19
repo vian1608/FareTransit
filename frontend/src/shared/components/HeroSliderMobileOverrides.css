@@ -1,0 +1,200 @@
+/* Mobile-only hero sizing overrides.
+   Keep the first-screen content useful without letting the carousel consume most
+   of the viewport before the primary search/assistance section begins. */
+@media (max-width: 767px) {
+  .hero-slider,
+  .hero-slider__slides,
+  .hero-slider__slide,
+  .hero-slider__ui {
+    height: 380px;
+    min-height: 380px;
+    max-height: 380px;
+  }
+
+  .hero-slider__ui {
+    padding-top: 0.55rem;
+    padding-bottom: 3.1rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .hero-slider .service-nav {
+    margin: 0;
+    padding: 0.25rem;
+    border-radius: 10px;
+  }
+
+  .hero-slider .service-nav__item {
+    min-height: 38px;
+    padding: 0.45rem 0.55rem;
+    font-size: 0.8rem;
+  }
+
+  .hero-slider__main {
+    min-height: 0;
+  }
+
+  .hero-slider__content-wrapper {
+    justify-content: center;
+    min-height: 0;
+  }
+
+  .hero-slider__eyebrow {
+    font-size: 0.66rem;
+    line-height: 1.25;
+    margin-bottom: 0.18rem;
+  }
+
+  .hero-slider__title {
+    font-size: clamp(1.15rem, 5vw, 1.42rem);
+    line-height: 1.18;
+    margin-bottom: 0.28rem;
+  }
+
+  .hero-slider__lead {
+    font-size: 0.82rem;
+    line-height: 1.32;
+    margin-bottom: 0.35rem;
+  }
+
+  .hero-trust-statement {
+    margin-top: 0.15rem;
+    padding-top: 0.4rem;
+  }
+
+  .hero-trust-badges {
+    gap: 0.28rem;
+  }
+
+  .hero-trust-badge {
+    font-size: 0.68rem;
+    line-height: 1.2;
+    padding: 0.22rem 0.42rem;
+  }
+
+  /* Mobile slider controls intentionally mirror the desktop/web treatment:
+     simple chevrons + circular dots, with no capsule/background container. */
+  .hero-slider__controls {
+    left: 50% !important;
+    bottom: 10px !important;
+    transform: translateX(-50%) !important;
+    width: auto !important;
+    min-height: 40px !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 18px !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+
+  .hero-slider__arrow {
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    min-height: 38px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    color: #fff !important;
+    font-size: 1.35rem !important;
+    opacity: 0.92 !important;
+    box-shadow: none !important;
+  }
+
+  .hero-slider__arrow:hover,
+  .hero-slider__arrow:focus-visible {
+    background: transparent !important;
+    opacity: 1 !important;
+    transform: scale(1.08) !important;
+  }
+
+  .hero-slider__arrow:active {
+    transform: scale(0.94) !important;
+  }
+
+  .hero-slider__dots {
+    width: auto !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 10px !important;
+  }
+
+  .hero-slider__dot {
+    width: 9px !important;
+    height: 9px !important;
+    min-width: 9px !important;
+    min-height: 9px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 50% !important;
+    background: rgba(255, 255, 255, 0.48) !important;
+    transform: none !important;
+  }
+
+  .hero-slider__dot--active {
+    width: 11px !important;
+    height: 11px !important;
+    min-width: 11px !important;
+    min-height: 11px !important;
+    border-radius: 50% !important;
+    background: #fff !important;
+    transform: none !important;
+  }
+
+  .hero-offer-bar__inner {
+    padding-top: 0.38rem;
+    padding-bottom: 0.38rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .hero-slider,
+  .hero-slider__slides,
+  .hero-slider__slide,
+  .hero-slider__ui {
+    height: 390px;
+    min-height: 390px;
+    max-height: 390px;
+  }
+
+  .hero-slider__ui {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .hero-slider__title {
+    font-size: 1.12rem;
+  }
+
+  .hero-slider__lead {
+    font-size: 0.78rem;
+  }
+
+  .hero-trust-badge {
+    font-size: 0.64rem;
+  }
+
+  .hero-slider__controls {
+    gap: 14px !important;
+  }
+
+  .hero-slider__arrow {
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    min-height: 34px !important;
+    font-size: 1.2rem !important;
+  }
+
+  .hero-slider__dots {
+    gap: 8px !important;
+  }
+}

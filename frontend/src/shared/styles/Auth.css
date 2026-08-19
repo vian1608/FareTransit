@@ -35,8 +35,8 @@
   align-items: center;
   justify-content: center;
   color: #ffffff;
-  background: linear-gradient(135deg, #991b1b 0%, #7f1d1d 100%);
-  box-shadow: 0 8px 18px rgba(127, 29, 29, 0.35);
+  background: linear-gradient(135deg, #8b1538 0%, #6b0f2a 100%);
+  box-shadow: 0 8px 18px rgba(107, 15, 42, 0.35);
 }
 
 .auth-icon i {
@@ -91,8 +91,8 @@
 
 .auth-input-group input:focus {
   outline: none;
-  border-color: #991b1b;
-  box-shadow: 0 0 0 3px rgba(153, 27, 27, 0.12);
+  border-color: #8b1538;
+  box-shadow: 0 0 0 3px rgba(139, 21, 56, 0.12);
 }
 
 .auth-submit-btn {
@@ -104,13 +104,13 @@
   font-size: 1rem;
   font-weight: 700;
   cursor: pointer;
-  background: linear-gradient(135deg, #991b1b 0%, #7f1d1d 100%);
+  background: linear-gradient(135deg, #8b1538 0%, #6b0f2a 100%);
   transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
 }
 
 .auth-submit-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 10px 22px rgba(127, 29, 29, 0.35);
+  box-shadow: 0 10px 22px rgba(107, 15, 42, 0.35);
 }
 
 .auth-submit-btn:disabled {
@@ -138,7 +138,7 @@
 }
 
 .auth-footer a {
-  color: #991b1b;
+  color: #8b1538;
   font-weight: 700;
   text-decoration: none;
 }

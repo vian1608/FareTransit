@@ -1,0 +1,46 @@
+/* Footer follows the same shell width as the page it belongs to. */
+.footer:not(.footer--admin) > .container {
+  width: 100%;
+  max-width: var(--tfs-public-shell, 1440px);
+  padding-left: 24px;
+  padding-right: 24px;
+}
+
+.footer--admin > .container {
+  width: 100%;
+  max-width: var(--tfs-admin-shell, 1540px);
+  padding-left: 22px;
+  padding-right: 22px;
+}
+
+.footer {
+  background: linear-gradient(180deg, var(--tfs-navy-950, #0b1628), #091321);
+  border-top-color: var(--tfs-wine-700, #861b3d);
+}
+
+.footer-section h3,
+.footer-section h4 {
+  color: #f8fafc;
+}
+
+.footer-section p,
+.footer-section li,
+.footer-section a {
+  color: #b9c6d6;
+}
+
+.footer-section a:hover {
+  color: var(--tfs-gold-300, #ead58e);
+}
+
+.footer-bottom {
+  border-top-color: rgba(185, 198, 214, 0.18);
+}
+
+@media (max-width: 640px) {
+  .footer:not(.footer--admin) > .container,
+  .footer--admin > .container {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}

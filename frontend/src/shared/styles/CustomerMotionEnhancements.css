@@ -1,0 +1,76 @@
+/* Customer-facing motion layer. Admin remains intentionally restrained. */
+.page-transition--flights .tfs-route-stage,
+.page-transition--cars .tfs-route-stage,
+.page-transition--rail .tfs-route-stage {
+  animation: tfs-customer-page-enter .42s cubic-bezier(.16, 1, .3, 1) both !important;
+  will-change: opacity, transform;
+}
+
+@keyframes tfs-customer-page-enter {
+  0% {
+    opacity: .62;
+    transform: translateY(10px) scale(.997);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Customer cards reveal with a short lift when a new page mounts. */
+.page-transition--flights .tfs-route-stage .flight-card,
+.page-transition--flights .tfs-route-stage .flights-inquiry-card,
+.page-transition--flights .tfs-route-stage .accordion-section,
+.page-transition--cars .tfs-route-stage .car-card,
+.page-transition--cars .tfs-route-stage .car-result-card {
+  animation: tfs-customer-card-reveal .4s cubic-bezier(.16, 1, .3, 1) both;
+}
+
+.page-transition--flights .tfs-route-stage .flight-card:nth-child(2),
+.page-transition--cars .tfs-route-stage .car-result-card:nth-child(2) { animation-delay: .035s; }
+.page-transition--flights .tfs-route-stage .flight-card:nth-child(3),
+.page-transition--cars .tfs-route-stage .car-result-card:nth-child(3) { animation-delay: .065s; }
+.page-transition--flights .tfs-route-stage .flight-card:nth-child(4),
+.page-transition--cars .tfs-route-stage .car-result-card:nth-child(4) { animation-delay: .09s; }
+
+@keyframes tfs-customer-card-reveal {
+  from { opacity: .6; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.page-transition--flights button[type="submit"]:not(:disabled),
+.page-transition--cars button[type="submit"]:not(:disabled),
+.page-transition--rail button[type="submit"]:not(:disabled),
+.page-transition--flights .btn-primary:not(:disabled) {
+  position: relative;
+  overflow: hidden;
+  transition: transform .18s cubic-bezier(.2, .8, .2, 1), box-shadow .22s ease, filter .18s ease !important;
+}
+
+.page-transition--flights button[type="submit"]:not(:disabled):hover,
+.page-transition--cars button[type="submit"]:not(:disabled):hover,
+.page-transition--rail button[type="submit"]:not(:disabled):hover,
+.page-transition--flights .btn-primary:not(:disabled):hover {
+  transform: translateY(-2px);
+  filter: brightness(1.025);
+}
+
+.page-transition--flights button[type="submit"]:not(:disabled):active,
+.page-transition--cars button[type="submit"]:not(:disabled):active,
+.page-transition--rail button[type="submit"]:not(:disabled):active,
+.page-transition--flights .btn-primary:not(:disabled):active {
+  transform: translateY(0) scale(.975);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-transition--flights .tfs-route-stage,
+  .page-transition--cars .tfs-route-stage,
+  .page-transition--rail .tfs-route-stage,
+  .page-transition--flights .tfs-route-stage .flight-card,
+  .page-transition--flights .tfs-route-stage .flights-inquiry-card,
+  .page-transition--flights .tfs-route-stage .accordion-section,
+  .page-transition--cars .tfs-route-stage .car-card,
+  .page-transition--cars .tfs-route-stage .car-result-card {
+    animation: none !important;
+  }
+}

@@ -6,29 +6,53 @@ import { paymentRouter } from '../modules/payments/payment.routes.mjs';
 import { flightRouter, airportRouter } from '../modules/flights/flight.routes.mjs';
 import { enquiryRouter } from '../modules/enquiries/enquiry.routes.mjs';
 import { adminRouter } from '../modules/admin/admin.routes.mjs';
+import { backOfficeRouter } from '../modules/backoffice/backoffice.routes.mjs';
+import { securePaymentPublicRouter } from '../modules/secure-payments/secure-payment.routes.mjs';
+import passengerAuthorizationController from '../modules/authorizations/passenger-authorization.controller.mjs';
+import whopRouter from '../modules/payments/whop.routes.mjs';
+import paypalController from '../modules/payments/paypal.controller.mjs';
+import rateLimit from '../middleware/rate-limit.mjs';
+import voucherRoutes from '../modules/vouchers/voucher.routes.mjs';
+import { journeySessionRouter } from '../modules/journey-sessions/journey-session.routes.mjs';
+import { noStore, publicLookupCache } from '../middleware/cache-control.middleware.mjs';
+import { carRouter } from '../modules/cars/car.routes.mjs';
+import { hotelRouter } from '../modules/hotels/hotel.routes.mjs';
+import addressAutocompleteController from '../modules/flights/address-autocomplete.controller.mjs';
 
 const router = express.Router();
+const paypalRateLimiter = rateLimit({ windowMs: 60000, maxRequests: 15, message: 'Too many payment requests. Please wait a minute.' });
+const securePaymentRateLimiter = rateLimit({ windowMs: 60000, maxRequests: 30, message: 'Too many secure payment requests. Please wait a minute.' });
+const paypalRouter = express.Router();
+paypalRouter.post('/create-order', paypalRateLimiter, paypalController.createOrder);
+paypalRouter.post('/capture-order', paypalRateLimiter, paypalController.captureOrder);
+paypalRouter.post('/webhook', paypalController.handleWebhook);
+const authorizationRouter = express.Router();
+authorizationRouter.get('/:token', passengerAuthorizationController.getAuthorization);
+authorizationRouter.post('/accept', passengerAuthorizationController.acceptAuthorization);
 
-router.use('/auth', authRouter);
-router.use('/customers', customerRouter);
-router.use('/bookings', bookingRouter);
-router.use('/payments', paymentRouter);
-router.use('/flights', flightRouter);
-router.use('/airports', airportRouter);
+router.use('/auth', noStore, authRouter);
+router.use('/customers', noStore, customerRouter);
+router.use('/bookings', noStore, bookingRouter);
+router.use('/my-bookings', noStore, bookingRouter);
+router.use('/payments', noStore, paymentRouter);
+router.use('/paypal', noStore, paypalRouter);
+router.use('/authorizations', noStore, authorizationRouter);
+router.use('/authorization', noStore, authorizationRouter);
+router.use('/secure-payments', noStore, securePaymentRateLimiter, securePaymentPublicRouter);
+router.use('/admin', noStore, adminRouter);
+router.use('/backoffice', noStore, backOfficeRouter);
+router.use('/vouchers', noStore, voucherRoutes);
+router.use('/journey-sessions', noStore, journeySessionRouter);
+router.post('/webhooks/paypal', paypalController.handleWebhook);
 router.use('/inquiries', enquiryRouter);
-router.use('/admin', adminRouter);
-
-// Health check endpoint
-router.get('/health', (req, res) => {
-  res.json({ 
-    success: true,
-    data: {
-      status: 'ok',
-      message: 'Urgent Travel API is running',
-      timestamp: new Date().toISOString()
-    }
-  });
-});
+router.use('/enquiries', enquiryRouter);
+router.use('/', whopRouter);
+router.use('/flights', flightRouter);
+router.use('/airports', publicLookupCache(300, 86400, 3600), airportRouter);
+router.use('/cars', carRouter);
+router.use('/hotels', noStore, hotelRouter);
+router.get('/address-autocomplete', publicLookupCache(300, 86400, 3600), addressAutocompleteController.getAddressAutocomplete);
+router.get('/health', (req, res) => res.json({ success: true, data: { status: 'ok', message: 'Urgent Travel API is running', timestamp: new Date().toISOString() } }));
 
 export default router;
 export { router as rootRouter };

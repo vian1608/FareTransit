@@ -6,12 +6,19 @@ export const corsOptions = {
     if (!origin) return callback(null, true);
     
     // In development or if explicitly allowed, match frontend origin
-    const allowedOrigins = [env.frontendUrl];
+    const allowedOrigins = [
+      env.frontendUrl,
+      'https://faretransit.com',
+      'https://www.faretransit.com'
+    ].filter(Boolean);
+
     if (env.nodeEnv === 'development') {
       allowedOrigins.push('http://localhost:3000', 'http://127.0.0.1:3000');
     }
 
-    if (allowedOrigins.indexOf(origin) !== -1 || env.nodeEnv === 'development') {
+    const isVercelDomain = typeof origin === 'string' && (origin.endsWith('.vercel.app') || origin.includes('vercel.app'));
+
+    if (allowedOrigins.indexOf(origin) !== -1 || isVercelDomain || env.nodeEnv === 'development') {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
