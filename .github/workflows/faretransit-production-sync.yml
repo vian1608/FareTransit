@@ -6,338 +6,78 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  sync:
-    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+  parity:
+    name: Production parity and safety gate
     runs-on: ubuntu-latest
+    env:
+      NODE_ENV: test
+      SUPABASE_URL: https://placeholder.supabase.co
+      SUPABASE_SECRET_KEY: placeholder-key
+      JWT_SECRET: faretransit-ci-jwt-secret-not-for-production
+      ADMIN_PASSWORD: faretransit-ci-admin-password-not-for-production
     steps:
-      - name: Checkout FareTransit main
+      - name: Checkout candidate revision
         uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          ref: main
-          fetch-depth: 0
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
 
-      - name: Clone current Final Seat production source
+      - name: Verify FareTransit identity and critical modules
+        shell: bash
         run: |
           set -euo pipefail
-          rm -rf /tmp/finalseat-source
-          git clone --depth 1 --branch master https://github.com/vian1608/thefinalseat.git /tmp/finalseat-source
-
-      - name: Clean-sync application code
-        run: |
-          set -euo pipefail
-          rsync -a --delete \
-            --exclude='.git/' \
-            --exclude='.github/' \
-            --exclude='.DS_Store' \
-            --exclude='vercel.json' \
-            --exclude='backend/data/' \
-            --exclude='backend/backups/' \
-            --exclude='backend/.env*' \
-            --exclude='frontend/.env*' \
-            --exclude='frontend/public/logo/' \
-            --exclude='frontend/public/favicon.png' \
-            --exclude='frontend/public/favicon.svg' \
-            /tmp/finalseat-source/ ./
-
-      - name: Apply FareTransit identity
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-
-          replacements = [
-              ('support@thefinalseat.com', 'support@faretransit.com'),
-              ('www.thefinalseat.com', 'www.faretransit.com'),
-              ('thefinalseat.com', 'faretransit.com'),
-              ('The Final Seat LLC', 'FareTransit LLC'),
-              ('THE FINAL SEAT LLC', 'FARETRANSIT LLC'),
-              ('The Final Seat', 'FareTransit'),
-              ('THE FINAL SEAT', 'FARETRANSIT'),
-              ('TheFinalSeat', 'FareTransit'),
-              ('the-final-seat', 'fare-transit'),
-              ('thefinalseat', 'faretransit'),
-              ('+1 (888) 780-8855', '+1 (213) 965-9727'),
-              ('+1-888-780-8855', '+1-213-965-9727'),
-              ('+18887808855', '+12139659727'),
-              ('888-780-8855', '213-965-9727'),
-              ('5830 E 2nd St, Ste 7000 #34290, Casper, Wyoming 82609 US', '1309 Coffeen Avenue STE 1200, Sheridan, Wyoming 82801 US'),
-              ('5830 E 2nd St, Ste 7000, Casper, Wyoming 82609 US', '1309 Coffeen Avenue STE 1200, Sheridan, Wyoming 82801 US'),
-              ('5830 E 2nd St, Ste 7000 #34290', '1309 Coffeen Avenue STE 1200'),
-              ('5830 E 2nd St, Ste 7000', '1309 Coffeen Avenue STE 1200'),
-              ('Casper, Wyoming 82609', 'Sheridan, Wyoming 82801'),
-              ('Casper, WY 82609', 'Sheridan, WY 82801'),
-              ('"addressLocality": "Casper"', '"addressLocality": "Sheridan"'),
-              ('"postalCode": "82609"', '"postalCode": "82801"'),
-              ('Urgent Travel API is running', 'FareTransit API is running'),
-          ]
-
-          text_suffixes = {'.js','.jsx','.mjs','.cjs','.ts','.tsx','.css','.html','.md','.txt','.xml','.json','.yml','.yaml','.sql'}
-          for path in Path('.').rglob('*'):
-              if not path.is_file() or '.git' in path.parts or '.github' in path.parts:
-                  continue
-              if path.suffix.lower() not in text_suffixes and path.name not in {'.env.example'}:
-                  continue
-              try:
-                  text = path.read_text(encoding='utf-8')
-              except UnicodeDecodeError:
-                  continue
-              original = text
-              for old, new in replacements:
-                  text = text.replace(old, new)
-              if text != original:
-                  path.write_text(text, encoding='utf-8')
-          PY
-
-          cat > frontend/src/shared/constants/supportContact.js <<'EOF'
-          export const SUPPORT_PHONE_TEL = '+12139659727';
-          export const SUPPORT_PHONE_DISPLAY = '+1 (213) 965-9727';
-          export const SUPPORT_PHONE_INTERNATIONAL = '+1 (213) 965-9727';
-          export const SUPPORT_PHONE_SCHEMA = '+1-213-965-9727';
-          export const SUPPORT_PHONE_HREF = `tel:${SUPPORT_PHONE_TEL}`;
-
-          export const BUSINESS_ADDRESS_STREET = '1309 Coffeen Avenue STE 1200';
-          export const BUSINESS_ADDRESS_CITY = 'Sheridan';
-          export const BUSINESS_ADDRESS_STATE = 'Wyoming';
-          export const BUSINESS_ADDRESS_STATE_CODE = 'WY';
-          export const BUSINESS_ADDRESS_ZIP = '82801';
-          export const BUSINESS_ADDRESS_FULL = `${BUSINESS_ADDRESS_STREET}, ${BUSINESS_ADDRESS_CITY}, ${BUSINESS_ADDRESS_STATE} ${BUSINESS_ADDRESS_ZIP} US`;
-          export const BUSINESS_ADDRESS_SHORT = `${BUSINESS_ADDRESS_STREET}, ${BUSINESS_ADDRESS_CITY}, ${BUSINESS_ADDRESS_STATE_CODE} ${BUSINESS_ADDRESS_ZIP}`;
-
-          export const BUSINESS_CONTACT = {
-            phoneDisplay: SUPPORT_PHONE_DISPLAY,
-            phoneInternational: SUPPORT_PHONE_INTERNATIONAL,
-            phoneHref: SUPPORT_PHONE_HREF,
-            phoneSchema: SUPPORT_PHONE_SCHEMA,
-          };
-          export default BUSINESS_CONTACT;
-          EOF
-
-      - name: Strengthen merchant-underwriting pages
-        run: |
-          set -euo pipefail
-
-          cat > frontend/src/shared/pages/AboutUsPage.js <<'EOF'
-          import React from 'react';
-          import { Helmet } from 'react-helmet-async';
-          import { Link } from 'react-router-dom';
-          import { SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_HREF, BUSINESS_ADDRESS_FULL } from '../constants/supportContact';
-          import '../styles/InfoPages.css';
-
-          function AboutUsPage() {
-            return (
-              <div className="info-page">
-                <Helmet>
-                  <title>About FareTransit LLC | Travel Reservation Assistance</title>
-                  <meta name="description" content="Learn how FareTransit LLC helps customers search travel options, submit reservation requests, and receive booking and post-booking assistance." />
-                  <link rel="canonical" href="https://www.faretransit.com/about" />
-                </Helmet>
-                <div className="container">
-                  <article className="info-card">
-                    <h1>About FareTransit LLC</h1>
-                    <p className="info-intro">FareTransit LLC is a Wyoming-registered online travel search and reservation-assistance business serving customers who want clear travel options and human support throughout the reservation process.</p>
-                    <section><h2>What We Do</h2><p>We help customers review flight, hotel, and car-rental options, provide traveler and contact details, submit reservation requests, and receive assistance with confirmations, itinerary questions, changes, cancellations, and other post-booking needs.</p></section>
-                    <section><h2>How a Reservation Works</h2><ol><li>Search or request available travel options.</li><li>Select an itinerary or travel option.</li><li>Provide the traveler and contact information required for the reservation.</li><li>Review the total, applicable terms, supplier rules, and refund/cancellation conditions.</li><li>Submit the reservation request. FareTransit coordinates fulfillment through applicable travel suppliers, host agencies, consolidators, or other travel partners.</li><li>Receive a FareTransit reservation reference and, after fulfillment, the applicable supplier or ticket confirmation.</li></ol></section>
-                    <section><h2>Independent Travel Assistance</h2><p>FareTransit LLC is an independent travel reservation-assistance business. We are not an airline or air carrier. Airline transportation, hotel stays, car rentals, ticket issuance, and other travel products are ultimately supplied under the terms of the applicable third-party travel provider.</p></section>
-                    <section><h2>Customer Support</h2><p>Email: <a href="mailto:support@faretransit.com">support@faretransit.com</a><br />Phone: <a href={SUPPORT_PHONE_HREF}>{SUPPORT_PHONE_DISPLAY}</a><br />Business address: {BUSINESS_ADDRESS_FULL}</p><p><Link to="/contact">Contact our support team</Link> for reservation, billing, cancellation, or itinerary questions.</p></section>
-                  </article>
-                </div>
-              </div>
-            );
-          }
-
-          export default AboutUsPage;
-          EOF
-
-          cat > frontend/src/shared/pages/PrivacyPolicyPage.js <<'EOF'
-          import React from 'react';
-          import { Helmet } from 'react-helmet-async';
-          import '../styles/InfoPages.css';
-
-          const PrivacyPolicy = () => (
-            <section className="info-page">
-              <Helmet><title>Privacy Policy | FareTransit</title><meta name="description" content="How FareTransit LLC handles customer, traveler, reservation, payment-reference, and communications data." /><link rel="canonical" href="https://www.faretransit.com/privacy-policy" /></Helmet>
-              <div className="container"><article className="info-card">
-                <h1>Privacy Policy</h1><p className="info-updated"><strong>Last Updated:</strong> August 20, 2026</p>
-                <section><h2>1. Information We Collect</h2><p>FareTransit LLC collects information reasonably necessary to provide travel search and reservation assistance, including customer contact details, traveler information, itinerary preferences, reservation details, support communications, and technical information used to operate and protect our services.</p></section>
-                <section><h2>2. How We Use Information</h2><p>We use information to respond to travel requests, create and manage reservations, communicate booking updates, provide customer support, prevent fraud or misuse, maintain business records, and comply with applicable legal and contractual obligations.</p></section>
-                <section><h2>3. Travel Suppliers and Service Providers</h2><p>Information required to fulfill a reservation may be shared with the applicable airline, hotel, car-rental company, host agency, consolidator, reservation system, or other service provider involved in the requested travel service. We do not sell customer personal information to third-party marketers.</p></section>
-                <section><h2>4. Payment Information</h2><p>FareTransit does not intentionally store full payment-card numbers or card security codes (CVV/CVC) in its application database. Our reservation records may retain non-sensitive payment-reference information such as card brand, last four digits, expiration month/year, cardholder name, billing information, transaction or authorization references, and payment status when needed for support and reconciliation. Any live card processing is performed through the payment-processing solution made available for the transaction.</p></section>
-                <section><h2>5. SMS and Communications</h2><p>Phone numbers and messaging consent are used for requested reservation and support communications. Mobile opt-in information is not shared with third parties for their independent marketing or promotional purposes.</p></section>
-                <section><h2>6. Data Security and Retention</h2><p>We use reasonable administrative and technical safeguards and retain business records for only as long as reasonably required for reservation support, dispute handling, accounting, compliance, and legal obligations.</p></section>
-                <section><h2>7. Contact</h2><p>Privacy questions may be sent to <a href="mailto:support@faretransit.com">support@faretransit.com</a>.</p></section>
-              </article></div>
-            </section>
-          );
-
-          export default PrivacyPolicy;
-          EOF
-
-          cat > frontend/src/shared/pages/TermsAndConditionsPage.js <<'EOF'
-          import React from 'react';
-          import { Helmet } from 'react-helmet-async';
-          import '../styles/InfoPages.css';
-
-          function TermsAndConditions() {
-            return (
-              <div className="info-page">
-                <Helmet><title>Terms &amp; Conditions | FareTransit</title><meta name="description" content="Terms governing FareTransit LLC travel search, reservation assistance, supplier fulfillment, payments, changes, and cancellations." /><link rel="canonical" href="https://www.faretransit.com/terms" /></Helmet>
-                <div className="container"><article className="info-card">
-                  <h1>Terms &amp; Conditions</h1><p className="info-updated"><strong>Last Updated:</strong> August 20, 2026</p>
-                  <section><h2>1. Scope of Services</h2><p>FareTransit LLC provides online travel search, reservation assistance, itinerary support, and customer service for travel products such as flights, hotels, and car rentals. Availability and pricing may change until the applicable reservation or ticket is confirmed.</p></section>
-                  <section><h2>2. Independent Travel Business</h2><p>FareTransit LLC is not an airline, air carrier, hotel, or car-rental operator. Travel products are supplied by third parties and remain subject to their fare rules, contracts of carriage, cancellation rules, availability, and other terms.</p></section>
-                  <section><h2>3. Reservation and Ticket Confirmation</h2><p>A FareTransit reservation reference confirms that we received or created a reservation request; it does not by itself mean that an airline ticket or other supplier service has been issued. A reservation is considered fulfilled when the applicable supplier confirmation, PNR, ticket number, voucher, or equivalent fulfillment confirmation is provided.</p></section>
-                  <section><h2>4. Customer Responsibilities</h2><p>Customers must provide accurate traveler names, dates of birth, contact details, identification and travel-document information, and must review all itinerary and traveler details before submission. Passport, visa, entry, health, and destination requirements remain the traveler's responsibility.</p></section>
-                  <section><h2>5. Prices, Payments, and Fees</h2><p>The amount presented before submission is the amount associated with the selected reservation request, subject to disclosed supplier conditions and any clearly disclosed service fees. We do not treat a payment as completed unless the relevant payment or authorization status is confirmed. Duplicate or unauthorized charges should be reported promptly to support.</p></section>
-                  <section><h2>6. Changes, Cancellations, and Refunds</h2><p>Changes and refunds depend on the applicable supplier and fare rules. Airline penalties, fare differences, supplier charges, and disclosed service fees may apply. Our <a href="/refund-policy">Refund and Cancellation Policy</a> provides additional details.</p></section>
-                  <section><h2>7. Supplier Changes</h2><p>Schedules, equipment, seat assignments, baggage rules, and availability may be changed by suppliers. FareTransit will provide reasonable assistance with eligible re-accommodation or refund requests but cannot control third-party supplier operations.</p></section>
-                  <section><h2>8. Contact</h2><p>Questions about these terms, a reservation, or a charge may be sent to <a href="mailto:support@faretransit.com">support@faretransit.com</a>.</p></section>
-                </article></div>
-              </div>
-            );
-          }
-
-          export default TermsAndConditions;
-          EOF
-
-          cat > frontend/src/shared/pages/RefundPolicyPage.js <<'EOF'
-          import React from 'react';
-          import { Helmet } from 'react-helmet-async';
-          import '../styles/InfoPages.css';
-
-          const RefundPolicy = () => (
-            <section className="info-page">
-              <Helmet><title>Refund &amp; Cancellation Policy | FareTransit</title><meta name="description" content="FareTransit LLC refund and cancellation policy for supplier-governed travel reservations and disclosed service fees." /><link rel="canonical" href="https://www.faretransit.com/refund-policy" /></Helmet>
-              <div className="container"><article className="info-card">
-                <h1>Refund and Cancellation Policy</h1><p className="info-updated"><strong>Last Updated:</strong> August 20, 2026</p>
-                <section><h2>1. Supplier Fare and Cancellation Rules</h2><p>Refund eligibility depends on the fare rules and cancellation policies of the airline, hotel, car-rental company, or other travel supplier associated with the reservation. Some products are refundable, some are refundable with penalties, and others may be non-refundable.</p></section>
-                <section><h2>2. Requesting a Cancellation or Refund</h2><p>Customers may contact FareTransit at <a href="mailto:support@faretransit.com">support@faretransit.com</a> to request cancellation or refund assistance. Requests should be made as early as possible and before scheduled departure or service use whenever required by the supplier rules.</p></section>
-                <section><h2>3. Refund Amounts and Fees</h2><p>Approved refunds are subject to the supplier's rules, applicable cancellation penalties, fare differences, no-show provisions, and any service fee that was clearly disclosed before purchase. A disclosed FareTransit service or processing fee may be non-refundable once the related service has been performed.</p></section>
-                <section><h2>4. How Refunds Are Returned</h2><p>When a refund is approved and funds are returned or released by the applicable supplier or processor, the refundable amount is normally returned through the original payment method where operationally available. Processing time can vary based on the supplier, processor, card network, and financial institution.</p></section>
-                <section><h2>5. Supplier Cancellations or Schedule Changes</h2><p>If a supplier cancels a service or makes a qualifying schedule change, the supplier may offer re-accommodation, credit, or a refund under its rules. FareTransit will assist the customer in requesting the available remedy.</p></section>
-                <section><h2>6. Charge Questions</h2><p>If you do not recognize a charge or believe an amount is incorrect, contact FareTransit promptly so we can review the reservation and payment records with you.</p></section>
-              </article></div>
-            </section>
-          );
-
-          export default RefundPolicy;
-          EOF
-
-          cat > frontend/src/shared/pages/ContactInfoPage.js <<'EOF'
-          import React from 'react';
-          import { Helmet } from 'react-helmet-async';
-          import { SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_HREF, BUSINESS_ADDRESS_FULL } from '../constants/supportContact';
-          import '../styles/InfoPages.css';
-
-          function ContactInfo() {
-            return (
-              <div className="info-page">
-                <Helmet><title>Contact FareTransit LLC | Reservation Support</title><meta name="description" content="Contact FareTransit LLC for reservation assistance, itinerary questions, billing support, changes, and cancellations." /><link rel="canonical" href="https://www.faretransit.com/contact" /></Helmet>
-                <div className="container"><article className="info-card">
-                  <h1>Contact FareTransit LLC</h1><p className="info-intro">Our support team can help with travel searches, reservation requests, itinerary questions, payment-status questions, changes, and cancellations.</p>
-                  <div className="contact-grid">
-                    <div className="contact-item"><h2>Business Name</h2><p>FareTransit LLC</p></div>
-                    <div className="contact-item"><h2>Email</h2><p><a href="mailto:support@faretransit.com">support@faretransit.com</a></p></div>
-                    <div className="contact-item"><h2>Phone</h2><p><a href={SUPPORT_PHONE_HREF}>{SUPPORT_PHONE_DISPLAY}</a></p></div>
-                    <div className="contact-item"><h2>Business Address</h2><p>{BUSINESS_ADDRESS_FULL}</p></div>
-                    <div className="contact-item"><h2>Reservation Support</h2><p>Keep your FareTransit reservation reference available when contacting us about an existing booking.</p></div>
-                    <div className="contact-item"><h2>Support Availability</h2><p>Online reservation requests are accepted at any time. Customer-support response times may vary by request and supplier urgency.</p></div>
-                  </div>
-                </article></div>
-              </div>
-            );
-          }
-
-          export default ContactInfo;
-          EOF
-
-          python3 - <<'PY'
-          from pathlib import Path
-          app = Path('frontend/src/app/App.js')
-          text = app.read_text()
-          marker = "import ContactInfo from '../shared/pages/ContactInfoPage';"
-          if "AboutUsPage" not in text:
-              text = text.replace(marker, marker + "\nimport AboutUsPage from '../shared/pages/AboutUsPage';")
-          route_marker = '<Route path="/contact" element={<ContactInfo />} />'
-          if '<Route path="/about"' not in text:
-              text = text.replace(route_marker, '<Route path="/about" element={<AboutUsPage />} />\n                ' + route_marker)
-          app.write_text(text)
-
-          header = Path('frontend/src/shared/components/Header.js')
-          text = header.read_text()
-          if 'isAboutActive' not in text:
-              text = text.replace("const isContactActive = location.pathname === '/contact';", "const isContactActive = location.pathname === '/contact';\n  const isAboutActive = location.pathname === '/about';")
-          contact_link = '''<Link\n              to="/contact"\n              className={`header-nav-link ${isContactActive ? 'header-nav-link--active' : ''}`}\n            >\n              Contact Us\n            </Link>'''
-          if 'to="/about"' not in text:
-              about_link = '''<Link\n              to="/about"\n              className={`header-nav-link ${isAboutActive ? 'header-nav-link--active' : ''}`}\n            >\n              About\n            </Link>\n            ''' + contact_link
-              text = text.replace(contact_link, about_link)
-          header.write_text(text)
-
-          footer = Path('frontend/src/shared/components/Footer.js')
-          text = footer.read_text()
-          marker = '<li><Link to="/my-bookings">My Bookings</Link></li>'
-          if '<Link to="/about">About FareTransit</Link>' not in text:
-              text = text.replace(marker, marker + '\n              <li><Link to="/about">About FareTransit</Link></li>')
-          footer.write_text(text)
-
-          sitemap = Path('frontend/public/sitemap.xml')
-          text = sitemap.read_text()
-          if 'https://www.faretransit.com/about' not in text:
-              text = text.replace('</urlset>', '  <url><loc>https://www.faretransit.com/about</loc></url>\n</urlset>')
-          sitemap.write_text(text)
-          PY
-
-      - name: Verify reservation workflow, identity, and payment safety
-        run: |
-          set -euo pipefail
-          test ! -d backend/src/modules/secure-payments
+          test -d backend/src/modules/bookings
+          test -d backend/src/modules/admin
+          test -d backend/src/modules/backoffice
+          test -d backend/src/modules/secure-payments
+          test -d backend/src/modules/cars
+          test -d backend/src/modules/hotels
           test -f frontend/src/features/secure-payments/VgsCheckoutCardFields.js
-          grep -q 'INTERNAL_REFERENCE' frontend/src/features/secure-payments/VgsCheckoutCardFields.js
-          ! grep -q 'window.VGSCollect' frontend/src/features/secure-payments/VgsCheckoutCardFields.js
-          ! grep -q '/secure-payments/' frontend/src/features/secure-payments/VgsCheckoutCardFields.js
-          grep -q 'FLIGHT_SEARCH_CACHE_TTL_MS' backend/src/integrations/serpapi/serpapi.service.mjs
-          grep -q "code: 'MDE'" backend/src/modules/flights/airport-ranker.mjs
-          grep -q 'path="/search"' frontend/src/app/App.js
-          grep -q 'path="/return-flight"' frontend/src/app/App.js
-          grep -q 'path="/booking"' frontend/src/app/App.js
-          grep -q 'path="/payment"' frontend/src/app/App.js
-          grep -q 'path="/my-bookings"' frontend/src/app/App.js
-          grep -q 'path="/about"' frontend/src/app/App.js
-          grep -q 'path="/refund-policy"' frontend/src/app/App.js
-          grep -q 'FareTransit LLC' frontend/src/shared/pages/AboutUsPage.js
-          grep -q 'Sheridan' frontend/public/index.html
-          grep -q '82801' frontend/public/index.html
-          if grep -R -n -E 'The Final Seat|thefinalseat\.com|support@thefinalseat\.com' frontend backend api --exclude-dir=node_modules; then
-            echo 'Final Seat identity remains in FareTransit application files.' >&2
-            exit 1
-          fi
-          if grep -R -n -E 'VGSCollect|verygoodsecurity|verygoodvault' frontend/src backend/src --exclude-dir=node_modules; then
-            echo 'Active VGS implementation remains.' >&2
+          test -f frontend/src/shared/constants/supportContact.js
+          grep -q 'faretransit.com' frontend/src/shared/constants/supportContact.js
+          if grep -R -n -E 'support@thefinalseat\.com|www\.thefinalseat\.com' frontend/src backend/src api --exclude-dir=node_modules; then
+            echo 'Final Seat production identity remains in active FareTransit application files.' >&2
             exit 1
           fi
 
-      - name: Install and build
-        run: |
-          set -euo pipefail
-          npm ci --prefix backend
-          npm install --prefix frontend --no-audit --no-fund
-          CI=false npm run build --prefix frontend
-          find backend/src -name '*.mjs' -print0 | xargs -0 -n1 node --check
-          VERCEL_ENV=preview NODE_ENV=production node -e "import('./backend/src/app.mjs').then(() => console.log('backend import ok'))"
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
 
-      - name: Commit production parity
-        run: |
-          set -euo pipefail
-          rm -f .github/workflows/faretransit-production-sync.yml
-          rm -f .production-readiness-trigger
-          git config user.name 'FareTransit Production Sync'
-          git config user.email 'actions@users.noreply.github.com'
-          git add -A
-          if git diff --cached --quiet; then
-            echo 'No application changes required.'
-            exit 0
-          fi
-          git commit -m 'Bring FareTransit reservation workflow to production readiness'
-          git push origin main
+      - name: Run production-readiness regression suite
+        working-directory: backend
+        run: npm run verify:production-ready
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: frontend
+        env:
+          CI: "false"
+        run: npm run build
+
+      - name: Check backend module syntax
+        shell: bash
+        run: find backend/src -name '*.mjs' -print0 | xargs -0 -n1 node --check
+
+      - name: Import backend in production-style preview mode
+        shell: bash
+        env:
+          VERCEL_ENV: preview
+          NODE_ENV: production
+          SUPABASE_URL: https://placeholder.supabase.co
+          SUPABASE_SECRET_KEY: placeholder-key
+          JWT_SECRET: faretransit-ci-jwt-secret-not-for-production
+          ADMIN_PASSWORD: faretransit-ci-admin-password-not-for-production
+        run: node -e "import('./backend/src/app.mjs').then(() => console.log('backend import ok'))"
