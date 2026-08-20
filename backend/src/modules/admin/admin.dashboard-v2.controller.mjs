@@ -45,6 +45,9 @@ export const adminDashboardV2Controller = {
         ? Number(req.body.agencyMarkup)
         : total - supplier - feeTotal;
 
+      // updatePricing owns persistence verification and finishes by calling
+      // bookingRepository.getCompleteBookingById, so the controller returns the
+      // verified read-after-write snapshot without issuing a duplicate DB read.
       const result = await bookingPricingService.updatePricing({
         bookingId: existing.id,
         supplierFare: supplier,
