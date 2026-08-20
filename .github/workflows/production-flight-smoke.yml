@@ -1,0 +1,35 @@
+name: Production Flight Smoke
+
+on:
+  push:
+    branches: [qa-production-flight-smoke]
+
+permissions:
+  contents: read
+
+jobs:
+  flight-search:
+    runs-on: ubuntu-latest
+    steps:
+      - name: POST live flight search
+        shell: bash
+        run: |
+          set -euo pipefail
+          HTTP_CODE=$(curl --fail-with-body --silent --show-error \
+            --connect-timeout 15 --max-time 60 \
+            -o /tmp/flight-smoke.json -w '%{http_code}' \
+            -X POST 'https://www.faretransit.com/api/flights/search' \
+            -H 'Content-Type: application/json' \
+            --data '{"from":"JFK","to":"LAX","departure":"2026-09-15","adults":1,"children":0,"infants":0,"travelClass":"economy","currency":"USD"}')
+          cat /tmp/flight-smoke.json
+          echo
+          echo "HTTP_CODE=$HTTP_CODE"
+          test "$HTTP_CODE" = "200"
+          node - <<'NODE'
+          const fs = require('fs');
+          const response = JSON.parse(fs.readFileSync('/tmp/flight-smoke.json', 'utf8'));
+          if (response.success !== true) throw new Error(`Flight API success=false: ${JSON.stringify(response.error || {})}`);
+          if (response?.meta?.source !== 'supplier') throw new Error(`Expected supplier source, got ${response?.meta?.source}`);
+          if (!Array.isArray(response.data) || response.data.length < 1) throw new Error('Expected at least one live flight result.');
+          console.log(`FLIGHT_SMOKE_PASS source=${response.meta.source} count=${response.data.length}`);
+          NODE
