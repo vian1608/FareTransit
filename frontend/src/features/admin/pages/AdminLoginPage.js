@@ -27,7 +27,8 @@ function AdminLogin() {
         // may use the legacy owner dashboard APIs. Every database-backed account
         // (including a DB role named `owner`) receives a `staff` JWT and must use
         // the permission-aware back-office shell.
-        navigate(profile?.legacyOwner === true ? '/admin/dashboard' : '/admin/backoffice');
+        const isStaffProfile = profile?.legacyOwner !== true;
+        navigate(isStaffProfile ? '/admin/backoffice' : '/admin/dashboard');
         return;
       }
       setError(normalizeError({ message: response?.error?.message || response?.message }, 'Invalid admin credentials.'));
