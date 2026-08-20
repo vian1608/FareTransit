@@ -12,6 +12,7 @@ const service = read('backend/src/modules/bookings/booking.service.mjs');
 const mapper = read('backend/src/modules/bookings/booking.mapper.mjs');
 const traveller = read('backend/src/modules/travellers/traveller.service.mjs');
 const bookingPage = read('frontend/src/features/bookings/pages/BookingPage.js');
+const vgsCheckout = read('frontend/src/features/secure-payments/VgsCheckoutCardFields.js');
 const migration = read('backend/migrations/035_booking_integrity_hardening.sql');
 
 // Booking creation is database-authoritative. Never report success from a fake
@@ -61,10 +62,23 @@ assert.match(mapper, /infantType:\s*t\.infant_type/);
 assert.match(migration, /ADD COLUMN IF NOT EXISTS infant_type VARCHAR\(20\)/);
 assert.match(migration, /'IN_SEAT','ON_LAP'|'IN_SEAT', 'ON_LAP'/);
 
-// Never treat or log the full PAN as last4.
-assert.match(bookingPage, /cleanCardNum\.slice\(-4\)/);
-assert.doesNotMatch(bookingPage, /const cardLast4 = cleanCardNum \|\| null/);
-assert.doesNotMatch(bookingPage, /console\.log\([\s\S]*cleanCardNum/);
+// Card security contract: the booking page never handles raw PAN/CVV. Sensitive
+// fields live inside VGS Collect, and only VGS aliases plus masked last4/brand
+// metadata cross back into application code.
+assert.match(bookingPage, /VgsCheckoutCardFields/);
+assert.match(bookingPage, /secureCardRef/);
+assert.match(bookingPage, /secureBooking/);
+assert.doesNotMatch(bookingPage, /cleanCardNum/);
+assert.doesNotMatch(bookingPage, /cardNumber\s*:/);
+assert.doesNotMatch(bookingPage, /\bcvv\s*:/i);
+assert.match(vgsCheckout, /window\.VGSCollect\.create/);
+assert.match(vgsCheckout, /createAliases/);
+assert.match(vgsCheckout, /panAlias/);
+assert.match(vgsCheckout, /expirationAlias/);
+assert.match(vgsCheckout, /cvvAlias/);
+assert.match(vgsCheckout, /getMaskedMetadata/);
+assert.match(vgsCheckout, /last4/);
+assert.doesNotMatch(vgsCheckout, /console\.log\([\s\S]*(card_number|card_cvv|panAlias|cvvAlias)/i);
 
 // Checkout token is a stable idempotency identity, and confirmation prefers the
 // opaque read token when available.
