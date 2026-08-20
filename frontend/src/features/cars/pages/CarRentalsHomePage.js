@@ -2,6 +2,7 @@ import React from 'react';
 import { Helmet } from 'react-helmet-async';
 import HeroSlider from '../../../shared/components/HeroSlider';
 import ProductSearchCard from '../../../shared/components/ProductSearchCard';
+import SeamlessAdvisorySection from '../../../shared/components/SeamlessAdvisorySection';
 import CarSearchForm from '../components/CarSearchForm';
 import { SUPPORT_PHONE_HREF, SUPPORT_PHONE_DISPLAY } from '../../../shared/constants/supportContact';
 import './CarRentalsHomePage.css';
@@ -125,6 +126,8 @@ function CarRentalsHomePage() {
         </div>
       </section>
 
+      <SeamlessAdvisorySection variant="flight" />
+
       <section className="car-support-section">
         <div className="container">
           <div className="car-support-card">
@@ -134,7 +137,11 @@ function CarRentalsHomePage() {
               <h2>Need Help Choosing a Rental?</h2>
               <p>Call us if you want help comparing pickup details, policies, deposits, mileage, or supplier information before you continue.</p>
             </div>
-            <a className="car-support-button" href={SUPPORT_PHONE_HREF}>
+            <a
+              className="car-support-button"
+              href={SUPPORT_PHONE_HREF}
+              aria-label="Car rental phone assistance"
+            >
               <i className="fas fa-phone-alt" aria-hidden="true" />
               <span>Call Now</span>
               <strong>{SUPPORT_PHONE_DISPLAY}</strong>
