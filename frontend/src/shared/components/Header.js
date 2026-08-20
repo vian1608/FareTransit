@@ -135,12 +135,6 @@ function Header() {
               Contact Us
             </Link>
           </div>
-
-          <div className="header-auth">
-            <Link to="/signin" className="header-nav-link header-auth__signin">
-              Sign In
-            </Link>
-          </div>
         </nav>
 
         {menuOpen && (
