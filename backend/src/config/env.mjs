@@ -44,12 +44,12 @@ export const env = {
   get stripePublishableKey() { return process.env.STRIPE_PUBLISHABLE_KEY || ''; },
   get stripeMockMode() { return process.env.STRIPE_MOCK_MODE === 'true'; },
 
-  // Whop Flight Checkout Integration
+  // Whop Flight Checkout Integration (disabled unless explicitly enabled)
   get whopApiKey() { return process.env.WHOP_API_KEY || ''; },
   get whopCompanyId() { return process.env.WHOP_COMPANY_ID || ''; },
   get whopWebhookSecret() { return process.env.WHOP_WEBHOOK_SECRET || ''; },
   get whopEnv() { return process.env.WHOP_ENV || 'sandbox'; },
-  get whopFlightCheckoutEnabled() { return process.env.WHOP_FLIGHT_CHECKOUT_ENABLED !== 'false'; },
+  get whopFlightCheckoutEnabled() { return process.env.WHOP_FLIGHT_CHECKOUT_ENABLED === 'true'; },
 
   // SerpAPI
   get serpapiApiKey() { return process.env.SERPAPI_API_KEY || ''; },
