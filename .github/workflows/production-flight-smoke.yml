@@ -3,6 +3,8 @@ name: Production Flight Smoke
 on:
   push:
     branches: [qa-production-flight-smoke]
+  pull_request:
+    branches: [main]
 
 permissions:
   contents: read
