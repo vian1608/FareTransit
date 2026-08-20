@@ -19,6 +19,24 @@ function toNonNegativeInteger(value, fallback = 0) {
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
 }
 
+const US_STATE_CODES = new Set([
+  'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT','VA','WA','WV','WI','WY','DC','PR','VI','GU','AS','MP'
+]);
+
+function normalizeAirportGeography(airport) {
+  if (!airport || typeof airport !== 'object') return airport;
+  const state = String(airport.state || '').trim();
+  const country = String(airport.country || '').trim();
+
+  // Older SerpAPI parsing treated every two-part description such as
+  // "Laxey, Isle of Man" as a US city/state pair. Correct those records at
+  // the API boundary while preserving genuine US state abbreviations.
+  if (country === 'United States' && state && !US_STATE_CODES.has(state.toUpperCase())) {
+    return { ...airport, state: '', country: state };
+  }
+  return airport;
+}
+
 export const flightController = {
   search: async (req, res) => {
     try {
@@ -107,8 +125,6 @@ export const flightController = {
         returnDate,
         adults: normalizedAdults,
         children: normalizedChildren,
-        // Keep total infants for backwards-compatible booking/passenger counts,
-        // while preserving the supplier-specific seated/lap split below.
         infants: normalizedInfants,
         infantsInSeat: normalizedInfantsInSeat,
         infantsOnLap: normalizedInfantsOnLap,
@@ -162,10 +178,11 @@ export const flightController = {
       }
 
       const suggestions = await flightService.autocompleteAirports(q);
-      return res.json({
-        success: true,
-        data: (Array.isArray(suggestions) ? suggestions : []).filter((airport) => /^[A-Z]{3}$/.test(String(airport?.code || '').toUpperCase())),
-      });
+      const data = (Array.isArray(suggestions) ? suggestions : [])
+        .filter((airport) => /^[A-Z]{3}$/.test(String(airport?.code || '').toUpperCase()))
+        .map(normalizeAirportGeography);
+
+      return res.json({ success: true, data });
     } catch (error) {
       return next(error);
     }
