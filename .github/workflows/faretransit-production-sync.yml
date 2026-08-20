@@ -138,34 +138,10 @@ jobs:
                   <article className="info-card">
                     <h1>About FareTransit LLC</h1>
                     <p className="info-intro">FareTransit LLC is a Wyoming-registered online travel search and reservation-assistance business serving customers who want clear travel options and human support throughout the reservation process.</p>
-
-                    <section>
-                      <h2>What We Do</h2>
-                      <p>We help customers review flight, hotel, and car-rental options, provide traveler and contact details, submit reservation requests, and receive assistance with confirmations, itinerary questions, changes, cancellations, and other post-booking needs.</p>
-                    </section>
-
-                    <section>
-                      <h2>How a Reservation Works</h2>
-                      <ol>
-                        <li>Search or request available travel options.</li>
-                        <li>Select an itinerary or travel option.</li>
-                        <li>Provide the traveler and contact information required for the reservation.</li>
-                        <li>Review the total, applicable terms, supplier rules, and refund/cancellation conditions.</li>
-                        <li>Submit the reservation request. FareTransit coordinates fulfillment through applicable travel suppliers, host agencies, consolidators, or other travel partners.</li>
-                        <li>Receive a FareTransit reservation reference and, after fulfillment, the applicable supplier or ticket confirmation.</li>
-                      </ol>
-                    </section>
-
-                    <section>
-                      <h2>Independent Travel Assistance</h2>
-                      <p>FareTransit LLC is an independent travel reservation-assistance business. We are not an airline or air carrier. Airline transportation, hotel stays, car rentals, ticket issuance, and other travel products are ultimately supplied under the terms of the applicable third-party travel provider.</p>
-                    </section>
-
-                    <section>
-                      <h2>Customer Support</h2>
-                      <p>Email: <a href="mailto:support@faretransit.com">support@faretransit.com</a><br />Phone: <a href={SUPPORT_PHONE_HREF}>{SUPPORT_PHONE_DISPLAY}</a><br />Business address: {BUSINESS_ADDRESS_FULL}</p>
-                      <p><Link to="/contact">Contact our support team</Link> for reservation, billing, cancellation, or itinerary questions.</p>
-                    </section>
+                    <section><h2>What We Do</h2><p>We help customers review flight, hotel, and car-rental options, provide traveler and contact details, submit reservation requests, and receive assistance with confirmations, itinerary questions, changes, cancellations, and other post-booking needs.</p></section>
+                    <section><h2>How a Reservation Works</h2><ol><li>Search or request available travel options.</li><li>Select an itinerary or travel option.</li><li>Provide the traveler and contact information required for the reservation.</li><li>Review the total, applicable terms, supplier rules, and refund/cancellation conditions.</li><li>Submit the reservation request. FareTransit coordinates fulfillment through applicable travel suppliers, host agencies, consolidators, or other travel partners.</li><li>Receive a FareTransit reservation reference and, after fulfillment, the applicable supplier or ticket confirmation.</li></ol></section>
+                    <section><h2>Independent Travel Assistance</h2><p>FareTransit LLC is an independent travel reservation-assistance business. We are not an airline or air carrier. Airline transportation, hotel stays, car rentals, ticket issuance, and other travel products are ultimately supplied under the terms of the applicable third-party travel provider.</p></section>
+                    <section><h2>Customer Support</h2><p>Email: <a href="mailto:support@faretransit.com">support@faretransit.com</a><br />Phone: <a href={SUPPORT_PHONE_HREF}>{SUPPORT_PHONE_DISPLAY}</a><br />Business address: {BUSINESS_ADDRESS_FULL}</p><p><Link to="/contact">Contact our support team</Link> for reservation, billing, cancellation, or itinerary questions.</p></section>
                   </article>
                 </div>
               </div>
@@ -182,25 +158,17 @@ jobs:
 
           const PrivacyPolicy = () => (
             <section className="info-page">
-              <Helmet>
-                <title>Privacy Policy | FareTransit</title>
-                <meta name="description" content="How FareTransit LLC handles customer, traveler, reservation, payment-reference, and communications data." />
-                <link rel="canonical" href="https://www.faretransit.com/privacy-policy" />
-              </Helmet>
-              <div className="container">
-                <article className="info-card">
-                  <h1>Privacy Policy</h1>
-                  <p className="info-updated"><strong>Last Updated:</strong> August 20, 2026</p>
-
-                  <section><h2>1. Information We Collect</h2><p>FareTransit LLC collects information reasonably necessary to provide travel search and reservation assistance, including customer contact details, traveler information, itinerary preferences, reservation details, support communications, and technical information used to operate and protect our services.</p></section>
-                  <section><h2>2. How We Use Information</h2><p>We use information to respond to travel requests, create and manage reservations, communicate booking updates, provide customer support, prevent fraud or misuse, maintain business records, and comply with applicable legal and contractual obligations.</p></section>
-                  <section><h2>3. Travel Suppliers and Service Providers</h2><p>Information required to fulfill a reservation may be shared with the applicable airline, hotel, car-rental company, host agency, consolidator, reservation system, or other service provider involved in the requested travel service. We do not sell customer personal information to third-party marketers.</p></section>
-                  <section><h2>4. Payment Information</h2><p>FareTransit does not intentionally store full payment-card numbers or card security codes (CVV/CVC) in its application database. Our reservation records may retain non-sensitive payment-reference information such as card brand, last four digits, expiration month/year, cardholder name, billing information, transaction or authorization references, and payment status when needed for support and reconciliation. Any live card processing is performed through the payment-processing solution made available for the transaction.</p></section>
-                  <section><h2>5. SMS and Communications</h2><p>Phone numbers and messaging consent are used for requested reservation and support communications. Mobile opt-in information is not shared with third parties for their independent marketing or promotional purposes.</p></section>
-                  <section><h2>6. Data Security and Retention</h2><p>We use reasonable administrative and technical safeguards and retain business records for only as long as reasonably required for reservation support, dispute handling, accounting, compliance, and legal obligations.</p></section>
-                  <section><h2>7. Contact</h2><p>Privacy questions may be sent to <a href="mailto:support@faretransit.com">support@faretransit.com</a>.</p></section>
-                </article>
-              </div>
+              <Helmet><title>Privacy Policy | FareTransit</title><meta name="description" content="How FareTransit LLC handles customer, traveler, reservation, payment-reference, and communications data." /><link rel="canonical" href="https://www.faretransit.com/privacy-policy" /></Helmet>
+              <div className="container"><article className="info-card">
+                <h1>Privacy Policy</h1><p className="info-updated"><strong>Last Updated:</strong> August 20, 2026</p>
+                <section><h2>1. Information We Collect</h2><p>FareTransit LLC collects information reasonably necessary to provide travel search and reservation assistance, including customer contact details, traveler information, itinerary preferences, reservation details, support communications, and technical information used to operate and protect our services.</p></section>
+                <section><h2>2. How We Use Information</h2><p>We use information to respond to travel requests, create and manage reservations, communicate booking updates, provide customer support, prevent fraud or misuse, maintain business records, and comply with applicable legal and contractual obligations.</p></section>
+                <section><h2>3. Travel Suppliers and Service Providers</h2><p>Information required to fulfill a reservation may be shared with the applicable airline, hotel, car-rental company, host agency, consolidator, reservation system, or other service provider involved in the requested travel service. We do not sell customer personal information to third-party marketers.</p></section>
+                <section><h2>4. Payment Information</h2><p>FareTransit does not intentionally store full payment-card numbers or card security codes (CVV/CVC) in its application database. Our reservation records may retain non-sensitive payment-reference information such as card brand, last four digits, expiration month/year, cardholder name, billing information, transaction or authorization references, and payment status when needed for support and reconciliation. Any live card processing is performed through the payment-processing solution made available for the transaction.</p></section>
+                <section><h2>5. SMS and Communications</h2><p>Phone numbers and messaging consent are used for requested reservation and support communications. Mobile opt-in information is not shared with third parties for their independent marketing or promotional purposes.</p></section>
+                <section><h2>6. Data Security and Retention</h2><p>We use reasonable administrative and technical safeguards and retain business records for only as long as reasonably required for reservation support, dispute handling, accounting, compliance, and legal obligations.</p></section>
+                <section><h2>7. Contact</h2><p>Privacy questions may be sent to <a href="mailto:support@faretransit.com">support@faretransit.com</a>.</p></section>
+              </article></div>
             </section>
           );
 
@@ -215,25 +183,18 @@ jobs:
           function TermsAndConditions() {
             return (
               <div className="info-page">
-                <Helmet>
-                  <title>Terms & Conditions | FareTransit</title>
-                  <meta name="description" content="Terms governing FareTransit LLC travel search, reservation assistance, supplier fulfillment, payments, changes, and cancellations." />
-                  <link rel="canonical" href="https://www.faretransit.com/terms" />
-                </Helmet>
-                <div className="container">
-                  <article className="info-card">
-                    <h1>Terms &amp; Conditions</h1>
-                    <p className="info-updated"><strong>Last Updated:</strong> August 20, 2026</p>
-                    <section><h2>1. Scope of Services</h2><p>FareTransit LLC provides online travel search, reservation assistance, itinerary support, and customer service for travel products such as flights, hotels, and car rentals. Availability and pricing may change until the applicable reservation or ticket is confirmed.</p></section>
-                    <section><h2>2. Independent Travel Business</h2><p>FareTransit LLC is not an airline, air carrier, hotel, or car-rental operator. Travel products are supplied by third parties and remain subject to their fare rules, contracts of carriage, cancellation rules, availability, and other terms.</p></section>
-                    <section><h2>3. Reservation and Ticket Confirmation</h2><p>A FareTransit reservation reference confirms that we received or created a reservation request; it does not by itself mean that an airline ticket or other supplier service has been issued. A reservation is considered fulfilled when the applicable supplier confirmation, PNR, ticket number, voucher, or equivalent fulfillment confirmation is provided.</p></section>
-                    <section><h2>4. Customer Responsibilities</h2><p>Customers must provide accurate traveler names, dates of birth, contact details, identification and travel-document information, and must review all itinerary and traveler details before submission. Passport, visa, entry, health, and destination requirements remain the traveler's responsibility.</p></section>
-                    <section><h2>5. Prices, Payments, and Fees</h2><p>The amount presented before submission is the amount associated with the selected reservation request, subject to disclosed supplier conditions and any clearly disclosed service fees. We do not treat a payment as completed unless the relevant payment or authorization status is confirmed. Duplicate or unauthorized charges should be reported promptly to support.</p></section>
-                    <section><h2>6. Changes, Cancellations, and Refunds</h2><p>Changes and refunds depend on the applicable supplier and fare rules. Airline penalties, fare differences, supplier charges, and disclosed service fees may apply. Our <a href="/refund-policy">Refund and Cancellation Policy</a> provides additional details.</p></section>
-                    <section><h2>7. Supplier Changes</h2><p>Schedules, equipment, seat assignments, baggage rules, and availability may be changed by suppliers. FareTransit will provide reasonable assistance with eligible re-accommodation or refund requests but cannot control third-party supplier operations.</p></section>
-                    <section><h2>8. Contact</h2><p>Questions about these terms, a reservation, or a charge may be sent to <a href="mailto:support@faretransit.com">support@faretransit.com</a>.</p></section>
-                  </article>
-                </div>
+                <Helmet><title>Terms &amp; Conditions | FareTransit</title><meta name="description" content="Terms governing FareTransit LLC travel search, reservation assistance, supplier fulfillment, payments, changes, and cancellations." /><link rel="canonical" href="https://www.faretransit.com/terms" /></Helmet>
+                <div className="container"><article className="info-card">
+                  <h1>Terms &amp; Conditions</h1><p className="info-updated"><strong>Last Updated:</strong> August 20, 2026</p>
+                  <section><h2>1. Scope of Services</h2><p>FareTransit LLC provides online travel search, reservation assistance, itinerary support, and customer service for travel products such as flights, hotels, and car rentals. Availability and pricing may change until the applicable reservation or ticket is confirmed.</p></section>
+                  <section><h2>2. Independent Travel Business</h2><p>FareTransit LLC is not an airline, air carrier, hotel, or car-rental operator. Travel products are supplied by third parties and remain subject to their fare rules, contracts of carriage, cancellation rules, availability, and other terms.</p></section>
+                  <section><h2>3. Reservation and Ticket Confirmation</h2><p>A FareTransit reservation reference confirms that we received or created a reservation request; it does not by itself mean that an airline ticket or other supplier service has been issued. A reservation is considered fulfilled when the applicable supplier confirmation, PNR, ticket number, voucher, or equivalent fulfillment confirmation is provided.</p></section>
+                  <section><h2>4. Customer Responsibilities</h2><p>Customers must provide accurate traveler names, dates of birth, contact details, identification and travel-document information, and must review all itinerary and traveler details before submission. Passport, visa, entry, health, and destination requirements remain the traveler's responsibility.</p></section>
+                  <section><h2>5. Prices, Payments, and Fees</h2><p>The amount presented before submission is the amount associated with the selected reservation request, subject to disclosed supplier conditions and any clearly disclosed service fees. We do not treat a payment as completed unless the relevant payment or authorization status is confirmed. Duplicate or unauthorized charges should be reported promptly to support.</p></section>
+                  <section><h2>6. Changes, Cancellations, and Refunds</h2><p>Changes and refunds depend on the applicable supplier and fare rules. Airline penalties, fare differences, supplier charges, and disclosed service fees may apply. Our <a href="/refund-policy">Refund and Cancellation Policy</a> provides additional details.</p></section>
+                  <section><h2>7. Supplier Changes</h2><p>Schedules, equipment, seat assignments, baggage rules, and availability may be changed by suppliers. FareTransit will provide reasonable assistance with eligible re-accommodation or refund requests but cannot control third-party supplier operations.</p></section>
+                  <section><h2>8. Contact</h2><p>Questions about these terms, a reservation, or a charge may be sent to <a href="mailto:support@faretransit.com">support@faretransit.com</a>.</p></section>
+                </article></div>
               </div>
             );
           }
@@ -248,23 +209,16 @@ jobs:
 
           const RefundPolicy = () => (
             <section className="info-page">
-              <Helmet>
-                <title>Refund & Cancellation Policy | FareTransit</title>
-                <meta name="description" content="FareTransit LLC refund and cancellation policy for supplier-governed travel reservations and disclosed service fees." />
-                <link rel="canonical" href="https://www.faretransit.com/refund-policy" />
-              </Helmet>
-              <div className="container">
-                <article className="info-card">
-                  <h1>Refund and Cancellation Policy</h1>
-                  <p className="info-updated"><strong>Last Updated:</strong> August 20, 2026</p>
-                  <section><h2>1. Supplier Fare and Cancellation Rules</h2><p>Refund eligibility depends on the fare rules and cancellation policies of the airline, hotel, car-rental company, or other travel supplier associated with the reservation. Some products are refundable, some are refundable with penalties, and others may be non-refundable.</p></section>
-                  <section><h2>2. Requesting a Cancellation or Refund</h2><p>Customers may contact FareTransit at <a href="mailto:support@faretransit.com">support@faretransit.com</a> to request cancellation or refund assistance. Requests should be made as early as possible and before scheduled departure or service use whenever required by the supplier rules.</p></section>
-                  <section><h2>3. Refund Amounts and Fees</h2><p>Approved refunds are subject to the supplier's rules, applicable cancellation penalties, fare differences, no-show provisions, and any service fee that was clearly disclosed before purchase. A disclosed FareTransit service or processing fee may be non-refundable once the related service has been performed.</p></section>
-                  <section><h2>4. How Refunds Are Returned</h2><p>When a refund is approved and funds are returned or released by the applicable supplier or processor, the refundable amount is normally returned through the original payment method where operationally available. Processing time can vary based on the supplier, processor, card network, and financial institution.</p></section>
-                  <section><h2>5. Supplier Cancellations or Schedule Changes</h2><p>If a supplier cancels a service or makes a qualifying schedule change, the supplier may offer re-accommodation, credit, or a refund under its rules. FareTransit will assist the customer in requesting the available remedy.</p></section>
-                  <section><h2>6. Charge Questions</h2><p>If you do not recognize a charge or believe an amount is incorrect, contact FareTransit promptly so we can review the reservation and payment records with you.</p></section>
-                </article>
-              </div>
+              <Helmet><title>Refund &amp; Cancellation Policy | FareTransit</title><meta name="description" content="FareTransit LLC refund and cancellation policy for supplier-governed travel reservations and disclosed service fees." /><link rel="canonical" href="https://www.faretransit.com/refund-policy" /></Helmet>
+              <div className="container"><article className="info-card">
+                <h1>Refund and Cancellation Policy</h1><p className="info-updated"><strong>Last Updated:</strong> August 20, 2026</p>
+                <section><h2>1. Supplier Fare and Cancellation Rules</h2><p>Refund eligibility depends on the fare rules and cancellation policies of the airline, hotel, car-rental company, or other travel supplier associated with the reservation. Some products are refundable, some are refundable with penalties, and others may be non-refundable.</p></section>
+                <section><h2>2. Requesting a Cancellation or Refund</h2><p>Customers may contact FareTransit at <a href="mailto:support@faretransit.com">support@faretransit.com</a> to request cancellation or refund assistance. Requests should be made as early as possible and before scheduled departure or service use whenever required by the supplier rules.</p></section>
+                <section><h2>3. Refund Amounts and Fees</h2><p>Approved refunds are subject to the supplier's rules, applicable cancellation penalties, fare differences, no-show provisions, and any service fee that was clearly disclosed before purchase. A disclosed FareTransit service or processing fee may be non-refundable once the related service has been performed.</p></section>
+                <section><h2>4. How Refunds Are Returned</h2><p>When a refund is approved and funds are returned or released by the applicable supplier or processor, the refundable amount is normally returned through the original payment method where operationally available. Processing time can vary based on the supplier, processor, card network, and financial institution.</p></section>
+                <section><h2>5. Supplier Cancellations or Schedule Changes</h2><p>If a supplier cancels a service or makes a qualifying schedule change, the supplier may offer re-accommodation, credit, or a refund under its rules. FareTransit will assist the customer in requesting the available remedy.</p></section>
+                <section><h2>6. Charge Questions</h2><p>If you do not recognize a charge or believe an amount is incorrect, contact FareTransit promptly so we can review the reservation and payment records with you.</p></section>
+              </article></div>
             </section>
           );
 
@@ -280,25 +234,18 @@ jobs:
           function ContactInfo() {
             return (
               <div className="info-page">
-                <Helmet>
-                  <title>Contact FareTransit LLC | Reservation Support</title>
-                  <meta name="description" content="Contact FareTransit LLC for reservation assistance, itinerary questions, billing support, changes, and cancellations." />
-                  <link rel="canonical" href="https://www.faretransit.com/contact" />
-                </Helmet>
-                <div className="container">
-                  <article className="info-card">
-                    <h1>Contact FareTransit LLC</h1>
-                    <p className="info-intro">Our support team can help with travel searches, reservation requests, itinerary questions, payment-status questions, changes, and cancellations.</p>
-                    <div className="contact-grid">
-                      <div className="contact-item"><h2>Business Name</h2><p>FareTransit LLC</p></div>
-                      <div className="contact-item"><h2>Email</h2><p><a href="mailto:support@faretransit.com">support@faretransit.com</a></p></div>
-                      <div className="contact-item"><h2>Phone</h2><p><a href={SUPPORT_PHONE_HREF}>{SUPPORT_PHONE_DISPLAY}</a></p></div>
-                      <div className="contact-item"><h2>Business Address</h2><p>{BUSINESS_ADDRESS_FULL}</p></div>
-                      <div className="contact-item"><h2>Reservation Support</h2><p>Keep your FareTransit reservation reference available when contacting us about an existing booking.</p></div>
-                      <div className="contact-item"><h2>Support Availability</h2><p>Online reservation requests are accepted at any time. Customer-support response times may vary by request and supplier urgency.</p></div>
-                    </div>
-                  </article>
-                </div>
+                <Helmet><title>Contact FareTransit LLC | Reservation Support</title><meta name="description" content="Contact FareTransit LLC for reservation assistance, itinerary questions, billing support, changes, and cancellations." /><link rel="canonical" href="https://www.faretransit.com/contact" /></Helmet>
+                <div className="container"><article className="info-card">
+                  <h1>Contact FareTransit LLC</h1><p className="info-intro">Our support team can help with travel searches, reservation requests, itinerary questions, payment-status questions, changes, and cancellations.</p>
+                  <div className="contact-grid">
+                    <div className="contact-item"><h2>Business Name</h2><p>FareTransit LLC</p></div>
+                    <div className="contact-item"><h2>Email</h2><p><a href="mailto:support@faretransit.com">support@faretransit.com</a></p></div>
+                    <div className="contact-item"><h2>Phone</h2><p><a href={SUPPORT_PHONE_HREF}>{SUPPORT_PHONE_DISPLAY}</a></p></div>
+                    <div className="contact-item"><h2>Business Address</h2><p>{BUSINESS_ADDRESS_FULL}</p></div>
+                    <div className="contact-item"><h2>Reservation Support</h2><p>Keep your FareTransit reservation reference available when contacting us about an existing booking.</p></div>
+                    <div className="contact-item"><h2>Support Availability</h2><p>Online reservation requests are accepted at any time. Customer-support response times may vary by request and supplier urgency.</p></div>
+                  </div>
+                </article></div>
               </div>
             );
           }
@@ -308,7 +255,6 @@ jobs:
 
           python3 - <<'PY'
           from pathlib import Path
-
           app = Path('frontend/src/app/App.js')
           text = app.read_text()
           marker = "import ContactInfo from '../shared/pages/ContactInfoPage';"
@@ -323,8 +269,8 @@ jobs:
           text = header.read_text()
           if 'isAboutActive' not in text:
               text = text.replace("const isContactActive = location.pathname === '/contact';", "const isContactActive = location.pathname === '/contact';\n  const isAboutActive = location.pathname === '/about';")
-          if '>\n              About\n            </Link>' not in text:
-              contact_link = '''<Link\n              to="/contact"\n              className={`header-nav-link ${isContactActive ? 'header-nav-link--active' : ''}`}\n            >\n              Contact Us\n            </Link>'''
+          contact_link = '''<Link\n              to="/contact"\n              className={`header-nav-link ${isContactActive ? 'header-nav-link--active' : ''}`}\n            >\n              Contact Us\n            </Link>'''
+          if 'to="/about"' not in text:
               about_link = '''<Link\n              to="/about"\n              className={`header-nav-link ${isAboutActive ? 'header-nav-link--active' : ''}`}\n            >\n              About\n            </Link>\n            ''' + contact_link
               text = text.replace(contact_link, about_link)
           header.write_text(text)
@@ -338,9 +284,8 @@ jobs:
 
           sitemap = Path('frontend/public/sitemap.xml')
           text = sitemap.read_text()
-          about = '  <url><loc>https://www.faretransit.com/about</loc></url>\n'
           if 'https://www.faretransit.com/about' not in text:
-              text = text.replace('  <url><loc>https://www.faretransit.com/contact</loc></url>\n', '  <url><loc>https://www.faretransit.com/contact</loc></url>\n' + about)
+              text = text.replace('</urlset>', '  <url><loc>https://www.faretransit.com/about</loc></url>\n</urlset>')
           sitemap.write_text(text)
           PY
 
@@ -377,7 +322,7 @@ jobs:
         run: |
           set -euo pipefail
           npm ci --prefix backend
-          npm ci --prefix frontend
+          npm install --prefix frontend --no-audit --no-fund
           CI=false npm run build --prefix frontend
           find backend/src -name '*.mjs' -print0 | xargs -0 -n1 node --check
           VERCEL_ENV=preview NODE_ENV=production node -e "import('./backend/src/app.mjs').then(() => console.log('backend import ok'))"
@@ -386,6 +331,7 @@ jobs:
         run: |
           set -euo pipefail
           rm -f .github/workflows/faretransit-production-sync.yml
+          rm -f .production-readiness-trigger
           git config user.name 'FareTransit Production Sync'
           git config user.email 'actions@users.noreply.github.com'
           git add -A
