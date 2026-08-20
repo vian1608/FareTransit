@@ -41,6 +41,7 @@ export const env = {
 
   // Stripe
   get stripeSecretKey() { return process.env.STRIPE_SECRET_KEY || ''; },
+  get stripePublishableKey() { return process.env.STRIPE_PUBLISHABLE_KEY || ''; },
   get stripeMockMode() { return process.env.STRIPE_MOCK_MODE === 'true'; },
 
   // Whop Flight Checkout Integration
