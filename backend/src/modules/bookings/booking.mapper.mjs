@@ -3,11 +3,29 @@ import { itineraryMapper } from '../itineraries/itinerary.mapper.mjs';
 export function resolvePositiveAmount(...values) {
   for (const value of values) {
     const amount = Number.parseFloat(value);
-    if (Number.isFinite(amount) && amount > 0) {
-      return amount;
-    }
+    if (Number.isFinite(amount) && amount > 0) return amount;
   }
   return 0;
+}
+
+function numberOrNull(value) {
+  if (value === null || value === undefined || value === '') return null;
+  const parsed = Number.parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function numberOrZero(value) {
+  return numberOrNull(value) ?? 0;
+}
+
+function resolveDiscountPercent(value, fallback = 10) {
+  const parsed = numberOrNull(value);
+  return parsed !== null && parsed >= 0 ? parsed : fallback;
+}
+
+function hasAuthorization(booking = {}) {
+  const status = String(booking.authorization_status || '').toUpperCase();
+  return ['AUTHORIZED', 'APPROVED', 'COMPLETED'].includes(status);
 }
 
 export const bookingMapper = {
@@ -43,12 +61,14 @@ export const bookingMapper = {
       throw err;
     }
 
-    const isMock = !!payload.isMock;
-    const discountPercent = isMock ? 0 : (parseFloat(payload.discount_percent) || 10);
-    const voucherDiscount = Math.max(0, parseFloat(payload.voucher_discount) || 0);
+    const isMock = Boolean(payload.isMock);
+    const discountPercent = isMock ? 0 : resolveDiscountPercent(payload.discount_percent, 10);
+    const voucherDiscount = Math.max(0, numberOrZero(payload.voucher_discount));
     const priceBeforeVoucher = resolvePositiveAmount(payload.price_before_voucher, rawCustomerPrice + voucherDiscount);
-    // Keep the normal website discount separate from voucher savings.
-    const discountAmount = isMock ? 0 : (parseFloat(payload.discount_amount) || Math.max(0, rawSupplierPrice - priceBeforeVoucher));
+    const explicitDiscount = numberOrNull(payload.discount_amount);
+    const discountAmount = isMock
+      ? 0
+      : Math.max(0, explicitDiscount ?? Math.max(0, rawSupplierPrice - priceBeforeVoucher));
 
     const clientReqId = payload.clientRequestId || payload.client_request_id || payload.idempotencyKey || payload.idempotency_key || null;
 
@@ -85,39 +105,44 @@ export const bookingMapper = {
     const pm = paymentMethod || {};
     const itinerary = itineraryMapper.toDomainModel(flights);
 
-    const hasCustomerPrice = (booking.customer_price !== undefined && booking.customer_price !== null) || (booking.total_amount !== undefined && booking.total_amount !== null);
-    const hasSupplierPrice = (booking.supplier_price !== undefined && booking.supplier_price !== null) || (booking.original_api_price !== undefined && booking.original_api_price !== null);
+    const hasCustomerPrice = booking.customer_price !== undefined && booking.customer_price !== null
+      || booking.total_amount !== undefined && booking.total_amount !== null;
+    const hasSupplierPrice = booking.supplier_price !== undefined && booking.supplier_price !== null
+      || booking.original_api_price !== undefined && booking.original_api_price !== null;
 
-    const customerTotal = hasCustomerPrice ? (parseFloat(booking.customer_price ?? booking.total_amount) || 0) : null;
-    const supplierCost = hasSupplierPrice ? (parseFloat(booking.supplier_price ?? booking.original_api_price) || 0) : customerTotal;
-    const voucherDiscount = Math.max(0, parseFloat(booking.voucher_discount) || 0);
+    const customerTotal = hasCustomerPrice ? numberOrZero(booking.customer_price ?? booking.total_amount) : null;
+    const supplierCost = hasSupplierPrice ? numberOrZero(booking.supplier_price ?? booking.original_api_price) : customerTotal;
+    const voucherDiscount = Math.max(0, numberOrZero(booking.voucher_discount));
     const priceBeforeVoucher = booking.price_before_voucher !== undefined && booking.price_before_voucher !== null
-      ? parseFloat(booking.price_before_voucher)
+      ? numberOrZero(booking.price_before_voucher)
       : (customerTotal !== null ? customerTotal + voucherDiscount : null);
-    const discount = booking.discount_amount !== undefined && booking.discount_amount !== null
-      ? parseFloat(booking.discount_amount)
-      : (priceBeforeVoucher !== null && supplierCost !== null ? Math.max(0, supplierCost - priceBeforeVoucher) : null);
+    const explicitDiscount = numberOrNull(booking.discount_amount);
+    const discount = explicitDiscount !== null
+      ? Math.max(0, explicitDiscount)
+      : (priceBeforeVoucher !== null && supplierCost !== null ? Math.max(0, supplierCost - priceBeforeVoucher) : 0);
 
-    const baseFare = booking.base_fare !== undefined && booking.base_fare !== null ? parseFloat(booking.base_fare) : supplierCost;
-    const taxes = booking.taxes !== undefined && booking.taxes !== null ? parseFloat(booking.taxes) : 45.00;
-    const serviceFee = booking.service_fee !== undefined && booking.service_fee !== null ? parseFloat(booking.service_fee) : 15.00;
-    const margin = (customerTotal !== null && supplierCost !== null) ? (customerTotal - supplierCost) : null;
+    // Never invent fare components. If the supplier did not provide a breakdown,
+    // expose the known supplier total as baseFare and leave unknown components at 0.
+    const baseFare = numberOrNull(booking.base_fare) ?? supplierCost ?? customerTotal ?? 0;
+    const taxes = numberOrNull(booking.taxes) ?? 0;
+    const serviceFee = numberOrNull(booking.service_fee) ?? 0;
+    const margin = customerTotal !== null && supplierCost !== null ? customerTotal - supplierCost : null;
     const currency = (booking.currency || 'USD').toUpperCase();
 
-    const authorizedAmount = booking.authorized_amount !== undefined && booking.authorized_amount !== null
-      ? parseFloat(booking.authorized_amount)
-      : (booking.authorized_amount ?? (booking.authorization?.authorizedAmount ?? customerTotal));
+    const explicitAuthorizedAmount = numberOrNull(booking.authorized_amount ?? booking.authorization?.authorizedAmount);
+    const authorizedAmount = explicitAuthorizedAmount !== null
+      ? explicitAuthorizedAmount
+      : (hasAuthorization(booking) ? customerTotal : null);
 
-    const isPaid = (booking.payment_status || '').toLowerCase() === 'paid' || (paymentRecord.payment_status || '').toLowerCase() === 'paid';
-    const isRefunded = (booking.payment_status || '').toLowerCase() === 'refunded' || (paymentRecord.payment_status || '').toLowerCase() === 'refunded';
+    const isPaid = String(booking.payment_status || paymentRecord.payment_status || '').toUpperCase() === 'PAID';
+    const isRefunded = String(booking.payment_status || paymentRecord.payment_status || '').toUpperCase() === 'REFUNDED';
 
-    const paidAmount = booking.paid_amount !== undefined && booking.paid_amount !== null
-      ? parseFloat(booking.paid_amount)
-      : (paymentRecord.payment_amount ? parseFloat(paymentRecord.payment_amount) : (isPaid ? customerTotal : null));
-
-    const refundedAmount = booking.refund_amount !== undefined && booking.refund_amount !== null
-      ? parseFloat(booking.refund_amount)
-      : (paymentRecord.refund_amount ? parseFloat(paymentRecord.refund_amount) : (isRefunded ? customerTotal : 0));
+    const paidAmount = numberOrNull(booking.paid_amount)
+      ?? numberOrNull(paymentRecord.paid_amount)
+      ?? (isPaid ? (numberOrNull(paymentRecord.payment_amount) ?? customerTotal) : null);
+    const refundedAmount = numberOrNull(booking.refund_amount)
+      ?? numberOrNull(paymentRecord.refund_amount)
+      ?? (isRefunded ? customerTotal : 0);
 
     const pricing = {
       baseFare,
@@ -132,44 +157,49 @@ export const bookingMapper = {
       customerPrice: customerTotal ?? 0,
       supplierPrice: supplierCost ?? 0,
       originalApiPrice: supplierCost ?? 0,
-      discountPercent: typeof booking.discount_percent === 'number' ? booking.discount_percent : 10,
-      discountAmount: discount ?? 0,
+      discountPercent: resolveDiscountPercent(booking.discount_percent, 10),
+      discountAmount: discount,
       voucherId: booking.voucher_id || null,
       voucherCode: booking.voucher_code || null,
       voucherDiscount,
       priceBeforeVoucher,
-      minimumPayableFloor: booking.minimum_payable_floor !== undefined && booking.minimum_payable_floor !== null
-        ? parseFloat(booking.minimum_payable_floor)
-        : null,
+      minimumPayableFloor: numberOrNull(booking.minimum_payable_floor),
       priceCheckedAt: booking.price_checked_at || booking.created_at
     };
 
     const authorization = {
       authorizedAmount,
-      status: booking.authorization_status || (booking.authorization_email_sent_at ? 'AWAITING_PASSENGER' : 'NOT_SENT'),
+      status: booking.authorization_status || (booking.authorization_email_sent_at ? 'AWAITING_PASSENGER' : 'NOT_CREATED'),
       emailSentAt: booking.authorization_email_sent_at || null,
       token: booking.authorization_token || null
     };
 
     const paymentModel = {
-      provider: paymentRecord.payment_provider || booking.payment_provider || 'stripe',
+      provider: paymentRecord.payment_provider || booking.payment_provider || null,
       stripeSessionId: paymentRecord.stripe_session_id || null,
       stripePaymentId: paymentRecord.stripe_payment_id || null,
-      paymentAmount: parseFloat(paymentRecord.payment_amount || customerTotal || 0) || 0,
-      paymentStatus: (booking.payment_status || paymentRecord.payment_status || 'PENDING').toUpperCase(),
-      status: (booking.payment_status || paymentRecord.payment_status || 'PENDING').toUpperCase(),
+      paymentAmount: numberOrNull(paymentRecord.payment_amount) ?? customerTotal ?? 0,
+      paymentStatus: String(booking.payment_status || paymentRecord.payment_status || 'PENDING').toUpperCase(),
+      status: String(booking.payment_status || paymentRecord.payment_status || 'PENDING').toUpperCase(),
       paymentDate: paymentRecord.payment_date || booking.paid_at || null,
       paidAmount,
       refundedAmount,
-      transactionReference: booking.transaction_reference || booking.provider_payment_id || paymentRecord.stripe_payment_id || null
+      transactionReference: booking.transaction_reference || booking.provider_payment_id || paymentRecord.provider_payment_id || paymentRecord.stripe_payment_id || null
     };
+
+    const cardBrand = pm.card_brand || booking.card_brand || paymentRecord.card_brand || null;
+    const cardLast4 = pm.card_last4 || booking.card_last4 || paymentRecord.card_last4 || null;
+    const cardExpMonth = pm.card_exp_month || booking.card_exp_month || paymentRecord.card_exp_month || null;
+    const cardExpYear = pm.card_exp_year || booking.card_exp_year || paymentRecord.card_exp_year || null;
+    const cardExpDate = cardExpMonth && cardExpYear ? `${cardExpMonth}/${cardExpYear}` : (booking.card_exp_date || paymentRecord.card_exp_date || null);
+    const cardholderName = pm.cardholder_name || booking.cardholder_name || paymentRecord.cardholder_name || booking.passenger_name || null;
 
     return {
       id: booking.id,
       confirmationCode: booking.confirmation_code,
       confirmation_code: booking.confirmation_code,
       bookingReference: booking.confirmation_code,
-      transactionReference: booking.transaction_reference || booking.provider_payment_id || null,
+      transactionReference: paymentModel.transactionReference,
       customer: {
         name: booking.passenger_name,
         email: booking.email,
@@ -180,13 +210,13 @@ export const bookingMapper = {
       email: booking.email,
       phone: booking.phone,
       amount: customerTotal ?? 0,
-      currency: booking.currency || 'USD',
+      currency,
       voucher_id: booking.voucher_id || null,
       voucher_code: booking.voucher_code || null,
       voucher_discount: voucherDiscount,
       price_before_voucher: priceBeforeVoucher,
       minimum_payable_floor: booking.minimum_payable_floor ?? null,
-      
+
       travellers: travellers.map(t => ({
         id: t.id,
         role: t.role,
@@ -208,16 +238,17 @@ export const bookingMapper = {
       flights: flights || [],
       itinerary_segments: flights || [],
       outbound_segments: (flights || []).filter(f => f.leg === 'outbound'),
-      
+      return_segments: (flights || []).filter(f => f.leg === 'return'),
+
       pricing,
       authorization,
       payment: paymentModel,
       contacts: contacts || [],
       payments: payments || [],
-      
+
       bookingStatus: booking.status,
       status: booking.status,
-      paymentStatus: booking.payment_status,
+      paymentStatus: String(booking.payment_status || 'PENDING').toUpperCase(),
       internalNotes: booking.internal_notes,
       airline_code: booking.airline_code,
       airline_name: booking.airline_name,
@@ -238,30 +269,22 @@ export const bookingMapper = {
       ticketNotes: booking.ticket_notes,
       supplierConfirmation: booking.supplier_confirmation,
       cardReference: {
-        cardBrand: pm.card_brand || booking.card_brand || paymentRecord.card_brand || null,
-        cardLast4: pm.card_last4 || booking.card_last4 || paymentRecord.card_last4 || null,
-        cardExpMonth: pm.card_exp_month || booking.card_exp_month || paymentRecord.card_exp_month || null,
-        cardExpYear: pm.card_exp_year || booking.card_exp_year || paymentRecord.card_exp_year || null,
-        cardExpDate: (pm.card_exp_month && pm.card_exp_year)
-          ? `${pm.card_exp_month}/${pm.card_exp_year}`
-          : (booking.card_exp_date || paymentRecord.card_exp_date || null),
-        cardholderName: pm.cardholder_name || booking.cardholder_name || paymentRecord.cardholder_name || booking.passenger_name || null,
+        cardBrand,
+        cardLast4,
+        cardExpMonth,
+        cardExpYear,
+        cardExpDate,
+        cardholderName,
         billingPhone: pm.billing_phone || booking.billing_phone || booking.phone || null,
         billingAddress: pm.billing_address_line1 || booking.billing_address || null
       },
       billingDetails: {
-        cardholderName: pm.cardholder_name || booking.cardholder_name || paymentRecord.cardholder_name || booking.passenger_name || null,
-        cardBrand: pm.card_brand || booking.card_brand || paymentRecord.card_brand || null,
-        cardLast4: pm.card_last4 || booking.card_last4 || paymentRecord.card_last4 || null,
-        cardExpMonth: pm.card_exp_month || booking.card_exp_month || paymentRecord.card_exp_month || null,
-        cardExpYear: pm.card_exp_year || booking.card_exp_year || paymentRecord.card_exp_year || null,
-        maskedCard: (() => {
-          const brand = pm.card_brand || booking.card_brand || paymentRecord.card_brand;
-          const last4 = pm.card_last4 || booking.card_last4 || paymentRecord.card_last4;
-          if (brand && last4) return `${brand} •••• ${last4}`;
-          if (last4) return `Card ending ${last4}`;
-          return null;
-        })(),
+        cardholderName,
+        cardBrand,
+        cardLast4,
+        cardExpMonth,
+        cardExpYear,
+        maskedCard: cardLast4 ? (cardBrand ? `${cardBrand} •••• ${cardLast4}` : `Card ending ${cardLast4}`) : null,
         billingEmail: pm.billing_email || null,
         billingPhone: pm.billing_phone || booking.billing_phone || booking.phone || null,
         addressLine1: pm.billing_address_line1 || null,
@@ -270,17 +293,15 @@ export const bookingMapper = {
         stateProvince: pm.billing_state || null,
         postalCode: pm.billing_postal_code || null,
         country: pm.billing_country || null,
-        paymentMethodType: pm.payment_provider || 'card',
+        paymentMethodType: pm.payment_provider || null,
         paymentMethodToken: pm.provider_payment_method_id || null,
-        transactionReference: booking.transaction_reference || paymentRecord.provider_payment_id || null,
+        transactionReference: paymentModel.transactionReference,
         createdAt: pm.created_at || null,
         updatedAt: pm.updated_at || null
       },
-      cardBrand: pm.card_brand || booking.card_brand || paymentRecord.card_brand || null,
-      cardLast4: pm.card_last4 || booking.card_last4 || paymentRecord.card_last4 || null,
-      cardExpDate: (pm.card_exp_month && pm.card_exp_year)
-        ? `${pm.card_exp_month}/${pm.card_exp_year}`
-        : (booking.card_exp_date || paymentRecord.card_exp_date || null),
+      cardBrand,
+      cardLast4,
+      cardExpDate,
       paymentMethod: pm && pm.id ? pm : null,
       createdAt: booking.created_at,
       updatedAt: booking.updated_at,
@@ -289,79 +310,78 @@ export const bookingMapper = {
     };
   },
 
-  toSummaryList: (bookings) => {
-    return bookings.map(b => {
-      const customerPrice = parseFloat(b.customer_price || b.total_amount) || 0;
-      const supplierPrice = parseFloat(b.supplier_price || b.original_api_price || customerPrice) || 0;
-      const voucherDiscount = Math.max(0, parseFloat(b.voucher_discount) || 0);
-      const priceBeforeVoucher = parseFloat(b.price_before_voucher) || (customerPrice + voucherDiscount);
-      const discountAmount = parseFloat(b.discount_amount) || Math.max(0, supplierPrice - priceBeforeVoucher);
-      const currency = (b.currency || 'USD').toUpperCase();
-      return {
-        id: b.id,
-        confirmationCode: b.confirmation_code,
-        bookingReference: b.confirmation_code,
-        passenger_name: b.passenger_name,
-        customerName: b.passenger_name,
-        email: b.email,
-        phone: b.phone,
-        amount: customerPrice,
-        customer_price: customerPrice,
-        supplier_price: supplierPrice,
-        discount_amount: discountAmount,
-        discount_percent: typeof b.discount_percent === 'number' ? b.discount_percent : 10,
-        voucher_id: b.voucher_id || null,
-        voucher_code: b.voucher_code || null,
-        voucher_discount: voucherDiscount,
-        price_before_voucher: priceBeforeVoucher,
-        minimum_payable_floor: b.minimum_payable_floor ?? null,
-        total_amount: customerPrice,
-        currency,
-        status: b.status,
-        bookingStatus: b.status,
-        paymentStatus: b.payment_status,
-        pricing: {
-          baseFare: supplierPrice,
-          taxes: 45.00,
-          serviceFee: 15.00,
-          discount: discountAmount,
-          customerTotal: customerPrice,
-          supplierCost: supplierPrice,
-          voucherCode: b.voucher_code || null,
-          voucherDiscount,
-          priceBeforeVoucher,
-          minimumPayableFloor: b.minimum_payable_floor ?? null,
-          margin: customerPrice - supplierPrice,
-          currency
-        },
-        authorization: {
-          authorizedAmount: parseFloat(b.authorized_amount ?? b.customer_price ?? b.total_amount ?? 0) || customerPrice
-        },
-        payment: {
-          paidAmount: (b.payment_status || '').toLowerCase() === 'paid' ? customerPrice : null,
-          refundedAmount: (b.payment_status || '').toLowerCase() === 'refunded' ? customerPrice : 0
-        },
-        airline_code: b.airline_code,
-        airline_name: b.airline_name,
-        airline_logo_url: b.airline_logo_url,
-        airline_confirmation_number: b.airline_confirmation_number,
-        airline_pnr: b.airline_confirmation_number,
-        pnr: b.airline_confirmation_number,
-        ticket_number: b.ticket_number,
-        ticket_issued_at: b.ticket_issued_at,
-        ticket_notes: b.ticket_notes,
-        supplier_confirmation: b.supplier_confirmation,
-        airlineCode: b.airline_code,
-        airlineName: b.airline_name,
-        airlineLogoUrl: b.airline_logo_url,
-        airlineConfirmationNumber: b.airline_confirmation_number,
-        ticketNumber: b.ticket_number,
-        ticketIssuedAt: b.ticket_issued_at,
-        created_at: b.created_at,
-        updated_at: b.updated_at
-      };
-    });
-  }
+  toSummaryList: (bookings) => bookings.map(b => {
+    const customerPrice = numberOrZero(b.customer_price ?? b.total_amount);
+    const supplierPrice = numberOrNull(b.supplier_price ?? b.original_api_price) ?? customerPrice;
+    const voucherDiscount = Math.max(0, numberOrZero(b.voucher_discount));
+    const priceBeforeVoucher = numberOrNull(b.price_before_voucher) ?? (customerPrice + voucherDiscount);
+    const explicitDiscount = numberOrNull(b.discount_amount);
+    const discountAmount = Math.max(0, explicitDiscount ?? Math.max(0, supplierPrice - priceBeforeVoucher));
+    const currency = (b.currency || 'USD').toUpperCase();
+    const authorizedAmount = numberOrNull(b.authorized_amount) ?? (hasAuthorization(b) ? customerPrice : null);
+
+    return {
+      id: b.id,
+      confirmationCode: b.confirmation_code,
+      bookingReference: b.confirmation_code,
+      passenger_name: b.passenger_name,
+      customerName: b.passenger_name,
+      email: b.email,
+      phone: b.phone,
+      amount: customerPrice,
+      customer_price: customerPrice,
+      supplier_price: supplierPrice,
+      discount_amount: discountAmount,
+      discount_percent: resolveDiscountPercent(b.discount_percent, 10),
+      voucher_id: b.voucher_id || null,
+      voucher_code: b.voucher_code || null,
+      voucher_discount: voucherDiscount,
+      price_before_voucher: priceBeforeVoucher,
+      minimum_payable_floor: b.minimum_payable_floor ?? null,
+      total_amount: customerPrice,
+      currency,
+      status: b.status,
+      bookingStatus: b.status,
+      paymentStatus: String(b.payment_status || 'PENDING').toUpperCase(),
+      pricing: {
+        baseFare: numberOrNull(b.base_fare) ?? supplierPrice,
+        taxes: numberOrNull(b.taxes) ?? 0,
+        serviceFee: numberOrNull(b.service_fee) ?? 0,
+        discount: discountAmount,
+        customerTotal: customerPrice,
+        supplierCost: supplierPrice,
+        voucherCode: b.voucher_code || null,
+        voucherDiscount,
+        priceBeforeVoucher,
+        minimumPayableFloor: b.minimum_payable_floor ?? null,
+        margin: customerPrice - supplierPrice,
+        currency
+      },
+      authorization: { authorizedAmount },
+      payment: {
+        paidAmount: String(b.payment_status || '').toUpperCase() === 'PAID' ? customerPrice : null,
+        refundedAmount: String(b.payment_status || '').toUpperCase() === 'REFUNDED' ? customerPrice : 0
+      },
+      airline_code: b.airline_code,
+      airline_name: b.airline_name,
+      airline_logo_url: b.airline_logo_url,
+      airline_confirmation_number: b.airline_confirmation_number,
+      airline_pnr: b.airline_confirmation_number,
+      pnr: b.airline_confirmation_number,
+      ticket_number: b.ticket_number,
+      ticket_issued_at: b.ticket_issued_at,
+      ticket_notes: b.ticket_notes,
+      supplier_confirmation: b.supplier_confirmation,
+      airlineCode: b.airline_code,
+      airlineName: b.airline_name,
+      airlineLogoUrl: b.airline_logo_url,
+      airlineConfirmationNumber: b.airline_confirmation_number,
+      ticketNumber: b.ticket_number,
+      ticketIssuedAt: b.ticket_issued_at,
+      created_at: b.created_at,
+      updated_at: b.updated_at
+    };
+  })
 };
 
 export default bookingMapper;

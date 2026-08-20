@@ -4,38 +4,52 @@ import { calculateBookingTotal } from '../../shared/utils/pricing.helper.mjs';
 
 // Predefined catalog for pricing verification
 export const CONSULTING_PLANS = {
-  'express': { name: 'Express Logistics Plan', price: 150.00 },
-  'premium': { name: 'Premium Logistics Plan', price: 250.00 },
-  'first': { name: 'First Class Premium Plan', price: 500.00 }
+  express: { name: 'Express Logistics Plan', price: 150.00 },
+  premium: { name: 'Premium Logistics Plan', price: 250.00 },
+  first: { name: 'First Class Premium Plan', price: 500.00 }
 };
+
+function cleanCurrency(value) {
+  const currency = String(value || 'USD').trim().toUpperCase();
+  return /^[A-Z]{3}$/.test(currency) ? currency : 'USD';
+}
+
+function cleanMetadataValue(value, max = 200) {
+  return String(value || '').trim().substring(0, max);
+}
 
 export const paymentService = {
   getConfig: () => {
+    const key = String(env.stripePublishableKey || '').trim();
+    const enabled = /^pk_(test|live)_/.test(key);
     return {
-      publishableKey: env.stripePublishableKey || 'pk_test_placeholder'
+      success: true,
+      enabled,
+      publishableKey: enabled ? key : null,
+      mockMode: env.stripeMockMode || !env.stripeSecretKey
     };
   },
 
   createSession: async (payload, hostOrigin) => {
     const { type, email, amount, planName } = payload;
+    const normalizedType = String(type || '').trim().toLowerCase();
+    const normalizedEmail = String(email || '').trim().toLowerCase();
 
-    if (!type || !email) {
-      throw new Error('Missing required checkout parameters: type and email');
+    if (!['booking', 'consulting'].includes(normalizedType) || !normalizedEmail) {
+      throw new Error('Missing or invalid checkout parameters: type and email are required.');
     }
 
-    let resolvedAmount = parseFloat(amount);
-    
-    // Server-calculated pricing validation using pricing.helper.mjs
-    if (type === 'consulting') {
+    let resolvedAmount = Number.parseFloat(amount);
+    const currency = cleanCurrency(payload.currency);
+
+    if (normalizedType === 'consulting') {
       const planKey = String(planName || '').toLowerCase().split(' ')[0];
       if (CONSULTING_PLANS[planKey]) {
         resolvedAmount = CONSULTING_PLANS[planKey].price;
-      } else {
-        if (isNaN(resolvedAmount) || resolvedAmount <= 0) {
-          throw new Error('Invalid payment amount calculated by server');
-        }
+      } else if (!Number.isFinite(resolvedAmount) || resolvedAmount <= 0) {
+        throw new Error('Invalid payment amount calculated by server');
       }
-    } else if (type === 'booking') {
+    } else {
       if (payload.flight?.isMock || payload.returnFlight?.isMock || payload.isMock) {
         const err = new Error('Offline / sample flight routes cannot be booked online. Please contact our support team.');
         err.code = 'MOCK_FLIGHT_NOT_BOOKABLE';
@@ -47,76 +61,55 @@ export const paymentService = {
           outboundFlight: payload.flight,
           returnFlight: payload.returnFlight,
           passengersCount: payload.passengersCount || 1,
-          currency: payload.currency || 'USD'
+          currency
         });
         resolvedAmount = pricing.customerPriceNum;
-      } else {
-        resolvedAmount = parseFloat(amount);
       }
 
-      if (isNaN(resolvedAmount) || resolvedAmount <= 0) {
+      if (!Number.isFinite(resolvedAmount) || resolvedAmount <= 0) {
         throw new Error('Invalid booking total amount calculated by server');
       }
     }
 
-    // Set checkout redirect paths
-    const successUrl = `${hostOrigin}/confirmation/success?session_id={CHECKOUT_SESSION_ID}&type=${type}`;
-    const cancelUrl = type === 'booking' 
+    const successUrl = `${hostOrigin}/confirmation/success?session_id={CHECKOUT_SESSION_ID}&type=${normalizedType}`;
+    const cancelUrl = normalizedType === 'booking'
       ? `${hostOrigin}/booking?status=cancelled`
       : `${hostOrigin}/payment?status=cancelled`;
 
-    // Flatten metadata for Stripe (no nested JSON allowed in metadata)
-    const metadata = { type };
-    if (type === 'consulting') {
-      metadata.name = payload.name || '';
-      metadata.email = email;
-      metadata.phone = payload.phone || '';
-      metadata.origin = payload.origin || '';
-      metadata.destination = payload.destination || '';
-      metadata.notes = (payload.notes || '').substring(0, 400);
-      metadata.plan_name = planName || '';
-    } else if (type === 'booking') {
-      const { passenger, flight } = payload;
-      if (!passenger || !flight) {
-        throw new Error('Passenger and flight details are required for booking payment');
+    // Payment-provider metadata must stay minimal. Passport, DOB, nationality,
+    // emergency contacts, billing secrets and other travel-document data belong
+    // in FareTransit only and must never be copied to Stripe metadata.
+    const metadata = { type: normalizedType };
+    if (normalizedType === 'consulting') {
+      metadata.customer_name = cleanMetadataValue(payload.name, 100);
+      metadata.plan_name = cleanMetadataValue(planName, 100);
+      metadata.origin = cleanMetadataValue(payload.origin, 50);
+      metadata.destination = cleanMetadataValue(payload.destination, 50);
+    } else {
+      const { passenger = {}, flight = {} } = payload;
+      if (!flight || Object.keys(flight).length === 0) {
+        throw new Error('Flight details are required for booking payment');
       }
-
-      // Customer info
-      metadata.firstName = passenger.firstName || '';
-      metadata.lastName = passenger.lastName || '';
-      metadata.email = passenger.email || '';
-      metadata.phone = passenger.phone || '';
-      metadata.dateOfBirth = passenger.dateOfBirth || '';
-      metadata.gender = passenger.gender || '';
-      metadata.nationality = passenger.nationality || '';
-      metadata.passportNumber = passenger.passportNumber || '';
-      metadata.passportExpiry = passenger.passportExpiry || '';
-      metadata.emergencyName = passenger.emergencyName || '';
-      metadata.emergencyPhone = passenger.emergencyPhone || '';
-      metadata.emergencyRelationship = passenger.emergencyRelationship || '';
-
-      // Flight summary info
-      metadata.flight_airline = flight.airline || '';
-      metadata.flight_number = flight.flightNumber || '';
-      metadata.flight_route = `${flight.departure?.airport || ''} to ${flight.arrival?.airport || ''}`;
-      metadata.flight_dep_time = `${flight.departure?.date || ''} ${flight.departure?.time || ''}`;
-      metadata.flight_arr_time = `${flight.arrival?.date || ''} ${flight.arrival?.time || ''}`;
-      metadata.flight_class = flight.class || 'Economy';
-      metadata.flight_stops = (flight.stops || 0).toString();
+      metadata.booking_reference = cleanMetadataValue(payload.bookingId || payload.bookingReference || payload.clientRequestId, 100);
+      metadata.customer_name = cleanMetadataValue([passenger.firstName, passenger.lastName].filter(Boolean).join(' '), 100);
+      metadata.flight_number = cleanMetadataValue(flight.flightNumber, 30);
+      metadata.flight_route = cleanMetadataValue(`${flight.departure?.airport || ''} to ${flight.arrival?.airport || ''}`, 50);
+      metadata.travel_date = cleanMetadataValue(flight.departure?.date, 30);
     }
 
-    const lineItemName = type === 'booking'
+    const lineItemName = normalizedType === 'booking'
       ? `Flight Ticket: ${payload.flight?.departure?.airport || 'Origin'} to ${payload.flight?.arrival?.airport || 'Destination'}`
       : (planName || 'Travel Logistics Consulting Fee');
 
-    const lineItemDescription = type === 'booking'
+    const lineItemDescription = normalizedType === 'booking'
       ? `Outbound Flight ${payload.flight?.flightNumber || ''} (${payload.flight?.class || 'Economy'})`
-      : 'Urgent travel planning and itinerary support services';
+      : 'Travel planning and itinerary support services';
 
     return stripeService.createCheckoutSession({
-      type,
-      email,
+      type: normalizedType,
+      email: normalizedEmail,
       amount: resolvedAmount,
+      currency,
       metadata,
       successUrl,
       cancelUrl,
@@ -125,9 +118,7 @@ export const paymentService = {
     });
   },
 
-  getStatus: async (sessionId) => {
-    return stripeService.getSessionStatus(sessionId);
-  }
+  getStatus: async (sessionId) => stripeService.getSessionStatus(sessionId)
 };
 
 export default paymentService;

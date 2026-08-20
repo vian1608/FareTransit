@@ -2,9 +2,8 @@ import env from '../config/env.mjs';
 import logger from '../config/logger.mjs';
 
 const DEFAULT_TIMEOUT_MS = 25000;
-const CATALOG_CACHE_TTL_MS = 12 * 60 * 60 * 1000; // 12 hours for static reference catalogs
+const CATALOG_CACHE_TTL_MS = 12 * 60 * 60 * 1000;
 
-/** Simple in-memory cache with TTL for catalog reference data */
 class CatalogCache {
   constructor() {
     this.cache = new Map();
@@ -30,14 +29,7 @@ class CatalogCache {
 
 const catalogCache = new CatalogCache();
 
-/**
- * Booking.com Demand API v3.1 Client
- * Strictly server-side implementation. Never exposes API Tokens or Affiliate IDs to client.
- */
 export const bookingDemandApiClient = {
-  /**
-   * Helper to perform HTTP requests to Booking.com Demand API v3.1
-   */
   request: async (endpoint, options = {}) => {
     const {
       method = 'POST',
@@ -69,12 +61,8 @@ export const bookingDemandApiClient = {
       'Accept': 'application/json'
     };
 
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-    if (affiliateId) {
-      headers['X-Affiliate-Id'] = affiliateId;
-    }
+    if (token) headers.Authorization = `Bearer ${token}`;
+    if (affiliateId) headers['X-Affiliate-Id'] = affiliateId;
 
     let lastError = null;
     let attempt = 0;
@@ -110,10 +98,9 @@ export const bookingDemandApiClient = {
         if (!res.ok) {
           const status = res.status;
           const errorMessage = data?.message || data?.error?.message || data?.errors?.[0]?.message || `Booking.com API error (${status})`;
-          
+
           logger.warn(`[BookingDemandApi] HTTP ${status} for ${endpoint} (request_id: ${requestId}): ${errorMessage}`);
 
-          // Retry on 5xx transient server errors
           if (status >= 500 && attempt <= retryCount) {
             await new Promise(r => setTimeout(r, 500 * attempt));
             continue;
@@ -131,7 +118,6 @@ export const bookingDemandApiClient = {
           requestId,
           data
         };
-
       } catch (err) {
         clearTimeout(timeoutId);
         lastError = err;
@@ -148,10 +134,7 @@ export const bookingDemandApiClient = {
           }
         }
 
-        if (err.statusCode && err.statusCode < 500) {
-          // Client errors (4xx) should not be retried endlessly
-          break;
-        }
+        if (err.statusCode && err.statusCode < 500) break;
 
         if (attempt <= retryCount) {
           logger.warn(`[BookingDemandApi] Exception on attempt ${attempt} for ${endpoint}: ${err.message}. Retrying...`);
@@ -160,7 +143,6 @@ export const bookingDemandApiClient = {
       }
     }
 
-    // Mask sensitive secrets if present in error message
     let safeMessage = lastError?.message || 'Booking.com API request failed.';
     if (token) safeMessage = safeMessage.replace(token, '[REDACTED]');
     if (affiliateId) safeMessage = safeMessage.replace(affiliateId, '[REDACTED]');
@@ -171,10 +153,6 @@ export const bookingDemandApiClient = {
     throw finalErr;
   },
 
-  /**
-   * Search Car Rentals
-   * POST /cars/search
-   */
   searchCars: async (payload) => {
     return bookingDemandApiClient.request('/cars/search', {
       method: 'POST',
@@ -182,10 +160,6 @@ export const bookingDemandApiClient = {
     });
   },
 
-  /**
-   * Get Car Details Catalog
-   * POST /cars/details
-   */
   getCarDetails: async (payload) => {
     const cacheKey = `cars_details_${JSON.stringify(payload)}`;
     const cached = catalogCache.get(cacheKey);
@@ -196,16 +170,10 @@ export const bookingDemandApiClient = {
       body: payload
     });
 
-    if (result.data) {
-      catalogCache.set(cacheKey, result.data);
-    }
+    if (result.data) catalogCache.set(cacheKey, result.data);
     return result;
   },
 
-  /**
-   * Get Depots
-   * POST /cars/depots
-   */
   getDepots: async (payload) => {
     const cacheKey = `cars_depots_${JSON.stringify(payload)}`;
     const cached = catalogCache.get(cacheKey);
@@ -216,16 +184,10 @@ export const bookingDemandApiClient = {
       body: payload
     });
 
-    if (result.data) {
-      catalogCache.set(cacheKey, result.data);
-    }
+    if (result.data) catalogCache.set(cacheKey, result.data);
     return result;
   },
 
-  /**
-   * Get Suppliers
-   * POST /cars/suppliers
-   */
   getSuppliers: async (payload) => {
     const cacheKey = `cars_suppliers_${JSON.stringify(payload)}`;
     const cached = catalogCache.get(cacheKey);
@@ -236,16 +198,10 @@ export const bookingDemandApiClient = {
       body: payload
     });
 
-    if (result.data) {
-      catalogCache.set(cacheKey, result.data);
-    }
+    if (result.data) catalogCache.set(cacheKey, result.data);
     return result;
   },
 
-  /**
-   * Get Depot Review Scores
-   * POST /cars/depots/reviews/scores
-   */
   getDepotScores: async (payload) => {
     const cacheKey = `cars_depot_scores_${JSON.stringify(payload)}`;
     const cached = catalogCache.get(cacheKey);
@@ -256,16 +212,10 @@ export const bookingDemandApiClient = {
       body: payload
     });
 
-    if (result.data) {
-      catalogCache.set(cacheKey, result.data);
-    }
+    if (result.data) catalogCache.set(cacheKey, result.data);
     return result;
   },
 
-  /**
-   * Get Car Constants / Translated Labels
-   * POST /cars/constants
-   */
   getCarConstants: async (payload = {}) => {
     const cacheKey = `cars_constants_${JSON.stringify(payload)}`;
     const cached = catalogCache.get(cacheKey);
@@ -276,31 +226,23 @@ export const bookingDemandApiClient = {
       body: payload
     });
 
-    if (result.data) {
-      catalogCache.set(cacheKey, result.data);
-    }
+    if (result.data) catalogCache.set(cacheKey, result.data);
     return result;
   },
 
-  /**
-   * Common Locations: Airports
-   * GET /common/locations/airports
-   */
-  getAirports: async (query) => {
+  // Booking.com Demand API v3.1 common location catalogs are POST endpoints.
+  // An empty request body returns the catalog; filters may be supplied by callers.
+  getAirports: async (payload = {}) => {
     return bookingDemandApiClient.request('/common/locations/airports', {
-      method: 'GET',
-      queryParams: { q: query }
+      method: 'POST',
+      body: payload
     });
   },
 
-  /**
-   * Common Locations: Cities
-   * GET /common/locations/cities
-   */
-  getCities: async (query) => {
+  getCities: async (payload = {}) => {
     return bookingDemandApiClient.request('/common/locations/cities', {
-      method: 'GET',
-      queryParams: { q: query }
+      method: 'POST',
+      body: payload
     });
   }
 };
