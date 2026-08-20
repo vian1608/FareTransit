@@ -6,6 +6,7 @@ import adminBackupController from './admin.backup.controller.mjs';
 import adminBulkDeleteController from './admin.bulk-delete.controller.mjs';
 import adminPassengerController from './admin.passenger.controller.mjs';
 import adminBookingMutationController from './admin.booking-mutation.controller.mjs';
+import adminEmailManualController from './admin.email-manual.controller.mjs';
 import voucherController from '../vouchers/voucher.controller.mjs';
 import '../bookings/booking.repository.runtime-repair.mjs';
 import '../bookings/booking.repository.egress-hardening.mjs';
@@ -40,7 +41,7 @@ router.get('/bookings', adminReadRateLimiter, authenticate, authorize(['admin'])
 router.get('/bookings/by-request/:clientRequestId', adminReadRateLimiter, authenticate, authorize(['admin']), adminController.getBookingByClientRequestId);
 router.post('/bookings', adminWriteRateLimiter, authenticate, authorize(['admin']), adminController.createBooking);
 router.post('/bookings/:id/email-preview', adminReadRateLimiter, authenticate, authorize(['admin']), adminController.emailPreview);
-router.post('/bookings/:id/email-manual-sent', adminWriteRateLimiter, authenticate, authorize(['admin']), adminController.markEmailManuallySent);
+router.post('/bookings/:id/email-manual-sent', adminWriteRateLimiter, authenticate, authorize(['admin']), adminEmailManualController.markEmailManuallySent);
 router.get('/bookings/:id', adminReadRateLimiter, authenticate, authorize(['admin']), adminController.getBookingDetail);
 router.delete('/bookings/:id', adminWriteRateLimiter, authenticate, authorize(['admin']), adminRepairController.deleteBooking);
 
