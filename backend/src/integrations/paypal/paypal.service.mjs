@@ -5,6 +5,12 @@ import logger from '../../config/logger.mjs';
 let cachedAccessToken = null;
 let tokenExpiryTime = 0;
 
+function isProductionDeployment() {
+  const vercelEnv = String(process.env.VERCEL_ENV || '').toLowerCase();
+  if (vercelEnv) return vercelEnv === 'production';
+  return String(process.env.NODE_ENV || 'development').toLowerCase() === 'production';
+}
+
 export const paypalService = {
   getApiBaseUrl: () => {
     const mode = (env.paypalEnv || process.env.PAYPAL_ENV || 'sandbox').toLowerCase();
@@ -14,7 +20,6 @@ export const paypalService = {
   },
 
   generatePayPalAccessToken: async () => {
-    // Return cached token if valid (with 60-second safety buffer)
     if (cachedAccessToken && Date.now() < tokenExpiryTime - 60000) {
       return cachedAccessToken;
     }
@@ -35,7 +40,7 @@ export const paypalService = {
         'grant_type=client_credentials',
         {
           headers: {
-            'Authorization': `Basic ${auth}`,
+            Authorization: `Basic ${auth}`,
             'Content-Type': 'application/x-www-form-urlencoded',
           },
           timeout: 10000,
@@ -45,15 +50,14 @@ export const paypalService = {
       const { access_token, expires_in } = response.data;
       cachedAccessToken = access_token;
       tokenExpiryTime = Date.now() + (expires_in || 3600) * 1000;
-
       return cachedAccessToken;
     } catch (error) {
       const status = error.response?.status;
-      const sanitizeMsg = status === 401 
-        ? 'PayPal authentication failed. Invalid Client ID or Secret.' 
+      const safeMessage = status === 401
+        ? 'PayPal authentication failed. Invalid Client ID or Secret.'
         : (error.response?.data?.error_description || error.message);
-      logger.error(`PayPal OAuth token request failed [${status || 'NETWORK_ERROR'}]: ${sanitizeMsg}`);
-      throw new Error(`PayPal authentication error: ${sanitizeMsg}`);
+      logger.error(`PayPal OAuth token request failed [${status || 'NETWORK_ERROR'}]: ${safeMessage}`);
+      throw new Error(`PayPal authentication error: ${safeMessage}`);
     }
   },
 
@@ -61,8 +65,19 @@ export const paypalService = {
     const accessToken = await paypalService.generatePayPalAccessToken();
     const baseUrl = paypalService.getApiBaseUrl();
 
-    const formattedAmount = typeof amount === 'number' ? amount.toFixed(2) : parseFloat(amount).toFixed(2);
-    const invoiceId = `TFS-INV-${bookingId.substring(0, 8).toUpperCase()}-${Date.now().toString().slice(-4)}`;
+    const numericAmount = Number(amount);
+    if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
+      throw new Error('Invalid PayPal order amount.');
+    }
+    const normalizedCurrency = String(currency || 'USD').trim().toUpperCase();
+    if (!/^[A-Z]{3}$/.test(normalizedCurrency)) {
+      throw new Error('Invalid PayPal order currency.');
+    }
+
+    const formattedAmount = numericAmount.toFixed(2);
+    const bookingFragment = String(bookingId || '').replace(/[^A-Za-z0-9]/g, '').slice(0, 12).toUpperCase() || 'BOOKING';
+    const invoiceSuffix = String(idempotencyKey || Date.now()).replace(/[^A-Za-z0-9]/g, '').slice(-12).toUpperCase();
+    const invoiceId = `FT-INV-${bookingFragment}-${invoiceSuffix}`.slice(0, 127);
 
     const payload = {
       intent: 'CAPTURE',
@@ -71,9 +86,9 @@ export const paypalService = {
           reference_id: bookingId,
           custom_id: bookingId,
           invoice_id: invoiceId,
-          description: 'Final Seat flight booking',
+          description: 'FareTransit flight booking',
           amount: {
-            currency_code: currency.toUpperCase(),
+            currency_code: normalizedCurrency,
             value: formattedAmount,
           },
         },
@@ -81,26 +96,25 @@ export const paypalService = {
     };
 
     const headers = {
-      'Authorization': `Bearer ${accessToken}`,
+      Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
     };
-
-    if (idempotencyKey) {
-      headers['PayPal-Request-Id'] = idempotencyKey;
-    }
+    if (idempotencyKey) headers['PayPal-Request-Id'] = idempotencyKey;
 
     try {
       const response = await axios.post(`${baseUrl}/v2/checkout/orders`, payload, {
         headers,
         timeout: 15000,
       });
-
       return response.data;
     } catch (error) {
       const status = error.response?.status;
       const errorDetail = error.response?.data?.details?.[0]?.description || error.response?.data?.message || error.message;
       logger.error(`PayPal Create Order failed [${status || 'ERROR'}]: ${errorDetail}`);
-      throw new Error(`PayPal order creation failed: ${errorDetail}`);
+      const wrapped = new Error(`PayPal order creation failed: ${errorDetail}`);
+      wrapped.status = status || 502;
+      wrapped.issue = error.response?.data?.details?.[0]?.issue || error.response?.data?.name || 'ORDER_CREATE_FAILED';
+      throw wrapped;
     }
   },
 
@@ -109,31 +123,23 @@ export const paypalService = {
     const baseUrl = paypalService.getApiBaseUrl();
 
     const headers = {
-      'Authorization': `Bearer ${accessToken}`,
+      Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
     };
-
-    if (idempotencyKey) {
-      headers['PayPal-Request-Id'] = idempotencyKey;
-    }
+    if (idempotencyKey) headers['PayPal-Request-Id'] = idempotencyKey;
 
     try {
       const response = await axios.post(
-        `${baseUrl}/v2/checkout/orders/${paypalOrderId}/capture`,
+        `${baseUrl}/v2/checkout/orders/${encodeURIComponent(paypalOrderId)}/capture`,
         {},
-        {
-          headers,
-          timeout: 15000,
-        }
+        { headers, timeout: 15000 }
       );
-
       return response.data;
     } catch (error) {
       const status = error.response?.status;
       const errorData = error.response?.data;
       const issue = errorData?.details?.[0]?.issue || errorData?.name || 'CAPTURE_FAILED';
       const description = errorData?.details?.[0]?.description || errorData?.message || error.message;
-
       logger.error(`PayPal Capture Order failed [${status || 'ERROR'}] [${issue}]: ${description}`);
 
       const errObj = new Error(description);
@@ -144,14 +150,20 @@ export const paypalService = {
   },
 
   verifyWebhookSignature: async ({ headers, rawBody }) => {
-    const accessToken = await paypalService.generatePayPalAccessToken();
-    const baseUrl = paypalService.getApiBaseUrl();
     const webhookId = env.paypalWebhookId || process.env.PAYPAL_WEBHOOK_ID;
 
+    // Never accept unverifiable provider callbacks in production.
     if (!webhookId) {
-      logger.warn('PAYPAL_WEBHOOK_ID not set. Skipping signature verification (dev fallback).');
+      if (isProductionDeployment()) {
+        logger.error('PAYPAL_WEBHOOK_ID is missing in production; rejecting PayPal webhook.');
+        return false;
+      }
+      logger.warn('PAYPAL_WEBHOOK_ID not set; allowing webhook verification bypass outside production only.');
       return true;
     }
+
+    const accessToken = await paypalService.generatePayPalAccessToken();
+    const baseUrl = paypalService.getApiBaseUrl();
 
     let parsedEvent;
     try {
@@ -159,6 +171,15 @@ export const paypalService = {
     } catch {
       return false;
     }
+
+    const requiredHeaders = [
+      'paypal-transmission-id',
+      'paypal-transmission-time',
+      'paypal-cert-url',
+      'paypal-auth-algo',
+      'paypal-transmission-sig'
+    ];
+    if (requiredHeaders.some((name) => !headers?.[name])) return false;
 
     const payload = {
       transmission_id: headers['paypal-transmission-id'],
@@ -176,13 +197,12 @@ export const paypalService = {
         payload,
         {
           headers: {
-            'Authorization': `Bearer ${accessToken}`,
+            Authorization: `Bearer ${accessToken}`,
             'Content-Type': 'application/json',
           },
           timeout: 10000,
         }
       );
-
       return response.data?.verification_status === 'SUCCESS';
     } catch (error) {
       logger.error(`PayPal webhook signature verification failed: ${error.message}`);
