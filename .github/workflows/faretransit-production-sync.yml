@@ -43,7 +43,7 @@ jobs:
           test -d backend/src/modules/hotels
           test -f frontend/src/features/secure-payments/VgsCheckoutCardFields.js
           test -f frontend/src/shared/constants/supportContact.js
-          grep -q 'faretransit.com' frontend/src/shared/constants/supportContact.js
+          grep -R -q 'faretransit.com' frontend/src backend/src api --exclude-dir=node_modules
           if grep -R -n -E 'support@thefinalseat\.com|www\.thefinalseat\.com' frontend/src backend/src api --exclude-dir=node_modules; then
             echo 'Final Seat production identity remains in active FareTransit application files.' >&2
             exit 1
