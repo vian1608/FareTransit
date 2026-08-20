@@ -1,0 +1,160 @@
+name: FareTransit Production Parity Sync
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/faretransit-production-sync.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout FareTransit
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Clone current Final Seat production source
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/finalseat-source
+          git clone --depth 1 --branch master https://github.com/vian1608/thefinalseat.git /tmp/finalseat-source
+
+      - name: Clean-sync application code
+        run: |
+          set -euo pipefail
+          rsync -a --delete \
+            --exclude='.git/' \
+            --exclude='.github/' \
+            --exclude='.DS_Store' \
+            --exclude='vercel.json' \
+            --exclude='backend/data/' \
+            --exclude='backend/backups/' \
+            --exclude='backend/.env*' \
+            --exclude='frontend/.env*' \
+            --exclude='frontend/public/logo/' \
+            --exclude='frontend/public/favicon.png' \
+            --exclude='frontend/public/favicon.svg' \
+            /tmp/finalseat-source/ ./
+
+      - name: Apply FareTransit identity
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          replacements = [
+              ('support@thefinalseat.com', 'support@faretransit.com'),
+              ('www.thefinalseat.com', 'www.faretransit.com'),
+              ('thefinalseat.com', 'faretransit.com'),
+              ('The Final Seat LLC', 'FareTransit LLC'),
+              ('THE FINAL SEAT LLC', 'FARETRANSIT LLC'),
+              ('The Final Seat', 'FareTransit'),
+              ('THE FINAL SEAT', 'FARETRANSIT'),
+              ('TheFinalSeat', 'FareTransit'),
+              ('the-final-seat', 'fare-transit'),
+              ('thefinalseat', 'faretransit'),
+              ('+1 (888) 780-8855', '+1 (213) 965-9727'),
+              ('+1-888-780-8855', '+1-213-965-9727'),
+              ('+18887808855', '+12139659727'),
+              ('888-780-8855', '213-965-9727'),
+              ('5830 E 2nd St, Ste 7000 #34290, Casper, Wyoming 82609 US', '1309 Coffeen Avenue STE 1200, Sheridan, Wyoming 82801 US'),
+              ('5830 E 2nd St, Ste 7000, Casper, Wyoming 82609 US', '1309 Coffeen Avenue STE 1200, Sheridan, Wyoming 82801 US'),
+              ('5830 E 2nd St, Ste 7000 #34290', '1309 Coffeen Avenue STE 1200'),
+              ('5830 E 2nd St, Ste 7000', '1309 Coffeen Avenue STE 1200'),
+              ('Casper, Wyoming 82609', 'Sheridan, Wyoming 82801'),
+              ('Casper, WY 82609', 'Sheridan, WY 82801'),
+              ('"addressLocality": "Casper"', '"addressLocality": "Sheridan"'),
+              ('"postalCode": "82609"', '"postalCode": "82801"'),
+              ('Urgent Travel API is running', 'FareTransit API is running'),
+          ]
+
+          text_suffixes = {'.js','.jsx','.mjs','.cjs','.ts','.tsx','.css','.html','.md','.txt','.xml','.json','.yml','.yaml','.sql'}
+          for path in Path('.').rglob('*'):
+              if not path.is_file() or '.git' in path.parts or '.github' in path.parts:
+                  continue
+              if path.suffix.lower() not in text_suffixes and path.name not in {'.env.example'}:
+                  continue
+              try:
+                  text = path.read_text(encoding='utf-8')
+              except UnicodeDecodeError:
+                  continue
+              original = text
+              for old, new in replacements:
+                  text = text.replace(old, new)
+              if text != original:
+                  path.write_text(text, encoding='utf-8')
+          PY
+
+          cat > frontend/src/shared/constants/supportContact.js <<'EOF'
+          export const SUPPORT_PHONE_TEL = '+12139659727';
+          export const SUPPORT_PHONE_DISPLAY = '+1 (213) 965-9727';
+          export const SUPPORT_PHONE_INTERNATIONAL = '+1 (213) 965-9727';
+          export const SUPPORT_PHONE_SCHEMA = '+1-213-965-9727';
+          export const SUPPORT_PHONE_HREF = `tel:${SUPPORT_PHONE_TEL}`;
+
+          export const BUSINESS_ADDRESS_STREET = '1309 Coffeen Avenue STE 1200';
+          export const BUSINESS_ADDRESS_CITY = 'Sheridan';
+          export const BUSINESS_ADDRESS_STATE = 'Wyoming';
+          export const BUSINESS_ADDRESS_STATE_CODE = 'WY';
+          export const BUSINESS_ADDRESS_ZIP = '82801';
+          export const BUSINESS_ADDRESS_FULL = `${BUSINESS_ADDRESS_STREET}, ${BUSINESS_ADDRESS_CITY}, ${BUSINESS_ADDRESS_STATE} ${BUSINESS_ADDRESS_ZIP} US`;
+          export const BUSINESS_ADDRESS_SHORT = `${BUSINESS_ADDRESS_STREET}, ${BUSINESS_ADDRESS_CITY}, ${BUSINESS_ADDRESS_STATE_CODE} ${BUSINESS_ADDRESS_ZIP}`;
+
+          export const BUSINESS_CONTACT = {
+            phoneDisplay: SUPPORT_PHONE_DISPLAY,
+            phoneInternational: SUPPORT_PHONE_INTERNATIONAL,
+            phoneHref: SUPPORT_PHONE_HREF,
+            phoneSchema: SUPPORT_PHONE_SCHEMA,
+          };
+          export default BUSINESS_CONTACT;
+          EOF
+
+      - name: Verify reservation workflow and payment safety
+        run: |
+          set -euo pipefail
+          test ! -d backend/src/modules/secure-payments
+          test -f frontend/src/features/secure-payments/VgsCheckoutCardFields.js
+          grep -q 'INTERNAL_REFERENCE' frontend/src/features/secure-payments/VgsCheckoutCardFields.js
+          ! grep -q 'window.VGSCollect' frontend/src/features/secure-payments/VgsCheckoutCardFields.js
+          ! grep -q '/secure-payments/' frontend/src/features/secure-payments/VgsCheckoutCardFields.js
+          grep -q 'FLIGHT_SEARCH_CACHE_TTL_MS' backend/src/integrations/serpapi/serpapi.service.mjs
+          grep -q "code: 'MDE'" backend/src/modules/flights/airport-ranker.mjs
+          grep -q 'path="/search"' frontend/src/app/App.js
+          grep -q 'path="/return-flight"' frontend/src/app/App.js
+          grep -q 'path="/booking"' frontend/src/app/App.js
+          grep -q 'path="/payment"' frontend/src/app/App.js
+          grep -q 'path="/my-bookings"' frontend/src/app/App.js
+          grep -q 'path="/refund-policy"' frontend/src/app/App.js
+          if grep -R -n -E 'The Final Seat|thefinalseat\.com|support@thefinalseat\.com' frontend backend api --exclude-dir=node_modules; then
+            echo 'Final Seat identity remains in FareTransit application files.' >&2
+            exit 1
+          fi
+
+      - name: Install and build
+        run: |
+          set -euo pipefail
+          npm ci --prefix backend
+          npm ci --prefix frontend
+          CI=false npm run build --prefix frontend
+          find backend/src -name '*.mjs' -print0 | xargs -0 -n1 node --check
+          VERCEL_ENV=preview NODE_ENV=production node -e "import('./backend/src/app.mjs').then(() => console.log('backend import ok'))"
+
+      - name: Commit production parity
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/faretransit-production-sync.yml
+          git config user.name 'FareTransit Production Sync'
+          git config user.email 'actions@users.noreply.github.com'
+          git add -A
+          if git diff --cached --quiet; then
+            echo 'No application changes required.'
+            exit 0
+          fi
+          git commit -m 'Bring FareTransit reservation workflow to current production parity'
+          git push origin main
