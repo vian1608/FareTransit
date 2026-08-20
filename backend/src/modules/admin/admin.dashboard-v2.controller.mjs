@@ -1,4 +1,5 @@
 import bookingRepository from '../bookings/booking.repository.mjs';
+import bookingPricingService from '../bookings/booking-pricing.service.mjs';
 import logger from '../../config/logger.mjs';
 
 export const adminDashboardV2Controller = {
@@ -24,11 +25,7 @@ export const adminDashboardV2Controller = {
       const auditReason = String(reason || '').trim();
 
       if (!bookingId) {
-        return res.status(400).json({
-          success: false,
-          requestId,
-          error: { code: 'INVALID_BOOKING_ID', message: 'A booking ID is required.' }
-        });
+        return res.status(400).json({ success: false, requestId, error: { code: 'INVALID_BOOKING_ID', message: 'A booking ID is required.' } });
       }
       if (!Number.isFinite(supplier) || supplier < 0) {
         return res.status(400).json({ success: false, requestId, error: { code: 'INVALID_SUPPLIER_FARE', message: 'Supplier fare must be a valid non-negative number.' } });
@@ -48,7 +45,7 @@ export const adminDashboardV2Controller = {
         ? Number(req.body.agencyMarkup)
         : total - supplier - feeTotal;
 
-      await bookingRepository.updatePricingAtomic({
+      const result = await bookingPricingService.updatePricing({
         bookingId: existing.id,
         supplierFare: supplier,
         taxesAndFees: feeTotal,
@@ -60,11 +57,7 @@ export const adminDashboardV2Controller = {
         expectedVersion: bookingVersion || expectedVersion || null
       });
 
-      // Never return the old sparse pricing-only object. The dashboard needs a
-      // complete read-after-write snapshot so passenger/itinerary/email state
-      // cannot disappear from React state after a successful price save.
-      const completeBooking = await bookingRepository.getCompleteBookingById(existing.id);
-      if (!completeBooking) {
+      if (!result.booking) {
         return res.status(500).json({
           success: false,
           requestId,
@@ -76,16 +69,9 @@ export const adminDashboardV2Controller = {
         success: true,
         requestId,
         message: 'Pricing updated and verified successfully.',
-        booking: completeBooking,
-        data: completeBooking,
-        pricing: {
-          supplierFare: supplier,
-          taxesAndFees: feeTotal,
-          agencyMarkup,
-          customerTotal: total,
-          currency: String(currency || 'USD').toUpperCase(),
-          reason: auditReason
-        },
+        booking: result.booking,
+        data: result.booking,
+        pricing: result.pricing,
         persistenceVerified: true
       });
     } catch (error) {
