@@ -22,10 +22,12 @@ function AdminLogin() {
         const profile = response.admin || { email: formData.email };
         localStorage.setItem('token', response.token);
         sessionStorage.setItem('adminSession', JSON.stringify(profile));
-        // Preserve the existing owner's dashboard exactly. Staff use the new
-        // permission-aware shell so they never land on owner-only dashboard APIs.
-        const isStaffProfile = profile?.role && !['owner', 'admin'].includes(profile.role);
-        navigate(isStaffProfile ? '/admin/backoffice' : '/admin/dashboard');
+
+        // Only the environment-backed legacy owner receives an `admin` JWT and
+        // may use the legacy owner dashboard APIs. Every database-backed account
+        // (including a DB role named `owner`) receives a `staff` JWT and must use
+        // the permission-aware back-office shell.
+        navigate(profile?.legacyOwner === true ? '/admin/dashboard' : '/admin/backoffice');
         return;
       }
       setError(normalizeError({ message: response?.error?.message || response?.message }, 'Invalid admin credentials.'));
