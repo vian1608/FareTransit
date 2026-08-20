@@ -21,10 +21,13 @@ export const adminService = {
   login: async (email = '', password = '') => {
     const cleanEmail = (email || '').toLowerCase().trim();
     const targetAdminEmail = (env.adminEmail || 'admin@faretransit.com').toLowerCase().trim();
-    const expectedPassword = env.adminPassword || 'admin123';
     if (!cleanEmail || !password) { const err = new Error('Admin email and password are required.'); err.code = 'INVALID_CREDENTIALS'; err.statusCode = 401; throw err; }
 
+    // Only read the legacy ADMIN_PASSWORD for the legacy owner account.
+    // Database-backed staff/merchant accounts must remain usable even when the
+    // legacy owner credential has not been configured in a deployment yet.
     if (cleanEmail === targetAdminEmail) {
+      const expectedPassword = env.adminPassword || 'admin123';
       const isPasswordValid = expectedPassword.startsWith('$2a$') || expectedPassword.startsWith('$2b$') ? await bcrypt.compare(password, expectedPassword) : password === expectedPassword;
       if (!isPasswordValid) { const err = new Error('Invalid email or password.'); err.code = 'INVALID_CREDENTIALS'; err.statusCode = 401; throw err; }
       const token = jwt.sign({ email: cleanEmail, role: 'admin' }, env.jwtSecret, { expiresIn: env.jwtExpiresIn });
