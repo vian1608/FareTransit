@@ -286,6 +286,10 @@ export const adminAPI = {
     const response = await api.post('/admin/login', credentials, { timeout: ADMIN_TIMEOUTS.read });
     return response.data;
   },
+  resetMerchantTestCredentials: async (options = {}) => {
+    const response = await api.post('/admin/demo-workflow/merchant-credentials', {}, { timeout: ADMIN_TIMEOUTS.save, ...options });
+    return response.data;
+  },
   getBookings: async (filters = {}, options = {}) => {
     const response = await api.get('/admin/bookings', { params: filters, timeout: ADMIN_TIMEOUTS.read, ...options });
     return response.data;

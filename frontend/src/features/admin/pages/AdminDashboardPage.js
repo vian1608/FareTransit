@@ -6,6 +6,7 @@ import AdminBookingWorkspace from '../components/AdminBookingWorkspace';
 import AdminBookingAddressPanel from '../components/AdminBookingAddressPanel';
 import AdminBookingManagementPanel from '../components/AdminBookingManagementPanel';
 import AdminSecurePaymentPanel from '../components/AdminSecurePaymentPanel';
+import AdminDemoWorkflowCard from '../components/AdminDemoWorkflowCard';
 import './AdminDashboardEnhancements.css';
 
 const ADMIN_BOOKINGS_PAGE_SIZE = 20;
@@ -178,6 +179,7 @@ export default function AdminDashboardPage() {
   return (
     <div className={isBookingDetailRoute ? 'admin-booking-detail-route' : undefined}>
       <GlobalFailure failure={globalFailure} onDismiss={() => setGlobalFailure(null)} />
+      {!isBookingDetailRoute && <AdminDemoWorkflowCard />}
       {isBookingDetailRoute ? (
         <>
           <AdminBookingAddressPanel />

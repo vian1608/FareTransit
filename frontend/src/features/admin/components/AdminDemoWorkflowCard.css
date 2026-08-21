@@ -1,0 +1,196 @@
+.admin-demo-card {
+  width: min(1540px, calc(100% - 28px));
+  margin: 18px auto 0;
+  padding: 20px;
+  border: 1px solid #ead9df;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #fff 0%, #fff8fb 100%);
+  box-shadow: 0 10px 28px rgba(36, 19, 27, 0.08);
+}
+
+.admin-demo-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.admin-demo-card__header h2 {
+  margin: 3px 0 6px;
+  color: #3d1323;
+  font-size: 22px;
+}
+
+.admin-demo-card__header p {
+  margin: 0;
+  max-width: 900px;
+  color: #66515a;
+  line-height: 1.5;
+}
+
+.admin-demo-card__eyebrow {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: #9b3159;
+}
+
+.admin-demo-card__primary,
+.admin-demo-workflow-step button,
+.admin-demo-credentials button {
+  border: 0;
+  border-radius: 9px;
+  cursor: pointer;
+  font-weight: 750;
+}
+
+.admin-demo-card__primary {
+  padding: 10px 14px;
+  color: #fff;
+  background: #861b3d;
+  white-space: nowrap;
+}
+
+.admin-demo-card__primary:disabled,
+.admin-demo-credentials button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.admin-demo-credentials {
+  display: grid;
+  grid-template-columns: minmax(250px, 1fr) auto minmax(250px, 1fr) auto;
+  gap: 10px;
+  margin-top: 16px;
+  padding: 14px;
+  border: 1px solid #eadfe3;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.admin-demo-credentials > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.admin-demo-credentials span {
+  color: #7a6670;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+}
+
+.admin-demo-credentials strong {
+  color: #27161d;
+  overflow-wrap: anywhere;
+}
+
+.admin-demo-credentials button {
+  align-self: center;
+  padding: 8px 10px;
+  color: #6f1634;
+  background: #f7eaf0;
+}
+
+.admin-demo-card__notice,
+.admin-demo-card__footer,
+.admin-demo-card__error {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 9px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.admin-demo-card__notice {
+  color: #6b4a11;
+  background: #fff8e5;
+  border: 1px solid #f3dc9c;
+}
+
+.admin-demo-card__error {
+  color: #991b1b;
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+}
+
+.admin-demo-workflow-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.admin-demo-workflow-step {
+  padding: 14px;
+  border: 1px solid #eadfe3;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.admin-demo-workflow-step__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.admin-demo-workflow-step__badge {
+  display: inline-flex;
+  padding: 4px 7px;
+  border-radius: 999px;
+  color: #7a1739;
+  background: #f8e8ef;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.admin-demo-workflow-step code {
+  color: #5f4851;
+  font-size: 12px;
+}
+
+.admin-demo-workflow-step h3 {
+  margin: 12px 0 6px;
+  color: #2e1720;
+  font-size: 16px;
+}
+
+.admin-demo-workflow-step p {
+  min-height: 58px;
+  margin: 0 0 12px;
+  color: #705b64;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.admin-demo-workflow-step button {
+  padding: 8px 11px;
+  color: #fff;
+  background: #4e2032;
+}
+
+.admin-demo-card__footer {
+  color: #5c4b52;
+  background: #f7f4f5;
+  border: 1px solid #e9e1e4;
+}
+
+@media (max-width: 900px) {
+  .admin-demo-card__header {
+    flex-direction: column;
+  }
+
+  .admin-demo-credentials,
+  .admin-demo-workflow-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-demo-credentials button {
+    justify-self: start;
+  }
+}
