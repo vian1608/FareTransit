@@ -179,6 +179,7 @@ export default function AdminDashboardPage() {
   return (
     <div className={isBookingDetailRoute ? 'admin-booking-detail-route' : undefined}>
       <GlobalFailure failure={globalFailure} onDismiss={() => setGlobalFailure(null)} />
+      {!isBookingDetailRoute && <AdminDemoWorkflowCard />}
       {isBookingDetailRoute ? (
         <>
           <AdminBookingAddressPanel />
@@ -187,10 +188,7 @@ export default function AdminDashboardPage() {
           <AdminSecurePaymentPanel />
         </>
       ) : (
-        <>
-          <AdminDemoWorkflowCard />
-          <AdminDashboardPageV2 />
-        </>
+        <AdminDashboardPageV2 />
       )}
     </div>
   );
