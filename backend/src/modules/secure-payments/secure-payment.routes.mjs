@@ -1,12 +1,39 @@
 import crypto from 'crypto';
 import express from 'express';
 import supabase from '../../integrations/supabase/supabase.client.mjs';
-import { getSafeVgsVaultConfig, getVgsAccessToken, getVgsVaultConfig } from './vgs-vault.service.mjs';
 
 const router = express.Router();
 const sha256 = value => crypto.createHash('sha256').update(String(value || '')).digest('hex');
 const nowIso = () => new Date().toISOString();
 const safeText = (value, max = 300) => String(value ?? '').trim().slice(0, max);
+
+const SENSITIVE_KEYS = new Set([
+  'cardnumber', 'card_number', 'fullcardnumber', 'full_card_number', 'pan', 'fullpan',
+  'cvv', 'cvc', 'securitycode', 'security_code', 'cardsecuritycode', 'card_security_code',
+  'trackdata', 'track_data', 'pin', 'cardpin', 'card_pin',
+]);
+
+function normalizeKey(key) {
+  return String(key || '').replace(/[^a-z0-9_]/gi, '').toLowerCase();
+}
+
+function rejectSensitiveCardPayload(value, depth = 0) {
+  if (depth > 12 || value == null) return;
+  if (Array.isArray(value)) {
+    value.forEach(item => rejectSensitiveCardPayload(item, depth + 1));
+    return;
+  }
+  if (typeof value !== 'object') return;
+  for (const [key, child] of Object.entries(value)) {
+    if (SENSITIVE_KEYS.has(normalizeKey(key))) {
+      const error = new Error('Full card numbers and card security codes are not accepted by FareTransit manual payment storage.');
+      error.status = 400;
+      error.code = 'SENSITIVE_CARD_DATA_NOT_ACCEPTED';
+      throw error;
+    }
+    rejectSensitiveCardPayload(child, depth + 1);
+  }
+}
 
 function code(prefix) {
   const stamp = new Date().toISOString().replace(/[-:TZ.]/g, '').slice(0, 14);
@@ -21,14 +48,84 @@ function validPublicWindow(row) {
   return row && (!row.public_token_expires_at || new Date(row.public_token_expires_at).getTime() > Date.now());
 }
 
-function looksLikeVaultAlias(value) {
-  const text = String(value || '').trim();
-  if (text.length < 8 || text.length > 512) return false;
-  return /^tok_[A-Za-z0-9_-]+$/.test(text) || /^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(text) || /^alias_[A-Za-z0-9_-]+$/.test(text);
+function storageConfig() {
+  return {
+    mode: 'manual_masked_metadata',
+    configured: true,
+    collectEnabled: true,
+    chargeableCredentialStored: false,
+    acceptedFields: ['cardholderName', 'cardBrand', 'last4', 'expMonth', 'expYear', 'billingAddress'],
+  };
 }
 
-function safeAuthorization(row) {
-  const method = Array.isArray(row.vaulted_payment_methods) ? row.vaulted_payment_methods[0] : row.vaulted_payment_methods;
+function sanitizeBillingAddress(input = {}) {
+  rejectSensitiveCardPayload(input);
+  if (!input || typeof input !== 'object' || Array.isArray(input)) return {};
+  return {
+    line1: safeText(input.line1 || input.address || input.addressLine1, 180) || null,
+    line2: safeText(input.line2 || input.addressLine2, 180) || null,
+    city: safeText(input.city, 100) || null,
+    region: safeText(input.region || input.state, 100) || null,
+    postalCode: safeText(input.postalCode || input.zip || input.zipCode, 32) || null,
+    country: safeText(input.country, 80) || null,
+    email: safeText(input.email, 240) || null,
+    phone: safeText(input.phone, 80) || null,
+  };
+}
+
+function normalizeManualMethod(body = {}, fallbackName = '') {
+  rejectSensitiveCardPayload(body);
+  const cardholderName = safeText(body.cardholderName || fallbackName, 180);
+  const cardBrand = safeText(body.cardBrand, 40);
+  const last4 = String(body.last4 || '').replace(/\D/g, '');
+  const expMonth = Number.parseInt(body.expMonth, 10);
+  let expYear = Number.parseInt(body.expYear, 10);
+  if (expYear >= 0 && expYear < 100) expYear += 2000;
+  const currentYear = new Date().getUTCFullYear();
+
+  if (!cardholderName || !cardBrand || !/^\d{4}$/.test(last4) || expMonth < 1 || expMonth > 12 || expYear < currentYear || expYear > currentYear + 30) {
+    const error = new Error('Cardholder name, card brand, last four digits, and a valid expiration month/year are required.');
+    error.status = 400;
+    error.code = 'INVALID_MANUAL_PAYMENT_METADATA';
+    throw error;
+  }
+
+  return {
+    cardholderName,
+    cardBrand,
+    last4,
+    expMonth,
+    expYear,
+    billingAddress: sanitizeBillingAddress(body.billingAddress || {}),
+  };
+}
+
+async function manualMethod(authorizationId) {
+  const result = await supabase.from('manual_payment_methods')
+    .select('id,authorization_id,cardholder_name,card_brand,last4,exp_month,exp_year,billing_address,source,notes,created_at,updated_at')
+    .eq('authorization_id', authorizationId)
+    .maybeSingle();
+  if (result.error) throw result.error;
+  return result.data || null;
+}
+
+function publicMethod(method) {
+  if (!method) return null;
+  return {
+    id: method.id,
+    provider: 'MANUAL',
+    cardholderName: method.cardholder_name,
+    cardBrand: method.card_brand,
+    last4: method.last4,
+    expMonth: method.exp_month,
+    expYear: method.exp_year,
+    billingAddress: method.billing_address || {},
+    source: method.source || 'MANUAL_METADATA',
+    chargeable: false,
+  };
+}
+
+function safeAuthorization(row, method = null) {
   const context = Array.isArray(row.payment_contexts) ? row.payment_contexts[0] : row.payment_contexts;
   return {
     id: row.id,
@@ -42,24 +139,20 @@ function safeAuthorization(row) {
     termsVersion: row.terms_version,
     linkExpiresAt: row.public_token_expires_at,
     context: context ? { contextCode: context.context_code, entityType: context.entity_type, entityCode: context.entity_code } : null,
-    paymentMethod: method ? {
-      provider: method.provider,
-      cardBrand: method.card_brand,
-      last4: method.last4,
-      panStatus: method.pan_status,
-      cvvStatus: method.cvv_status,
-      cvvExpiresAt: method.cvv_expires_at,
-    } : null,
+    paymentMethod: publicMethod(method),
     recollectionOnly: row.status === 'RECOLLECTION_REQUIRED',
+    storage: storageConfig(),
   };
 }
 
 async function findByToken(req) {
-  const { data, error } = await supabase.from('payment_authorizations')
-    .select('id,authorization_code,payment_context_id,customer_name,customer_email,customer_phone,authorized_amount,currency,purpose,status,public_token_expires_at,terms_version,signature_name,authorized_at,payment_contexts(id,context_code,entity_type,entity_id,entity_code),vaulted_payment_methods(id,provider,card_brand,last4,pan_status,cvv_status,cvv_expires_at)')
+  const result = await supabase.from('payment_authorizations')
+    .select('id,authorization_code,payment_context_id,customer_name,customer_email,customer_phone,authorized_amount,currency,purpose,status,public_token_expires_at,terms_version,signature_name,authorized_at,payment_contexts(id,context_code,entity_type,entity_id,entity_code)')
     .eq('public_token_hash', publicTokenHash(req)).maybeSingle();
-  if (error) throw error;
-  return data;
+  if (result.error) throw result.error;
+  if (!result.data) return null;
+  result.data.manualPaymentMethod = await manualMethod(result.data.id);
+  return result.data;
 }
 
 async function verifyCheckoutBooking(body) {
@@ -71,8 +164,7 @@ async function verifyCheckoutBooking(body) {
 
   const result = await supabase.from('bookings')
     .select('id,confirmation_code,email,client_request_id,passenger_name,customer_price,total_amount,currency')
-    .eq('id', bookingId)
-    .maybeSingle();
+    .eq('id', bookingId).maybeSingle();
   if (result.error) throw result.error;
   const booking = result.data;
   if (!booking) return null;
@@ -82,84 +174,104 @@ async function verifyCheckoutBooking(body) {
   return booking;
 }
 
+async function upsertManualMethod(authorizationId, method) {
+  const payload = {
+    authorization_id: authorizationId,
+    cardholder_name: method.cardholderName,
+    card_brand: method.cardBrand,
+    last4: method.last4,
+    exp_month: method.expMonth,
+    exp_year: method.expYear,
+    billing_address: method.billingAddress,
+    source: 'MANUAL_METADATA',
+    updated_at: nowIso(),
+  };
+  const existing = await supabase.from('manual_payment_methods').select('id').eq('authorization_id', authorizationId).maybeSingle();
+  if (existing.error) throw existing.error;
+  const result = existing.data
+    ? await supabase.from('manual_payment_methods').update(payload).eq('id', existing.data.id).select('*').single()
+    : await supabase.from('manual_payment_methods').insert(payload).select('*').single();
+  if (result.error) throw result.error;
+  return result.data;
+}
+
+async function persistBookingMethod(booking, body, method) {
+  const billing = method.billingAddress || {};
+  const payload = {
+    payment_provider: 'manual',
+    provider_customer_id: null,
+    provider_payment_method_id: null,
+    cardholder_name: method.cardholderName,
+    card_brand: method.cardBrand,
+    card_last4: method.last4,
+    card_exp_month: method.expMonth,
+    card_exp_year: method.expYear,
+    billing_email: safeText(body.customerEmail || booking.email, 240) || null,
+    billing_phone: safeText(body.customerPhone, 80) || null,
+    billing_address_line1: billing.line1,
+    billing_address_line2: billing.line2,
+    billing_city: billing.city,
+    billing_state: billing.region,
+    billing_postal_code: billing.postalCode,
+    billing_country: billing.country,
+    tokenization_status: 'MANUAL_METADATA',
+    removed_at: null,
+    updated_at: nowIso(),
+  };
+  const existing = await supabase.from('booking_payment_methods').select('id').eq('booking_id', booking.id).is('removed_at', null).order('created_at', { ascending: false }).limit(1);
+  if (existing.error) throw existing.error;
+  const id = existing.data?.[0]?.id;
+  const result = id
+    ? await supabase.from('booking_payment_methods').update(payload).eq('id', id)
+    : await supabase.from('booking_payment_methods').insert({ booking_id: booking.id, ...payload });
+  if (result.error) throw result.error;
+}
+
 router.get('/checkout/config', (req, res) => {
-  const safe = getSafeVgsVaultConfig();
-  res.json({ success: true, data: safe });
+  res.json({ success: true, data: storageConfig() });
 });
 
-router.post('/checkout/collect-token', async (req, res, next) => {
-  try {
-    const booking = await verifyCheckoutBooking(req.body || {});
-    if (!booking) return res.status(404).json({ success: false, error: { code: 'CHECKOUT_BOOKING_NOT_FOUND', message: 'The checkout reservation could not be verified.' } });
-    const safe = getSafeVgsVaultConfig();
-    if (!safe.configured) return res.status(503).json({ success: false, error: { code: 'VGS_NOT_CONFIGURED', message: 'Secure card collection is not configured yet.' } });
-    if (!safe.ttlReady) return res.status(503).json({ success: false, error: { code: 'VGS_CVV_TTL_NOT_CONFIRMED', message: `The requested ${safe.targetCvvTtlHours}-hour CVV vault window has not yet been confirmed for this VGS vault.` } });
-    const accessToken = await getVgsAccessToken();
-    res.json({ success: true, data: { ...safe, accessToken } });
-  } catch (error) { next(error); }
+router.post('/checkout/collect-token', (req, res) => {
+  res.status(410).json({
+    success: false,
+    error: { code: 'TOKENIZATION_REMOVED', message: 'FareTransit no longer tokenizes card credentials. Use masked manual payment metadata instead.' },
+  });
 });
 
 router.post('/checkout/attach', async (req, res, next) => {
   try {
     const body = req.body || {};
+    rejectSensitiveCardPayload(body);
     const booking = await verifyCheckoutBooking(body);
     if (!booking) return res.status(404).json({ success: false, error: { code: 'CHECKOUT_BOOKING_NOT_FOUND', message: 'The checkout reservation could not be verified.' } });
-
-    const config = getVgsVaultConfig();
-    if (!config.configured || !config.ttlReady) return res.status(503).json({ success: false, error: { code: 'VGS_CVV_TTL_NOT_CONFIRMED', message: 'Secure card collection is not available for this VGS environment.' } });
-    if (!looksLikeVaultAlias(body.panAlias) || !looksLikeVaultAlias(body.expirationAlias) || !looksLikeVaultAlias(body.cvvAlias)) {
-      return res.status(400).json({ success: false, error: { code: 'INVALID_VAULT_ALIAS', message: 'Valid VGS aliases are required for card number, expiration, and CVV.' } });
-    }
-
+    const method = normalizeManualMethod(body, body.customerName || booking.passenger_name);
     const customerName = safeText(body.customerName || booking.passenger_name || 'Valued Passenger', 180);
     const customerEmail = safeText(body.customerEmail || booking.email, 240).toLowerCase();
     const customerPhone = safeText(body.customerPhone, 80) || null;
     const currency = safeText(body.currency || booking.currency || 'USD', 8).toUpperCase();
     const bookingAmount = Number(booking.customer_price || booking.total_amount || body.authorizedAmount || 0);
     if (!Number.isFinite(bookingAmount) || bookingAmount <= 0) {
-      return res.status(400).json({ success: false, error: { code: 'INVALID_AUTHORIZED_AMOUNT', message: 'The booking does not have a valid authorized amount.' } });
+      return res.status(400).json({ success: false, error: { code: 'INVALID_AUTHORIZED_AMOUNT', message: 'The booking does not have a valid amount.' } });
     }
 
-    let context = null;
-    const contextLookup = await supabase.from('payment_contexts')
-      .select('*')
-      .eq('entity_type', 'FLIGHT')
-      .eq('entity_id', booking.id)
-      .like('context_code', 'PAYCTX-WEB-%')
-      .order('created_at', { ascending: false })
-      .limit(1);
+    const contextLookup = await supabase.from('payment_contexts').select('*').eq('entity_type', 'FLIGHT').eq('entity_id', booking.id).like('context_code', 'PAYCTX-WEB-%').order('created_at', { ascending: false }).limit(1);
     if (contextLookup.error) throw contextLookup.error;
-    context = contextLookup.data?.[0] || null;
-
+    let context = contextLookup.data?.[0] || null;
     if (!context) {
-      const insertedContext = await supabase.from('payment_contexts').insert({
-        context_code: code('PAYCTX-WEB'),
-        entity_type: 'FLIGHT',
-        entity_id: booking.id,
-        entity_code: booking.confirmation_code,
-        currency,
-        created_by: null,
-      }).select('*').single();
-      if (insertedContext.error) throw insertedContext.error;
-      context = insertedContext.data;
+      const inserted = await supabase.from('payment_contexts').insert({ context_code: code('PAYCTX-WEB'), entity_type: 'FLIGHT', entity_id: booking.id, entity_code: booking.confirmation_code, currency, created_by: null }).select('*').single();
+      if (inserted.error) throw inserted.error;
+      context = inserted.data;
     }
 
-    let authorization = null;
-    const authLookup = await supabase.from('payment_authorizations')
-      .select('*')
-      .eq('payment_context_id', context.id)
-      .order('created_at', { ascending: false })
-      .limit(1);
+    const authLookup = await supabase.from('payment_authorizations').select('*').eq('payment_context_id', context.id).order('created_at', { ascending: false }).limit(1);
     if (authLookup.error) throw authLookup.error;
-    authorization = authLookup.data?.[0] || null;
-
+    let authorization = authLookup.data?.[0] || null;
     if (!authorization) {
       const authCode = code('AUTH');
       const purpose = safeText(body.purpose || `Flight booking ${booking.confirmation_code}`, 800);
       const signatureName = safeText(body.cardholderName || customerName, 180);
-      const termsVersion = 'secure-payment-v1';
-      const termsHash = sha256(`${termsVersion}|${authCode}|${bookingAmount}|${currency}|${purpose}|${signatureName}`);
-      const insertedAuth = await supabase.from('payment_authorizations').insert({
+      const termsVersion = 'manual-payment-record-v1';
+      const inserted = await supabase.from('payment_authorizations').insert({
         authorization_code: authCode,
         payment_context_id: context.id,
         customer_name: customerName,
@@ -168,169 +280,70 @@ router.post('/checkout/attach', async (req, res, next) => {
         authorized_amount: bookingAmount,
         currency,
         purpose,
-        status: 'CARD_READY',
+        status: 'CARD_SUBMITTED',
         terms_version: termsVersion,
-        terms_snapshot_hash: termsHash,
+        terms_snapshot_hash: sha256(`${termsVersion}|${authCode}|${bookingAmount}|${currency}|${purpose}|${signatureName}`),
         signature_name: signatureName,
         customer_ip: safeText(String(req.headers['x-forwarded-for'] || req.ip || '').split(',')[0], 120) || null,
         customer_user_agent: safeText(req.headers['user-agent'], 500) || null,
         authorized_at: nowIso(),
       }).select('*').single();
-      if (insertedAuth.error) throw insertedAuth.error;
-      authorization = insertedAuth.data;
-    }
-
-    const collectedAt = new Date();
-    const cvvExpiresAt = new Date(collectedAt.getTime() + config.effectiveCvvTtlHours * 60 * 60 * 1000);
-    const methodPayload = {
-      authorization_id: authorization.id,
-      provider: 'VGS',
-      pan_alias: safeText(body.panAlias, 512),
-      expiration_alias: safeText(body.expirationAlias, 512),
-      cvv_alias: safeText(body.cvvAlias, 512),
-      card_brand: safeText(body.cardBrand, 32) || null,
-      last4: /^\d{4}$/.test(String(body.last4 || '')) ? String(body.last4) : null,
-      cardholder_name: safeText(body.cardholderName || customerName, 180) || null,
-      billing_address: body.billingAddress && typeof body.billingAddress === 'object' ? body.billingAddress : {},
-      pan_status: 'AVAILABLE',
-      cvv_status: 'AVAILABLE',
-      cvv_collected_at: collectedAt.toISOString(),
-      cvv_expires_at: cvvExpiresAt.toISOString(),
-      updated_at: nowIso(),
-    };
-
-    const existingMethod = await supabase.from('vaulted_payment_methods').select('*').eq('authorization_id', authorization.id).maybeSingle();
-    if (existingMethod.error) throw existingMethod.error;
-    let method;
-    if (existingMethod.data) {
-      const updated = await supabase.from('vaulted_payment_methods').update(methodPayload).eq('id', existingMethod.data.id).select('id,provider,card_brand,last4,pan_status,cvv_status,cvv_expires_at').single();
-      if (updated.error) throw updated.error;
-      method = updated.data;
-    } else {
-      const inserted = await supabase.from('vaulted_payment_methods').insert(methodPayload).select('id,provider,card_brand,last4,pan_status,cvv_status,cvv_expires_at').single();
       if (inserted.error) throw inserted.error;
-      method = inserted.data;
+      authorization = inserted.data;
+    } else {
+      const updated = await supabase.from('payment_authorizations').update({ status: 'CARD_SUBMITTED', signature_name: method.cardholderName, authorized_at: authorization.authorized_at || nowIso(), updated_at: nowIso() }).eq('id', authorization.id).select('*').single();
+      if (updated.error) throw updated.error;
+      authorization = updated.data;
     }
 
-    if (authorization.status !== 'CARD_READY') {
-      const updatedAuth = await supabase.from('payment_authorizations').update({ status: 'CARD_READY', authorized_at: authorization.authorized_at || nowIso(), updated_at: nowIso() }).eq('id', authorization.id).select('*').single();
-      if (updatedAuth.error) throw updatedAuth.error;
-      authorization = updatedAuth.data;
-    }
+    const savedMethod = await upsertManualMethod(authorization.id, method);
+    await persistBookingMethod(booking, body, method);
+    await supabase.from('payment_authorization_events').insert({ authorization_id: authorization.id, event_type: 'MANUAL_PAYMENT_METADATA_RECORDED', metadata: { bookingCode: booking.confirmation_code, cardBrand: method.cardBrand, last4: method.last4, chargeable: false } });
 
-    await supabase.from('payment_authorization_events').insert({
-      authorization_id: authorization.id,
-      event_type: 'CARD_VAULTED_AT_WEBSITE_CHECKOUT',
-      metadata: {
-        provider: 'VGS',
-        bookingCode: booking.confirmation_code,
-        effectiveCvvTtlHours: config.effectiveCvvTtlHours,
-        usesSandboxDefaultTtl: config.usesSandboxDefaultTtl,
-      },
-    });
-
-    res.json({
-      success: true,
-      data: {
-        authorizationId: authorization.id,
-        authorizationCode: authorization.authorization_code,
-        status: 'CARD_READY',
-        paymentMethod: method,
-        cvvExpiresAt: method.cvv_expires_at,
-      },
-    });
+    res.json({ success: true, data: { authorizationId: authorization.id, authorizationCode: authorization.authorization_code, status: 'CARD_SUBMITTED', paymentMethod: publicMethod(savedMethod) } });
   } catch (error) { next(error); }
 });
 
 router.get('/authorizations/:token', async (req, res, next) => {
   try {
     const row = await findByToken(req);
-    if (!row || !validPublicWindow(row)) return res.status(404).json({ success: false, error: { code: 'SECURE_AUTH_NOT_FOUND', message: 'This secure authorization link is invalid or expired.' } });
+    if (!row || !validPublicWindow(row)) return res.status(404).json({ success: false, error: { code: 'SECURE_AUTH_NOT_FOUND', message: 'This payment authorization link is invalid or expired.' } });
     if (['REVOKED','CANCELLED','EXPIRED'].includes(row.status)) return res.status(410).json({ success: false, error: { code: 'SECURE_AUTH_UNAVAILABLE', message: 'This authorization is no longer available.' } });
     if (row.status === 'SENT') {
       await supabase.from('payment_authorizations').update({ status: 'OPENED', updated_at: nowIso() }).eq('id', row.id);
       await supabase.from('payment_authorization_events').insert({ authorization_id: row.id, event_type: 'CUSTOMER_OPENED', metadata: {} });
       row.status = 'OPENED';
     }
-    res.json({ success: true, data: { authorization: safeAuthorization(row), vault: getSafeVgsVaultConfig() } });
+    res.json({ success: true, data: { authorization: safeAuthorization(row, row.manualPaymentMethod), storage: storageConfig() } });
   } catch (error) { next(error); }
 });
 
 router.get('/authorizations/:token/collect-config', async (req, res, next) => {
   try {
     const row = await findByToken(req);
-    if (!row || !validPublicWindow(row)) return res.status(404).json({ success: false, error: { code: 'SECURE_AUTH_NOT_FOUND', message: 'This secure authorization link is invalid or expired.' } });
-    const safe = getSafeVgsVaultConfig();
-    if (!safe.configured) return res.status(503).json({ success: false, error: { code: 'VGS_NOT_CONFIGURED', message: 'Secure card collection is not configured yet.' } });
-    if (!safe.ttlReady) return res.status(503).json({ success: false, error: { code: 'VGS_CVV_TTL_NOT_CONFIRMED', message: `The requested ${safe.targetCvvTtlHours}-hour CVV vault window has not yet been confirmed for this VGS vault.` } });
-    const accessToken = await getVgsAccessToken();
-    res.json({ success: true, data: { ...safe, accessToken } });
+    if (!row || !validPublicWindow(row)) return res.status(404).json({ success: false, error: { code: 'SECURE_AUTH_NOT_FOUND', message: 'This payment authorization link is invalid or expired.' } });
+    res.json({ success: true, data: storageConfig() });
   } catch (error) { next(error); }
 });
 
 router.post('/authorizations/:token/complete', async (req, res, next) => {
   try {
     const row = await findByToken(req);
-    if (!row || !validPublicWindow(row)) return res.status(404).json({ success: false, error: { code: 'SECURE_AUTH_NOT_FOUND', message: 'This secure authorization link is invalid or expired.' } });
-    const config = getVgsVaultConfig();
-    if (!config.configured || !config.ttlReady) return res.status(503).json({ success: false, error: { code: 'VGS_CVV_TTL_NOT_CONFIRMED', message: 'Secure card collection is disabled until the requested volatile CVV TTL is available for this VGS environment.' } });
-
+    if (!row || !validPublicWindow(row)) return res.status(404).json({ success: false, error: { code: 'SECURE_AUTH_NOT_FOUND', message: 'This payment authorization link is invalid or expired.' } });
     const body = req.body || {};
-    const recollectionOnly = row.status === 'RECOLLECTION_REQUIRED';
-    if (!looksLikeVaultAlias(body.cvvAlias)) return res.status(400).json({ success: false, error: { code: 'INVALID_VAULT_ALIAS', message: 'A VGS volatile CVV alias is required.' } });
-    if (!recollectionOnly && (!looksLikeVaultAlias(body.panAlias) || !looksLikeVaultAlias(body.expirationAlias))) {
-      return res.status(400).json({ success: false, error: { code: 'INVALID_VAULT_ALIAS', message: 'VGS aliases are required for card number and expiration.' } });
-    }
-    if (!recollectionOnly && !String(body.signatureName || '').trim()) return res.status(400).json({ success: false, error: { code: 'SIGNATURE_REQUIRED', message: 'Cardholder authorization name is required.' } });
-
-    const collectedAt = new Date();
-    const cvvExpiresAt = new Date(collectedAt.getTime() + config.effectiveCvvTtlHours * 60 * 60 * 1000);
-    const existing = await supabase.from('vaulted_payment_methods').select('*').eq('authorization_id', row.id).maybeSingle();
-    if (existing.error) throw existing.error;
-    const methodPayload = {
-      authorization_id: row.id,
-      provider: 'VGS',
-      cvv_alias: String(body.cvvAlias).trim(),
-      cvv_status: 'AVAILABLE',
-      cvv_collected_at: collectedAt.toISOString(),
-      cvv_expires_at: cvvExpiresAt.toISOString(),
-      updated_at: nowIso(),
-    };
-    if (!recollectionOnly) {
-      methodPayload.pan_alias = String(body.panAlias).trim();
-      methodPayload.expiration_alias = String(body.expirationAlias).trim();
-      methodPayload.pan_status = 'AVAILABLE';
-      methodPayload.card_brand = String(body.cardBrand || '').slice(0, 32) || null;
-      methodPayload.last4 = /^\d{4}$/.test(String(body.last4 || '')) ? String(body.last4) : null;
-      methodPayload.cardholder_name = String(body.cardholderName || body.signatureName || '').slice(0, 180) || null;
-      methodPayload.billing_address = body.billingAddress && typeof body.billingAddress === 'object' ? body.billingAddress : {};
-    }
-    let method;
-    if (existing.data) {
-      const updated = await supabase.from('vaulted_payment_methods').update(methodPayload).eq('id', existing.data.id).select('id,provider,card_brand,last4,pan_status,cvv_status,cvv_expires_at').single();
-      if (updated.error) throw updated.error;
-      method = updated.data;
-    } else {
-      const inserted = await supabase.from('vaulted_payment_methods').insert(methodPayload).select('id,provider,card_brand,last4,pan_status,cvv_status,cvv_expires_at').single();
-      if (inserted.error) throw inserted.error;
-      method = inserted.data;
-    }
-
-    const signatureName = String(body.signatureName || row.signature_name || '').trim().slice(0, 180) || null;
-    const termsHash = sha256(`${row.terms_version}|${row.authorization_code}|${row.authorized_amount}|${row.currency}|${row.purpose}|${signatureName || ''}`);
-    const update = {
-      status: 'CARD_READY',
+    rejectSensitiveCardPayload(body);
+    const method = normalizeManualMethod(body, row.customer_name);
+    const savedMethod = await upsertManualMethod(row.id, method);
+    const signatureName = safeText(body.signatureName || method.cardholderName, 180);
+    const saved = await supabase.from('payment_authorizations').update({
+      status: 'CARD_SUBMITTED',
       signature_name: signatureName,
-      terms_snapshot_hash: termsHash,
       authorized_at: row.authorized_at || nowIso(),
-      customer_ip: String(req.headers['x-forwarded-for'] || req.ip || '').split(',')[0].trim().slice(0, 120) || null,
-      customer_user_agent: String(req.headers['user-agent'] || '').slice(0, 500) || null,
       updated_at: nowIso(),
-    };
-    const saved = await supabase.from('payment_authorizations').update(update).eq('id', row.id).select('id,authorization_code,status').single();
+    }).eq('id', row.id).select('authorization_code,status').single();
     if (saved.error) throw saved.error;
-    await supabase.from('payment_authorization_events').insert({ authorization_id: row.id, event_type: recollectionOnly ? 'CVV_RECOLLECTED' : 'CARD_VAULTED', metadata: { provider: 'VGS', effectiveCvvTtlHours: config.effectiveCvvTtlHours, usesSandboxDefaultTtl: config.usesSandboxDefaultTtl } });
-    res.json({ success: true, data: { authorizationCode: saved.data.authorization_code, status: saved.data.status, paymentMethod: method, cvvExpiresAt: method.cvv_expires_at } });
+    await supabase.from('payment_authorization_events').insert({ authorization_id: row.id, event_type: row.status === 'RECOLLECTION_REQUIRED' ? 'MANUAL_PAYMENT_METADATA_UPDATED' : 'MANUAL_PAYMENT_METADATA_RECORDED', metadata: { cardBrand: method.cardBrand, last4: method.last4, chargeable: false } });
+    res.json({ success: true, data: { authorizationCode: saved.data.authorization_code, status: saved.data.status, paymentMethod: publicMethod(savedMethod) } });
   } catch (error) { next(error); }
 });
 
