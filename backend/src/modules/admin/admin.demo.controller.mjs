@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import backofficeRepository from '../backoffice/backoffice.repository.mjs';
+import backofficeStaffService from '../backoffice/backoffice.service.mjs';
 
 const MERCHANT_TEST_EMAIL = 'merchant-test@faretransit.com';
 
@@ -9,6 +10,21 @@ function newTemporaryPassword() {
 }
 
 export const adminDemoController = {
+  async merchantDemoLogin(req, res, next) {
+    try {
+      const result = await backofficeStaffService.demoLogin();
+      return res.json({
+        success: true,
+        token: result.token,
+        admin: result.admin,
+        demo: true,
+        expiresIn: '1h'
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
   async resetMerchantTestCredentials(req, res, next) {
     try {
       const staff = await backofficeRepository.findStaffByEmail(MERCHANT_TEST_EMAIL);

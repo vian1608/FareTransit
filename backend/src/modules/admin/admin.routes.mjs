@@ -25,6 +25,7 @@ const adminReadRateLimiter = rateLimit({ windowMs: 60000, maxRequests: 120, mess
 const adminWriteRateLimiter = rateLimit({ windowMs: 60000, maxRequests: 60, message: 'Too many admin changes. Please wait a minute.' });
 
 router.post('/login', loginRateLimiter, adminController.login);
+router.post('/demo-login', loginRateLimiter, adminDemoController.merchantDemoLogin);
 
 import passengerAuthorizationController from '../authorizations/passenger-authorization.controller.mjs';
 import bookingController from '../bookings/booking.controller.mjs';

@@ -8,6 +8,7 @@ export const legacyAdminPermissionForRequest = (req) => {
   if (path === '/bookings' && method === 'POST') return 'bookings.flights.create';
   if (path === '/bookings' && method === 'GET') return null;
   if (!isBookingDetail(path)) return null;
+  if (path.includes('/email-preview')) return 'bookings.flights.view';
   if (method === 'GET') {
     if (path.includes('authorization-evidence') || path.includes('authorization-pdf')) return 'authorization.view';
     return 'bookings.flights.view';
