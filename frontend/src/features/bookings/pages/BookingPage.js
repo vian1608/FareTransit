@@ -11,7 +11,7 @@ import InternationalPhoneInput from '../../../shared/components/InternationalPho
 import CountrySelect from '../../../shared/components/CountrySelect';
 import EmailInput from '../../../shared/components/EmailInput';
 import AddressAutocompleteInput from '../../../shared/components/AddressAutocompleteInput';
-import VgsCheckoutCardFields from '../../secure-payments/VgsCheckoutCardFields';
+import ManualPaymentCardFields from '../../secure-payments/ManualPaymentCardFields';
 import {
   validatePostalCode,
   validatePassportNumber,
@@ -66,7 +66,7 @@ function Booking({ initialJourneyPayload = null }) {
   );
   const [error, setError] = useState('');
 
-  // Only non-sensitive payment metadata lives in React state. PAN / expiry / CVV stay inside VGS Collect fields.
+  // Only masked manual payment metadata lives in React state. Full card number and security code are never collected here.
   const [cardForm, setCardForm] = useState({
     cardholderName: '',
     billingPhone: '',
@@ -456,7 +456,7 @@ function Booking({ initialJourneyPayload = null }) {
       customer_price: pricing.total,
       displayedWebsitePrice: pricing.total,
       paymentStatus: 'PENDING',
-      payment_provider: 'VGS',
+      payment_provider: 'manual',
       paymentMethod,
       cardholderName: paymentMethod.cardholderName,
       cardLast4,
@@ -538,12 +538,12 @@ function Booking({ initialJourneyPayload = null }) {
     }
 
     if (!secureCardRef.current?.isReady()) {
-      setCardError('Secure card fields are still loading. Please wait a moment and try again.');
+      setCardError('Manual payment fields are still loading. Please wait a moment and try again.');
       return;
     }
 
     if (!secureCardRef.current?.isValid()) {
-      setCardError('Please enter a valid card number, expiration date, and security code.');
+      setCardError('Please enter the card brand, last four digits, and a valid expiration date.');
       return;
     }
 
@@ -598,13 +598,12 @@ function Booking({ initialJourneyPayload = null }) {
     setCardProcessing(true);
 
     try {
-      // 1. Create the reservation using only safe card metadata. Raw card values never enter this payload.
+      // 1. Create the reservation using only masked manual payment metadata.
       const maskedCard = secureCardRef.current.getMaskedMetadata();
       const pending = await createPendingBookingRecord(maskedCard);
       const bCode = pending.code;
 
-      // 2. Tokenize the same card fields already entered on this checkout and attach them to this booking.
-      //    PAN/expiry are persistent VGS aliases; CVV is a volatile VGS alias.
+      // 2. Attach the masked manual payment record to this booking. No full card number or security code is transmitted.
       await secureCardRef.current.secureBooking({
         bookingId: pending.id,
         bookingCode: bCode,
@@ -1110,7 +1109,7 @@ function Booking({ initialJourneyPayload = null }) {
                   <div className="card-payment-header">
                     <div className="security-badge-group">
                       <span className="secure-badge"><i className="fas fa-lock"></i> Encrypted Checkout</span>
-                      <span className="secure-badge"><i className="fas fa-shield-alt"></i> Card Fields Secured by VGS</span>
+                      <span className="secure-badge"><i className="fas fa-shield-alt"></i> Masked Manual Payment Record</span>
                     </div>
                     <div className="card-brand-logos">
                       <i className="fab fa-cc-visa" title="Visa"></i>
@@ -1140,10 +1139,10 @@ function Booking({ initialJourneyPayload = null }) {
                       {fieldErrors.cardholderName && <span className="field-error-text">{fieldErrors.cardholderName}</span>}
                     </div>
 
-                    <VgsCheckoutCardFields ref={secureCardRef} onFocus={handlePaymentFocus} />
+                    <ManualPaymentCardFields ref={secureCardRef} onFocus={handlePaymentFocus} />
 
                     <p style={{ margin: '0.8rem 0 0', fontSize: '0.82rem', lineHeight: 1.5, color: '#64748b' }}>
-                      Card number, expiration date, and security code are entered directly into protected VGS fields. FareTransit receives vault references and masked metadata, not the raw values.
+                      FareTransit stores only card brand, last four digits, expiration and billing metadata for manual recordkeeping. Full card number and security code are not collected by this form.
                     </p>
                   </div>
 

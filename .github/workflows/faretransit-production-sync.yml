@@ -41,11 +41,18 @@ jobs:
           test -d backend/src/modules/secure-payments
           test -d backend/src/modules/cars
           test -d backend/src/modules/hotels
-          test -f frontend/src/features/secure-payments/VgsCheckoutCardFields.js
+          test -f frontend/src/features/secure-payments/ManualPaymentCardFields.js
+          test ! -f frontend/src/features/secure-payments/VgsCheckoutCardFields.js
+          test ! -f backend/src/modules/secure-payments/vgs-vault.service.mjs
+          test ! -f backend/src/modules/secure-payments/vgs-mfa.service.mjs
           test -f frontend/src/shared/constants/supportContact.js
           grep -R -q 'faretransit.com' frontend/src backend/src api --exclude-dir=node_modules
           if grep -R -n -E 'support@thefinalseat\.com|www\.thefinalseat\.com' frontend/src backend/src api --exclude-dir=node_modules; then
             echo 'Final Seat production identity remains in active FareTransit application files.' >&2
+            exit 1
+          fi
+          if grep -R -n -E '\bVGS\b|VGSCollect|VGSShow|VeryGoodVault|verygoodvault' frontend/src backend/src api --exclude-dir=node_modules; then
+            echo 'Legacy VGS runtime remains in active FareTransit application files.' >&2
             exit 1
           fi
 
