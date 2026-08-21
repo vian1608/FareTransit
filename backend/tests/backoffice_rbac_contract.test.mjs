@@ -68,9 +68,9 @@ test('back-office expansion preserves the stable flight admin and enforces RBAC'
     assert.match(bridgeMigration, /ADD COLUMN IF NOT EXISTS trip_id UUID NULL/);
   });
 
-  await t.test('staff share the existing login but do not land on the legacy owner dashboard', () => {
+  await t.test('staff share the existing login and hard-handoff into the permission-aware back office', () => {
     assert.match(adminLogin, /isStaffProfile/);
-    assert.match(adminLogin, /navigate\(isStaffProfile \? '\/admin\/backoffice' : '\/admin\/dashboard'\)/);
+    assert.match(adminLogin, /window\.location\.assign\('\/admin\/backoffice'\)/);
     assert.match(boShell, /hasPermission\(permission\)/, 'Sidebar visibility must be permission-aware.');
   });
 
