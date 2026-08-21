@@ -1,1 +1,0 @@
-This release removes the active VGS runtime and uses masked manual payment metadata for FareTransit internal records. Full card numbers and card security codes are not accepted by the application.
