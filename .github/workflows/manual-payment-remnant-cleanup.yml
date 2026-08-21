@@ -1,0 +1,30 @@
+name: Manual Payment Remnant Cleanup
+
+on:
+  push:
+    branches: [remove-vgs-manual-payment]
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: remove-vgs-manual-payment
+      - name: Remove active VGS remnants
+        run: python scripts/finish_manual_payment_remnants.py
+      - name: Remove temporary cleanup files
+        run: |
+          rm -f scripts/finish_manual_payment_remnants.py
+          rm -f .github/workflows/manual-payment-remnant-cleanup.yml
+      - name: Commit cleanup
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Remove final active VGS references'
+          git push origin HEAD:remove-vgs-manual-payment
