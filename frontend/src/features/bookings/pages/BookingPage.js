@@ -456,7 +456,7 @@ function Booking({ initialJourneyPayload = null }) {
       customer_price: pricing.total,
       displayedWebsitePrice: pricing.total,
       paymentStatus: 'PENDING',
-      payment_provider: 'VGS',
+      payment_provider: 'manual',
       paymentMethod,
       cardholderName: paymentMethod.cardholderName,
       cardLast4,
@@ -1109,7 +1109,7 @@ function Booking({ initialJourneyPayload = null }) {
                   <div className="card-payment-header">
                     <div className="security-badge-group">
                       <span className="secure-badge"><i className="fas fa-lock"></i> Encrypted Checkout</span>
-                      <span className="secure-badge"><i className="fas fa-shield-alt"></i> Card Fields Secured by VGS</span>
+                      <span className="secure-badge"><i className="fas fa-shield-alt"></i> Masked Manual Payment Record</span>
                     </div>
                     <div className="card-brand-logos">
                       <i className="fab fa-cc-visa" title="Visa"></i>
