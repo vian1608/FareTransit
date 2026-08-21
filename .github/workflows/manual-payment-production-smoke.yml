@@ -1,0 +1,37 @@
+name: Production Manual Payment Smoke
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  manual-payment-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify masked manual payment write
+        shell: bash
+        run: |
+          set -euo pipefail
+          TOKEN='qa_manual_payment_smoke_20260821'
+          URL="https://www.faretransit.com/api/secure-payments/authorizations/${TOKEN}/complete"
+          HTTP_CODE=$(curl --silent --show-error --connect-timeout 15 --max-time 60 \
+            -o /tmp/manual-safe.json -w '%{http_code}' \
+            -X POST "$URL" \
+            -H 'Content-Type: application/json' \
+            --data '{"cardholderName":"QA Manual Smoke","cardBrand":"Visa","last4":"4242","expMonth":12,"expYear":2030,"signatureName":"QA Manual Smoke","billingAddress":{"line1":"1 QA Test Way","city":"Buffalo","region":"NY","postalCode":"14260","country":"US"}}')
+          echo "HTTP_CODE=$HTTP_CODE"
+          test "$HTTP_CODE" = "200"
+          node - <<'NODE'
+          const fs = require('fs');
+          const body = JSON.parse(fs.readFileSync('/tmp/manual-safe.json', 'utf8'));
+          if (body.success !== true) throw new Error(`manual write failed: ${JSON.stringify(body.error || {})}`);
+          const method = body?.data?.paymentMethod;
+          if (!method || method.provider !== 'MANUAL' || method.last4 !== '4242' || method.chargeable !== false) {
+            throw new Error(`unexpected manual method: ${JSON.stringify(method)}`);
+          }
+          if (body?.data?.status !== 'CARD_SUBMITTED') throw new Error(`unexpected status ${body?.data?.status}`);
+          console.log('MANUAL_PAYMENT_WRITE_PASS provider=MANUAL last4=4242 chargeable=false');
+          NODE
