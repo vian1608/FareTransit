@@ -1,0 +1,30 @@
+name: Manual Payment Cutover
+
+on:
+  push:
+    branches: [remove-vgs-manual-payment]
+
+permissions:
+  contents: write
+
+jobs:
+  cutover:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: remove-vgs-manual-payment
+      - name: Apply cutover edits
+        run: python scripts/finish_manual_payment_cutover.py
+      - name: Remove temporary cutover files
+        run: |
+          rm -f scripts/finish_manual_payment_cutover.py
+          rm -f .github/workflows/manual-payment-cutover.yml
+      - name: Commit cutover
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Complete manual payment cutover and remove VGS runtime'
+          git push origin HEAD:remove-vgs-manual-payment
