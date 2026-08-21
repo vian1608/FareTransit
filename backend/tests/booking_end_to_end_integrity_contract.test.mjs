@@ -12,7 +12,8 @@ const service = read('backend/src/modules/bookings/booking.service.mjs');
 const mapper = read('backend/src/modules/bookings/booking.mapper.mjs');
 const traveller = read('backend/src/modules/travellers/traveller.service.mjs');
 const bookingPage = read('frontend/src/features/bookings/pages/BookingPage.js');
-const vgsCheckout = read('frontend/src/features/secure-payments/VgsCheckoutCardFields.js');
+const manualCheckout = read('frontend/src/features/secure-payments/ManualPaymentCardFields.js');
+const securePaymentRoutes = read('backend/src/modules/secure-payments/secure-payment.routes.mjs');
 const migration = read('backend/migrations/035_booking_integrity_hardening.sql');
 
 // Booking creation is database-authoritative. Never report success from a fake
@@ -62,23 +63,24 @@ assert.match(mapper, /infantType:\s*t\.infant_type/);
 assert.match(migration, /ADD COLUMN IF NOT EXISTS infant_type VARCHAR\(20\)/);
 assert.match(migration, /'IN_SEAT','ON_LAP'|'IN_SEAT', 'ON_LAP'/);
 
-// Card security contract: the booking page never handles raw PAN/CVV. Sensitive
-// fields live inside VGS Collect, and only VGS aliases plus masked last4/brand
-// metadata cross back into application code.
-assert.match(bookingPage, /VgsCheckoutCardFields/);
+// Card security contract: the booking page collects only masked manual payment
+// metadata. FareTransit never accepts or stores a full PAN/card number or CVV.
+assert.match(bookingPage, /ManualPaymentCardFields/);
 assert.match(bookingPage, /secureCardRef/);
 assert.match(bookingPage, /secureBooking/);
+assert.match(bookingPage, /payment_provider:\s*'manual'/);
 assert.doesNotMatch(bookingPage, /cleanCardNum/);
 assert.doesNotMatch(bookingPage, /cardNumber\s*:/);
 assert.doesNotMatch(bookingPage, /\bcvv\s*:/i);
-assert.match(vgsCheckout, /window\.VGSCollect\.create/);
-assert.match(vgsCheckout, /createAliases/);
-assert.match(vgsCheckout, /panAlias/);
-assert.match(vgsCheckout, /expirationAlias/);
-assert.match(vgsCheckout, /cvvAlias/);
-assert.match(vgsCheckout, /getMaskedMetadata/);
-assert.match(vgsCheckout, /last4/);
-assert.doesNotMatch(vgsCheckout, /console\.log\([\s\S]*(card_number|card_cvv|panAlias|cvvAlias)/i);
+assert.match(manualCheckout, /getMaskedMetadata/);
+assert.match(manualCheckout, /last4/);
+assert.match(manualCheckout, /expMonth/);
+assert.match(manualCheckout, /expYear/);
+assert.doesNotMatch(manualCheckout, /createAliases|panAlias|cvvAlias|card-number|security-code|VGSCollect|VGSShow/i);
+assert.match(securePaymentRoutes, /SENSITIVE_CARD_DATA_NOT_ACCEPTED/);
+assert.match(securePaymentRoutes, /rejectSensitiveCardPayload/);
+assert.match(securePaymentRoutes, /payment_provider:\s*'manual'/);
+assert.match(securePaymentRoutes, /tokenization_status:\s*'MANUAL_METADATA'/);
 
 // Checkout token is a stable idempotency identity, and confirmation prefers the
 // opaque read token when available.
