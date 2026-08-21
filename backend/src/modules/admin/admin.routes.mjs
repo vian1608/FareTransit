@@ -7,6 +7,7 @@ import adminBulkDeleteController from './admin.bulk-delete.controller.mjs';
 import adminPassengerController from './admin.passenger.controller.mjs';
 import adminBookingMutationController from './admin.booking-mutation.controller.mjs';
 import adminEmailManualController from './admin.email-manual.controller.mjs';
+import adminDemoController from './admin.demo.controller.mjs';
 import voucherController from '../vouchers/voucher.controller.mjs';
 import '../bookings/booking.repository.runtime-repair.mjs';
 import '../bookings/booking.repository.egress-hardening.mjs';
@@ -27,6 +28,8 @@ router.post('/login', loginRateLimiter, adminController.login);
 
 import passengerAuthorizationController from '../authorizations/passenger-authorization.controller.mjs';
 import bookingController from '../bookings/booking.controller.mjs';
+
+router.post('/demo-workflow/merchant-credentials', adminWriteRateLimiter, authenticate, authorize(['admin']), adminDemoController.resetMerchantTestCredentials);
 
 router.get('/vouchers', adminReadRateLimiter, authenticate, authorize(['admin']), voucherController.listAdmin);
 router.post('/vouchers', adminWriteRateLimiter, authenticate, authorize(['admin']), voucherController.createAdmin);
