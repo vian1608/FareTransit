@@ -1,8 +1,10 @@
 name: FareTransit Hardening CI
 
 on:
+  workflow_dispatch:
   push:
     branches:
+      - main
       - faretransit-hardening-phase2
   pull_request:
     branches:
@@ -11,10 +13,15 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: faretransit-hardening-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   backend-regression:
     name: Backend regression suite
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: backend
@@ -41,6 +48,7 @@ jobs:
   frontend-build:
     name: Frontend production build
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: frontend
@@ -56,4 +64,6 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
       - name: Build frontend
+        env:
+          CI: "false"
         run: npm run build
