@@ -3,6 +3,8 @@ import { calculateFlightDiscount } from '../../shared/utils/pricing.helper.mjs';
 import { GLOBAL_AIRPORTS, rankAirportSuggestions, searchAndRankLocalAirports } from '../../modules/flights/airport-ranker.mjs';
 
 const PROVIDER_TIMEOUT_MS = 20000;
+const FLIGHT_SEARCH_CACHE_TTL_MS = 60000;
+const FLIGHT_SEARCH_CACHE_MAX = 100;
 
 function isIataCode(value) {
   return /^[A-Z]{3}$/.test(String(value || '').trim().toUpperCase());
@@ -28,6 +30,8 @@ function durationFromMinutes(value) {
 class SerpApiService {
   constructor() {
     this.apiKey = env.serpapiApiKey || '';
+    this.flightSearchCache = new Map();
+    this.flightSearchInFlight = new Map();
   }
 
   extractAirportCode(input) {
@@ -57,58 +61,66 @@ class SerpApiService {
       return GLOBAL_AIRPORTS.filter((airport) => isIataCode(airport.code)).slice(0, 10);
     }
 
-    const localResults = searchAndRankLocalAirports(query).filter((airport) => isIataCode(airport.code));
+    const normalizedQuery = String(query).trim();
+    const localResults = searchAndRankLocalAirports(normalizedQuery)
+      .filter((airport) => isIataCode(airport.code));
+
+    if (localResults.length > 0) {
+      return localResults.slice(0, 12);
+    }
+
+    if (normalizedQuery.length < 3 || !this.apiKey) {
+      return [];
+    }
+
     const apiResults = [];
+    try {
+      const params = new URLSearchParams({
+        engine: 'google_flights_autocomplete',
+        q: normalizedQuery,
+        api_key: this.apiKey,
+        exclude_regions: 'true',
+        hl: 'en',
+        gl: 'us',
+      });
 
-    if (this.apiKey) {
-      try {
-        const params = new URLSearchParams({
-          engine: 'google_flights_autocomplete',
-          q: query,
-          api_key: this.apiKey,
-          exclude_regions: 'true',
-          hl: 'en',
-          gl: 'us',
-        });
+      const response = await fetch(`https://serpapi.com/search.json?${params.toString()}`, {
+        signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS),
+      });
+      const data = await response.json();
 
-        const response = await fetch(`https://serpapi.com/search.json?${params.toString()}`, {
-          signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS),
-        });
-        const data = await response.json();
-
-        if (response.ok && Array.isArray(data.suggestions)) {
-          data.suggestions.forEach((suggestion) => {
-            if (suggestion.type === 'airport' && isIataCode(suggestion.id)) {
-              const descInfo = parseDescription(suggestion.description);
+      if (response.ok && Array.isArray(data.suggestions)) {
+        data.suggestions.forEach((suggestion) => {
+          if (suggestion.type === 'airport' && isIataCode(suggestion.id)) {
+            const descInfo = parseDescription(suggestion.description);
+            apiResults.push({
+              code: suggestion.id.toUpperCase(),
+              name: suggestion.name,
+              city: descInfo.city,
+              state: descInfo.state,
+              country: descInfo.country,
+            });
+          } else if (suggestion.type === 'city' && Array.isArray(suggestion.airports)) {
+            suggestion.airports.forEach((airport) => {
+              if (!isIataCode(airport.id)) return;
+              const descInfo = parseDescription(suggestion.name);
               apiResults.push({
-                code: suggestion.id.toUpperCase(),
-                name: suggestion.name,
+                code: airport.id.toUpperCase(),
+                name: airport.name,
                 city: descInfo.city,
                 state: descInfo.state,
                 country: descInfo.country,
               });
-            } else if (suggestion.type === 'city' && Array.isArray(suggestion.airports)) {
-              suggestion.airports.forEach((airport) => {
-                if (!isIataCode(airport.id)) return;
-                const descInfo = parseDescription(suggestion.name);
-                apiResults.push({
-                  code: airport.id.toUpperCase(),
-                  name: airport.name,
-                  city: descInfo.city,
-                  state: descInfo.state,
-                  country: descInfo.country,
-                });
-              });
-            }
-          });
-        }
-      } catch (error) {
-        console.warn('SerpAPI autocomplete failed:', error.message);
+            });
+          }
+        });
       }
+    } catch (error) {
+      console.warn('SerpAPI autocomplete failed:', error.message);
     }
 
     const merged = new Map();
-    [...localResults, ...apiResults].forEach((item) => {
+    apiResults.forEach((item) => {
       const code = String(item?.code || '').toUpperCase();
       if (!isIataCode(code)) return;
       const matchingLocal = GLOBAL_AIRPORTS.find((airport) => airport.code === code);
@@ -116,10 +128,9 @@ class SerpApiService {
     });
 
     const candidates = [...merged.values()];
-    const ranked = rankAirportSuggestions(candidates, query).filter((airport) => isIataCode(airport.code));
-    return ranked.length > 0
-      ? ranked
-      : rankAirportSuggestions(GLOBAL_AIRPORTS.filter((airport) => isIataCode(airport.code)), query);
+    return rankAirportSuggestions(candidates, normalizedQuery)
+      .filter((airport) => isIataCode(airport.code))
+      .slice(0, 12);
   }
 
   async searchFlights(searchParams) {
@@ -211,13 +222,43 @@ class SerpApiService {
       if (infantsInSeat > 0) params.append('infants_in_seat', infantsInSeat.toString());
       if (infantsOnLap > 0) params.append('infants_on_lap', infantsOnLap.toString());
 
-      const response = await fetch(`https://serpapi.com/search.json?${params.toString()}`, {
-        signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'SerpAPI flight search request failed');
+      const cacheKey = [...params.entries()]
+        .filter(([key]) => key !== 'api_key')
+        .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+        .join('&');
 
-      return this.formatSerpFlightOffers(data, formatSearchParams);
+      const cached = this.flightSearchCache.get(cacheKey);
+      if (cached && (Date.now() - cached.createdAt) < FLIGHT_SEARCH_CACHE_TTL_MS) {
+        return cached.value;
+      }
+      if (cached) this.flightSearchCache.delete(cacheKey);
+
+      if (this.flightSearchInFlight.has(cacheKey)) {
+        return await this.flightSearchInFlight.get(cacheKey);
+      }
+
+      const providerRequest = (async () => {
+        const response = await fetch(`https://serpapi.com/search.json?${params.toString()}`, {
+          signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'SerpAPI flight search request failed');
+
+        const formatted = this.formatSerpFlightOffers(data, formatSearchParams);
+        if (this.flightSearchCache.size >= FLIGHT_SEARCH_CACHE_MAX) {
+          const oldestKey = this.flightSearchCache.keys().next().value;
+          if (oldestKey) this.flightSearchCache.delete(oldestKey);
+        }
+        this.flightSearchCache.set(cacheKey, { createdAt: Date.now(), value: formatted });
+        return formatted;
+      })();
+
+      this.flightSearchInFlight.set(cacheKey, providerRequest);
+      try {
+        return await providerRequest;
+      } finally {
+        this.flightSearchInFlight.delete(cacheKey);
+      }
     } catch (error) {
       if (isProduction) {
         const err = new Error('Live flight search is temporarily unavailable. Please try again shortly.');
