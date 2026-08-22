@@ -1,0 +1,76 @@
+name: Production Smoke
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  statuses: read
+
+concurrency:
+  group: production-smoke-${{ github.repository }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    name: Verify live deployment
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Wait for Vercel deployment status
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          vercel_state="missing"
+          for attempt in $(seq 1 40); do
+            payload="$(curl -fsS \
+              -H "Authorization: Bearer ${GH_TOKEN}" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/status")"
+            vercel_state="$(printf '%s' "$payload" | jq -r '[.statuses[] | select(.context == "Vercel")][0].state // "missing"')"
+            echo "Vercel status: ${vercel_state} (attempt ${attempt}/40)"
+            if [ "$vercel_state" = "success" ]; then
+              break
+            fi
+            if [ "$vercel_state" = "failure" ] || [ "$vercel_state" = "error" ]; then
+              echo "Vercel deployment failed for ${GITHUB_SHA}." >&2
+              exit 1
+            fi
+            sleep 15
+          done
+          if [ "$vercel_state" != "success" ]; then
+            echo "Timed out waiting for Vercel deployment status for ${GITHUB_SHA}." >&2
+            exit 1
+          fi
+
+      - name: Smoke public production routes
+        shell: bash
+        run: |
+          set -euo pipefail
+          urls=(
+            "https://www.faretransit.com/"
+            "https://www.faretransit.com/api/health"
+            "https://www.faretransit.com/admin/login"
+          )
+          for url in "${urls[@]}"; do
+            echo "Checking ${url}"
+            curl --fail --silent --show-error --location \
+              --retry 5 --retry-delay 5 --retry-all-errors \
+              --max-time 30 "$url" >/dev/null
+          done
+
+      - name: Verify canonical domain redirect
+        shell: bash
+        run: |
+          set -euo pipefail
+          target="$(curl --silent --show-error --head --max-redirs 0 \
+            -o /dev/null -w '%{redirect_url}' https://faretransit.com/ || true)"
+          if [[ "$target" != https://www.faretransit.com/* ]]; then
+            echo "Expected faretransit.com to redirect to www.faretransit.com, got: ${target:-no redirect}" >&2
+            exit 1
+          fi
+          echo "Canonical redirect verified: ${target}"
