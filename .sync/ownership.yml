@@ -1,0 +1,69 @@
+version: 1
+canonical:
+  repository: vian1608/thefinalseat
+  branch: master
+
+this_repository:
+  repository: vian1608/FareTransit
+  branch: main
+  role: branded_downstream
+
+policy:
+  direction: finalseat_to_faretransit
+  delivery: pull_request_only
+  direct_main_push_from_sync: false
+  reverse_changes: promote_to_canonical_first
+
+shared_exact:
+  - backend/src/integrations/serpapi/serpapi.service.mjs
+  - backend/src/modules/flights/airport-ranker.mjs
+  - backend/src/modules/flights/flight.service.mjs
+  - backend/src/modules/flights/flight.routes.mjs
+  - backend/src/modules/cars/car-location.service.mjs
+  - backend/src/services/bookingDemandApiClient.mjs
+  - backend/src/modules/bookings/booking.mapper.mjs
+
+review_shared:
+  - frontend/src/features/flights/**
+  - frontend/src/features/hotels/**
+  - frontend/src/features/cars/**
+  - frontend/src/features/bookings/**
+  - frontend/src/features/journey/**
+  - frontend/src/features/customers/**
+  - frontend/src/features/backoffice/**
+  - backend/src/modules/bookings/**
+  - backend/src/modules/hotels/**
+  - backend/src/modules/cars/**
+  - backend/src/modules/backoffice/**
+  - backend/src/modules/authorizations/**
+
+# FareTransit-specific code and business identity. Shared-core synchronization must
+# fail closed rather than overwrite any of these paths.
+protected:
+  - frontend/src/features/secure-payments/**
+  - backend/src/modules/secure-payments/**
+  - backend/src/modules/admin/admin.demo.controller.mjs
+  - backend/tests/admin_demo_workflow_contract.test.mjs
+  - backend/tests/merchant_demo_login_contract.test.mjs
+  - frontend/src/features/admin/components/AdminDemoWorkflowCard.js
+  - frontend/src/shared/constants/supportContact.js
+  - frontend/src/shared/pages/AboutUsPage.js
+  - frontend/src/shared/pages/PrivacyPolicyPage.js
+  - frontend/src/shared/pages/TermsAndConditionsPage.js
+  - frontend/src/shared/pages/RefundPolicyPage.js
+  - frontend/public/logo/**
+  - frontend/public/favicon.*
+  - vercel.json
+  - '**/.env*'
+  - backend/migrations/**
+  - supabase/**
+  - '**/*secret*'
+
+faretransit_invariants:
+  - faretransit_brand_identity_only
+  - faretransit_database_only
+  - manual_masked_payment_metadata_only
+  - never_restore_vgs_runtime
+  - never_store_full_pan_or_cvv
+  - merchant_demo_remains_read_only_and_faretransit_only
+  - shared_changes_arrive_via_reviewed_pr
