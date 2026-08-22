@@ -1,0 +1,181 @@
+name: Delivery Gates
+
+on:
+  pull_request:
+    branches: [develop, staging, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: delivery-gates-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  branch-policy:
+    name: Enforce promotion path
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Validate source and target branches
+        shell: bash
+        env:
+          BASE: ${{ github.base_ref }}
+          HEAD: ${{ github.head_ref }}
+        run: |
+          set -euo pipefail
+          echo "Promotion request: ${HEAD} -> ${BASE}"
+          case "$BASE" in
+            develop)
+              if [[ "$HEAD" == "develop" || "$HEAD" == "staging" || "$HEAD" == "main" ]]; then
+                echo "Feature/fix work must enter develop from a non-environment branch." >&2
+                exit 1
+              fi
+              ;;
+            staging)
+              if [[ "$HEAD" != "develop" ]]; then
+                echo "Staging only accepts promotion from develop." >&2
+                exit 1
+              fi
+              ;;
+            main)
+              if [[ "$HEAD" != "staging" && "$HEAD" != hotfix/* ]]; then
+                echo "Production only accepts staging, or an explicit hotfix/* branch." >&2
+                exit 1
+              fi
+              ;;
+          esac
+
+  quality:
+    name: Full application regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NODE_ENV: test
+      SUPABASE_URL: https://placeholder.supabase.co
+      SUPABASE_SECRET_KEY: placeholder-key
+      JWT_SECRET: faretransit-ci-jwt-secret-not-for-production
+      ADMIN_PASSWORD: faretransit-ci-admin-password-not-for-production
+    steps:
+      - name: Checkout candidate revision
+        uses: actions/checkout@v4
+
+      - name: Verify FareTransit identity and payment boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d backend/src/modules/bookings
+          test -d backend/src/modules/admin
+          test -d backend/src/modules/backoffice
+          test -d backend/src/modules/secure-payments
+          test -d backend/src/modules/cars
+          test -d backend/src/modules/hotels
+          test -f frontend/src/features/secure-payments/ManualPaymentCardFields.js
+          test ! -f frontend/src/features/secure-payments/VgsCheckoutCardFields.js
+          test ! -f backend/src/modules/secure-payments/vgs-vault.service.mjs
+          test ! -f backend/src/modules/secure-payments/vgs-mfa.service.mjs
+          grep -R -q 'faretransit.com' frontend/src backend/src api --exclude-dir=node_modules
+          if grep -R -n -E 'support@thefinalseat\.com|www\.thefinalseat\.com' frontend/src backend/src api --exclude-dir=node_modules; then
+            echo 'Final Seat production identity remains in active FareTransit application files.' >&2
+            exit 1
+          fi
+          if grep -R -n -E '\bVGS\b|VGSCollect|VGSShow|VeryGoodVault|verygoodvault' frontend/src backend/src api --exclude-dir=node_modules; then
+            echo 'Legacy VGS runtime remains in active FareTransit application files.' >&2
+            exit 1
+          fi
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci --no-audit --no-fund
+
+      - name: Run production-readiness regression suite
+        working-directory: backend
+        run: npm run verify:production-ready
+
+      - name: Check backend module syntax
+        shell: bash
+        run: find backend/src -name '*.mjs' -print0 | xargs -0 -n1 node --check
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci --no-audit --no-fund
+
+      - name: Build production frontend
+        working-directory: frontend
+        env:
+          CI: "false"
+        run: npm run build
+
+  migration-safety:
+    name: Database migration safety
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Reject rewritten or unapproved destructive migrations
+        shell: bash
+        env:
+          BASE: ${{ github.base_ref }}
+        run: |
+          set -euo pipefail
+          git fetch origin "$BASE" --quiet
+
+          status="$(git diff --name-status "origin/${BASE}...HEAD" -- backend/migrations || true)"
+          echo "$status"
+
+          modified="$(printf '%s\n' "$status" | awk '$1 == "M" { print $2 }')"
+          if [[ -n "$modified" ]]; then
+            echo "Existing migration files must not be rewritten after promotion. Add a new migration instead:" >&2
+            echo "$modified" >&2
+            exit 1
+          fi
+
+          diff="$(git diff --unified=0 "origin/${BASE}...HEAD" -- backend/migrations || true)"
+          added="$(printf '%s\n' "$diff" | grep '^+' | grep -v '^+++' || true)"
+          if printf '%s\n' "$added" | grep -Eiq '\b(DROP[[:space:]]+(TABLE|COLUMN|SCHEMA|TYPE)|TRUNCATE[[:space:]]+|ALTER[[:space:]]+TABLE.*DROP[[:space:]]+|DELETE[[:space:]]+FROM)\b'; then
+            if ! printf '%s\n' "$added" | grep -q 'ALLOW_DESTRUCTIVE_MIGRATION:'; then
+              echo "Destructive SQL detected. Prefer expand-and-contract migrations." >&2
+              echo "If destruction is truly required, add: -- ALLOW_DESTRUCTIVE_MIGRATION: <reason>" >&2
+              exit 1
+            fi
+          fi
+
+  changed-secret-scan:
+    name: Changed-code secret scan
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Scan newly added runtime lines for high-risk secrets
+        shell: bash
+        env:
+          BASE: ${{ github.base_ref }}
+        run: |
+          set -euo pipefail
+          git fetch origin "$BASE" --quiet
+          diff="$(git diff --unified=0 "origin/${BASE}...HEAD" -- frontend/src backend/src api 2>/dev/null || true)"
+          added="$(printf '%s\n' "$diff" | grep '^+' | grep -v '^+++' || true)"
+
+          pattern='(-----BEGIN ([A-Z ]+)?PRIVATE KEY-----|sk_live_[A-Za-z0-9]+|sb_secret_[A-Za-z0-9]+|SUPABASE_SECRET_KEY[[:space:]]*=[[:space:]]*[A-Za-z0-9._-]{16,}|PAYPAL_CLIENT_SECRET[[:space:]]*=[[:space:]]*[A-Za-z0-9._-]{16,}|NMI_SECURITY_KEY[[:space:]]*=[[:space:]]*[A-Za-z0-9._-]{16,})'
+          if printf '%s\n' "$added" | grep -E "$pattern"; then
+            echo "Potential production secret found in newly added runtime code." >&2
+            exit 1
+          fi

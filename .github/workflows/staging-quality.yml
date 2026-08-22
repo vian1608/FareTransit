@@ -1,0 +1,137 @@
+name: Staging Quality
+
+on:
+  push:
+    branches: [staging]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  statuses: read
+  deployments: read
+
+concurrency:
+  group: staging-quality-${{ github.repository }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Verify FareTransit staging candidate
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      NODE_ENV: test
+      SUPABASE_URL: https://placeholder.supabase.co
+      SUPABASE_SECRET_KEY: placeholder-key
+      JWT_SECRET: faretransit-ci-jwt-secret-not-for-production
+      ADMIN_PASSWORD: faretransit-ci-admin-password-not-for-production
+    steps:
+      - name: Checkout staging revision
+        uses: actions/checkout@v4
+
+      - name: Verify FareTransit identity and payment boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f frontend/src/features/secure-payments/ManualPaymentCardFields.js
+          test ! -f frontend/src/features/secure-payments/VgsCheckoutCardFields.js
+          test ! -f backend/src/modules/secure-payments/vgs-vault.service.mjs
+          test ! -f backend/src/modules/secure-payments/vgs-mfa.service.mjs
+          if grep -R -n -E 'support@thefinalseat\.com|www\.thefinalseat\.com' frontend/src backend/src api --exclude-dir=node_modules; then
+            echo 'Final Seat production identity remains in active FareTransit application files.' >&2
+            exit 1
+          fi
+          if grep -R -n -E '\bVGS\b|VGSCollect|VGSShow|VeryGoodVault|verygoodvault' frontend/src backend/src api --exclude-dir=node_modules; then
+            echo 'Legacy VGS runtime remains in active FareTransit application files.' >&2
+            exit 1
+          fi
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci --no-audit --no-fund
+
+      - name: Run full backend regression suite
+        working-directory: backend
+        run: npm run verify:production-ready
+
+      - name: Check backend module syntax
+        shell: bash
+        run: find backend/src -name '*.mjs' -print0 | xargs -0 -n1 node --check
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci --no-audit --no-fund
+
+      - name: Build staging frontend artifact
+        working-directory: frontend
+        env:
+          CI: "false"
+        run: npm run build
+
+      - name: Wait for Vercel staging preview deployment
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          state="missing"
+          for attempt in $(seq 1 40); do
+            payload="$(curl -fsS \
+              -H "Authorization: Bearer ${GH_TOKEN}" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/status")"
+            state="$(printf '%s' "$payload" | jq -r '[.statuses[] | select(.context == "Vercel")][0].state // "missing"')"
+            echo "Vercel staging status: ${state} (attempt ${attempt}/40)"
+            if [[ "$state" == "success" ]]; then
+              exit 0
+            fi
+            if [[ "$state" == "failure" || "$state" == "error" ]]; then
+              echo "Vercel staging deployment failed for ${GITHUB_SHA}." >&2
+              exit 1
+            fi
+            sleep 15
+          done
+          echo "Timed out waiting for Vercel staging deployment for ${GITHUB_SHA}." >&2
+          exit 1
+
+      - name: Report staging deployment URL when GitHub exposes one
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          deployments="$(curl -fsS \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/deployments?sha=${GITHUB_SHA}&per_page=20" || echo '[]')"
+
+          found=""
+          while read -r id; do
+            [[ -z "$id" ]] && continue
+            statuses="$(curl -fsS \
+              -H "Authorization: Bearer ${GH_TOKEN}" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${GITHUB_REPOSITORY}/deployments/${id}/statuses?per_page=20" || echo '[]')"
+            candidate="$(printf '%s' "$statuses" | jq -r '[.[] | select(.state == "success") | .environment_url] | map(select(. != null and . != "")) | .[0] // empty')"
+            if [[ -n "$candidate" ]]; then
+              found="$candidate"
+              break
+            fi
+          done < <(printf '%s' "$deployments" | jq -r '.[].id')
+
+          if [[ -n "$found" ]]; then
+            echo "Staging preview: ${found}"
+            echo "### Staging preview" >> "$GITHUB_STEP_SUMMARY"
+            echo "${found}" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::warning::Vercel succeeded, but GitHub did not expose a preview environment URL. Use the Vercel status link on this commit for manual UAT."
+          fi
