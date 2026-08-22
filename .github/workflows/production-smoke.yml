@@ -3,6 +3,8 @@ name: Production Smoke
 on:
   push:
     branches: [main]
+  schedule:
+    - cron: '41 */6 * * *'
   workflow_dispatch:
 
 permissions:
@@ -15,11 +17,12 @@ concurrency:
 
 jobs:
   smoke:
-    name: Verify live deployment
+    name: Verify live production
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - name: Wait for Vercel deployment status
+      - name: Wait for exact Vercel production deployment
+        if: github.event_name == 'push'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -33,16 +36,16 @@ jobs:
               "https://api.github.com/repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/status")"
             vercel_state="$(printf '%s' "$payload" | jq -r '[.statuses[] | select(.context == "Vercel")][0].state // "missing"')"
             echo "Vercel status: ${vercel_state} (attempt ${attempt}/40)"
-            if [ "$vercel_state" = "success" ]; then
+            if [[ "$vercel_state" == "success" ]]; then
               break
             fi
-            if [ "$vercel_state" = "failure" ] || [ "$vercel_state" = "error" ]; then
+            if [[ "$vercel_state" == "failure" || "$vercel_state" == "error" ]]; then
               echo "Vercel deployment failed for ${GITHUB_SHA}." >&2
               exit 1
             fi
             sleep 15
           done
-          if [ "$vercel_state" != "success" ]; then
+          if [[ "$vercel_state" != "success" ]]; then
             echo "Timed out waiting for Vercel deployment status for ${GITHUB_SHA}." >&2
             exit 1
           fi
@@ -53,8 +56,17 @@ jobs:
           set -euo pipefail
           urls=(
             "https://www.faretransit.com/"
-            "https://www.faretransit.com/api/health"
+            "https://www.faretransit.com/hotels"
+            "https://www.faretransit.com/car-rentals"
+            "https://www.faretransit.com/my-bookings"
+            "https://www.faretransit.com/contact"
+            "https://www.faretransit.com/terms"
+            "https://www.faretransit.com/privacy-policy"
+            "https://www.faretransit.com/refund-policy"
             "https://www.faretransit.com/admin/login"
+            "https://www.faretransit.com/api/health"
+            "https://www.faretransit.com/robots.txt"
+            "https://www.faretransit.com/sitemap.xml"
           )
           for url in "${urls[@]}"; do
             echo "Checking ${url}"
@@ -62,6 +74,21 @@ jobs:
               --retry 5 --retry-delay 5 --retry-all-errors \
               --max-time 30 "$url" >/dev/null
           done
+
+      - name: Verify production identity and API health
+        shell: bash
+        run: |
+          set -euo pipefail
+          home="$(curl --fail --silent --show-error --location --max-time 30 https://www.faretransit.com/)"
+          health="$(curl --fail --silent --show-error --location --max-time 30 https://www.faretransit.com/api/health)"
+          if ! printf '%s' "$home" | grep -qi 'FareTransit'; then
+            echo "The live homepage does not contain the expected FareTransit identity." >&2
+            exit 1
+          fi
+          if ! printf '%s' "$health" | grep -qi 'FareTransit API is running'; then
+            echo "The health endpoint did not return the expected FareTransit API identity." >&2
+            exit 1
+          fi
 
       - name: Verify canonical domain redirect
         shell: bash
