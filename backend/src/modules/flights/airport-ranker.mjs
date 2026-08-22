@@ -86,6 +86,7 @@ export const GLOBAL_AIRPORTS = [
   { code: 'GRU', name: 'São Paulo/Guarulhos International Airport', city: 'Sao Paulo', state: '', country: 'Brazil' },
   { code: 'EZE', name: 'Ministro Pistarini International Airport', city: 'Buenos Aires', state: '', country: 'Argentina' },
   { code: 'BOG', name: 'El Dorado International Airport', city: 'Bogota', state: '', country: 'Colombia' },
+  { code: 'MDE', name: 'José María Córdova International Airport', city: 'Medellin', state: 'Antioquia', country: 'Colombia' },
 
   // Middle East & Asia Pacific
   { code: 'DXB', name: 'Dubai International Airport', city: 'Dubai', state: '', country: 'United Arab Emirates' },
@@ -107,9 +108,6 @@ export const GLOBAL_AIRPORTS = [
   { code: 'AKL', name: 'Auckland Airport', city: 'Auckland', state: '', country: 'New Zealand' }
 ];
 
-/**
- * Calculates match score for an airport based on query string
- */
 export function scoreAirportMatch(airport, queryStr) {
   if (!queryStr || !airport) return 0;
   const q = String(queryStr).trim().toLowerCase();
@@ -121,36 +119,17 @@ export function scoreAirportMatch(airport, queryStr) {
   const name = (airport.name || '').toLowerCase();
   const country = (airport.country || '').toLowerCase();
 
-  // 1. Exact IATA Code Match (Highest Priority)
   if (code === qUpper) return 10000;
-
-  // 2. IATA Code Prefix Match
   if (code.startsWith(qUpper)) return 8000;
-
-  // 3. Exact City Match
   if (city === q) return 6000;
-
-  // 4. City Prefix Match
   if (city.startsWith(q)) return 4000;
-
-  // 5. City Partial Match
   if (city.includes(q)) return 3000;
-
-  // 6. Airport Name Prefix Match
   if (name.startsWith(q)) return 2000;
-
-  // 7. Airport Name Substring Match
   if (name.includes(q)) return 1000;
-
-  // 8. Country Match
   if (country.startsWith(q) || country.includes(q)) return 500;
-
   return 0;
 }
 
-/**
- * Rank array of airports by relevance score for query string
- */
 export function rankAirportSuggestions(airports, queryStr) {
   if (!Array.isArray(airports)) return [];
   const qLower = (queryStr || '').trim().toLowerCase();
@@ -161,25 +140,17 @@ export function rankAirportSuggestions(airports, queryStr) {
   })).filter(item => item.score > 0);
 
   scored.sort((a, b) => {
-    if (b.score !== a.score) {
-      return b.score - a.score;
-    }
-    // Secondary tie-breaker: exact city match precedence
+    if (b.score !== a.score) return b.score - a.score;
     const cityA = (a.airport.city || '').toLowerCase();
     const cityB = (b.airport.city || '').toLowerCase();
     if (cityA === qLower && cityB !== qLower) return -1;
     if (cityB === qLower && cityA !== qLower) return 1;
-
-    // Tertiary tie-breaker: alphabetical by IATA code
     return (a.airport.code || '').localeCompare(b.airport.code || '');
   });
 
   return scored.map(item => item.airport);
 }
 
-/**
- * Search local dictionary and rank results
- */
 export function searchAndRankLocalAirports(queryStr) {
   return rankAirportSuggestions(GLOBAL_AIRPORTS, queryStr);
 }
