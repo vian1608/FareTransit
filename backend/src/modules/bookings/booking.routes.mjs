@@ -8,6 +8,7 @@ import completeJourneySessionAfterBooking from '../journey-sessions/checkout-ses
 import './booking.repository.egress-hardening.mjs';
 import './booking.service.status-hardening.mjs';
 import './booking.service.addon-hardening.mjs';
+import './booking.service.trip-addon-parity-hardening.mjs';
 
 const router = express.Router();
 
