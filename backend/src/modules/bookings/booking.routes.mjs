@@ -7,6 +7,8 @@ import applyVoucherPricingToBooking from '../vouchers/voucher-booking.middleware
 import completeJourneySessionAfterBooking from '../journey-sessions/checkout-session-booking.middleware.mjs';
 import './booking.repository.egress-hardening.mjs';
 import './booking.service.status-hardening.mjs';
+import './booking.service.addon-hardening.mjs';
+import './booking.service.trip-addon-parity-hardening.mjs';
 
 const router = express.Router();
 
