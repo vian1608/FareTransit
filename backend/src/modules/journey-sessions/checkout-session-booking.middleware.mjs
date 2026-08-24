@@ -4,6 +4,7 @@ import {
   applyAuthoritativeTripAddonPricing,
 } from '../addons/trip-addon-pricing.service.mjs';
 import flexAddonService from '../addons/flex-addon.service.mjs';
+import { sendTripAddonBookingSummaryEmail } from '../addons/trip-addon-booking-email.service.mjs';
 
 /**
  * Links a successful booking to its c_ checkout token and returns an r_ read token.
@@ -83,11 +84,17 @@ export async function completeJourneySessionAfterBooking(req, res, next) {
     Promise.allSettled([
       journeySessionService.completeCheckout(checkoutToken, bookingId),
       flexAddonService.persistForBooking(bookingId, tripAddons),
-    ]).then((results) => {
+    ]).then(async (results) => {
       if (sent) return;
-      sent = true;
       if (results[0]?.status === 'rejected') console.error('[JourneySession] Non-blocking checkout completion warning:', results[0].reason?.message);
       if (results[1]?.status === 'rejected') console.error('[TripAddons] Non-blocking Flex persistence warning:', results[1].reason?.message);
+      // Baggage is persisted inside bookingService.create before this response is
+      // emitted, so email lookup sees both Flex and baggage records.
+      try { await sendTripAddonBookingSummaryEmail(bookingId); }
+      catch (error) { console.error('[TripAddons] Non-blocking itemized email warning:', error.message); }
+
+      if (sent) return;
+      sent = true;
       const reservationToken = results[0]?.status === 'fulfilled' ? results[0].value?.reservationToken : null;
       const existingData = body?.data && typeof body.data === 'object' ? body.data : {};
       return originalJson({
