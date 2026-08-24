@@ -41,6 +41,7 @@ create table if not exists public.flex_change_requests (
   updated_at timestamptz not null default now()
 );
 
+create index if not exists idx_flex_change_requests_booking_addon on public.flex_change_requests(booking_addon_id);
 create index if not exists idx_flex_change_requests_booking on public.flex_change_requests(booking_id);
 create index if not exists idx_flex_change_requests_status on public.flex_change_requests(status);
 
