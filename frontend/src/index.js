@@ -15,6 +15,7 @@ import './shared/styles/BookingChoiceUX.css';
 import './shared/styles/MobileItineraryCompact.css';
 import './shared/styles/MobileItineraryRoutePolish.css';
 import './features/bookings/addons/BaggageAncillary.css';
+import './features/bookings/addons/TripAddonsEnhancement.css';
 import App from './app/App';
 import BackOfficeRouter from './features/backoffice/BackOfficeRouter';
 import SecurePaymentPage from './features/secure-payments/SecurePaymentPage';
@@ -29,17 +30,17 @@ import { installBookingValidationUX } from './shared/validation/installBookingVa
 import { installFareBreakdownUX } from './shared/pricing/installFareBreakdownUX';
 import { installMobileBookingUX } from './shared/mobile/installMobileBookingUX';
 import { installPrimaryContactSyncUX } from './shared/contact/installPrimaryContactSyncUX';
-import { installBaggageAncillaryUX } from './features/bookings/addons/installBaggageAncillaryUX';
+import { installTripAddonsUX } from './features/bookings/addons/installTripAddonsUX';
 
 installSensitiveDataGuards();
 installBookingValidationUX();
 installFareBreakdownUX();
 installMobileBookingUX();
 installPrimaryContactSyncUX();
-installBaggageAncillaryUX();
+installTripAddonsUX();
 
 // Build marker used to verify that the current FareTransit frontend bundle is live.
-document.documentElement.dataset.faretransitBuild = 'baggage-ancillary-2026-08-24';
+document.documentElement.dataset.faretransitBuild = 'trip-addons-flex-baggage-2026-08-24';
 
 // CRM launches the EXISTING create-flight workflow with a leadId query parameter.
 // Patch only that single request path so the successful legacy create call is
