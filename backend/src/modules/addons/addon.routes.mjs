@@ -1,6 +1,7 @@
 import express from 'express';
 import addonController from './addon.controller.mjs';
 import { flexAddonController } from './flex-addon.controller.mjs';
+import './trip-addon-evidence-hardening.mjs';
 import authenticate from '../../middleware/authenticate.mjs';
 import authorize from '../../middleware/authorize.mjs';
 import rateLimit from '../../middleware/rate-limit.mjs';
