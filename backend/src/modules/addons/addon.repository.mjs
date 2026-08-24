@@ -26,7 +26,7 @@ function normalizeRequestRows(bookingId, travellers = [], rawRequests = []) {
   if (!bookingId || !Array.isArray(rawRequests)) return [];
 
   return rawRequests.map((request) => {
-    const quantity = Math.max(0, Math.min(5, Number.parseInt(request?.quantity, 10) || 0));
+    const quantity = Math.max(0, Math.min(3, Number.parseInt(request?.quantity, 10) || 0));
     if (quantity < 1) return null;
     const passengerIndex = Math.max(0, Number.parseInt(request?.passengerIndex ?? request?.passenger_index, 10) || 0);
     const traveller = travellers[passengerIndex];
@@ -39,6 +39,8 @@ function normalizeRequestRows(bookingId, travellers = [], rawRequests = []) {
       journey_direction: normalizeDirection(request?.journeyDirection ?? request?.journey_direction),
       quantity,
       requested_weight_kg: Number(request?.requestedWeightKg ?? request?.requested_weight_kg ?? 23) || 23,
+      terms_version: request?.termsVersion || request?.terms_version || 'BAGGAGE_REQUEST_V1',
+      metadata: request?.metadata && typeof request.metadata === 'object' ? request.metadata : {},
       status: 'REQUESTED',
       updated_at: new Date().toISOString()
     };
