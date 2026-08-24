@@ -83,7 +83,8 @@ if (!passengerAuthorizationService.__fareTransitTripAddonEvidenceHardening) {
           addOnEvidence: addonEvidence(addons),
           priceBreakdown: priceBreakdown(booking, addons),
         };
-        await supabase.from('passenger_authorizations').update({ quote_snapshot: quoteSnapshot }).eq('token', result.token);
+        const { error: quoteError } = await supabase.from('passenger_authorizations').update({ quote_snapshot: quoteSnapshot }).eq('token', result.token);
+        if (quoteError) logger.warn(`[TripAddons] FareTransit authorization quote update warning: ${quoteError.message}`);
         return { ...result, quote_snapshot: quoteSnapshot, quoteSnapshot };
       } catch (error) {
         logger.warn(`[TripAddons] FareTransit authorization quote evidence warning: ${error.message}`);
@@ -114,8 +115,10 @@ if (!passengerAuthorizationService.__fareTransitTripAddonEvidenceHardening) {
             baggage: [...new Set((addons.baggage || []).map((item) => item.termsVersion || 'BAGGAGE_REQUEST_V1'))],
           },
         };
-        await supabase.from('passenger_authorizations').update({ authorization_snapshot: merged }).eq('token', token);
-        await supabase.from('authorization_snapshots').update({ snapshot_data: merged }).eq('token', token).catch(() => null);
+        const { error: authError } = await supabase.from('passenger_authorizations').update({ authorization_snapshot: merged }).eq('token', token);
+        if (authError) logger.warn(`[TripAddons] FareTransit authorization snapshot update warning: ${authError.message}`);
+        const { error: snapshotError } = await supabase.from('authorization_snapshots').update({ snapshot_data: merged }).eq('token', token);
+        if (snapshotError) logger.warn(`[TripAddons] FareTransit immutable snapshot update warning: ${snapshotError.message}`);
         return { ...result, authorizationSnapshot: merged, authorization_snapshot: merged };
       } catch (error) {
         logger.warn(`[TripAddons] FareTransit accepted authorization evidence warning: ${error.message}`);
