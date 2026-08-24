@@ -14,9 +14,12 @@ import './shared/styles/MobileBookingUX.css';
 import './shared/styles/BookingChoiceUX.css';
 import './shared/styles/MobileItineraryCompact.css';
 import './shared/styles/MobileItineraryRoutePolish.css';
+import './features/bookings/addons/BaggageAncillary.css';
 import App from './app/App';
 import BackOfficeRouter from './features/backoffice/BackOfficeRouter';
 import SecurePaymentPage from './features/secure-payments/SecurePaymentPage';
+import BaggagePaymentPage from './features/bookings/addons/BaggagePaymentPage';
+import BaggageAdminPage from './features/admin/pages/BaggageAdminPage';
 import SupportCallLayer from './shared/components/SupportCallLayer';
 import { boPatch } from './features/backoffice/backofficeApi';
 import { adminAPI } from './shared/api/api';
@@ -26,15 +29,17 @@ import { installBookingValidationUX } from './shared/validation/installBookingVa
 import { installFareBreakdownUX } from './shared/pricing/installFareBreakdownUX';
 import { installMobileBookingUX } from './shared/mobile/installMobileBookingUX';
 import { installPrimaryContactSyncUX } from './shared/contact/installPrimaryContactSyncUX';
+import { installBaggageAncillaryUX } from './features/bookings/addons/installBaggageAncillaryUX';
 
 installSensitiveDataGuards();
 installBookingValidationUX();
 installFareBreakdownUX();
 installMobileBookingUX();
 installPrimaryContactSyncUX();
+installBaggageAncillaryUX();
 
 // Build marker used to verify that the current FareTransit frontend bundle is live.
-document.documentElement.dataset.faretransitBuild = 'compact-hero-2026-08-20';
+document.documentElement.dataset.faretransitBuild = 'baggage-ancillary-2026-08-24';
 
 // CRM launches the EXISTING create-flight workflow with a leadId query parameter.
 // Patch only that single request path so the successful legacy create call is
@@ -60,10 +65,12 @@ if (crmLeadId && !adminAPI.__tfsCrmFlightCreateBridge) {
   Object.defineProperty(adminAPI, '__tfsCrmFlightCreateBridge', { value: true, configurable: false, enumerable: false, writable: false });
 }
 
-// Preserve every established App.js route. Only additive back-office and secure-payment
+// Preserve every established App.js route. Only additive back-office and payment
 // URLs are intercepted here so the stable flight/admin route table does not need a rewrite.
 const isNewBackOfficePath = /^\/admin\/(backoffice|crm(?:\/|$)|trips(?:\/|$)|bookings\/(?:flights|hotels|cars)(?:\/|$)|payments(?:\/|$)|testing(?:\/|$)|finance(?:\/|$)|suppliers(?:\/|$)|reports(?:\/|$)|team(?:\/|$)|settings(?:\/|$))/.test(window.location.pathname);
 const isSecurePaymentPath = /^\/secure-payment\/[^/]+\/?$/.test(window.location.pathname);
+const isBaggagePaymentPath = /^\/addons\/pay\/[^/]+\/?$/.test(window.location.pathname);
+const isBaggageAdminPath = /^\/admin\/baggage\/?$/.test(window.location.pathname);
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -73,8 +80,12 @@ root.render(
         <BrowserRouter><BackOfficeRouter /></BrowserRouter>
       ) : isSecurePaymentPath ? (
         <BrowserRouter><Routes><Route path="/secure-payment/:token" element={<SecurePaymentPage />} /></Routes></BrowserRouter>
+      ) : isBaggagePaymentPath ? (
+        <BrowserRouter><Routes><Route path="/addons/pay/:token" element={<BaggagePaymentPage />} /></Routes></BrowserRouter>
+      ) : isBaggageAdminPath ? (
+        <BrowserRouter><Routes><Route path="/admin/baggage" element={<BaggageAdminPage />} /></Routes></BrowserRouter>
       ) : <App />}
-      {!isNewBackOfficePath && <SupportCallLayer />}
+      {!isNewBackOfficePath && !isBaggageAdminPath && <SupportCallLayer />}
     </HelmetProvider>
   </React.StrictMode>
 );
