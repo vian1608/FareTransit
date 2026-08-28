@@ -40,6 +40,12 @@ installMobileBookingUX();
 installPrimaryContactSyncUX();
 installTripAddonsUX();
 
+// Reuse the single Google tag already loaded in public/index.html and
+// add the current Fare Transit Google Ads account as a destination.
+window.dataLayer = window.dataLayer || [];
+window.gtag = window.gtag || function () { window.dataLayer.push(arguments); };
+window.gtag('config', 'AW-18414311623');
+
 document.documentElement.dataset.faretransitBuild = 'trip-addons-flex-baggage-2026-08-24';
 
 const query = new URLSearchParams(window.location.search);
