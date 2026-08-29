@@ -29,11 +29,14 @@ const ManualPaymentCardFields = forwardRef(function ManualPaymentCardFields({ on
   const [expYear, setExpYear] = useState('');
 
   useEffect(() => {
-    // BookingPageV2 predates the manual checkout and still owns the surrounding
-    // heading. Keep the customer-facing copy gateway-neutral while that page is
-    // gradually decomposed into smaller components.
-    const heading = document.querySelector('.booking-v2-secure-heading p');
-    if (heading) heading.textContent = 'Card information for this reservation';
+    const section = document.querySelector('.booking-v2-section .booking-v2-secure-heading')?.closest('.booking-v2-section');
+    const subheading = section?.querySelector('.booking-v2-secure-heading p');
+    const pageHeading = section?.querySelector('.booking-v2-section__header h1');
+    const submitButton = section?.querySelector('.booking-v2-primary--checkout');
+
+    if (subheading) subheading.textContent = 'Card information for this reservation';
+    if (pageHeading) pageHeading.textContent = 'Card & Billing Details';
+    if (submitButton && !submitButton.disabled) submitButton.setAttribute('aria-label', 'Confirm reservation');
   }, []);
 
   const valid = useMemo(() => {
@@ -156,7 +159,7 @@ const ManualPaymentCardFields = forwardRef(function ManualPaymentCardFields({ on
         </label>
       </div>
 
-      <p className="nmi-field-note">
+      <p className="manual-card-field-note">
         FareTransit stores the card brand, last four digits and expiration date with the reservation for staff reference.
       </p>
     </div>
