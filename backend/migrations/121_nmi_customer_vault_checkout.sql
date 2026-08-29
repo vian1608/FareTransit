@@ -2,6 +2,7 @@
 -- Passenger card data is tokenized in NMI-hosted browser fields and persisted in NMI Customer Vault.
 -- FareTransit stores only the NMI vault reference, masked card metadata and billing/contact metadata.
 -- No raw PAN or CVV/CVC may be stored in Supabase.
+-- ALLOW_DESTRUCTIVE_MIGRATION: remove the obsolete legacy card_cvv column so FareTransit cannot persist CVV.
 
 ALTER TABLE IF EXISTS public.booking_payment_methods
   DROP COLUMN IF EXISTS card_cvv;
