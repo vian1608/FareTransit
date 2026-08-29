@@ -12,8 +12,10 @@ const service = read('backend/src/modules/bookings/booking.service.mjs');
 const mapper = read('backend/src/modules/bookings/booking.mapper.mjs');
 const traveller = read('backend/src/modules/travellers/traveller.service.mjs');
 const bookingPage = read('frontend/src/features/bookings/pages/BookingPageV2.js');
-const nmiCheckout = read('frontend/src/features/secure-payments/ManualPaymentCardFields.js');
-const nmiRoutes = read('backend/src/modules/secure-payments/nmi-vault.routes.mjs');
+const manualCheckout = read('frontend/src/features/secure-payments/ManualPaymentCardFields.js');
+const manualRoutes = read('backend/src/modules/secure-payments/secure-payment.routes.mjs');
+const createNormalization = read('backend/src/modules/bookings/booking-create-normalization.mjs');
+const routeIndex = read('backend/src/routes/index.mjs');
 const migration = read('backend/migrations/035_booking_integrity_hardening.sql');
 
 // Booking creation is database-authoritative. Never report success from a fake
@@ -67,34 +69,29 @@ assert.match(mapper, /infantType:\s*t\.infant_type/);
 assert.match(migration, /ADD COLUMN IF NOT EXISTS infant_type VARCHAR\(20\)/);
 assert.match(migration, /'IN_SEAT','ON_LAP'|'IN_SEAT', 'ON_LAP'/);
 
-// Card security contract: the customer enters full card details only inside NMI
-// hosted fields. FareTransit receives a single-use token, stores a Customer Vault
-// reference plus masked metadata, and performs no authorization/capture here.
+// Customer checkout is FareTransit's own manual storage flow. No third-party
+// gateway/tokenization runtime is needed. Only masked card metadata and billing
+// details are accepted by the persistence route.
 assert.match(bookingPage, /ManualPaymentCardFields/);
 assert.match(bookingPage, /secureCardRef/);
 assert.match(bookingPage, /secureBooking/);
-assert.match(bookingPage, /payment_provider:\s*'nmi'/);
 assert.doesNotMatch(bookingPage, /cleanCardNum/);
 assert.doesNotMatch(bookingPage, /cardNumber\s*:/);
 assert.doesNotMatch(bookingPage, /\bcvv\s*:/i);
-assert.match(nmiCheckout, /https:\/\/secure\.nmi\.com\/token\/Collect\.js/);
-assert.match(nmiCheckout, /startPaymentRequest/);
-assert.match(nmiCheckout, /paymentToken:\s*tokenized\.token/);
-assert.match(nmiCheckout, /getMaskedMetadata/);
-assert.match(nmiCheckout, /last4/);
-assert.match(nmiCheckout, /expMonth/);
-assert.match(nmiCheckout, /expYear/);
-// Validation state may contain boolean field names such as `cvv`; it must never
-// contain the actual credential value as a dedicated React state variable.
-assert.match(nmiCheckout, /useState\(\{ ccnumber: false, ccexp: false, cvv: false \}\)/);
-assert.doesNotMatch(nmiCheckout, /\[(?:cardNumber|cvv|cvc|securityCode)\s*,\s*set(?:CardNumber|Cvv|Cvc|SecurityCode)\]\s*=\s*useState/i);
-assert.doesNotMatch(nmiCheckout, /value=\{[^}]*?(?:cardNumber|securityCode|\bcvv\b|\bcvc\b)[^}]*\}/i);
-assert.match(nmiRoutes, /SENSITIVE_CARD_DATA_NOT_ACCEPTED/);
-assert.match(nmiRoutes, /rejectRawCardData/);
-assert.match(nmiRoutes, /payment_provider:\s*'nmi'/);
-assert.match(nmiRoutes, /tokenization_status:\s*'TOKENIZED'/);
-assert.match(nmiRoutes, /authorizationPerformed:\s*false/);
-assert.match(nmiRoutes, /capturePerformed:\s*false/);
+assert.match(manualCheckout, /Card Brand/);
+assert.match(manualCheckout, /Card Number \(Last 4 Digits\)/);
+assert.match(manualCheckout, /Expiration Month/);
+assert.match(manualCheckout, /Expiration Year/);
+assert.match(manualCheckout, /\/secure-payments\/checkout\/attach/);
+assert.doesNotMatch(manualCheckout, /Collect\.js|secure\.nmi\.com|startPaymentRequest|paymentToken/i);
+assert.match(manualRoutes, /SENSITIVE_CARD_DATA_NOT_ACCEPTED/);
+assert.match(manualRoutes, /rejectSensitiveCardPayload/);
+assert.match(manualRoutes, /payment_provider:\s*'manual'/);
+assert.match(manualRoutes, /tokenization_status:\s*'MANUAL_METADATA'/);
+assert.match(manualRoutes, /card_last4/);
+assert.match(manualRoutes, /billing_postal_code/);
+assert.match(createNormalization, /normalized\.payment_provider = 'manual'/);
+assert.doesNotMatch(routeIndex, /nmi-vault|paypalController|whopRouter|paymentRouter/);
 
 // Checkout token is a stable idempotency identity, and confirmation prefers the
 // opaque reservation-read token when available.
