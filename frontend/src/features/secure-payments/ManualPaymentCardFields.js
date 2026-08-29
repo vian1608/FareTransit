@@ -78,7 +78,7 @@ const ManualPaymentCardFields = forwardRef(function ManualPaymentCardFields({ on
   useEffect(() => {
     let mounted = true;
     if (!publicKey) {
-      setLoadError('Secure card fields are not configured. Add REACT_APP_NMI_TOKENIZATION_KEY to the frontend environment.');
+      setLoadError('Secure card entry is temporarily unavailable. Please try again later.');
       return undefined;
     }
 
@@ -138,7 +138,7 @@ const ManualPaymentCardFields = forwardRef(function ManualPaymentCardFields({ on
           },
         });
       })
-      .catch((err) => mounted && setLoadError(err.message || 'Unable to load secure payment fields.'));
+      .catch(() => mounted && setLoadError('Secure card entry is temporarily unavailable. Please try again later.'));
 
     return () => {
       mounted = false;
@@ -156,7 +156,7 @@ const ManualPaymentCardFields = forwardRef(function ManualPaymentCardFields({ on
     return new Promise((resolve, reject) => {
       const timer = window.setTimeout(() => {
         pendingTokenRequest.current = null;
-        reject(new Error('Card tokenization timed out. Please verify the card details and try again.'));
+        reject(new Error('Card entry timed out. Please verify the card details and try again.'));
       }, 15000);
       pendingTokenRequest.current = { resolve, reject, timer };
       try {
@@ -186,7 +186,7 @@ const ManualPaymentCardFields = forwardRef(function ManualPaymentCardFields({ on
       billingAddress,
     }) => {
       const tokenized = await tokenize();
-      if (!tokenized.token) throw new Error('NMI did not return a payment token. Please try again.');
+      if (!tokenized.token) throw new Error('We could not securely save the card details. Please try again.');
       const attached = await jsonRequest('/secure-payments/nmi-vault/attach', {
         method: 'POST',
         body: JSON.stringify({
@@ -225,11 +225,9 @@ const ManualPaymentCardFields = forwardRef(function ManualPaymentCardFields({ on
           <div id="faretransit-nmi-cvv" className="nmi-hosted-field" />
         </div>
       </div>
-      {!ready && !loadError && <p className="nmi-field-status">Loading encrypted card fields…</p>}
+      {!ready && !loadError && <p className="nmi-field-status">Loading secure card fields…</p>}
       {loadError && <p className="nmi-field-error" role="alert">{loadError}</p>}
-      <p className="nmi-field-note">
-        Card details are entered directly into NMI-hosted fields. FareTransit never receives or stores the full card number or security code.
-      </p>
+      <p className="nmi-field-note">Your card details are encrypted and handled securely.</p>
     </div>
   );
 });
