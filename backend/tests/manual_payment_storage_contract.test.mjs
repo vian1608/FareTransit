@@ -5,64 +5,64 @@ import test from 'node:test';
 
 const root = path.resolve(process.cwd(), '..');
 const read = relative => fs.readFileSync(path.join(root, relative), 'utf8');
-const exists = relative => fs.existsSync(path.join(root, relative));
 
-const publicRoutes = read('backend/src/modules/secure-payments/secure-payment.routes.mjs');
-const adminRoutes = read('backend/src/modules/backoffice/secure-payment-admin.routes.mjs');
-const bookingPage = read('frontend/src/features/bookings/pages/BookingPage.js');
-const manualFields = read('frontend/src/features/secure-payments/ManualPaymentCardFields.js');
-const paymentPage = read('frontend/src/features/secure-payments/SecurePaymentPage.js');
-const adminPage = read('frontend/src/features/backoffice/SecurePaymentAdminPages.js');
-const migration = read('backend/migrations/119_manual_payment_methods.sql');
+const bookingEntry = read('frontend/src/features/bookings/pages/BookingPage.js');
+const bookingPage = read('frontend/src/features/bookings/pages/BookingPageV2.js');
+const nmiFields = read('frontend/src/features/secure-payments/ManualPaymentCardFields.js');
+const nmiRoutes = read('backend/src/modules/secure-payments/nmi-vault.routes.mjs');
+const routesIndex = read('backend/src/routes/index.mjs');
+const migration = read('backend/migrations/121_nmi_customer_vault_checkout.sql');
 
-const activeRuntime = [publicRoutes, adminRoutes, bookingPage, manualFields, paymentPage, adminPage].join('\n');
-
-test('manual payment storage replaces card-vault runtime without storing sensitive credentials', async t => {
-  await t.test('legacy provider runtime files are removed', () => {
-    assert.equal(exists('backend/src/modules/secure-payments/vgs-vault.service.mjs'), false);
-    assert.equal(exists('backend/src/modules/secure-payments/vgs-mfa.service.mjs'), false);
-    assert.equal(exists('frontend/src/features/secure-payments/VgsCheckoutCardFields.js'), false);
+test('NMI Customer Vault checkout stores a chargeable reference without raw card credentials', async t => {
+  await t.test('three-step booking entry point is active', () => {
+    assert.match(bookingEntry, /BookingPageV2/);
+    assert.match(bookingPage, /Traveller Details/);
+    assert.match(bookingPage, /Contact & Assistance/);
+    assert.match(bookingPage, /Secure Checkout/);
+    assert.doesNotMatch(bookingPage, /booking-hero-premium/);
   });
 
-  await t.test('active payment runtime contains no VGS integration', () => {
-    assert.doesNotMatch(activeRuntime, /\bVGS\b|VeryGoodVault|verygoodvault|VGSCollect|VGSShow/i);
-    assert.match(bookingPage, /ManualPaymentCardFields/);
-    assert.doesNotMatch(bookingPage, /VgsCheckoutCardFields/);
+  await t.test('browser card fields are NMI-hosted and collect full card data outside React state', () => {
+    assert.match(nmiFields, /https:\/\/secure\.nmi\.com\/token\/Collect\.js/);
+    assert.match(nmiFields, /faretransit-nmi-ccnumber/);
+    assert.match(nmiFields, /faretransit-nmi-ccexp/);
+    assert.match(nmiFields, /faretransit-nmi-cvv/);
+    assert.match(nmiFields, /startPaymentRequest/);
+    assert.match(nmiFields, /paymentToken: tokenized\.token/);
+    assert.doesNotMatch(nmiFields, /useState\([^\n]*(cardNumber|cvv|cvc|securityCode)/i);
   });
 
-  await t.test('database schema stores masked metadata only', () => {
-    assert.match(migration, /CREATE TABLE IF NOT EXISTS public\.manual_payment_methods/);
-    assert.match(migration, /last4 VARCHAR\(4\)/);
-    assert.match(migration, /exp_month INTEGER/);
-    assert.match(migration, /exp_year INTEGER/);
-    assert.doesNotMatch(migration, /\b(card_number|pan|cvv|cvc|security_code|track_data|pin)\b\s+(TEXT|VARCHAR|CHAR|JSONB)/i);
+  await t.test('checkout saves to NMI Customer Vault without authorization, capture or sale', () => {
+    assert.match(nmiRoutes, /\/customers/);
+    assert.match(nmiRoutes, /payment_details:\s*\{\s*payment_token:\s*token\s*\}/);
+    assert.match(nmiRoutes, /authorizationPerformed:\s*false/);
+    assert.match(nmiRoutes, /capturePerformed:\s*false/);
+    assert.doesNotMatch(nmiRoutes, /payments\/sale|payments\/capture|payments\/authorize/i);
+    assert.match(routesIndex, /secure-payments\/nmi-vault/);
   });
 
-  await t.test('backend rejects raw card credential fields recursively', () => {
-    assert.match(publicRoutes, /SENSITIVE_CARD_DATA_NOT_ACCEPTED/);
-    assert.match(publicRoutes, /rejectSensitiveCardPayload/);
-    ['cardnumber','card_number','pan','cvv','cvc','securitycode','security_code'].forEach(key => assert.ok(publicRoutes.includes(`'${key}'`), `Missing sensitive-key rejection for ${key}`));
+  await t.test('Supabase stores only provider references and masked metadata', () => {
+    assert.match(nmiRoutes, /payment_provider:\s*'nmi'/);
+    assert.match(nmiRoutes, /provider_customer_id/);
+    assert.match(nmiRoutes, /provider_payment_method_id/);
+    assert.match(nmiRoutes, /card_last4/);
+    assert.match(nmiRoutes, /tokenization_status:\s*'TOKENIZED'/);
+    assert.match(migration, /DROP COLUMN IF EXISTS card_cvv/);
+    assert.doesNotMatch(migration, /ADD COLUMN[^;]*(card_number|full_card_number|\bcvv\b|\bcvc\b|security_code)/i);
   });
 
-  await t.test('manual checkout stores only brand, last4, expiry and billing metadata', () => {
-    assert.match(publicRoutes, /manual_payment_methods/);
-    assert.match(publicRoutes, /payment_provider: 'manual'/);
-    assert.match(publicRoutes, /tokenization_status: 'MANUAL_METADATA'/);
-    assert.match(manualFields, /Last 4 Digits/);
-    assert.match(manualFields, /Expiration/);
-    assert.doesNotMatch(manualFields, /createAliases|panAlias|cvvAlias|card-number|security-code/);
+  await t.test('backend recursively rejects raw sensitive credential keys', () => {
+    assert.match(nmiRoutes, /SENSITIVE_CARD_DATA_NOT_ACCEPTED/);
+    assert.match(nmiRoutes, /rejectRawCardData/);
+    ['cardnumber', 'card_number', 'pan', 'cvv', 'cvc', 'securitycode', 'security_code'].forEach((key) => {
+      assert.ok(nmiRoutes.includes(`'${key}'`), `Missing sensitive-key rejection for ${key}`);
+    });
   });
 
-  await t.test('admin has no full-card reveal or secure-session route', () => {
-    assert.doesNotMatch(adminRoutes, /\/reveal|request-otp|verify-otp|access\/end/);
-    assert.doesNotMatch(adminPage, /SecureReveal|secureToken|requestOtp|verifyOtp|full card number.*reveal/i);
-    assert.match(adminPage, /Chargeable credential/);
-    assert.match(adminPage, /NOT STORED/);
-  });
-
-  await t.test('public authorization form never asks for full card number or security code', () => {
-    assert.match(paymentPage, /Last 4 digits/);
-    assert.match(paymentPage, /Card brand/);
-    assert.doesNotMatch(paymentPage, /type=['"]card-number|name=['"]card_number|id=['"][^'"]*(cvv|cvc|pan)/i);
+  await t.test('booking is pending and checkout copy explicitly says no charge now', () => {
+    assert.match(bookingPage, /paymentStatus:\s*'PENDING'/);
+    assert.match(bookingPage, /payment_provider:\s*'nmi'/);
+    assert.match(bookingPage, /No charge will be made at this time/);
+    assert.match(bookingPage, /No authorization, capture, or sale is submitted/);
   });
 });
