@@ -24,7 +24,7 @@ const requestMetrics = read('backend/src/observability/request-metrics.mjs');
 const supabaseClient = read('backend/src/integrations/supabase/supabase.client.mjs');
 const app = read('backend/src/app.mjs');
 const migration = read('backend/migrations/033_egress_hardening_and_schema_contract.sql');
-const bookingPage = read('frontend/src/features/bookings/pages/BookingPage.js');
+const bookingPage = read('frontend/src/features/bookings/pages/BookingPageV2.js');
 const confirmationPage = read('frontend/src/features/bookings/pages/PaymentSuccessPage.js');
 
 // Booking-detail pages must not mount the entire hidden dashboard.
@@ -62,9 +62,12 @@ assert.doesNotMatch(abandonedRepo, /\.select\(/);
 assert.match(abandonedRepo, /compactFlight/);
 assert.match(abandonedService, /RETENTION_DAYS = 30/);
 
-// Current customer checkout saves one initial abandoned snapshot; no polling/autosave loop.
+// Three-step checkout keeps local draft state and updates the same compact
+// abandoned-booking session rather than polling or creating parallel records.
 const abandonedSaveCalls = (bookingPage.match(/bookingAPI\.saveAbandoned\(/g) || []).length;
-assert.equal(abandonedSaveCalls, 1);
+assert.equal(abandonedSaveCalls, 2);
+assert.match(bookingPage, /sessionStorage\.setItem\(DRAFT_KEY/);
+assert.match(bookingPage, /sessionKey:\s*abandonedSessionKey\.current/);
 assert.doesNotMatch(bookingPage, /setInterval\s*\(/);
 assert.doesNotMatch(confirmationPage, /setInterval\s*\(/);
 
