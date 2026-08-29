@@ -21,12 +21,45 @@ function fallbackFor(pathname) {
   return match?.[1] || '/';
 }
 
+function modernizeLegacyBackControl(element) {
+  if (!(element instanceof HTMLElement) || element.classList.contains('tfs-customer-back')) return;
+  if (element.dataset.tfsBackModernized === 'true') return;
+  const text = String(element.textContent || '').replace(/\s+/g, ' ').trim();
+  if (!/^(?:←|‹|<)?\s*(?:go\s+)?back(?:\s+to\b.*)?$/i.test(text)) return;
+  element.dataset.tfsBackModernized = 'true';
+  element.dataset.tfsBackOriginalLabel = text;
+  element.classList.add('tfs-legacy-back-modernized');
+  element.setAttribute('aria-label', text || 'Go back');
+  element.setAttribute('title', text || 'Go back');
+  element.replaceChildren(Object.assign(document.createElement('span'), {
+    className: 'tfs-customer-back__glyph',
+    textContent: '‹',
+  }));
+  element.firstElementChild?.setAttribute('aria-hidden', 'true');
+}
+
 export default function CustomerBackButton() {
   const navigate = useNavigate();
   const location = useLocation();
   const pathname = location.pathname || '/';
   const isBookingPage = /^\/booking(?:\/|$)/.test(pathname);
   const [bookingTarget, setBookingTarget] = useState(null);
+
+  useEffect(() => {
+    if (pathname.startsWith('/admin')) return undefined;
+    const scan = (root = document) => {
+      if (root instanceof HTMLElement && root.matches('a, button, [role="button"]')) modernizeLegacyBackControl(root);
+      root.querySelectorAll?.('a, button, [role="button"]').forEach(modernizeLegacyBackControl);
+    };
+    scan();
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => mutation.addedNodes.forEach((node) => {
+        if (node instanceof HTMLElement) scan(node);
+      }));
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [pathname]);
 
   useEffect(() => {
     if (!isBookingPage) {
