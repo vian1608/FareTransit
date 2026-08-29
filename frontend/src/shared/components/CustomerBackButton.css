@@ -9,50 +9,51 @@
   width: auto;
   margin: 0;
   position: absolute;
-  top: -0.15rem;
-  right: 1.5rem;
+  top: 0;
+  left: 0;
   z-index: 25;
 }
 
 .tfs-customer-back {
   appearance: none;
-  border: 1px solid var(--tfs-border-strong, #c7d3e1);
-  background: rgba(255, 255, 255, 0.97);
-  color: var(--tfs-text, #33445a);
-  min-height: 42px;
-  padding: 0.58rem 0.92rem;
-  border-radius: 11px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid rgba(139, 21, 56, 0.18);
+  background: rgba(255, 255, 255, 0.98);
+  color: var(--tfs-wine-700, #861b3d);
+  border-radius: 13px;
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  font: inherit;
-  font-size: 0.9rem;
-  font-weight: 700;
+  justify-content: center;
   cursor: pointer;
-  box-shadow: var(--tfs-shadow-sm, 0 4px 16px rgba(11, 22, 40, 0.06));
+  box-shadow: 0 5px 18px rgba(11, 22, 40, 0.08);
   backdrop-filter: blur(10px);
-  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease, background 180ms ease, color 180ms ease;
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease, background 180ms ease;
+}
+
+.tfs-customer-back__glyph {
+  display: block;
+  font-size: 2rem;
+  line-height: 1;
+  font-weight: 400;
+  transform: translateY(-1px);
 }
 
 .tfs-customer-back:hover {
-  transform: translateY(-1px);
-  border-color: rgba(134, 27, 61, 0.35);
-  box-shadow: 0 9px 24px rgba(11, 22, 40, 0.1);
-  background: #fff;
-  color: var(--tfs-wine-800, #6d1532);
+  transform: translateX(-2px);
+  border-color: rgba(139, 21, 56, 0.42);
+  box-shadow: 0 9px 24px rgba(11, 22, 40, 0.12);
+  background: #fff8fa;
 }
 
 .tfs-customer-back:active {
-  transform: translateY(0) scale(0.98);
+  transform: translateX(-1px) scale(0.97);
 }
 
 .tfs-customer-back:focus-visible {
   outline: 3px solid var(--tfs-focus, rgba(134, 27, 61, 0.18));
   outline-offset: 2px;
-}
-
-.tfs-customer-back i {
-  color: var(--tfs-wine-700, #861b3d);
 }
 
 @media (max-width: 640px) {
@@ -61,14 +62,13 @@
     margin-top: 0.6rem;
   }
 
-  .tfs-customer-back-wrap--booking {
-    right: 1rem;
-    top: -0.25rem;
+  .tfs-customer-back {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
   }
 
-  .tfs-customer-back {
-    min-height: 40px;
-    padding: 0.5rem 0.75rem;
-    font-size: 0.84rem;
+  .tfs-customer-back__glyph {
+    font-size: 1.8rem;
   }
 }
