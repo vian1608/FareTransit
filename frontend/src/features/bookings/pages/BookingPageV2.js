@@ -660,8 +660,8 @@ function BookingPageV2({ initialJourneyPayload = null }) {
             </div>
 
             <div className="booking-v2-no-charge-notice">
-              <i className="fas fa-shield-alt" aria-hidden="true" />
-              <div><strong>No charge will be made at this time.</strong><p>Your payment method will be securely saved with your reservation. A FareTransit travel specialist will contact you to confirm availability, itinerary and final pricing before payment is processed.</p></div>
+              <i className="fas fa-headset" aria-hidden="true" />
+              <div><p>Our travel specialist may call you to confirm your itinerary based on availability.</p></div>
             </div>
 
             <label className="booking-v2-terms">
@@ -675,7 +675,6 @@ function BookingPageV2({ initialJourneyPayload = null }) {
                 {processing ? <><i className="fas fa-circle-notch fa-spin" /> Saving Reservation…</> : <><i className="fas fa-lock" /> Confirm Reservation & Save Payment Method</>}
               </button>
             </div>
-            <p className="booking-v2-submit-note">No authorization, capture, or sale is submitted when you confirm this reservation.</p>
           </section>
         )}
       </main>
