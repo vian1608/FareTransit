@@ -45,7 +45,9 @@ assert.match(booking, /Primary Contact Details/);
 assert.match(booking, /Special Requests & Preferences/);
 assert.match(booking, /ManualPaymentCardFields/);
 assert.match(booking, /Confirm Reservation & Save Payment Method/);
-assert.match(booking, /No authorization, capture, or sale is submitted/);
+assert.match(booking, /Our travel specialist may call you to confirm your itinerary based on availability/);
+assert.doesNotMatch(booking, /No charge will be made at this time/);
+assert.doesNotMatch(booking, /No authorization, capture, or sale is submitted/);
 assert.match(booking, /fa-circle-notch fa-spin/);
 
 // The new layout is intentionally a page stepper, not the legacy accordion checkout.
