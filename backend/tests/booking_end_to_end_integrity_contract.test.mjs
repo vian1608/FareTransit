@@ -84,7 +84,11 @@ assert.match(nmiCheckout, /getMaskedMetadata/);
 assert.match(nmiCheckout, /last4/);
 assert.match(nmiCheckout, /expMonth/);
 assert.match(nmiCheckout, /expYear/);
-assert.doesNotMatch(nmiCheckout, /useState\([^\n]*(cardNumber|cvv|cvc|securityCode)/i);
+// Validation state may contain boolean field names such as `cvv`; it must never
+// contain the actual credential value as a dedicated React state variable.
+assert.match(nmiCheckout, /useState\(\{ ccnumber: false, ccexp: false, cvv: false \}\)/);
+assert.doesNotMatch(nmiCheckout, /\[(?:cardNumber|cvv|cvc|securityCode)\s*,\s*set(?:CardNumber|Cvv|Cvc|SecurityCode)\]\s*=\s*useState/i);
+assert.doesNotMatch(nmiCheckout, /value=\{[^}]*?(?:cardNumber|securityCode|\bcvv\b|\bcvc\b)[^}]*\}/i);
 assert.match(nmiRoutes, /SENSITIVE_CARD_DATA_NOT_ACCEPTED/);
 assert.match(nmiRoutes, /rejectRawCardData/);
 assert.match(nmiRoutes, /payment_provider:\s*'nmi'/);
