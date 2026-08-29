@@ -29,7 +29,9 @@ test('NMI Customer Vault checkout stores a chargeable reference without raw card
     assert.match(nmiFields, /faretransit-nmi-cvv/);
     assert.match(nmiFields, /startPaymentRequest/);
     assert.match(nmiFields, /paymentToken: tokenized\.token/);
-    assert.doesNotMatch(nmiFields, /useState\([^\n]*(cardNumber|cvv|cvc|securityCode)/i);
+    assert.match(nmiFields, /useState\(\{ ccnumber: false, ccexp: false, cvv: false \}\)/);
+    assert.doesNotMatch(nmiFields, /\[(?:cardNumber|cvv|cvc|securityCode)\s*,\s*set(?:CardNumber|Cvv|Cvc|SecurityCode)\]\s*=\s*useState/i);
+    assert.doesNotMatch(nmiFields, /value=\{[^}]*?(?:cardNumber|securityCode|\bcvv\b|\bcvc\b)[^}]*\}/i);
   });
 
   await t.test('checkout saves to NMI Customer Vault without authorization, capture or sale', () => {
