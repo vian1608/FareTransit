@@ -5,6 +5,11 @@ const ASSISTANCE_STATUSES = new Set(['NONE', 'REQUESTED', 'ACKNOWLEDGED', 'COMPL
 
 const cleanRef = value => String(value || '').trim();
 const baggageCount = value => Math.max(0, Math.min(6, Number.parseInt(value, 10) || 0));
+const moneyOrNull = value => {
+  if (value === null || value === undefined || value === '') return null;
+  const parsed = Number.parseFloat(value);
+  return Number.isFinite(parsed) ? Number(parsed.toFixed(2)) : null;
+};
 
 function hasSpecialAssistance(row = {}) {
   return Boolean(
@@ -19,11 +24,18 @@ function hasSpecialAssistance(row = {}) {
 function publicAssistance(row = null) {
   const source = row || {};
   const hasRequest = hasSpecialAssistance(source);
+  const quote = source.additional_baggage_quote && typeof source.additional_baggage_quote === 'object'
+    ? source.additional_baggage_quote
+    : null;
   return {
     mealPreference: source.meal_preference || 'none',
     seatPreference: source.seat_preference || 'none',
     wheelchairRequired: Boolean(source.wheelchair_required),
     additionalBaggageCount: baggageCount(source.additional_baggage_count),
+    additionalBaggageQuote: quote,
+    additionalBaggageSourceTotal: moneyOrNull(source.additional_baggage_source_total),
+    additionalBaggageCustomerTotal: moneyOrNull(source.additional_baggage_customer_total),
+    additionalBaggageCurrency: source.additional_baggage_currency || quote?.currency || null,
     additionalRequest: source.additional_request || null,
     assistanceStatus: source.assistance_status || (hasRequest ? 'REQUESTED' : 'NONE'),
     hasSpecialAssistance: hasRequest,
@@ -137,6 +149,10 @@ export const adminAssistanceController = {
           seat_preference: current?.seat_preference || 'none',
           wheelchair_required: Boolean(current?.wheelchair_required),
           additional_baggage_count: baggageCount(current?.additional_baggage_count),
+          additional_baggage_quote: current?.additional_baggage_quote || null,
+          additional_baggage_source_total: current?.additional_baggage_source_total ?? null,
+          additional_baggage_customer_total: current?.additional_baggage_customer_total ?? null,
+          additional_baggage_currency: current?.additional_baggage_currency || null,
           additional_request: current?.additional_request || null,
           assistance_status: status,
           updated_at: new Date().toISOString(),
@@ -193,6 +209,8 @@ export const adminAssistanceController = {
           assistanceStatus: assistance.assistanceStatus,
           wheelchairRequired: assistance.wheelchairRequired,
           additionalBaggageCount: assistance.additionalBaggageCount,
+          additionalBaggageCustomerTotal: assistance.additionalBaggageCustomerTotal,
+          additionalBaggageCurrency: assistance.additionalBaggageCurrency,
           flexAssistSelected: flexAssist.selected,
           flexAssistAmount: flexAssist.amount,
         };
