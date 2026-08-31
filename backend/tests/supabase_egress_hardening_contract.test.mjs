@@ -24,14 +24,17 @@ const requestMetrics = read('backend/src/observability/request-metrics.mjs');
 const supabaseClient = read('backend/src/integrations/supabase/supabase.client.mjs');
 const app = read('backend/src/app.mjs');
 const migration = read('backend/migrations/033_egress_hardening_and_schema_contract.sql');
-const bookingPage = read('frontend/src/features/bookings/pages/BookingPageV2.js');
+const bookingPage = read('frontend/src/features/bookings/pages/BookingPageV3.js');
 const confirmationPage = read('frontend/src/features/bookings/pages/PaymentSuccessPage.js');
 
-// Booking-detail pages must not mount the entire hidden dashboard.
+// Booking-detail pages must not mount the entire hidden dashboard. The list route
+// may mount a zero-visual operational badge observer beside the real dashboard.
 assert.match(adminWrapper, /isBookingDetailRoute \? \(/);
 assert.match(adminWrapper, /<AdminBookingAddressPanel \/>/);
 assert.match(adminWrapper, /<AdminBookingWorkspace \/>/);
-assert.match(adminWrapper, /:\s*\(\s*<AdminDashboardPageV2 \/>/);
+assert.match(adminWrapper, /<AdminBookingServiceRequestsPanel \/>/);
+assert.match(adminWrapper, /<AdminDashboardPageV2 \/>/);
+assert.match(adminWrapper, /<AdminBookingOperationalBadges \/>/);
 assert.match(adminWrapper, /__tfsBookingDetailRequestDedupe/);
 assert.match(adminWrapper, /inFlight\.has\(key\)/);
 
@@ -62,10 +65,10 @@ assert.doesNotMatch(abandonedRepo, /\.select\(/);
 assert.match(abandonedRepo, /compactFlight/);
 assert.match(abandonedService, /RETENTION_DAYS = 30/);
 
-// Three-step checkout keeps local draft state and updates the same compact
-// abandoned-booking session rather than polling or creating parallel records.
+// Four-step checkout keeps local draft state and updates one compact abandoned
+// session. There is no interval/polling loop.
 const abandonedSaveCalls = (bookingPage.match(/bookingAPI\.saveAbandoned\(/g) || []).length;
-assert.equal(abandonedSaveCalls, 2);
+assert.equal(abandonedSaveCalls, 1);
 assert.match(bookingPage, /sessionStorage\.setItem\(DRAFT_KEY/);
 assert.match(bookingPage, /sessionKey:\s*abandonedSessionKey\.current/);
 assert.doesNotMatch(bookingPage, /setInterval\s*\(/);
