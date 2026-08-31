@@ -23,9 +23,15 @@ function detectCardBrand(value) {
   return digits.length >= 6 ? 'Other' : '';
 }
 
+function maxCardDigits(value) {
+  const digits = digitsOnly(value);
+  // American Express uses 15 digits. All other supported entry is capped at 16.
+  return /^3[47]/.test(digits) ? 15 : 16;
+}
+
 function passesLuhn(value) {
   const digits = digitsOnly(value);
-  if (digits.length < 12 || digits.length > 19) return false;
+  if (digits.length < 12 || digits.length > maxCardDigits(digits)) return false;
   let sum = 0;
   let doubleDigit = false;
   for (let index = digits.length - 1; index >= 0; index -= 1) {
@@ -54,7 +60,12 @@ function parseExpiry(value) {
 }
 
 function formatCardNumber(value) {
-  return digitsOnly(value).slice(0, 19).replace(/(.{4})/g, '$1 ').trim();
+  const digits = digitsOnly(value).slice(0, maxCardDigits(value));
+  if (/^3[47]/.test(digits)) {
+    const groups = [digits.slice(0, 4), digits.slice(4, 10), digits.slice(10, 15)].filter(Boolean);
+    return groups.join(' ');
+  }
+  return digits.replace(/(.{4})/g, '$1 ').trim();
 }
 
 function formatExpiry(value) {
@@ -112,6 +123,7 @@ const PaymentCardEntry = forwardRef(function PaymentCardEntry({ nameOnCard, onNa
   }), [valid, nameOnCard, cardNumber, securityCode, expiryParts, brand]);
 
   const showError = touched && !valid;
+  const isAmexLength = /^3[47]/.test(cardNumber);
 
   return (
     <div className="booking-v3-card-entry">
@@ -126,8 +138,12 @@ const PaymentCardEntry = forwardRef(function PaymentCardEntry({ nameOnCard, onNa
           value={formatCardNumber(cardNumber)}
           onFocus={onFocus}
           onBlur={() => setTouched(true)}
-          onChange={(event) => setCardNumber(digitsOnly(event.target.value).slice(0, 19))}
+          onChange={(event) => {
+            const digits = digitsOnly(event.target.value);
+            setCardNumber(digits.slice(0, maxCardDigits(digits)));
+          }}
           placeholder="Card Number"
+          maxLength={isAmexLength ? 17 : 19}
           aria-invalid={showError && !passesLuhn(cardNumber)}
           required
         />
@@ -200,5 +216,5 @@ const PaymentCardEntry = forwardRef(function PaymentCardEntry({ nameOnCard, onNa
   );
 });
 
-export { detectCardBrand };
+export { detectCardBrand, maxCardDigits };
 export default PaymentCardEntry;
