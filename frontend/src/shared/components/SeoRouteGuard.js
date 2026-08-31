@@ -2,51 +2,19 @@ import React, { useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useLocation, useNavigate } from 'react-router-dom';
 import routesData from '../data/routesData.json';
+import seoPages from '../data/seoPages.json';
+import seoContent from '../data/seoContent.json';
 
 const CANONICAL_ORIGIN = 'https://www.faretransit.com';
 
-const INDEXABLE_EXACT = new Set([
-  '/',
-  '/hotels',
-  '/car-rentals',
-  '/contact',
-  '/terms',
-  '/privacy-policy',
-  '/refund-policy',
-  '/travel-assistance',
-  '/booking-for-parents',
-  '/urgent-travel',
-  '/senior-travel/flight-deals',
-  '/flight-nyc-to-mia',
-  '/flight-lax-to-jfk',
-  '/train-nyc-to-dc',
-  '/train-dc-to-nyc',
-  '/train-philly-to-nyc',
-  '/train-boston-to-nyc',
-]);
-
-const PAGE_NAMES = {
-  '/': 'FareTransit',
-  '/hotels': 'Hotel Search and Booking Assistance',
-  '/car-rentals': 'Car Rentals',
-  '/contact': 'Contact FareTransit',
-  '/terms': 'Terms and Conditions',
-  '/privacy-policy': 'Privacy Policy',
-  '/refund-policy': 'Refund Policy',
-  '/travel-assistance': 'Flight Booking Assistance',
-  '/booking-for-parents': 'Booking Flights for Parents and Relatives',
-  '/urgent-travel': 'Urgent Travel Assistance',
-  '/senior-travel/flight-deals': 'Senior Flight Assistance',
-  '/flight-nyc-to-mia': 'Flights from New York to Miami',
-  '/flight-lax-to-jfk': 'Flights from Los Angeles to New York',
-  '/train-nyc-to-dc': 'Train from New York to Washington, D.C.',
-  '/train-dc-to-nyc': 'Train from Washington, D.C. to New York',
-  '/train-philly-to-nyc': 'Train from Philadelphia to New York',
-  '/train-boston-to-nyc': 'Train from Boston to New York',
-};
+const PAGE_BY_PATH = new Map(seoPages.map((page) => [page.path, page]));
+const INDEXABLE_EXACT = new Set(seoPages.map((page) => page.path));
+const CONTENT_PATHS = new Set(Object.keys(seoContent));
 
 const VALID_ROUTE_PATHS = new Set(
-  routesData.filter((route) => route?.slug).map((route) => `/routes/${route.slug}`)
+  routesData
+    .filter((route) => route?.slug && route?.seoStatus !== 'noindex')
+    .map((route) => `/routes/${route.slug}`)
 );
 
 const ROUTE_PAGE_NAMES = new Map(
@@ -55,7 +23,7 @@ const ROUTE_PAGE_NAMES = new Map(
     .map((route) => [`/routes/${route.slug}`, route.title || route.metaTitle || route.slug])
 );
 
-const CANONICAL_ALIASES = {
+export const CANONICAL_ALIASES = {
   '/senior-travel': '/senior-travel/flight-deals',
   '/privacy': '/privacy-policy',
   '/privacypolicy': '/privacy-policy',
@@ -79,7 +47,7 @@ function isIndexablePath(pathname) {
 }
 
 function getPageName(pathname) {
-  return PAGE_NAMES[pathname] || ROUTE_PAGE_NAMES.get(pathname) || 'FareTransit';
+  return PAGE_BY_PATH.get(pathname)?.pageName || ROUTE_PAGE_NAMES.get(pathname) || 'FareTransit';
 }
 
 export default function SeoRouteGuard() {
@@ -88,6 +56,7 @@ export default function SeoRouteGuard() {
   const normalizedPath = normalizePath(location.pathname);
   const canonicalPath = CANONICAL_ALIASES[normalizedPath] || normalizedPath;
   const indexable = isIndexablePath(canonicalPath);
+  const handledBySeoContentPage = CONTENT_PATHS.has(canonicalPath);
 
   useEffect(() => {
     if (normalizedPath !== '/search') return;
@@ -114,7 +83,7 @@ export default function SeoRouteGuard() {
     ? 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1'
     : 'noindex, nofollow, noarchive';
 
-  const webPageData = indexable ? {
+  const genericWebPageData = indexable && !handledBySeoContentPage ? {
     '@context': 'https://schema.org',
     '@type': 'WebPage',
     '@id': `${canonicalUrl}#webpage`,
@@ -124,32 +93,37 @@ export default function SeoRouteGuard() {
     about: { '@id': `${CANONICAL_ORIGIN}/#organization` },
   } : null;
 
-  const breadcrumbData = indexable && canonicalPath !== '/' && canonicalPath !== '/senior-travel/flight-deals' ? {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-      {
-        '@type': 'ListItem',
-        position: 1,
-        name: 'Home',
-        item: `${CANONICAL_ORIGIN}/`,
-      },
-      {
-        '@type': 'ListItem',
-        position: 2,
-        name: pageName,
-        item: canonicalUrl,
-      },
-    ],
-  } : null;
+  const breadcrumbData = indexable
+    && !handledBySeoContentPage
+    && canonicalPath !== '/'
+    && canonicalPath !== '/senior-travel/flight-deals'
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          {
+            '@type': 'ListItem',
+            position: 1,
+            name: 'Home',
+            item: `${CANONICAL_ORIGIN}/`,
+          },
+          {
+            '@type': 'ListItem',
+            position: 2,
+            name: pageName,
+            item: canonicalUrl,
+          },
+        ],
+      }
+    : null;
 
   return (
     <Helmet>
       <meta name="robots" content={robotsValue} />
       <meta name="googlebot" content={robotsValue} />
-      {indexable && <link rel="canonical" href={canonicalUrl} />}
-      {indexable && <meta property="og:url" content={canonicalUrl} />}
-      {webPageData && <script type="application/ld+json">{JSON.stringify(webPageData)}</script>}
+      {indexable && !handledBySeoContentPage && <link rel="canonical" href={canonicalUrl} />}
+      {indexable && !handledBySeoContentPage && <meta property="og:url" content={canonicalUrl} />}
+      {genericWebPageData && <script type="application/ld+json">{JSON.stringify(genericWebPageData)}</script>}
       {breadcrumbData && <script type="application/ld+json">{JSON.stringify(breadcrumbData)}</script>}
     </Helmet>
   );
