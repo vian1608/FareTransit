@@ -5,14 +5,14 @@ import RoutePlanningContent from '../../features/flights/components/RoutePlannin
 import routesData from '../data/routesData.json';
 import routeSeoInsights from '../data/routeSeoInsights.json';
 import seoPages from '../data/seoPages.json';
-import seoContent from '../data/seoContent.json';
+import seoContentPaths from '../data/seoContentPaths.json';
 import seoAliases from '../data/seoAliases.json';
 
 const CANONICAL_ORIGIN = 'https://www.faretransit.com';
 
 const PAGE_BY_PATH = new Map(seoPages.map((page) => [page.path, page]));
 const INDEXABLE_EXACT = new Set(seoPages.map((page) => page.path));
-const CONTENT_PATHS = new Set(Object.keys(seoContent));
+const CONTENT_PATHS = new Set(seoContentPaths);
 
 const VALID_ROUTE_PATHS = new Set(
   routesData
