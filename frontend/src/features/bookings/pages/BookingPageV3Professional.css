@@ -1,0 +1,221 @@
+.booking-page-v3 {
+  --ft-professional-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: var(--ft-professional-font) !important;
+}
+
+.booking-page-v3,
+.booking-page-v3 button,
+.booking-page-v3 input,
+.booking-page-v3 select,
+.booking-page-v3 textarea {
+  font-family: var(--ft-professional-font) !important;
+}
+
+/* Keep typography restrained and professional. Avoid synthetic ultra-heavy weights. */
+.booking-page-v3 .booking-v3-section-header h1 {
+  font-family: var(--ft-professional-font) !important;
+  font-size: clamp(1.85rem, 2.65vw, 2.35rem) !important;
+  font-weight: 700 !important;
+  line-height: 1.12 !important;
+  letter-spacing: -0.028em !important;
+  color: #10203a !important;
+}
+
+.booking-page-v3 .booking-v3-section-header h2,
+.booking-page-v3 .booking-v3-card-heading-row h2,
+.booking-page-v3 .booking-v3-payment-title h2,
+.booking-page-v3 .booking-v3-order-summary h2,
+.booking-page-v3 .booking-v3-passenger-title strong {
+  font-family: var(--ft-professional-font) !important;
+  font-weight: 650 !important;
+  letter-spacing: -0.015em !important;
+  color: #162742 !important;
+}
+
+.booking-page-v3 .booking-v3-eyebrow,
+.booking-page-v3 .booking-v3-option-label {
+  font-family: var(--ft-professional-font) !important;
+  font-weight: 700 !important;
+  letter-spacing: .085em !important;
+}
+
+.booking-page-v3 .booking-step-v3 {
+  font-family: var(--ft-professional-font) !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.008em !important;
+}
+
+.booking-page-v3 .booking-step-v3__dot,
+.booking-page-v3 .booking-v3-request-badge,
+.booking-page-v3 .booking-v3-recommended,
+.booking-page-v3 .booking-v3-summary-kicker,
+.booking-page-v3 .booking-v3-secure-chip {
+  font-weight: 650 !important;
+}
+
+.booking-page-v3 .booking-v3-header-copy,
+.booking-page-v3 .booking-v3-section-intro,
+.booking-page-v3 .booking-v3-card-heading-row p,
+.booking-page-v3 .booking-v3-payment-title p,
+.booking-page-v3 .booking-v3-subcard p,
+.booking-page-v3 .booking-v3-order-summary p {
+  font-weight: 400 !important;
+  color: #66758a !important;
+  line-height: 1.6 !important;
+}
+
+.booking-page-v3 .booking-v3-field,
+.booking-page-v3 .booking-v3-floating-field {
+  font-weight: 600 !important;
+  color: #34465f !important;
+}
+
+.booking-page-v3 .booking-v3-field input,
+.booking-page-v3 .booking-v3-field select,
+.booking-page-v3 .booking-v3-field textarea,
+.booking-page-v3 .booking-v3-floating-field input,
+.booking-page-v3 .booking-v3-floating-field select,
+.booking-page-v3 .booking-v3-floating-field textarea {
+  font-weight: 400 !important;
+  color: #17263c !important;
+}
+
+.booking-page-v3 .booking-v3-primary,
+.booking-page-v3 .booking-v3-secondary,
+.booking-page-v3 .booking-v3-submit-btn {
+  font-family: var(--ft-professional-font) !important;
+  font-weight: 650 !important;
+  letter-spacing: -0.01em !important;
+}
+
+.booking-v3-baggage-loading {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 18px;
+  padding: 13px 15px;
+  border: 1px solid #e1e7ef;
+  border-radius: 12px;
+  background: #f8fafc;
+  color: #5b6b80;
+  font-size: .88rem;
+}
+
+.booking-v3-baggage-request--priced {
+  margin-top: 18px;
+  border: 1px solid #dbe4ef;
+  border-radius: 16px;
+  padding: 18px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+}
+
+.booking-v3-baggage-price-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.booking-v3-baggage-price-list > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 11px 13px;
+  border: 1px solid #e3e9f1;
+  border-radius: 11px;
+  background: #fff;
+  color: #53647a;
+  transition: border-color .16s ease, background .16s ease, transform .16s ease;
+}
+
+.booking-v3-baggage-price-list > div.is-selected {
+  border-color: #9eb3d3;
+  background: #f2f7ff;
+  color: #183a6a;
+  transform: translateY(-1px);
+}
+
+.booking-v3-baggage-price-list strong {
+  color: #102a4d;
+  white-space: nowrap;
+}
+
+.booking-v3-baggage-quote-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 12px;
+  padding: 13px 14px;
+  border-radius: 12px;
+  background: #102a4d;
+  color: #fff;
+}
+
+.booking-v3-baggage-quote-total span {
+  font-size: .86rem;
+  opacity: .82;
+}
+
+.booking-v3-baggage-quote-total strong {
+  font-size: 1.02rem;
+}
+
+.booking-v3-flex-promo-price {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 10px;
+}
+
+.booking-v3-flex-promo-price del {
+  color: #8b96a8;
+  font-size: 1rem;
+  font-weight: 600;
+  text-decoration-thickness: 2px;
+}
+
+.booking-v3-flex-promo-price__offer {
+  color: #99183f;
+  font-size: 1.55rem;
+  font-weight: 750;
+  letter-spacing: -.025em;
+}
+
+.booking-v3-flex-promo-price__label,
+.booking-v3-flex-promo-price__saving {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .02em;
+}
+
+.booking-v3-flex-promo-price__label {
+  background: #fff0f4;
+  color: #8f1639;
+  border: 1px solid #efc5d1;
+}
+
+.booking-v3-flex-promo-price__saving {
+  background: #edf9f1;
+  color: #17663b;
+  border: 1px solid #c7ead3;
+}
+
+@media (max-width: 700px) {
+  .booking-v3-baggage-request__top,
+  .booking-v3-baggage-price-list > div,
+  .booking-v3-baggage-quote-total {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .booking-v3-baggage-price-list strong {
+    white-space: normal;
+  }
+}

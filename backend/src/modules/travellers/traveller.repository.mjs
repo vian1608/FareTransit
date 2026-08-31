@@ -19,11 +19,16 @@ export const travellerRepository = {
       first_name: t.firstName || '',
       middle_name: t.middleName || null,
       last_name: t.lastName || '',
+      suffix: t.suffix || null,
       date_of_birth: t.dateOfBirth || null,
       gender: t.gender || null,
       nationality: t.nationality || null,
       passport_number: t.passportNumber || null,
       passport_expiry: t.passportExpiry || null,
+      loyalty_program: t.loyaltyProgram || t.loyalty_program || null,
+      frequent_flyer_number: t.frequentFlyerNumber || t.frequent_flyer_number || null,
+      known_traveler_number: t.knownTravelerNumber || t.known_traveler_number || null,
+      redress_number: t.redressNumber || t.redress_number || null,
     }));
 
     const { data, error } = await supabase

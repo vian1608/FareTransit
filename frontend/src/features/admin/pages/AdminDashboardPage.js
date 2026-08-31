@@ -6,6 +6,8 @@ import AdminBookingWorkspace from '../components/AdminBookingWorkspace';
 import AdminBookingAddressPanel from '../components/AdminBookingAddressPanel';
 import AdminBookingManagementPanel from '../components/AdminBookingManagementPanel';
 import AdminSecurePaymentPanel from '../components/AdminSecurePaymentPanel';
+import AdminBookingServiceRequestsPanel from '../components/AdminBookingServiceRequestsPanel';
+import AdminBookingOperationalBadges from '../components/AdminBookingOperationalBadges';
 import './AdminDashboardEnhancements.css';
 
 const ADMIN_BOOKINGS_PAGE_SIZE = 20;
@@ -182,11 +184,15 @@ export default function AdminDashboardPage() {
         <>
           <AdminBookingAddressPanel />
           <AdminBookingWorkspace />
+          <AdminBookingServiceRequestsPanel />
           <AdminBookingManagementPanel />
           <AdminSecurePaymentPanel />
         </>
       ) : (
-        <AdminDashboardPageV2 />
+        <>
+          <AdminDashboardPageV2 />
+          <AdminBookingOperationalBadges />
+        </>
       )}
     </div>
   );

@@ -12,7 +12,7 @@ const sharedSearch = read('frontend/src/features/flights/components/FlightSearch
 const modifyModal = read('frontend/src/features/flights/components/ModifySearchModal.js');
 const results = read('frontend/src/features/flights/pages/SearchResultsPage.js');
 const returnPage = read('frontend/src/features/flights/pages/ReturnFlightSelectionPage.js');
-const bookingPage = read('frontend/src/features/bookings/pages/BookingPage.js');
+const bookingPage = read('frontend/src/features/bookings/pages/BookingPageV2.js');
 const controller = read('backend/src/modules/flights/flight.controller.mjs');
 const flightService = read('backend/src/modules/flights/flight.service.mjs');
 const provider = read('backend/src/integrations/serpapi/serpapi.service.mjs');
@@ -36,8 +36,8 @@ assert.match(home, /infants:\s*totalInfants/);
 assert.match(sharedSearch, /infants:\s*totalInfants/);
 assert.match(results, /infants:\s*hasSplitInfants\s*\?\s*infantsInSeat\s*\+\s*infantsOnLap\s*:\s*legacyInfants/);
 
-// Checkout now preserves the explicit infant fulfillment type instead of
-// recreating every infant as a generic passenger. Legacy links still become lap infants.
+// Checkout preserves the explicit infant fulfillment type instead of recreating
+// every infant as a generic passenger. Legacy links still become lap infants.
 assert.match(bookingPage, /searchParams\.infantsInSeat/);
 assert.match(bookingPage, /searchParams\.infantsOnLap/);
 assert.match(bookingPage, /createPassenger\('infant', 'IN_SEAT'\)/);
@@ -60,7 +60,8 @@ assert.match(flightService, /passengerMix/);
 assert.match(flightService, /infantsInSeat/);
 assert.match(flightService, /infantsOnLap/);
 assert.match(flightService, /flights:\s*\(results\.flights\s*\|\|\s*\[\]\)\.map/);
-assert.match(bookingPage, /flight:\s*flightObj/);
+assert.match(bookingPage, /passengers:\s*passengersList/);
+assert.match(bookingPage, /flight:\s*\{\s*\.\.\.flight,\s*returnFlight,\s*specialRequests\s*\}/);
 
 assert.match(returnPage, /departureToken:\s*token[\s\S]*infantsInSeat:\s*canonicalParams\.infantsInSeat[\s\S]*infantsOnLap:\s*canonicalParams\.infantsOnLap/);
 
