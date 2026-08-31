@@ -77,9 +77,9 @@ export default function AdminBookingServiceRequestsPanel() {
       const next = response.data?.data || response.data;
       setData(next);
       setStatus(next?.assistance?.assistanceStatus || status);
-      setMessage('Assistance status updated.');
+      setMessage('Service-request status updated.');
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Unable to update assistance status.'));
+      setError(getApiErrorMessage(err, 'Unable to update service-request status.'));
     } finally {
       setSaving(false);
     }
@@ -91,6 +91,7 @@ export default function AdminBookingServiceRequestsPanel() {
 
   const assistance = data.assistance || {};
   const flex = data.flexAssist || {};
+  const baggageCount = Number(assistance.additionalBaggageCount || 0);
 
   return (
     <section className="asr-panel" aria-label="Passenger profiles and service requests">
@@ -100,7 +101,8 @@ export default function AdminBookingServiceRequestsPanel() {
           <h2>Passenger Profiles & Service Requests</h2>
         </div>
         <div className="asr-header-badges">
-          {assistance.hasSpecialAssistance && <span className="asr-badge asr-badge--assistance"><i className="fas fa-universal-access" /> Special Assistance</span>}
+          {assistance.hasSpecialAssistance && <span className="asr-badge asr-badge--assistance"><i className="fas fa-concierge-bell" /> Service Request</span>}
+          {baggageCount > 0 && <span className="asr-badge asr-badge--assistance"><i className="fas fa-suitcase-rolling" /> {baggageCount} Extra Bag{baggageCount === 1 ? '' : 's'}</span>}
           {flex.selected && <span className="asr-badge asr-badge--flex"><i className="fas fa-shield-alt" /> Flex Assist</span>}
         </div>
       </div>
@@ -130,11 +132,12 @@ export default function AdminBookingServiceRequestsPanel() {
                 <div><dt>Meal Preference</dt><dd>{pretty(assistance.mealPreference)}</dd></div>
                 <div><dt>Seat Preference</dt><dd>{pretty(assistance.seatPreference)}</dd></div>
                 <div><dt>Wheelchair Assistance</dt><dd>{assistance.wheelchairRequired ? 'YES — REQUIRED' : 'No'}</dd></div>
+                <div><dt>Additional Checked Bags</dt><dd>{baggageCount > 0 ? `${baggageCount} requested — confirm availability and airline fee after booking` : 'None'}</dd></div>
                 <div className="asr-request-list__wide"><dt>Additional Request</dt><dd>{assistance.additionalRequest || 'None'}</dd></div>
               </dl>
 
               <div className="asr-status-control">
-                <label>Assistance Status
+                <label>Service Request Status
                   <select value={status} onChange={(event) => setStatus(event.target.value)}>
                     <option value="REQUESTED">Requested</option>
                     <option value="ACKNOWLEDGED">Acknowledged</option>
@@ -145,7 +148,7 @@ export default function AdminBookingServiceRequestsPanel() {
               </div>
             </>
           ) : (
-            <div className="asr-empty-state"><i className="fas fa-check-circle" /><div><strong>No special assistance requested</strong><span>Meal, seating, wheelchair and additional-request fields are all clear.</span></div></div>
+            <div className="asr-empty-state"><i className="fas fa-check-circle" /><div><strong>No service requests</strong><span>Meal, seating, wheelchair, baggage and additional-request fields are all clear.</span></div></div>
           )}
         </div>
 
@@ -164,7 +167,7 @@ export default function AdminBookingServiceRequestsPanel() {
         </div>
       </div>
 
-      <div className="asr-status-footnote">Current assistance state: <strong>{statusLabels[assistance.assistanceStatus] || assistance.assistanceStatus || 'No assistance requested'}</strong></div>
+      <div className="asr-status-footnote">Current service-request state: <strong>{statusLabels[assistance.assistanceStatus] || assistance.assistanceStatus || 'No assistance requested'}</strong></div>
     </section>
   );
 }
