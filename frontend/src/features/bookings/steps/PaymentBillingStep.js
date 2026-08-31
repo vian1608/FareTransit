@@ -56,7 +56,7 @@ export default function PaymentBillingStep({
             <div className="booking-v3-payment-title-row">
               <div className="booking-v3-payment-title">
                 <span className="booking-v3-payment-heading-icon"><i className="far fa-credit-card" aria-hidden="true" /></span>
-                <div><h2>Credit or Debit Card</h2><p>Use the card details associated with the billing address below.</p></div>
+                <div><h2>Add New Credit or Debit Card</h2><p>Use the card details associated with the billing address below.</p></div>
               </div>
               <div className="booking-v3-card-logos" aria-label="Accepted card brands">
                 <span className={`booking-v3-card-logo${brandClass('American Express')}`} title="American Express"><i className="fab fa-cc-amex" /></span>
@@ -136,7 +136,7 @@ export default function PaymentBillingStep({
           </label>
 
           <div className="booking-v3-actions booking-v3-actions--end booking-v3-payment-actions">
-            <button type="submit" className="booking-v3-primary booking-v3-submit-btn booking-v3-submit-btn--premium" disabled={processing || !termsAccepted}>
+            <button type="submit" aria-label="Complete Reservation" className="booking-v3-primary booking-v3-submit-btn booking-v3-submit-btn--premium" disabled={processing || !termsAccepted}>
               {processing ? (
                 <><i className="fas fa-circle-notch fa-spin" /> Processing Reservation…</>
               ) : (
