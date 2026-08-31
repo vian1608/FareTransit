@@ -7,37 +7,41 @@ const root = path.resolve(process.cwd(), '..');
 const read = relative => fs.readFileSync(path.join(root, relative), 'utf8');
 
 const bookingEntry = read('frontend/src/features/bookings/pages/BookingPage.js');
-const bookingPage = read('frontend/src/features/bookings/pages/BookingPageV2.js');
-const manualFields = read('frontend/src/features/secure-payments/ManualPaymentCardFields.js');
+const bookingPage = read('frontend/src/features/bookings/pages/BookingPageV3.js');
+const cardEntry = read('frontend/src/features/bookings/components/PaymentCardEntry.js');
 const manualRoutes = read('backend/src/modules/secure-payments/secure-payment.routes.mjs');
 const routesIndex = read('backend/src/routes/index.mjs');
 const migration = read('backend/migrations/121_manual_checkout_billing_metadata.sql');
 const frontendEnvExample = read('frontend/.env.example');
 const backendEnvExample = read('backend/.env.example');
 
-test('FareTransit manual checkout stores billing and masked card metadata without a customer gateway', async t => {
-  await t.test('three-step booking entry point is active', () => {
-    assert.match(bookingEntry, /BookingPageV2/);
+test('FareTransit four-step checkout stores billing and masked card metadata without a customer gateway', async t => {
+  await t.test('four-step booking entry point is active', () => {
+    assert.match(bookingEntry, /BookingPageV3/);
     assert.match(bookingPage, /Traveller Details/);
     assert.match(bookingPage, /Contact & Assistance/);
-    assert.match(bookingPage, /Secure Checkout/);
+    assert.match(bookingPage, /Trip Protection/);
+    assert.match(bookingPage, /Payment/);
     assert.doesNotMatch(bookingPage, /booking-hero-premium/);
   });
 
-  await t.test('ordinary FareTransit card reference fields are rendered', () => {
-    assert.match(manualFields, /Card Brand/);
-    assert.match(manualFields, /Card Number \(Last 4 Digits\)/);
-    assert.match(manualFields, /Expiration Month/);
-    assert.match(manualFields, /Expiration Year/);
-    assert.doesNotMatch(manualFields, /Collect\.js|secure\.nmi\.com|NMI_TOKENIZATION|startPaymentRequest/i);
+  await t.test('normal full visual card-entry fields are rendered', () => {
+    assert.match(cardEntry, /Card Number/);
+    assert.match(cardEntry, /Name on Card/);
+    assert.match(cardEntry, /CID\/CVV/);
+    assert.match(cardEntry, /Expiration Date/);
+    assert.match(cardEntry, /passesLuhn/);
+    assert.match(cardEntry, /getMaskedMetadata/);
+    assert.doesNotMatch(cardEntry, /Collect\.js|secure\.nmi\.com|NMI_TOKENIZATION|startPaymentRequest/i);
   });
 
-  await t.test('customer checkout uses only the internal manual attach route', () => {
-    assert.match(manualFields, /\/secure-payments\/checkout\/attach/);
-    assert.match(manualRoutes, /router\.post\('\/checkout\/attach'/);
-    assert.match(manualRoutes, /payment_provider:\s*'manual'/);
-    assert.match(manualRoutes, /tokenization_status:\s*'MANUAL_METADATA'/);
-    assert.doesNotMatch(routesIndex, /nmi-vault|nmiVault/i);
+  await t.test('customer checkout sends only masked metadata in the booking request', () => {
+    assert.match(bookingPage, /cardBrand:\s*card\.cardBrand/);
+    assert.match(bookingPage, /cardLast4:\s*card\.last4/);
+    assert.match(bookingPage, /billingPostalCode:\s*billing\.postalCode/);
+    assert.doesNotMatch(bookingPage, /cardNumber\s*:/);
+    assert.doesNotMatch(bookingPage, /\bcvv\s*:/i);
+    assert.doesNotMatch(cardEntry, /bookingAPI|fetch\(|sessionStorage|localStorage/);
   });
 
   await t.test('Supabase persistence is masked metadata plus billing details only', () => {
@@ -61,15 +65,16 @@ test('FareTransit manual checkout stores billing and masked card metadata withou
     });
   });
 
-  await t.test('NMI configuration and runtime references are absent from checkout configuration', () => {
+  await t.test('third-party gateway configuration is absent from customer checkout', () => {
     assert.doesNotMatch(frontendEnvExample, /NMI|TOKENIZATION_KEY|Collect\.js/i);
     assert.doesNotMatch(backendEnvExample, /NMI_PRIVATE_API_KEY|NMI_API_BASE_URL|NMI_ENVIRONMENT/i);
-    assert.doesNotMatch(manualFields, /\bnmi\b/i);
+    assert.doesNotMatch(bookingPage, /Collect\.js|secure\.nmi\.com|paymentToken/i);
+    assert.doesNotMatch(routesIndex, /nmi-vault|nmiVault/i);
   });
 
-  await t.test('customer booking remains pending while manual card reference is recorded', () => {
+  await t.test('customer booking remains pending while masked card reference is recorded', () => {
     assert.match(bookingPage, /paymentStatus:\s*'PENDING'/);
-    assert.match(manualRoutes, /status:\s*'CARD_SUBMITTED'/);
+    assert.match(bookingPage, /payment_provider:\s*'manual'/);
     assert.match(manualRoutes, /chargeable:\s*false/);
   });
 });
