@@ -11,15 +11,23 @@ export default function TripProtectionStep({
   syncPending,
   syncWarning,
   onSelect,
-  onBack,
   onContinue,
 }) {
   return (
     <section className="booking-v3-section booking-v3-step-section booking-v3-step-section--protection booking-v3-protection-section">
       <div className="booking-v3-section-header booking-v3-section-header--simple">
-        <div><p className="booking-v3-eyebrow">3. Trip Protection & Baggage Fees</p><h1>Extra help when travel plans change</h1></div>
+        <div>
+          <p className="booking-v3-eyebrow">3. Trip Protection</p>
+          <h1>Extra help when travel plans change</h1>
+          <p className="booking-v3-header-copy">Choose whether you want FareTransit Flex Assist added to your reservation before moving to payment.</p>
+        </div>
       </div>
-      <p className="booking-v3-section-intro">Add FareTransit Flex Assist for your trip from {origin} to {destination}{hasReturn ? ` and back to ${finalDestination}` : ''}.</p>
+
+      <div className="booking-v3-protection-route-chip">
+        <i className="fas fa-route" aria-hidden="true" />
+        <span>{origin} → {destination}{hasReturn ? ` → ${finalDestination}` : ''}</span>
+      </div>
+
       <p className="booking-v3-required-choice"><b>* Required:</b> Select Yes or No to continue</p>
 
       <button
@@ -32,8 +40,11 @@ export default function TripProtectionStep({
         <span className="booking-v3-radio" aria-hidden="true"><span /></span>
         <div className="booking-v3-protection-content">
           <div className="booking-v3-protection-choice-row">
-            <strong>Yes, add FareTransit Flex Assist for ${flexAmount.toFixed(2)} total.</strong>
-            <span className="booking-v3-recommended">HIGHLY RECOMMENDED</span>
+            <div>
+              <span className="booking-v3-option-label">Add Flex Assist</span>
+              <strong>Yes, add FareTransit Flex Assist for ${flexAmount.toFixed(2)} total.</strong>
+            </div>
+            <span className="booking-v3-recommended"><i className="fas fa-star" aria-hidden="true" /> HIGHLY RECOMMENDED</span>
           </div>
           <div className="booking-v3-benefits">
             <div><i className="fas fa-exchange-alt" /><span><b>Changes made easier</b><small>Get help reviewing flight-change and rebooking options when plans change.</small></span></div>
@@ -52,7 +63,7 @@ export default function TripProtectionStep({
         onClick={() => onSelect(false)}
       >
         <span className="booking-v3-radio" aria-hidden="true"><span /></span>
-        <strong>No, do not add Flex Assist to my ${Number(baseFare).toFixed(2)} trip.</strong>
+        <div><span className="booking-v3-option-label">Continue without Flex Assist</span><strong>No, do not add Flex Assist to my ${Number(baseFare).toFixed(2)} trip.</strong></div>
       </button>
 
       {syncPending && <p className="booking-v3-sync-note"><i className="fas fa-circle-notch fa-spin" aria-hidden="true" /> Saving your selection in the background…</p>}
@@ -60,8 +71,7 @@ export default function TripProtectionStep({
 
       <p className="booking-v3-flex-disclaimer">Flex Assist is a FareTransit agency service, not travel insurance or an airline flexible fare. Airline fare differences, penalties, taxes, availability and fare rules may still apply.</p>
 
-      <div className="booking-v3-actions">
-        <button type="button" className="booking-v3-icon-back" aria-label="Previous step" onClick={onBack}>‹</button>
+      <div className="booking-v3-actions booking-v3-actions--end">
         <button type="button" className="booking-v3-primary" onClick={onContinue} disabled={typeof tripProtection !== 'boolean'}>Continue to Payment <span aria-hidden="true">→</span></button>
       </div>
     </section>
