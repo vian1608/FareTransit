@@ -1,4 +1,4 @@
-import React, { forwardRef, useImperativeHandle, useMemo, useState } from 'react';
+import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useState } from 'react';
 
 const digitsOnly = (value) => String(value || '').replace(/\D/g, '');
 
@@ -6,16 +6,16 @@ function detectCardBrand(value) {
   const digits = digitsOnly(value);
   if (!digits) return '';
 
-  // Give the passenger immediate feedback from the first digit, then refine
-  // the less-common 3-series networks once enough digits are available.
+  // Give immediate network feedback while the passenger types, then refine
+  // the less-common 3-series networks when enough digits are available.
   if (/^4/.test(digits)) return 'Visa';
   if (/^5/.test(digits)) return 'Mastercard';
   if (/^6/.test(digits)) return 'Discover';
 
   if (/^3/.test(digits)) {
     if (/^3[47]/.test(digits)) return 'American Express';
-    if (/^35/.test(digits)) return digits.length >= 2 ? 'JCB' : 'American Express';
-    if (/^3(0[0-5]|[68])/.test(digits)) return digits.length >= 2 ? 'Diners Club' : 'American Express';
+    if (/^35/.test(digits) && digits.length >= 2) return 'JCB';
+    if (/^3(0[0-5]|[68])/.test(digits) && digits.length >= 2) return 'Diners Club';
     return 'American Express';
   }
 
@@ -63,7 +63,7 @@ function formatExpiry(value) {
   return `${digits.slice(0, 2)}/${digits.slice(2)}`;
 }
 
-const PaymentCardEntry = forwardRef(function PaymentCardEntry({ nameOnCard, onNameChange, onFocus }, ref) {
+const PaymentCardEntry = forwardRef(function PaymentCardEntry({ nameOnCard, onNameChange, onFocus, onBrandChange }, ref) {
   const [cardNumber, setCardNumber] = useState('');
   const [securityCode, setSecurityCode] = useState('');
   const [expiry, setExpiry] = useState('');
@@ -77,6 +77,10 @@ const PaymentCardEntry = forwardRef(function PaymentCardEntry({ nameOnCard, onNa
     && Boolean(expiryParts)
     && /^\d{3,4}$/.test(securityCode)
   ), [nameOnCard, cardNumber, expiryParts, securityCode]);
+
+  useEffect(() => {
+    onBrandChange?.(brand);
+  }, [brand, onBrandChange]);
 
   const getValidationMessage = () => {
     if (!String(nameOnCard || '').trim()) return 'Enter the name shown on the card.';
