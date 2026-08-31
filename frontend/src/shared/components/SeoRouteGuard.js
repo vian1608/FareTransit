@@ -1,7 +1,9 @@
 import React, { useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useLocation, useNavigate } from 'react-router-dom';
+import RoutePlanningContent from '../../features/flights/components/RoutePlanningContent';
 import routesData from '../data/routesData.json';
+import routeSeoInsights from '../data/routeSeoInsights.json';
 import seoPages from '../data/seoPages.json';
 import seoContent from '../data/seoContent.json';
 import seoAliases from '../data/seoAliases.json';
@@ -24,6 +26,15 @@ const ROUTE_PAGE_NAMES = new Map(
     .map((route) => [`/routes/${route.slug}`, route.title || route.metaTitle || route.slug])
 );
 
+const DIRECT_ROUTE_INFO = {
+  '/flight-nyc-to-mia': {
+    type: 'flight', originCity: 'New York City', destinationCity: 'Miami', originCode: 'NYC', destinationCode: 'MIA',
+  },
+  '/flight-lax-to-jfk': {
+    type: 'flight', originCity: 'Los Angeles', destinationCity: 'New York', originCode: 'LAX', destinationCode: 'JFK',
+  },
+};
+
 export const CANONICAL_ALIASES = seoAliases;
 
 const normalizePath = (pathname) => {
@@ -39,6 +50,21 @@ function getPageName(pathname) {
   return PAGE_BY_PATH.get(pathname)?.pageName || ROUTE_PAGE_NAMES.get(pathname) || 'FareTransit';
 }
 
+function getRoutePlanning(pathname) {
+  if (DIRECT_ROUTE_INFO[pathname]) return DIRECT_ROUTE_INFO[pathname];
+
+  const directSlug = pathname.startsWith('/') ? pathname.slice(1) : pathname;
+  const directRoute = routesData.find((route) => route.slug === directSlug);
+  if (directRoute && pathname.startsWith('/train-')) return directRoute;
+
+  if (pathname.startsWith('/routes/')) {
+    const slug = pathname.slice('/routes/'.length);
+    return routesData.find((route) => route.slug === slug) || null;
+  }
+
+  return null;
+}
+
 export default function SeoRouteGuard() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -46,6 +72,7 @@ export default function SeoRouteGuard() {
   const canonicalPath = CANONICAL_ALIASES[normalizedPath] || normalizedPath;
   const indexable = isIndexablePath(canonicalPath);
   const handledBySeoContentPage = CONTENT_PATHS.has(canonicalPath);
+  const routePlanning = indexable ? getRoutePlanning(canonicalPath) : null;
 
   useEffect(() => {
     if (normalizedPath !== '/search') return;
@@ -107,13 +134,26 @@ export default function SeoRouteGuard() {
     : null;
 
   return (
-    <Helmet>
-      <meta name="robots" content={robotsValue} />
-      <meta name="googlebot" content={robotsValue} />
-      {indexable && !handledBySeoContentPage && <link rel="canonical" href={canonicalUrl} />}
-      {indexable && !handledBySeoContentPage && <meta property="og:url" content={canonicalUrl} />}
-      {genericWebPageData && <script type="application/ld+json">{JSON.stringify(genericWebPageData)}</script>}
-      {breadcrumbData && <script type="application/ld+json">{JSON.stringify(breadcrumbData)}</script>}
-    </Helmet>
+    <>
+      <Helmet>
+        <meta name="robots" content={robotsValue} />
+        <meta name="googlebot" content={robotsValue} />
+        {indexable && !handledBySeoContentPage && <link rel="canonical" href={canonicalUrl} />}
+        {indexable && !handledBySeoContentPage && <meta property="og:url" content={canonicalUrl} />}
+        {genericWebPageData && <script type="application/ld+json">{JSON.stringify(genericWebPageData)}</script>}
+        {breadcrumbData && <script type="application/ld+json">{JSON.stringify(breadcrumbData)}</script>}
+      </Helmet>
+
+      {routePlanning && (
+        <RoutePlanningContent
+          mode={routePlanning.type}
+          originCity={routePlanning.originCity}
+          destinationCity={routePlanning.destinationCity}
+          originCode={routePlanning.originCode}
+          destinationCode={routePlanning.destinationCode}
+          insights={routeSeoInsights[canonicalPath] || []}
+        />
+      )}
+    </>
   );
 }
