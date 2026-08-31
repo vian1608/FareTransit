@@ -69,7 +69,8 @@ export default function CustomerBackButton() {
 
     let ownedSlot = null;
     const locateTarget = () => {
-      const panel = document.querySelector('.booking-itinerary-top-panel__inner');
+      const panel = document.querySelector('.booking-v3-shell')
+        || document.querySelector('.booking-itinerary-top-panel__inner');
       if (!panel) {
         setBookingTarget(null);
         return;
