@@ -16,6 +16,11 @@ const pretty = value => {
   return text.replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase());
 };
 
+const money = value => {
+  const parsed = Number.parseFloat(value);
+  return Number.isFinite(parsed) ? parsed.toFixed(2) : null;
+};
+
 function PassengerProfile({ passenger, index }) {
   const fullName = [passenger.title, passenger.firstName, passenger.middleName, passenger.lastName, passenger.suffix].filter(Boolean).join(' ');
   return (
@@ -92,6 +97,9 @@ export default function AdminBookingServiceRequestsPanel() {
   const assistance = data.assistance || {};
   const flex = data.flexAssist || {};
   const baggageCount = Number(assistance.additionalBaggageCount || 0);
+  const baggageCurrency = assistance.additionalBaggageCurrency || assistance.additionalBaggageQuote?.currency || 'USD';
+  const baggageCustomerTotal = money(assistance.additionalBaggageCustomerTotal ?? assistance.additionalBaggageQuote?.customerTotal);
+  const baggageSourceTotal = money(assistance.additionalBaggageSourceTotal ?? assistance.additionalBaggageQuote?.sourceTotal);
 
   return (
     <section className="asr-panel" aria-label="Passenger profiles and service requests">
@@ -132,7 +140,10 @@ export default function AdminBookingServiceRequestsPanel() {
                 <div><dt>Meal Preference</dt><dd>{pretty(assistance.mealPreference)}</dd></div>
                 <div><dt>Seat Preference</dt><dd>{pretty(assistance.seatPreference)}</dd></div>
                 <div><dt>Wheelchair Assistance</dt><dd>{assistance.wheelchairRequired ? 'YES — REQUIRED' : 'No'}</dd></div>
-                <div><dt>Additional Checked Bags</dt><dd>{baggageCount > 0 ? `${baggageCount} requested — confirm availability and airline fee after booking` : 'None'}</dd></div>
+                <div><dt>Additional Checked Bags</dt><dd>{baggageCount > 0 ? `${baggageCount} requested` : 'None'}</dd></div>
+                {baggageCount > 0 && <div><dt>FareTransit Baggage Quote</dt><dd>{baggageCustomerTotal ? `$${baggageCustomerTotal} ${baggageCurrency}` : 'Confirm price with airline'}</dd></div>}
+                {baggageCount > 0 && baggageSourceTotal && <div><dt>Airline Price Basis</dt><dd>${baggageSourceTotal} {baggageCurrency}</dd></div>}
+                <div className="asr-request-list__wide"><dt>Baggage Follow-up</dt><dd>{baggageCount > 0 ? 'Confirm airline availability and final applicable amount after booking before collecting baggage payment.' : 'None'}</dd></div>
                 <div className="asr-request-list__wide"><dt>Additional Request</dt><dd>{assistance.additionalRequest || 'None'}</dd></div>
               </dl>
 
