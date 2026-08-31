@@ -12,7 +12,11 @@ const protectionStep = read('frontend/src/features/bookings/steps/TripProtection
 const cardEntry = read('frontend/src/features/bookings/components/PaymentCardEntry.js');
 const premiumCss = read('frontend/src/features/bookings/pages/BookingPageV3Premium.css');
 const visualCss = read('frontend/src/features/bookings/pages/BookingPageV3VisualPolish.css');
+const paymentFixCss = read('frontend/src/features/bookings/pages/BookingPageV3PaymentFixes.css');
 const professionalCss = read('frontend/src/features/bookings/pages/BookingPageV3Professional.css');
+const addressAutocomplete = read('frontend/src/shared/components/AddressAutocompleteInput.js');
+const googleAdsAdapter = read('frontend/src/shared/analytics/googleAds.js');
+const bookingPage = read('frontend/src/features/bookings/pages/BookingPageV3.js');
 const backButton = read('frontend/src/shared/components/CustomerBackButton.js');
 const addonMiddleware = read('backend/src/modules/journey-sessions/checkout-session-booking.middleware.mjs');
 const addonPricing = read('backend/src/modules/addons/trip-addon-pricing.service.mjs');
@@ -65,14 +69,31 @@ test('FareTransit premium four-step checkout keeps navigation and totals consist
     assert.match(premiumCss, /position: sticky/);
   });
 
-  await t.test('card brand feedback is immediate and visible', () => {
+  await t.test('billing address line one uses autocomplete and fills structured fields', () => {
+    assert.match(paymentStep, /AddressAutocompleteInput/);
+    assert.match(paymentStep, /onSelectSuggestion=\{applyBillingSuggestion\}/);
+    assert.match(paymentStep, /addressLine1:/);
+    assert.match(paymentStep, /city:/);
+    assert.match(paymentStep, /postalCode:/);
+    assert.match(paymentStep, /normalizeUsState/);
+    assert.match(paymentStep, /normalizeCountry/);
+    assert.match(addressAutocomplete, /requestSequenceRef/);
+    assert.match(addressAutocomplete, /AbortController/);
+    assert.match(addressAutocomplete, /onSelectSuggestion/);
+    assert.match(addressAutocomplete, /Address suggestions are temporarily unavailable/);
+  });
+
+  await t.test('card brand feedback is immediate and visually boxed', () => {
     assert.match(cardEntry, /\^4/);
     assert.match(cardEntry, /\^5/);
     assert.match(cardEntry, /\^3/);
     assert.match(cardEntry, /onBrandChange/);
-    assert.match(paymentStep, /brandClass\('Visa'\)/);
-    assert.match(paymentStep, /brandClass\('Mastercard'\)/);
-    assert.match(paymentStep, /brandClass\('American Express'\)/);
+    assert.match(paymentStep, /CARD_BRANDS/);
+    assert.match(paymentStep, /detectedBrand === cardBrand\.name/);
+    assert.match(paymentStep, /booking-v3-card-brand__logo/);
+    assert.match(paymentStep, /booking-v3-card-brand__check/);
+    assert.match(paymentFixCss, /booking-v3-card-brand\.is-active/);
+    assert.match(paymentFixCss, /grid-template-columns: repeat\(6/);
   });
 
   await t.test('card number entry is capped at 16 digits and Amex at 15', () => {
@@ -82,6 +103,12 @@ test('FareTransit premium four-step checkout keeps navigation and totals consist
     assert.match(cardEntry, /maxLength=\{isAmexLength \? 17 : 19\}/);
   });
 
+  await t.test('booking conversion adapter is Promise-safe for checkout catch handling', () => {
+    assert.match(bookingPage, /trackGoogleAdsLeadConversion[\s\S]*?\.catch\(\(\) => \{\}\)/);
+    assert.match(googleAdsAdapter, /Promise\.resolve\(\)\.then/);
+    assert.match(googleAdsAdapter, /trackGoogleAdsLeadConversionSync/);
+  });
+
   await t.test('premium styling is shared across all four steps', () => {
     assert.match(premiumCss, /booking-stepper-v3/);
     assert.match(premiumCss, /booking-v3-passenger/);
@@ -89,6 +116,7 @@ test('FareTransit premium four-step checkout keeps navigation and totals consist
     assert.match(premiumCss, /booking-v3-protection-card/);
     assert.match(premiumCss, /booking-v3-payment-section/);
     assert.match(paymentStep, /BookingPageV3VisualPolish\.css/);
+    assert.match(paymentStep, /BookingPageV3PaymentFixes\.css/);
     assert.match(visualCss, /--ft-wine/);
     assert.match(visualCss, /--ft-navy/);
     assert.match(professionalCss, /--ft-professional-font/);
