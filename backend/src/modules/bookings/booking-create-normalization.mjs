@@ -20,10 +20,10 @@ function canonicalizeStatus(value, fallback, allowedValues, label, code) {
 }
 
 /**
- * Customer checkout historically submitted paymentStatus="pending" while the
- * canonical Supabase constraints only accept uppercase operational states.
- * Normalize at the API boundary so every downstream booking/payment insert
- * receives the same canonical values.
+ * Normalize customer-created bookings at the API boundary so downstream
+ * persistence always receives canonical booking/payment states. The public
+ * checkout records manual masked card metadata only and does not select or
+ * invoke a payment gateway.
  */
 export function normalizeBookingCreatePayload(payload = {}) {
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
@@ -50,6 +50,16 @@ export function normalizeBookingCreatePayload(payload = {}) {
 
   if (Object.prototype.hasOwnProperty.call(payload, 'payment_status')) {
     normalized.payment_status = normalized.paymentStatus;
+  }
+
+  // Older frontends may still send a provider field. Public FareTransit
+  // checkout is gateway-neutral; never persist a third-party provider here.
+  if (
+    Object.prototype.hasOwnProperty.call(payload, 'payment_provider')
+    || Object.prototype.hasOwnProperty.call(payload, 'paymentProvider')
+  ) {
+    normalized.payment_provider = 'manual';
+    normalized.paymentProvider = 'manual';
   }
 
   return normalized;

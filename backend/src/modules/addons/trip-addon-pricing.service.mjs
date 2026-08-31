@@ -1,4 +1,5 @@
-const FLEX_RATE = 0.10;
+const FLEX_REGULAR_RATE = 0.11;
+const FLEX_OFFER_RATE = 0.085;
 const FLEX_TERMS_VERSION = 'FLEX_V1';
 const BAGGAGE_TERMS_VERSION = 'BAGGAGE_REQUEST_V1';
 const ADDON_VERSION = 'TRIP_ADDONS_V1';
@@ -7,6 +8,11 @@ const MAX_BAGS_PER_TRAVELER_DIRECTION = 3;
 function money(value) {
   const number = Number.parseFloat(value);
   return Number.isFinite(number) ? Number(number.toFixed(2)) : 0;
+}
+
+function promoMoney(value) {
+  const number = Number.parseFloat(value);
+  return Number.isFinite(number) ? Math.max(0, Math.round(number)) : 0;
 }
 
 function positive(value) {
@@ -78,7 +84,8 @@ export function buildAuthoritativeTripAddonQuote(checkoutPayload = {}) {
   const passengerCount = getPassengerCount(checkoutPayload.searchParams || {});
   const requested = checkoutPayload.addons || checkoutPayload.tripAddons || {};
   const flexSelected = requested?.flexAssist?.selected === true;
-  const flexPrice = flexSelected ? money(ticketBase * FLEX_RATE) : 0;
+  const regularFlexPrice = flexSelected ? promoMoney(ticketBase * FLEX_REGULAR_RATE) : 0;
+  const offerFlexPrice = flexSelected ? promoMoney(ticketBase * FLEX_OFFER_RATE) : 0;
   const baggage = normalizeBaggage(requested?.baggage, {
     passengerCount,
     hasReturn: Boolean(checkoutPayload.returnFlight || checkoutPayload.selectedReturnFlight),
@@ -91,8 +98,13 @@ export function buildAuthoritativeTripAddonQuote(checkoutPayload = {}) {
     flexAssist: {
       addonType: 'FLEX_ASSIST',
       selected: flexSelected,
-      rate: FLEX_RATE,
-      price: flexPrice,
+      rate: FLEX_OFFER_RATE,
+      offerRate: FLEX_OFFER_RATE,
+      regularRate: FLEX_REGULAR_RATE,
+      price: offerFlexPrice,
+      offerPrice: offerFlexPrice,
+      regularPrice: regularFlexPrice,
+      savings: Math.max(0, regularFlexPrice - offerFlexPrice),
       status: flexSelected ? 'ACTIVE' : 'NOT_SELECTED',
       termsVersion: FLEX_TERMS_VERSION,
       serviceScope: 'CHANGE_ASSISTANCE',
@@ -100,7 +112,7 @@ export function buildAuthoritativeTripAddonQuote(checkoutPayload = {}) {
     },
     baggage,
     baggageTotal: 0,
-    addOnTotal: flexPrice,
+    addOnTotal: offerFlexPrice,
   };
 }
 
@@ -126,6 +138,7 @@ export function applyAuthoritativeTripAddonPricing(bookingPayload = {}, quote = 
     ticket_component_total: ticketDueAfterVoucher,
     add_on_total: addOnTotal,
     flex_assist_fee: positive(quote?.flexAssist?.price),
+    flex_assist_regular_price: positive(quote?.flexAssist?.regularPrice),
     trip_addons: quote,
     pricing: {
       ...(bookingPayload.pricing || {}),
@@ -139,7 +152,8 @@ export function applyAuthoritativeTripAddonPricing(bookingPayload = {}, quote = 
 }
 
 export default {
-  FLEX_RATE,
+  FLEX_REGULAR_RATE,
+  FLEX_OFFER_RATE,
   FLEX_TERMS_VERSION,
   BAGGAGE_TERMS_VERSION,
   ADDON_VERSION,

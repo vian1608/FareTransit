@@ -14,7 +14,7 @@ const resultRow = read('frontend/src/features/flights/components/FlightResultRow
 const returnPage = read('frontend/src/features/flights/pages/ReturnFlightSelectionPage.js');
 const bookingContract = read('frontend/src/shared/pricing/bookingPriceContract.js');
 const itineraryNormalizer = read('frontend/src/shared/utils/itineraryNormalizer.js');
-const bookingPage = read('frontend/src/features/bookings/pages/BookingPage.js');
+const bookingPage = read('frontend/src/features/bookings/pages/BookingPageV2.js');
 
 // Supplier prices are explicitly typed as whole-party totals so downstream code
 // never has to guess whether a number is per traveler or for the whole search.
@@ -39,8 +39,8 @@ assert.match(resultRow, /prepareFlightForBooking/);
 assert.match(resultRow, /onSelect\(prepareFlightForBooking\(flight,\s*totalTravelers\)\)/);
 
 // The adapter divides a party total by the passenger count before feeding the
-// legacy BookingPage calculation. For a round-trip outbound quote, contribution
-// is deferred until the return-token response supplies the final complete quote.
+// checkout calculation. For a round-trip outbound quote, contribution is
+// deferred until the return-token response supplies the final complete quote.
 assert.match(bookingContract, /partyAmount\)\s*\/\s*count/);
 assert.match(bookingContract, /sourceScope\s*!==\s*'party_total'/);
 assert.match(bookingContract, /tripScope\s*===\s*'roundtrip_total'/);
@@ -57,10 +57,11 @@ assert.match(itineraryNormalizer, /price\.partyFinalPrice/);
 assert.match(itineraryNormalizer, /const totalAmount = resolveItineraryTotalAmount\(rawResult\)/);
 assert.match(itineraryNormalizer, /preserved quote, not the intentionally deferred contribution/);
 
-// The current checkout still multiplies legacy per-traveler contributions by
-// passenger count, which is why the adapter is mandatory. Guard both sides of
-// the contract: party totals are normalized first, then multiplied exactly once.
-assert.match(bookingPage, /const total = \(perPassFinal \* passCount\)\.toFixed\(2\)/);
+// The three-step checkout still multiplies normalized per-traveler contributions
+// by passenger count exactly once. Guard both sides of the pricing contract.
+assert.match(bookingPage, /const count = Math\.max\(1, passengersList\.length \|\| 1\)/);
+assert.match(bookingPage, /total:\s*\(\(outFinal \+ retFinal\) \* count\)\.toFixed\(2\)/);
+assert.match(bookingPage, /supplierPrice:\s*\(\(outOriginal \+ retOriginal\) \* count\)\.toFixed\(2\)/);
 
 // Backend pricing independently understands the same scopes. This protects
 // payment/admin/server paths even if they receive a raw supplier object instead

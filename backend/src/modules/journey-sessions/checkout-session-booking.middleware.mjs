@@ -6,10 +6,26 @@ import {
 import flexAddonService from '../addons/flex-addon.service.mjs';
 import { sendTripAddonBookingSummaryEmail } from '../addons/trip-addon-booking-email.service.mjs';
 
+function buildRequestFallbackPayload(body = {}) {
+  const passengers = Array.isArray(body.passengers) ? body.passengers : [];
+  return {
+    selectedFlight: body.flight || null,
+    returnFlight: body.returnFlight || body.flight?.returnFlight || null,
+    searchParams: {
+      adults: Math.max(1, passengers.length || Number.parseInt(body.passengersCount || 1, 10) || 1),
+      children: 0,
+      infants: 0,
+    },
+    addons: body.tripAddons || body.trip_addons || {},
+  };
+}
+
 /**
  * Links a successful booking to its c_ checkout token and returns an r_ read token.
- * Optional-service prices are rebuilt from the server-side checkout payload. The
- * browser cannot choose its own Flex amount or add baggage to the airfare charge.
+ * Optional-service prices are rebuilt server-side. When a checkout token is not
+ * available (for example a direct/local checkout), the server still rebuilds the
+ * Flex Assist quote from the selected itinerary, passenger count and Yes/No choice
+ * instead of trusting a browser-posted add-on amount.
  */
 export async function completeJourneySessionAfterBooking(req, res, next) {
   const checkoutToken = String(
@@ -18,19 +34,21 @@ export async function completeJourneySessionAfterBooking(req, res, next) {
     || ''
   ).trim();
 
-  if (!checkoutToken) return next();
-
   let tripAddons;
   try {
-    const checkout = await journeySessionService.getCheckout(checkoutToken);
-    tripAddons = buildAuthoritativeTripAddonQuote(checkout?.payload || {});
-    await journeySessionService.patchCheckout(checkoutToken, {
-      payload: {
-        ...(checkout?.payload || {}),
-        addons: tripAddons,
-        addonQuote: tripAddons,
-      },
-    });
+    if (checkoutToken) {
+      const checkout = await journeySessionService.getCheckout(checkoutToken);
+      tripAddons = buildAuthoritativeTripAddonQuote(checkout?.payload || {});
+      await journeySessionService.patchCheckout(checkoutToken, {
+        payload: {
+          ...(checkout?.payload || {}),
+          addons: tripAddons,
+          addonQuote: tripAddons,
+        },
+      });
+    } else {
+      tripAddons = buildAuthoritativeTripAddonQuote(buildRequestFallbackPayload(req.body || {}));
+    }
   } catch (error) {
     const status = Number(error?.status) || 400;
     return res.status(status).json({
@@ -42,19 +60,29 @@ export async function completeJourneySessionAfterBooking(req, res, next) {
     });
   }
 
-  const durableRequestId = `checkout:${checkoutToken}`;
+  const existingRequestId = req.body?.idempotency_key
+    || req.body?.idempotencyKey
+    || req.body?.client_request_id
+    || req.body?.clientRequestId
+    || null;
+  const durableRequestId = checkoutToken ? `checkout:${checkoutToken}` : existingRequestId;
+
   req.body = applyAuthoritativeTripAddonPricing({
     ...(req.body || {}),
-    checkout_session_token: checkoutToken,
-    checkoutSessionToken: checkoutToken,
-    idempotency_key: durableRequestId,
-    idempotencyKey: durableRequestId,
-    client_request_id: durableRequestId,
-    clientRequestId: durableRequestId,
+    ...(checkoutToken ? {
+      checkout_session_token: checkoutToken,
+      checkoutSessionToken: checkoutToken,
+    } : {}),
+    ...(durableRequestId ? {
+      idempotency_key: durableRequestId,
+      idempotencyKey: durableRequestId,
+      client_request_id: durableRequestId,
+      clientRequestId: durableRequestId,
+    } : {}),
   }, tripAddons);
 
   // Keep the existing baggage booking service path authoritative for request
-  // persistence, but normalize the request shape from the checkout token too.
+  // persistence, but normalize the request shape from the final server quote too.
   req.body.baggageRequests = (tripAddons.baggage || []).map((item) => ({
     passengerIndex: item.travelerIndex,
     addonType: 'CHECKED_BAGGAGE',
@@ -81,8 +109,12 @@ export async function completeJourneySessionAfterBooking(req, res, next) {
       return originalJson(body);
     }
 
+    const checkoutCompletion = checkoutToken
+      ? journeySessionService.completeCheckout(checkoutToken, bookingId)
+      : Promise.resolve(null);
+
     Promise.allSettled([
-      journeySessionService.completeCheckout(checkoutToken, bookingId),
+      checkoutCompletion,
       flexAddonService.persistForBooking(bookingId, tripAddons),
     ]).then(async (results) => {
       if (sent) return;

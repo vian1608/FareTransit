@@ -5,64 +5,97 @@ import test from 'node:test';
 
 const root = path.resolve(process.cwd(), '..');
 const read = relative => fs.readFileSync(path.join(root, relative), 'utf8');
-const exists = relative => fs.existsSync(path.join(root, relative));
 
-const publicRoutes = read('backend/src/modules/secure-payments/secure-payment.routes.mjs');
-const adminRoutes = read('backend/src/modules/backoffice/secure-payment-admin.routes.mjs');
-const bookingPage = read('frontend/src/features/bookings/pages/BookingPage.js');
-const manualFields = read('frontend/src/features/secure-payments/ManualPaymentCardFields.js');
-const paymentPage = read('frontend/src/features/secure-payments/SecurePaymentPage.js');
-const adminPage = read('frontend/src/features/backoffice/SecurePaymentAdminPages.js');
-const migration = read('backend/migrations/119_manual_payment_methods.sql');
+const bookingEntry = read('frontend/src/features/bookings/pages/BookingPage.js');
+const bookingPage = read('frontend/src/features/bookings/pages/BookingPageV3.js');
+const cardEntry = read('frontend/src/features/bookings/components/PaymentCardEntry.js');
+const bookingFixesCss = read('frontend/src/features/bookings/pages/BookingPageV3Fixes.css');
+const manualRoutes = read('backend/src/modules/secure-payments/secure-payment.routes.mjs');
+const routesIndex = read('backend/src/routes/index.mjs');
+const migration = read('backend/migrations/121_manual_checkout_billing_metadata.sql');
+const frontendEnvExample = read('frontend/.env.example');
+const backendEnvExample = read('backend/.env.example');
+const rootPackage = read('package.json');
+const localDevLauncher = read('scripts/dev.mjs');
 
-const activeRuntime = [publicRoutes, adminRoutes, bookingPage, manualFields, paymentPage, adminPage].join('\n');
-
-test('manual payment storage replaces card-vault runtime without storing sensitive credentials', async t => {
-  await t.test('legacy provider runtime files are removed', () => {
-    assert.equal(exists('backend/src/modules/secure-payments/vgs-vault.service.mjs'), false);
-    assert.equal(exists('backend/src/modules/secure-payments/vgs-mfa.service.mjs'), false);
-    assert.equal(exists('frontend/src/features/secure-payments/VgsCheckoutCardFields.js'), false);
+test('FareTransit four-step checkout stores billing and masked card metadata without a customer gateway', async t => {
+  await t.test('four-step booking entry point is active', () => {
+    assert.match(bookingEntry, /BookingPageV3/);
+    assert.match(bookingPage, /Traveller Details/);
+    assert.match(bookingPage, /Contact & Assistance/);
+    assert.match(bookingPage, /Trip Protection/);
+    assert.match(bookingPage, /Payment/);
+    assert.doesNotMatch(bookingPage, /booking-hero-premium/);
   });
 
-  await t.test('active payment runtime contains no VGS integration', () => {
-    assert.doesNotMatch(activeRuntime, /\bVGS\b|VeryGoodVault|verygoodvault|VGSCollect|VGSShow/i);
-    assert.match(bookingPage, /ManualPaymentCardFields/);
-    assert.doesNotMatch(bookingPage, /VgsCheckoutCardFields/);
+  await t.test('normal full visual card-entry fields are rendered', () => {
+    assert.match(cardEntry, /Card Number/);
+    assert.match(cardEntry, /Name on Card/);
+    assert.match(cardEntry, /CID\/CVV/);
+    assert.match(cardEntry, /Expiration Date/);
+    assert.match(cardEntry, /passesLuhn/);
+    assert.match(cardEntry, /getMaskedMetadata/);
+    assert.doesNotMatch(cardEntry, /Collect\.js|secure\.nmi\.com|NMI_TOKENIZATION|startPaymentRequest/i);
   });
 
-  await t.test('database schema stores masked metadata only', () => {
-    assert.match(migration, /CREATE TABLE IF NOT EXISTS public\.manual_payment_methods/);
-    assert.match(migration, /last4 VARCHAR\(4\)/);
-    assert.match(migration, /exp_month INTEGER/);
-    assert.match(migration, /exp_year INTEGER/);
-    assert.doesNotMatch(migration, /\b(card_number|pan|cvv|cvc|security_code|track_data|pin)\b\s+(TEXT|VARCHAR|CHAR|JSONB)/i);
+  await t.test('card brand is detected immediately and is visible to the passenger', () => {
+    assert.match(cardEntry, /\^4.*Visa/);
+    assert.match(cardEntry, /\^5.*Mastercard/);
+    assert.match(cardEntry, /\^3/);
+    assert.match(cardEntry, /American Express/);
+    assert.match(cardEntry, /Card type/);
+    assert.match(cardEntry, /booking-v3-detected-brand/);
+    assert.doesNotMatch(bookingFixesCss, /\.booking-v3-detected-brand\s*\{[^}]*display:\s*none/is);
   });
 
-  await t.test('backend rejects raw card credential fields recursively', () => {
-    assert.match(publicRoutes, /SENSITIVE_CARD_DATA_NOT_ACCEPTED/);
-    assert.match(publicRoutes, /rejectSensitiveCardPayload/);
-    ['cardnumber','card_number','pan','cvv','cvc','securitycode','security_code'].forEach(key => assert.ok(publicRoutes.includes(`'${key}'`), `Missing sensitive-key rejection for ${key}`));
+  await t.test('customer checkout sends only masked metadata in the booking request', () => {
+    assert.match(bookingPage, /cardBrand:\s*card\.cardBrand/);
+    assert.match(bookingPage, /cardLast4:\s*card\.last4/);
+    assert.match(bookingPage, /billingPostalCode:\s*billing\.postalCode/);
+    assert.doesNotMatch(bookingPage, /cardNumber\s*:/);
+    assert.doesNotMatch(bookingPage, /\bcvv\s*:/i);
+    assert.doesNotMatch(cardEntry, /bookingAPI|fetch\(|sessionStorage|localStorage/);
   });
 
-  await t.test('manual checkout stores only brand, last4, expiry and billing metadata', () => {
-    assert.match(publicRoutes, /manual_payment_methods/);
-    assert.match(publicRoutes, /payment_provider: 'manual'/);
-    assert.match(publicRoutes, /tokenization_status: 'MANUAL_METADATA'/);
-    assert.match(manualFields, /Last 4 Digits/);
-    assert.match(manualFields, /Expiration/);
-    assert.doesNotMatch(manualFields, /createAliases|panAlias|cvvAlias|card-number|security-code/);
+  await t.test('local development starts both services required by Complete Reservation', () => {
+    assert.match(rootPackage, /"dev"\s*:\s*"node scripts\/dev\.mjs"/);
+    assert.match(localDevLauncher, /--prefix', 'backend', 'run', 'dev'/);
+    assert.match(localDevLauncher, /--prefix', 'frontend', 'start'/);
+    assert.match(localDevLauncher, /localhost:5001/);
+    assert.match(localDevLauncher, /localhost:3000/);
   });
 
-  await t.test('admin has no full-card reveal or secure-session route', () => {
-    assert.doesNotMatch(adminRoutes, /\/reveal|request-otp|verify-otp|access\/end/);
-    assert.doesNotMatch(adminPage, /SecureReveal|secureToken|requestOtp|verifyOtp|full card number.*reveal/i);
-    assert.match(adminPage, /Chargeable credential/);
-    assert.match(adminPage, /NOT STORED/);
+  await t.test('Supabase persistence is masked metadata plus billing details only', () => {
+    assert.match(manualRoutes, /card_last4/);
+    assert.match(manualRoutes, /card_exp_month/);
+    assert.match(manualRoutes, /card_exp_year/);
+    assert.match(manualRoutes, /billing_address_line1/);
+    assert.match(manualRoutes, /billing_city/);
+    assert.match(manualRoutes, /billing_state/);
+    assert.match(manualRoutes, /billing_postal_code/);
+    assert.match(manualRoutes, /billing_country/);
+    assert.match(migration, /DROP COLUMN IF EXISTS card_cvv/);
+    assert.doesNotMatch(migration, /ADD COLUMN[^;]*(card_number|full_card_number|\bcvv\b|\bcvc\b|security_code)/i);
   });
 
-  await t.test('public authorization form never asks for full card number or security code', () => {
-    assert.match(paymentPage, /Last 4 digits/);
-    assert.match(paymentPage, /Card brand/);
-    assert.doesNotMatch(paymentPage, /type=['"]card-number|name=['"]card_number|id=['"][^'"]*(cvv|cvc|pan)/i);
+  await t.test('backend rejects raw PAN and card security-code payloads', () => {
+    assert.match(manualRoutes, /SENSITIVE_CARD_DATA_NOT_ACCEPTED/);
+    assert.match(manualRoutes, /rejectSensitiveCardPayload/);
+    ['cardnumber', 'card_number', 'pan', 'cvv', 'cvc', 'securitycode', 'security_code'].forEach((key) => {
+      assert.ok(manualRoutes.includes(`'${key}'`), `Missing sensitive-key rejection for ${key}`);
+    });
+  });
+
+  await t.test('third-party gateway configuration is absent from customer checkout', () => {
+    assert.doesNotMatch(frontendEnvExample, /NMI|TOKENIZATION_KEY|Collect\.js/i);
+    assert.doesNotMatch(backendEnvExample, /NMI_PRIVATE_API_KEY|NMI_API_BASE_URL|NMI_ENVIRONMENT/i);
+    assert.doesNotMatch(bookingPage, /Collect\.js|secure\.nmi\.com|paymentToken/i);
+    assert.doesNotMatch(routesIndex, /nmi-vault|nmiVault/i);
+  });
+
+  await t.test('customer booking remains pending while masked card reference is recorded', () => {
+    assert.match(bookingPage, /paymentStatus:\s*'PENDING'/);
+    assert.match(bookingPage, /payment_provider:\s*'manual'/);
+    assert.match(manualRoutes, /chargeable:\s*false/);
   });
 });

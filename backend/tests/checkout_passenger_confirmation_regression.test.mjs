@@ -11,27 +11,30 @@ async function read(relativePath) {
 }
 
 async function run() {
-  const bookingPage = await read('frontend/src/features/bookings/pages/BookingPage.js');
+  const bookingPage = await read('frontend/src/features/bookings/pages/BookingPageV2.js');
   const mobileInstaller = await read('frontend/src/shared/mobile/installMobileBookingUX.js');
   const successPage = await read('frontend/src/features/bookings/pages/PaymentSuccessPage.js');
   const migration = await read('backend/migrations/041_email_delivery_upsert_constraint.sql');
 
-  // React must be the single source of truth for passenger completion + collapse state.
-  assert.ok(bookingPage.includes('PASSENGER_REQUIRED_FIELDS'));
-  assert.ok(bookingPage.includes('getMissingPassengerFields'));
-  assert.ok(bookingPage.includes('isPassengerRequiredComplete'));
-  assert.ok(bookingPage.includes('expandedPassengers'));
+  // React is the single source of truth for passenger completion. The redesigned
+  // checkout intentionally removed the legacy passenger accordion in favor of a
+  // dedicated Traveller Details step where all passenger cards remain visible.
+  assert.ok(bookingPage.includes('const validateTravellers = () =>'));
+  assert.ok(bookingPage.includes("['title', 'Title']"));
+  assert.ok(bookingPage.includes("['firstName', 'First Name']"));
+  assert.ok(bookingPage.includes("['lastName', 'Last Name']"));
+  assert.ok(bookingPage.includes("['gender', 'Gender']"));
+  assert.ok(bookingPage.includes("['dateOfBirth', 'Date of Birth']"));
   assert.ok(bookingPage.includes('passengerValidationErrors'));
-  assert.ok(bookingPage.includes('aria-expanded={expandedPassengers[idx] !== false}'));
-  assert.ok(bookingPage.includes("setExpandedPassengers(prev => ({ ...prev, [idx]: prev[idx] === false }))"));
-  assert.ok(bookingPage.includes("{isPassengerRequiredComplete(passenger) ? 'Done' : 'Required'}"));
+  assert.ok(bookingPage.includes('data-passenger-index={idx}'));
+  assert.ok(bookingPage.includes('scrollIntoView({ behavior: \'smooth\', block: \'center\' })'));
+  assert.ok(!bookingPage.includes('expandedPassengers'));
 
-  // Do not let browser-native :invalid state disagree with React passenger state again.
-  assert.ok(bookingPage.includes('<form noValidate'));
-  assert.ok(!bookingPage.includes(".passenger-card-block select:invalid"));
-  assert.ok(!bookingPage.includes(".passenger-card-block input:invalid"));
-  assert.ok(bookingPage.includes('revealPassenger(firstIncompleteIndex)'));
-  assert.ok(bookingPage.includes('Passenger #${firstIncompleteIndex + 1}: Please complete ${missing.join(\', \')}'));
+  // Browser-native invalid state must not conflict with the React validation
+  // presented in the stepper flow.
+  assert.ok(!bookingPage.includes('.passenger-card-block select:invalid'));
+  assert.ok(!bookingPage.includes('.passenger-card-block input:invalid'));
+  assert.ok(bookingPage.includes('Passenger #${i + 1}: Please complete ${missing.join(\', \')}'));
 
   // Title normalization prevents "Mr." vs "Mr" style-value drift.
   assert.ok(bookingPage.includes("replace(/\\.$/, '')"));
@@ -52,8 +55,8 @@ async function run() {
   // Email delivery upserts require this exact conflict key to be unique in Postgres.
   assert.match(migration, /CREATE UNIQUE INDEX IF NOT EXISTS ux_email_deliveries_booking_type[\s\S]*?booking_id, email_type/);
 
-  console.log('✔ Passenger accordion is React-owned and deterministic.');
-  console.log('✔ Passenger validation uses the same React state shown to the customer.');
+  console.log('✔ Traveller-step validation is React-owned and deterministic.');
+  console.log('✔ Passenger fields remain visible and share one React validation source.');
   console.log('✔ Confirmation rendering is defensive against legacy/unexpected DTO shapes.');
   console.log('✔ Email-delivery upsert conflict key is backed by a unique database index.');
 }

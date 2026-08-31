@@ -8,6 +8,7 @@ import adminPassengerController from './admin.passenger.controller.mjs';
 import adminBookingMutationController from './admin.booking-mutation.controller.mjs';
 import adminEmailManualController from './admin.email-manual.controller.mjs';
 import adminDemoController from './admin.demo.controller.mjs';
+import adminAssistanceController from './admin.assistance.controller.mjs';
 import voucherController from '../vouchers/voucher.controller.mjs';
 import '../bookings/booking.repository.runtime-repair.mjs';
 import '../bookings/booking.repository.egress-hardening.mjs';
@@ -40,12 +41,15 @@ router.get('/vouchers/:id/redemptions', adminReadRateLimiter, authenticate, auth
 router.post('/bookings/export', adminWriteRateLimiter, authenticate, authorize(['admin']), adminBackupController.exportBookingsBulk);
 router.post('/bookings/bulk-delete', adminWriteRateLimiter, authenticate, authorize(['admin']), adminRepairController.bulkDeleteBookings);
 router.post('/bookings/import-backup', adminWriteRateLimiter, authenticate, authorize(['admin']), adminController.importBookingBackup);
+router.post('/bookings/operational-flags', adminReadRateLimiter, authenticate, authorize(['admin']), adminAssistanceController.getOperationalFlags);
 
 router.get('/bookings', adminReadRateLimiter, authenticate, authorize(['admin']), adminController.getBookings);
 router.get('/bookings/by-request/:clientRequestId', adminReadRateLimiter, authenticate, authorize(['admin']), adminController.getBookingByClientRequestId);
 router.post('/bookings', adminWriteRateLimiter, authenticate, authorize(['admin']), adminController.createBooking);
 router.post('/bookings/:id/email-preview', adminReadRateLimiter, authenticate, authorize(['admin']), adminController.emailPreview);
 router.post('/bookings/:id/email-manual-sent', adminWriteRateLimiter, authenticate, authorize(['admin']), adminEmailManualController.markEmailManuallySent);
+router.get('/bookings/:id/service-requests', adminReadRateLimiter, authenticate, authorize(['admin']), adminAssistanceController.getOperationalDetails);
+router.patch('/bookings/:id/service-requests', adminWriteRateLimiter, authenticate, authorize(['admin']), adminAssistanceController.updateAssistance);
 router.get('/bookings/:id', adminReadRateLimiter, authenticate, authorize(['admin']), adminController.getBookingDetail);
 router.delete('/bookings/:id', adminWriteRateLimiter, authenticate, authorize(['admin']), adminRepairController.deleteBooking);
 
