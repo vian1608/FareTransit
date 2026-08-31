@@ -9,11 +9,14 @@ const read = relative => fs.readFileSync(path.join(root, relative), 'utf8');
 const bookingEntry = read('frontend/src/features/bookings/pages/BookingPage.js');
 const bookingPage = read('frontend/src/features/bookings/pages/BookingPageV3.js');
 const cardEntry = read('frontend/src/features/bookings/components/PaymentCardEntry.js');
+const bookingFixesCss = read('frontend/src/features/bookings/pages/BookingPageV3Fixes.css');
 const manualRoutes = read('backend/src/modules/secure-payments/secure-payment.routes.mjs');
 const routesIndex = read('backend/src/routes/index.mjs');
 const migration = read('backend/migrations/121_manual_checkout_billing_metadata.sql');
 const frontendEnvExample = read('frontend/.env.example');
 const backendEnvExample = read('backend/.env.example');
+const rootPackage = read('package.json');
+const localDevLauncher = read('scripts/dev.mjs');
 
 test('FareTransit four-step checkout stores billing and masked card metadata without a customer gateway', async t => {
   await t.test('four-step booking entry point is active', () => {
@@ -35,6 +38,16 @@ test('FareTransit four-step checkout stores billing and masked card metadata wit
     assert.doesNotMatch(cardEntry, /Collect\.js|secure\.nmi\.com|NMI_TOKENIZATION|startPaymentRequest/i);
   });
 
+  await t.test('card brand is detected immediately and is visible to the passenger', () => {
+    assert.match(cardEntry, /\^4.*Visa/);
+    assert.match(cardEntry, /\^5.*Mastercard/);
+    assert.match(cardEntry, /\^3/);
+    assert.match(cardEntry, /American Express/);
+    assert.match(cardEntry, /Card type/);
+    assert.match(cardEntry, /booking-v3-detected-brand/);
+    assert.doesNotMatch(bookingFixesCss, /\.booking-v3-detected-brand\s*\{[^}]*display:\s*none/is);
+  });
+
   await t.test('customer checkout sends only masked metadata in the booking request', () => {
     assert.match(bookingPage, /cardBrand:\s*card\.cardBrand/);
     assert.match(bookingPage, /cardLast4:\s*card\.last4/);
@@ -42,6 +55,14 @@ test('FareTransit four-step checkout stores billing and masked card metadata wit
     assert.doesNotMatch(bookingPage, /cardNumber\s*:/);
     assert.doesNotMatch(bookingPage, /\bcvv\s*:/i);
     assert.doesNotMatch(cardEntry, /bookingAPI|fetch\(|sessionStorage|localStorage/);
+  });
+
+  await t.test('local development starts both services required by Complete Reservation', () => {
+    assert.match(rootPackage, /"dev"\s*:\s*"node scripts\/dev\.mjs"/);
+    assert.match(localDevLauncher, /--prefix', 'backend', 'run', 'dev'/);
+    assert.match(localDevLauncher, /--prefix', 'frontend', 'start'/);
+    assert.match(localDevLauncher, /localhost:5001/);
+    assert.match(localDevLauncher, /localhost:3000/);
   });
 
   await t.test('Supabase persistence is masked metadata plus billing details only', () => {
