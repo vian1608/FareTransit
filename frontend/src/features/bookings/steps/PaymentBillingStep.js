@@ -1,10 +1,20 @@
 import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import AddressAutocompleteInput from '../../../shared/components/AddressAutocompleteInput';
 import PaymentCardEntry from '../components/PaymentCardEntry';
 import '../pages/BookingPageV3Premium.css';
 import '../pages/BookingPageV3VisualPolish.css';
 
 const FLEX_OFFER_RATE = 0.085;
+
+const CARD_BRANDS = [
+  { name: 'Visa', icon: 'fab fa-cc-visa', label: 'VISA' },
+  { name: 'Mastercard', icon: 'fab fa-cc-mastercard', label: 'Mastercard' },
+  { name: 'American Express', icon: 'fab fa-cc-amex', label: 'Amex' },
+  { name: 'Discover', icon: 'fab fa-cc-discover', label: 'Discover' },
+  { name: 'JCB', icon: 'fab fa-cc-jcb', label: 'JCB' },
+  { name: 'Diners Club', icon: 'fab fa-cc-diners-club', label: 'Diners' },
+];
 
 const money = (value) => {
   const parsed = Number.parseFloat(value);
@@ -14,6 +24,23 @@ const money = (value) => {
 const promoPrice = (fare) => {
   const parsed = Number.parseFloat(fare);
   return Number.isFinite(parsed) ? Math.max(0, Math.round(parsed * FLEX_OFFER_RATE)) : 0;
+};
+
+const normalizeCountry = (value, countries = []) => {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  if (/^(us|usa|united states|united states of america)$/i.test(raw)) return 'United States';
+  const exact = countries.find((country) => country.toLowerCase() === raw.toLowerCase());
+  return exact || raw;
+};
+
+const normalizeUsState = (value, usStates = []) => {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  const match = usStates.find(([code, name]) => (
+    code.toLowerCase() === raw.toLowerCase() || name.toLowerCase() === raw.toLowerCase()
+  ));
+  return match?.[0] || raw;
 };
 
 export default function PaymentBillingStep({
@@ -44,7 +71,23 @@ export default function PaymentBillingStep({
     };
   }, [baseFare, reservationTotal, tripProtection]);
 
-  const brandClass = (name) => detectedBrand === name ? ' is-active' : '';
+  const applyBillingSuggestion = (suggestion = {}) => {
+    const country = normalizeCountry(suggestion.country, countries) || billing.country || 'United States';
+    const state = country === 'United States'
+      ? normalizeUsState(suggestion.state, usStates)
+      : String(suggestion.state || '').trim();
+
+    setBilling((previous) => ({
+      ...previous,
+      addressLine1: String(suggestion.addressLine1 || previous.addressLine1 || '').trim(),
+      addressLine2: String(suggestion.addressLine2 || previous.addressLine2 || '').trim(),
+      city: String(suggestion.city || '').trim(),
+      state,
+      postalCode: String(suggestion.postalCode || '').trim(),
+      country,
+    }));
+    clearCardErrors?.();
+  };
 
   return (
     <section className="booking-v3-section booking-v3-step-section booking-v3-step-section--payment booking-v3-payment-section">
@@ -65,13 +108,22 @@ export default function PaymentBillingStep({
                 <span className="booking-v3-payment-heading-icon"><i className="far fa-credit-card" aria-hidden="true" /></span>
                 <div><h2>Add New Credit or Debit Card</h2><p>Use the card details associated with the billing address below.</p></div>
               </div>
-              <div className="booking-v3-card-logos" aria-label="Accepted card brands">
-                <span className={`booking-v3-card-logo${brandClass('American Express')}`} title="American Express"><i className="fab fa-cc-amex" /></span>
-                <span className={`booking-v3-card-logo${brandClass('Visa')}`} title="Visa"><i className="fab fa-cc-visa" /></span>
-                <span className={`booking-v3-card-logo${brandClass('Mastercard')}`} title="Mastercard"><i className="fab fa-cc-mastercard" /></span>
-                <span className={`booking-v3-card-logo${brandClass('Discover')}`} title="Discover"><i className="fab fa-cc-discover" /></span>
-                <span className={`booking-v3-card-logo${brandClass('JCB')}`} title="JCB"><i className="fab fa-cc-jcb" /></span>
-                <span className={`booking-v3-card-logo${brandClass('Diners Club')}`} title="Diners Club"><i className="fab fa-cc-diners-club" /></span>
+              <div className="booking-v3-card-brands" aria-label="Accepted card brands">
+                {CARD_BRANDS.map((cardBrand) => {
+                  const active = detectedBrand === cardBrand.name;
+                  return (
+                    <span
+                      key={cardBrand.name}
+                      className={`booking-v3-card-brand${active ? ' is-active' : ''}`}
+                      title={cardBrand.name}
+                      aria-label={`${cardBrand.name}${active ? ', detected card type' : ''}`}
+                    >
+                      <span className="booking-v3-card-brand__logo"><i className={cardBrand.icon} aria-hidden="true" /></span>
+                      <span className="booking-v3-card-brand__label">{cardBrand.label}</span>
+                      {active && <span className="booking-v3-card-brand__check"><i className="fas fa-check" aria-hidden="true" /></span>}
+                    </span>
+                  );
+                })}
               </div>
             </div>
             <p className="booking-v3-required-note"><i className="fas fa-lock" aria-hidden="true" /> All card fields are required.</p>
@@ -94,16 +146,31 @@ export default function PaymentBillingStep({
 
             <label className="booking-v3-floating-field booking-v3-payment-full-field">
               <span>Country</span>
-              <select value={billing.country} onChange={(event) => setBilling((previous) => ({ ...previous, country: event.target.value, state: event.target.value === 'United States' ? previous.state : '' }))}>
+              <select
+                value={billing.country}
+                onChange={(event) => setBilling((previous) => ({
+                  ...previous,
+                  country: event.target.value,
+                  state: event.target.value === 'United States' ? previous.state : '',
+                }))}
+                autoComplete="country-name"
+              >
                 {countries.map((country) => <option key={country} value={country}>{country}</option>)}
               </select>
             </label>
             {fieldErrors.country && <p className="booking-v3-field-error">{fieldErrors.country}</p>}
 
-            <label className="booking-v3-floating-field booking-v3-payment-full-field">
+            <div className="booking-v3-floating-field booking-v3-payment-full-field booking-v3-address-autocomplete-field">
               <span>Address Line 1</span>
-              <input id="billingAddress" value={billing.addressLine1} onChange={(event) => setBilling((previous) => ({ ...previous, addressLine1: event.target.value }))} placeholder="Address Line 1" autoComplete="address-line1" />
-            </label>
+              <AddressAutocompleteInput
+                id="billingAddress"
+                value={billing.addressLine1}
+                onChange={(value) => setBilling((previous) => ({ ...previous, addressLine1: value }))}
+                onSelectSuggestion={applyBillingSuggestion}
+                placeholder="Start typing your billing address"
+                required
+              />
+            </div>
             {fieldErrors.addressLine1 && <p className="booking-v3-field-error">{fieldErrors.addressLine1}</p>}
 
             <label className="booking-v3-floating-field booking-v3-payment-full-field">
