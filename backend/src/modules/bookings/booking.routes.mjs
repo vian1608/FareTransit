@@ -9,6 +9,7 @@ import './booking.repository.egress-hardening.mjs';
 import './booking.service.status-hardening.mjs';
 import './booking.service.addon-hardening.mjs';
 import './booking.service.trip-addon-parity-hardening.mjs';
+import './booking.service.passenger-profile-hardening.mjs';
 
 const router = express.Router();
 
