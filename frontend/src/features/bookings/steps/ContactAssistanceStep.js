@@ -9,18 +9,31 @@ export default function ContactAssistanceStep({
   setContactSameAsTraveller,
   specialRequests,
   setSpecialRequests,
-  onBack,
   onContinue,
 }) {
+  const hasSpecialRequest = Boolean(
+    specialRequests.wheelchair
+    || specialRequests.mealPreference !== 'none'
+    || specialRequests.seatingPreference !== 'none'
+    || specialRequests.notes.trim()
+  );
+
   return (
     <section className="booking-v3-section booking-v3-step-section booking-v3-step-section--contact">
       <div className="booking-v3-section-header booking-v3-section-header--simple">
-        <div><p className="booking-v3-eyebrow">2. Contact & Assistance</p><h1>How should we contact you?</h1></div>
+        <div>
+          <p className="booking-v3-eyebrow">2. Contact & Assistance</p>
+          <h1>Stay connected throughout your trip</h1>
+          <p className="booking-v3-header-copy">Add the best contact details for itinerary updates and tell our travel specialists about any assistance you may need.</p>
+        </div>
       </div>
 
-      <div className="booking-v3-subcard">
-        <h2>Primary Contact Details</h2>
-        <label className="booking-v3-toggle-row">
+      <div className="booking-v3-subcard booking-v3-subcard--contact">
+        <div className="booking-v3-card-heading-row">
+          <span className="booking-v3-card-heading-icon"><i className="far fa-address-card" aria-hidden="true" /></span>
+          <div><h2>Primary Contact Details</h2><p>We’ll use these details for reservation updates and follow-up.</p></div>
+        </div>
+        <label className="booking-v3-toggle-row booking-v3-contact-copy-toggle">
           <input type="checkbox" checked={contactSameAsTraveller} onChange={(event) => setContactSameAsTraveller(event.target.checked)} />
           <span>Use Passenger #1 as primary contact</span>
         </label>
@@ -36,13 +49,14 @@ export default function ContactAssistanceStep({
 
       <div className="booking-v3-subcard booking-v3-assistance-card">
         <div className="booking-v3-assistance-heading">
-          <div>
-            <h2>Special Requests & Preferences</h2>
-            <p>Tell us about any assistance or preferences our travel specialist should review with your reservation.</p>
+          <div className="booking-v3-card-heading-row">
+            <span className="booking-v3-card-heading-icon"><i className="fas fa-hands-helping" aria-hidden="true" /></span>
+            <div>
+              <h2>Special Requests & Preferences</h2>
+              <p>Tell us about any assistance or preferences our travel specialist should review with your reservation.</p>
+            </div>
           </div>
-          {(specialRequests.wheelchair || specialRequests.mealPreference !== 'none' || specialRequests.seatingPreference !== 'none' || specialRequests.notes.trim()) && (
-            <span className="booking-v3-request-badge">Special request added</span>
-          )}
+          {hasSpecialRequest && <span className="booking-v3-request-badge"><i className="fas fa-check" aria-hidden="true" /> Special request added</span>}
         </div>
         <div className="booking-v3-two-grid booking-v3-grid-gap">
           <label className="booking-v3-field">Meal Preference
@@ -65,8 +79,7 @@ export default function ContactAssistanceStep({
         </label>
       </div>
 
-      <div className="booking-v3-actions">
-        <button type="button" className="booking-v3-icon-back" aria-label="Previous step" onClick={onBack}>‹</button>
+      <div className="booking-v3-actions booking-v3-actions--end">
         <button type="button" className="booking-v3-primary" onClick={onContinue}>Continue to Trip Protection <span aria-hidden="true">→</span></button>
       </div>
     </section>
