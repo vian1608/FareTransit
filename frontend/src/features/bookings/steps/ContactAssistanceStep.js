@@ -1,6 +1,9 @@
 import React from 'react';
 import InternationalPhoneInput from '../../../shared/components/InternationalPhoneInput';
 import EmailInput from '../../../shared/components/EmailInput';
+import '../pages/BookingPageV3Professional.css';
+
+const clampBaggageCount = value => Math.max(0, Math.min(6, Number.parseInt(value, 10) || 0));
 
 export default function ContactAssistanceStep({
   primaryContact,
@@ -11,11 +14,26 @@ export default function ContactAssistanceStep({
   setSpecialRequests,
   onContinue,
 }) {
+  const baggageCount = clampBaggageCount(
+    specialRequests.additionalBaggageCount
+    ?? specialRequests.baggageCount
+    ?? 0
+  );
+
+  const setBaggageCount = nextValue => {
+    const nextCount = clampBaggageCount(nextValue);
+    setSpecialRequests(previous => ({
+      ...previous,
+      additionalBaggageCount: nextCount,
+    }));
+  };
+
   const hasSpecialRequest = Boolean(
     specialRequests.wheelchair
     || specialRequests.mealPreference !== 'none'
     || specialRequests.seatingPreference !== 'none'
     || specialRequests.notes.trim()
+    || baggageCount > 0
   );
 
   return (
@@ -70,6 +88,27 @@ export default function ContactAssistanceStep({
             </select>
           </label>
         </div>
+
+        <div className="booking-v3-baggage-request" aria-label="Additional baggage request">
+          <div className="booking-v3-baggage-request__top">
+            <div className="booking-v3-baggage-request__copy">
+              <span className="booking-v3-baggage-request__icon"><i className="fas fa-suitcase-rolling" aria-hidden="true" /></span>
+              <div>
+                <strong>Additional checked baggage</strong>
+                <p>Request up to 6 additional checked bags for this reservation.</p>
+              </div>
+            </div>
+
+            <div className="booking-v3-baggage-counter" role="group" aria-label="Additional checked bags">
+              <button type="button" aria-label="Remove one bag" onClick={() => setBaggageCount(baggageCount - 1)} disabled={baggageCount === 0}>−</button>
+              <span className="booking-v3-baggage-counter__value" aria-live="polite"><strong>{baggageCount}</strong><small>{baggageCount === 1 ? 'bag' : 'bags'}</small></span>
+              <button type="button" aria-label="Add one bag" onClick={() => setBaggageCount(baggageCount + 1)} disabled={baggageCount >= 6}>+</button>
+            </div>
+          </div>
+
+          <p className="booking-v3-baggage-notice"><i className="fas fa-info-circle" aria-hidden="true" /><span><strong>No baggage fee is charged during this booking.</strong> After your reservation is created, a FareTransit specialist will confirm baggage availability and the applicable airline fee. You can pay for the approved baggage after booking.</span></p>
+        </div>
+
         <label className="booking-v3-toggle-row booking-v3-grid-gap booking-v3-wheelchair-row">
           <input type="checkbox" checked={specialRequests.wheelchair} onChange={(event) => setSpecialRequests((previous) => ({ ...previous, wheelchair: event.target.checked }))} />
           <span><strong>Request Wheelchair Assistance</strong><small>We will flag this prominently for the travel specialist handling the booking.</small></span>
