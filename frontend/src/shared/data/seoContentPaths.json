@@ -1,0 +1,19 @@
+[
+  "/flights",
+  "/flights/from-new-york",
+  "/flights/from-los-angeles",
+  "/airlines",
+  "/baggage",
+  "/baggage/checked-baggage-fees",
+  "/baggage/extra-baggage",
+  "/fare-types",
+  "/fare-types/basic-economy",
+  "/fare-types/flexible-fares",
+  "/guides",
+  "/guides/booking-flights-for-family",
+  "/guides/last-minute-travel",
+  "/about",
+  "/how-it-works",
+  "/editorial-policy",
+  "/fees-and-disclosures"
+]
