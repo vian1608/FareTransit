@@ -17,7 +17,7 @@ export default function TripProtectionStep({
     <section className="booking-v3-section booking-v3-step-section booking-v3-step-section--protection booking-v3-protection-section">
       <div className="booking-v3-section-header booking-v3-section-header--simple">
         <div>
-          <p className="booking-v3-eyebrow">3. Trip Protection</p>
+          <p className="booking-v3-eyebrow">3. Trip Protection & Baggage Fees</p>
           <h1>Extra help when travel plans change</h1>
           <p className="booking-v3-header-copy">Choose whether you want FareTransit Flex Assist added to your reservation before moving to payment.</p>
         </div>
