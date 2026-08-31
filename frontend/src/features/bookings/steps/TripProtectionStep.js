@@ -1,18 +1,29 @@
 import React from 'react';
 
+const FLEX_REGULAR_RATE = 0.11;
+const FLEX_OFFER_RATE = 0.085;
+
+const promoPrice = (fare, rate) => {
+  const amount = Number.parseFloat(fare);
+  return Number.isFinite(amount) ? Math.max(0, Math.round(amount * rate)) : 0;
+};
+
 export default function TripProtectionStep({
   origin,
   destination,
   finalDestination,
   hasReturn,
   tripProtection,
-  flexAmount,
   baseFare,
   syncPending,
   syncWarning,
   onSelect,
   onContinue,
 }) {
+  const regularFlexAmount = promoPrice(baseFare, FLEX_REGULAR_RATE);
+  const offerFlexAmount = promoPrice(baseFare, FLEX_OFFER_RATE);
+  const savings = Math.max(0, regularFlexAmount - offerFlexAmount);
+
   return (
     <section className="booking-v3-section booking-v3-step-section booking-v3-step-section--protection booking-v3-protection-section">
       <div className="booking-v3-section-header booking-v3-section-header--simple">
@@ -42,7 +53,13 @@ export default function TripProtectionStep({
           <div className="booking-v3-protection-choice-row">
             <div>
               <span className="booking-v3-option-label">Add Flex Assist</span>
-              <strong>Yes, add FareTransit Flex Assist for ${flexAmount.toFixed(2)} total.</strong>
+              <strong>Yes, add FareTransit Flex Assist</strong>
+              <div className="booking-v3-flex-promo-price" aria-label={`Regular price $${regularFlexAmount.toFixed(2)}, offer price $${offerFlexAmount.toFixed(2)}`}>
+                <del>${regularFlexAmount.toFixed(2)}</del>
+                <span className="booking-v3-flex-promo-price__offer">${offerFlexAmount.toFixed(2)}</span>
+                <span className="booking-v3-flex-promo-price__label">Offer price</span>
+                {savings > 0 && <span className="booking-v3-flex-promo-price__saving">Save ${savings.toFixed(2)}</span>}
+              </div>
             </div>
             <span className="booking-v3-recommended"><i className="fas fa-star" aria-hidden="true" /> HIGHLY RECOMMENDED</span>
           </div>
