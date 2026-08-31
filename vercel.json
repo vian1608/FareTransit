@@ -25,7 +25,19 @@
       ],
       "destination": "https://www.faretransit.com/:path*",
       "permanent": true
-    }
+    },
+    { "source": "/privacy", "destination": "/privacy-policy", "permanent": true },
+    { "source": "/privacypolicy", "destination": "/privacy-policy", "permanent": true },
+    { "source": "/refund", "destination": "/refund-policy", "permanent": true },
+    { "source": "/refundpolicy", "destination": "/refund-policy", "permanent": true },
+    { "source": "/senior-travel", "destination": "/senior-travel/flight-deals", "permanent": true },
+    { "source": "/amtrak", "destination": "/car-rentals", "permanent": true },
+    { "source": "/amtrak-assistance", "destination": "/car-rentals", "permanent": true },
+    { "source": "/routes/train-nyc-to-dc", "destination": "/train-nyc-to-dc", "permanent": true },
+    { "source": "/routes/train-dc-to-nyc", "destination": "/train-dc-to-nyc", "permanent": true },
+    { "source": "/routes/train-philly-to-nyc", "destination": "/train-philly-to-nyc", "permanent": true },
+    { "source": "/routes/train-boston-to-nyc", "destination": "/train-boston-to-nyc", "permanent": true },
+    { "source": "/pay", "destination": "/payment", "permanent": true }
   ],
   "headers": [
     {
@@ -33,11 +45,19 @@
       "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }]
     },
     {
-      "source": "/search/:path*",
+      "source": "/search",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }]
+    },
+    {
+      "source": "/payment",
       "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }]
     },
     {
       "source": "/payment/:path*",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }]
+    },
+    {
+      "source": "/booking",
       "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }]
     },
     {
@@ -53,11 +73,15 @@
       "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }]
     },
     {
+      "source": "/booking-confirmed",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }]
+    },
+    {
       "source": "/booking-confirmed/:path*",
       "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }]
     },
     {
-      "source": "/my-bookings/:path*",
+      "source": "/my-bookings",
       "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }]
     },
     {
@@ -66,6 +90,10 @@
     },
     {
       "source": "/signup",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }]
+    },
+    {
+      "source": "/return-flight",
       "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }]
     },
     {
@@ -78,6 +106,22 @@
     },
     {
       "source": "/car-rentals/results",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }]
+    },
+    {
+      "source": "/hotels/results",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }]
+    },
+    {
+      "source": "/book/:path*",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }]
+    },
+    {
+      "source": "/changes/:path*",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }]
+    },
+    {
+      "source": "/cancellation/:path*",
       "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }]
     }
   ],
