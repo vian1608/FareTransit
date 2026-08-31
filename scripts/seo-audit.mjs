@@ -10,8 +10,10 @@ const dataRoot = path.join(repoRoot, 'frontend', 'src', 'shared', 'data');
 const readJson = (name) => JSON.parse(fs.readFileSync(path.join(dataRoot, name), 'utf8'));
 const pages = readJson('seoPages.json');
 const content = readJson('seoContent.json');
+const contentPaths = readJson('seoContentPaths.json');
 const aliases = readJson('seoAliases.json');
 const routes = readJson('routesData.json');
+const routeInsights = readJson('routeSeoInsights.json');
 
 const errors = [];
 const warnings = [];
@@ -19,11 +21,21 @@ const seenPaths = new Set();
 const seenTitles = new Map();
 const seenDescriptions = new Map();
 const pagePaths = new Set(pages.map((page) => page.path));
+const contentPathSet = new Set(contentPaths);
 const routePaths = new Set(routes.filter((route) => route?.slug).map((route) => `/routes/${route.slug}`));
+const directCanonicalRoutes = new Set([
+  '/flight-nyc-to-mia',
+  '/flight-lax-to-jfk',
+  '/train-nyc-to-dc',
+  '/train-dc-to-nyc',
+  '/train-philly-to-nyc',
+  '/train-boston-to-nyc',
+]);
+const knownRouteInsightPaths = new Set([...routePaths, ...directCanonicalRoutes]);
 const privatePrefixes = [
   '/admin', '/api', '/search', '/payment', '/pay', '/booking/', '/return-flight',
   '/authorize', '/booking-confirmed', '/my-bookings', '/signin', '/signup', '/confirmation/',
-  '/car-rentals/search', '/car-rentals/results', '/hotels/results',
+  '/car-rentals/search', '/car-rentals/results', '/hotels/results', '/book/', '/changes/', '/cancellation/',
 ];
 
 for (const page of pages) {
@@ -56,14 +68,33 @@ for (const page of pages) {
   }
 }
 
+if (contentPathSet.size !== contentPaths.length) {
+  errors.push('seoContentPaths.json contains duplicate paths');
+}
+
+for (const contentPath of contentPaths) {
+  if (!pagePaths.has(contentPath)) errors.push(`SEO content manifest missing registry entry: ${contentPath}`);
+  if (!content[contentPath]) errors.push(`SEO content manifest missing content object: ${contentPath}`);
+}
+
 for (const [contentPath, pageContent] of Object.entries(content)) {
   if (!pagePaths.has(contentPath)) errors.push(`SEO content missing registry entry: ${contentPath}`);
+  if (!contentPathSet.has(contentPath)) errors.push(`SEO content missing lightweight manifest entry: ${contentPath}`);
   if (!pageContent.heroTitle || !pageContent.heroText) errors.push(`SEO content missing hero: ${contentPath}`);
   if (!Array.isArray(pageContent.sections) || pageContent.sections.length < 2) {
     errors.push(`SEO content needs at least 2 substantive sections: ${contentPath}`);
   }
   if (!Array.isArray(pageContent.relatedLinks) || pageContent.relatedLinks.length < 2) {
     errors.push(`SEO content needs internal related links: ${contentPath}`);
+  }
+
+  const referencedLinks = [
+    ...(pageContent.relatedLinks || []),
+    ...(pageContent.sections || []).flatMap((section) => section.links || []),
+    ...(pageContent.cta ? [pageContent.cta] : []),
+  ];
+  for (const link of referencedLinks) {
+    if (!link?.to?.startsWith('/')) errors.push(`Invalid internal SEO link on ${contentPath}: ${link?.to}`);
   }
 }
 
@@ -87,6 +118,25 @@ for (const route of routes) {
   if (!route.title || !route.metaTitle || !route.metaDescription) {
     errors.push(`Indexable route missing SEO metadata: ${route.slug}`);
   }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(route.reviewedAt || '')) {
+    errors.push(`Indexable route missing reviewedAt: ${route.slug}`);
+  }
+}
+
+for (const [insightPath, insights] of Object.entries(routeInsights)) {
+  if (!knownRouteInsightPaths.has(insightPath)) {
+    errors.push(`Route insight points to an unknown route: ${insightPath}`);
+  }
+  if (!Array.isArray(insights) || insights.length < 2) {
+    errors.push(`Route insight page needs at least 2 unique insights: ${insightPath}`);
+  }
+  for (const insight of insights || []) {
+    if (!insight?.title || !insight?.text) errors.push(`Incomplete route insight on ${insightPath}`);
+  }
+}
+
+for (const directPath of directCanonicalRoutes) {
+  if (!routeInsights[directPath]) errors.push(`Canonical direct route lacks unique route insights: ${directPath}`);
 }
 
 if (warnings.length) {
@@ -100,4 +150,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log(`\n[SEO] Audit passed: ${pages.length} registry pages, ${Object.keys(content).length} content pages, ${routes.length} route records.`);
+console.log(`\n[SEO] Audit passed: ${pages.length} registry pages, ${Object.keys(content).length} content pages, ${routes.length} route records, ${Object.keys(routeInsights).length} route insight sets.`);
