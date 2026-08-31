@@ -5,12 +5,17 @@
   z-index: 20;
 }
 
+.tfs-booking-back-slot {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  margin: 0 0 14px;
+}
+
 .tfs-customer-back-wrap--booking {
   width: auto;
   margin: 0;
-  position: absolute;
-  top: 0;
-  left: 0;
+  position: static;
   z-index: 25;
 }
 
@@ -68,6 +73,11 @@
   .tfs-customer-back-wrap:not(.tfs-customer-back-wrap--booking) {
     width: calc(100% - 24px);
     margin-top: 0.6rem;
+  }
+
+  .tfs-booking-back-slot {
+    min-height: 40px;
+    margin-bottom: 10px;
   }
 
   .tfs-customer-back,
