@@ -1,5 +1,6 @@
 import express from 'express';
 import flightController from './flight.controller.mjs';
+import baggagePricingController from './baggage-pricing.controller.mjs';
 import rateLimit from '../../middleware/rate-limit.mjs';
 
 const flightRouter = express.Router();
@@ -13,6 +14,7 @@ const searchRateLimiter = rateLimit({
 
 // Mounted under /flights
 flightRouter.post('/search', searchRateLimiter, flightController.search);
+flightRouter.post('/baggage-options', searchRateLimiter, baggagePricingController.getBaggageOptions);
 
 // Mounted under /airports
 airportRouter.get('/search', flightController.searchAirports);
