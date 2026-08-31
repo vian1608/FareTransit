@@ -1,0 +1,169 @@
+.booking-v3-card-brands {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(72px, 1fr));
+  gap: 10px;
+  width: min(100%, 610px);
+}
+
+.booking-v3-card-brand {
+  position: relative;
+  min-height: 66px;
+  padding: 9px 10px 8px;
+  border: 1.5px solid #dce3ec;
+  border-radius: 13px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  box-shadow: 0 4px 12px rgba(18, 32, 54, .045), inset 0 1px 0 rgba(255,255,255,.95);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: #8a96a6;
+  opacity: .72;
+  filter: grayscale(.8);
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease, opacity .18s ease, filter .18s ease;
+}
+
+.booking-v3-card-brand__logo {
+  display: grid;
+  place-items: center;
+  min-height: 25px;
+  font-size: 1.68rem;
+  line-height: 1;
+}
+
+.booking-v3-card-brand__label {
+  color: #78869a;
+  font-size: .66rem;
+  font-weight: 760;
+  line-height: 1;
+  letter-spacing: .015em;
+  white-space: nowrap;
+}
+
+.booking-v3-card-brand.is-active {
+  color: #194f8b;
+  opacity: 1;
+  filter: none;
+  border-color: #8fb2d8;
+  background: linear-gradient(155deg, #ffffff 0%, #eef6ff 58%, #fdf5f8 100%);
+  box-shadow: 0 0 0 3px rgba(44,95,153,.085), 0 12px 24px rgba(28,71,119,.14), inset 0 1px 0 #fff;
+  transform: translateY(-2px);
+}
+
+.booking-v3-card-brand.is-active::before {
+  content: '';
+  position: absolute;
+  top: -1.5px;
+  left: 13px;
+  right: 13px;
+  height: 3px;
+  border-radius: 0 0 999px 999px;
+  background: linear-gradient(90deg, #9f123f, #315f95);
+}
+
+.booking-v3-card-brand.is-active .booking-v3-card-brand__label {
+  color: #173d6b;
+}
+
+.booking-v3-card-brand__check {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 17px;
+  height: 17px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: #16734a;
+  box-shadow: 0 3px 8px rgba(22,115,74,.22);
+  font-size: .55rem;
+}
+
+.booking-v3-address-autocomplete-field {
+  display: block;
+}
+
+.booking-v3-address-autocomplete-field > span {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.booking-v3-address-autocomplete-field .address-autocomplete-input {
+  min-height: 62px !important;
+  padding: 22px 48px 9px 16px !important;
+  color: var(--ft-ink) !important;
+  border: 1.25px solid #d5deea !important;
+  border-radius: 14px !important;
+  background: #fcfdff !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 2px 4px rgba(18,32,54,.018) !important;
+  font-size: .97rem !important;
+  font-weight: 500 !important;
+}
+
+.booking-v3-address-autocomplete-field .address-autocomplete-input:focus {
+  border-color: rgba(159,18,63,.82) !important;
+  background: #fff !important;
+  box-shadow: 0 0 0 4px rgba(159,18,63,.085), 0 10px 24px rgba(26,39,60,.055) !important;
+}
+
+.booking-v3-address-autocomplete-field .address-input-icon {
+  right: 16px;
+  color: #7b8799;
+}
+
+.booking-v3-address-autocomplete-field .address-autocomplete-controls {
+  margin-top: 7px;
+}
+
+.booking-v3-address-autocomplete-field .address-autocomplete-hint {
+  color: #7b8799;
+}
+
+.booking-v3-address-autocomplete-field .btn-manual-toggle {
+  color: #8f173d;
+}
+
+.booking-v3-address-autocomplete-field .address-suggestions-dropdown {
+  top: calc(100% - 18px);
+  border-color: #d7e0eb;
+  box-shadow: 0 20px 46px rgba(13,27,51,.16), 0 4px 12px rgba(13,27,51,.06);
+}
+
+.booking-v3-address-autocomplete-field .suggestion-item--active,
+.booking-v3-address-autocomplete-field .suggestion-item:hover {
+  background: linear-gradient(135deg, #fff6f9 0%, #f2f7fd 100%);
+}
+
+.booking-v3-address-autocomplete-field .suggestion-icon {
+  color: #9f123f;
+  background: #fff0f5;
+}
+
+@media (max-width: 1100px) {
+  .booking-v3-card-brands {
+    grid-template-columns: repeat(3, minmax(86px, 1fr));
+    width: 100%;
+  }
+}
+
+@media (max-width: 720px) {
+  .booking-v3-card-brands {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .booking-v3-card-brand {
+    min-height: 60px;
+    padding-inline: 6px;
+  }
+
+  .booking-v3-card-brand__logo {
+    font-size: 1.45rem;
+  }
+
+  .booking-v3-address-autocomplete-field .address-autocomplete-hint {
+    display: none;
+  }
+}
