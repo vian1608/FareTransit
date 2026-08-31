@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import PaymentCardEntry from '../components/PaymentCardEntry';
 import '../pages/BookingPageV3Premium.css';
+import '../pages/BookingPageV3VisualPolish.css';
 
 const money = (value) => {
   const parsed = Number.parseFloat(value);
