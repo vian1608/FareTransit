@@ -14,16 +14,16 @@ const PAGE_BY_PATH = new Map(seoPages.map((page) => [page.path, page]));
 const INDEXABLE_EXACT = new Set(seoPages.map((page) => page.path));
 const CONTENT_PATHS = new Set(seoContentPaths);
 
+const ROUTE_BY_PATH = new Map(
+  routesData
+    .filter((route) => route?.slug)
+    .map((route) => [`/routes/${route.slug}`, route])
+);
+
 const VALID_ROUTE_PATHS = new Set(
   routesData
     .filter((route) => route?.slug && route?.seoStatus !== 'noindex')
     .map((route) => `/routes/${route.slug}`)
-);
-
-const ROUTE_PAGE_NAMES = new Map(
-  routesData
-    .filter((route) => route?.slug)
-    .map((route) => [`/routes/${route.slug}`, route.title || route.metaTitle || route.slug])
 );
 
 const DIRECT_ROUTE_INFO = {
@@ -46,10 +46,6 @@ function isIndexablePath(pathname) {
   return INDEXABLE_EXACT.has(pathname) || VALID_ROUTE_PATHS.has(pathname);
 }
 
-function getPageName(pathname) {
-  return PAGE_BY_PATH.get(pathname)?.pageName || ROUTE_PAGE_NAMES.get(pathname) || 'FareTransit';
-}
-
 function getRoutePlanning(pathname) {
   if (DIRECT_ROUTE_INFO[pathname]) return DIRECT_ROUTE_INFO[pathname];
 
@@ -58,11 +54,25 @@ function getRoutePlanning(pathname) {
   if (directRoute && pathname.startsWith('/train-')) return directRoute;
 
   if (pathname.startsWith('/routes/')) {
-    const slug = pathname.slice('/routes/'.length);
-    return routesData.find((route) => route.slug === slug) || null;
+    return ROUTE_BY_PATH.get(pathname) || null;
   }
 
   return null;
+}
+
+function getMetadata(pathname) {
+  const registryPage = PAGE_BY_PATH.get(pathname);
+  if (registryPage) return registryPage;
+
+  const route = ROUTE_BY_PATH.get(pathname);
+  if (!route) return null;
+  return {
+    pageName: route.title || route.metaTitle || route.slug,
+    title: route.metaTitle || route.title,
+    description: route.metaDescription,
+    type: route.type === 'flight' || route.type === 'train' ? 'Service' : 'WebPage',
+    lastmod: route.reviewedAt,
+  };
 }
 
 export default function SeoRouteGuard() {
@@ -73,6 +83,7 @@ export default function SeoRouteGuard() {
   const indexable = isIndexablePath(canonicalPath);
   const handledBySeoContentPage = CONTENT_PATHS.has(canonicalPath);
   const routePlanning = indexable ? getRoutePlanning(canonicalPath) : null;
+  const metadata = indexable ? getMetadata(canonicalPath) : null;
 
   useEffect(() => {
     if (normalizedPath !== '/search') return;
@@ -94,7 +105,7 @@ export default function SeoRouteGuard() {
   }, [location.search, navigate, normalizedPath]);
 
   const canonicalUrl = `${CANONICAL_ORIGIN}${canonicalPath === '/' ? '/' : canonicalPath}`;
-  const pageName = getPageName(canonicalPath);
+  const pageName = metadata?.pageName || 'FareTransit';
   const robotsValue = indexable
     ? 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1'
     : 'noindex, nofollow, noarchive';
@@ -105,8 +116,10 @@ export default function SeoRouteGuard() {
     '@id': `${canonicalUrl}#webpage`,
     url: canonicalUrl,
     name: pageName,
+    description: metadata?.description,
     isPartOf: { '@id': `${CANONICAL_ORIGIN}/#website` },
     about: { '@id': `${CANONICAL_ORIGIN}/#organization` },
+    ...(metadata?.lastmod ? { dateModified: metadata.lastmod } : {}),
   } : null;
 
   const breadcrumbData = indexable
@@ -138,8 +151,15 @@ export default function SeoRouteGuard() {
       <Helmet>
         <meta name="robots" content={robotsValue} />
         <meta name="googlebot" content={robotsValue} />
+        {indexable && !handledBySeoContentPage && metadata?.title && <title>{metadata.title}</title>}
+        {indexable && !handledBySeoContentPage && metadata?.description && <meta name="description" content={metadata.description} />}
         {indexable && !handledBySeoContentPage && <link rel="canonical" href={canonicalUrl} />}
+        {indexable && !handledBySeoContentPage && metadata?.title && <meta property="og:title" content={metadata.title} />}
+        {indexable && !handledBySeoContentPage && metadata?.description && <meta property="og:description" content={metadata.description} />}
         {indexable && !handledBySeoContentPage && <meta property="og:url" content={canonicalUrl} />}
+        {indexable && !handledBySeoContentPage && <meta property="og:type" content="website" />}
+        {indexable && !handledBySeoContentPage && metadata?.title && <meta name="twitter:title" content={metadata.title} />}
+        {indexable && !handledBySeoContentPage && metadata?.description && <meta name="twitter:description" content={metadata.description} />}
         {genericWebPageData && <script type="application/ld+json">{JSON.stringify(genericWebPageData)}</script>}
         {breadcrumbData && <script type="application/ld+json">{JSON.stringify(breadcrumbData)}</script>}
       </Helmet>
