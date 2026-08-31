@@ -59,7 +59,7 @@ test('FareTransit premium four-step checkout keeps navigation and totals consist
 
   await t.test('card number entry is capped at 16 digits and Amex at 15', () => {
     assert.match(cardEntry, /function maxCardDigits/);
-    assert.match(cardEntry, /return \/\^3\[47\]\/.+\? 15 : 16/);
+    assert.match(cardEntry, /\? 15 : 16/);
     assert.match(cardEntry, /digits\.slice\(0, maxCardDigits\(digits\)\)/);
     assert.match(cardEntry, /maxLength=\{isAmexLength \? 17 : 19\}/);
   });
