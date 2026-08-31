@@ -1,8 +1,25 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
+import seoContentPaths from '../data/seoContentPaths.json';
+
+const SeoContentPage = lazy(() => import('./SeoContentPage'));
+const SEO_CONTENT_PATHS = new Set(seoContentPaths);
 
 export default function NotFoundPage() {
+  const location = useLocation();
+  const path = location.pathname.replace(/\/+$/, '') || '/';
+
+  // New SEO content pages deliberately flow through the existing wildcard route.
+  // The large editorial data bundle is lazy-loaded only when one of those pages is requested.
+  if (SEO_CONTENT_PATHS.has(path)) {
+    return (
+      <Suspense fallback={<div style={{ minHeight: '50vh' }} aria-hidden="true" />}>
+        <SeoContentPage />
+      </Suspense>
+    );
+  }
+
   return (
     <section style={{ maxWidth: 760, margin: '4rem auto', padding: '2rem', textAlign: 'center' }}>
       <Helmet>

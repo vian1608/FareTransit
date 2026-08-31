@@ -36,13 +36,16 @@ function Footer() {
             <p>FareTransit provides travel-search and reservation assistance for travelers who value clear information and real human support.</p>
           </div>
 
-          <FooterSection title="Company">
+          <FooterSection title="Plan Travel">
             <ul>
               <li><Link to="/">Flight Search</Link></li>
+              <li><Link to="/flights">Flight Planning</Link></li>
+              <li><Link to="/airlines">Airline Fare Guides</Link></li>
+              <li><Link to="/baggage">Baggage Guide</Link></li>
+              <li><Link to="/fare-types">Fare Types</Link></li>
+              <li><Link to="/guides">Travel Guides</Link></li>
               <li><Link to="/hotels">Hotels</Link></li>
               <li><Link to="/car-rentals">Car Rentals</Link></li>
-              <li><Link to="/my-bookings">My Bookings</Link></li>
-              <li><Link to="/contact">Contact Information</Link></li>
             </ul>
           </FooterSection>
 
@@ -52,17 +55,32 @@ function Footer() {
               <li><Link to="/booking-for-parents">Booking Flights for Parents</Link></li>
               <li><Link to="/urgent-travel">Urgent Travel Assistance</Link></li>
               <li><Link to="/senior-travel/flight-deals">Senior Flight Assistance</Link></li>
+              <li><Link to="/guides/booking-flights-for-family">Family Booking Checklist</Link></li>
+              <li><Link to="/guides/last-minute-travel">Last-Minute Travel Guide</Link></li>
             </ul>
           </FooterSection>
 
           <FooterSection title="Popular Routes">
             <ul>
+              <li><Link to="/flights/from-new-york">Flights from New York</Link></li>
+              <li><Link to="/flights/from-los-angeles">Flights from Los Angeles</Link></li>
               <li><Link to="/flight-nyc-to-mia">New York to Miami Flights</Link></li>
               <li><Link to="/flight-lax-to-jfk">Los Angeles to New York Flights</Link></li>
               <li><Link to="/routes/flight-nyc-to-lon">New York to London Flights</Link></li>
               <li><Link to="/routes/flight-lax-to-tokyo">Los Angeles to Tokyo Flights</Link></li>
               <li><Link to="/train-nyc-to-dc">New York to Washington Train</Link></li>
               <li><Link to="/train-boston-to-nyc">Boston to New York Train</Link></li>
+            </ul>
+          </FooterSection>
+
+          <FooterSection title="Company & Trust">
+            <ul>
+              <li><Link to="/about">About FareTransit</Link></li>
+              <li><Link to="/how-it-works">How It Works</Link></li>
+              <li><Link to="/fees-and-disclosures">Fees &amp; Disclosures</Link></li>
+              <li><Link to="/editorial-policy">Editorial Policy</Link></li>
+              <li><Link to="/contact">Contact Information</Link></li>
+              <li><Link to="/my-bookings">My Bookings</Link></li>
             </ul>
           </FooterSection>
 

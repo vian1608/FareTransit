@@ -8,7 +8,9 @@
     "destinationCode": "LHR",
     "title": "Flights from New York (JFK) to London (LHR)",
     "metaTitle": "Flights from New York to London | FareTransit",
-    "metaDescription": "Book premium routing and travel logistics for flights from New York JFK to London Heathrow."
+    "metaDescription": "Review New York to London flight options, airport choices, fare conditions, baggage considerations and reservation support for JFK to LHR travel.",
+    "reviewedAt": "2026-08-31",
+    "seoStatus": "index"
   },
   {
     "slug": "flight-lax-to-tokyo",
@@ -18,8 +20,10 @@
     "originCode": "LAX",
     "destinationCode": "NRT/HND",
     "title": "Flights from Los Angeles (LAX) to Tokyo (NRT/HND)",
-    "metaTitle": "Flights from LAX to Tokyo | FareTransit",
-    "metaDescription": "Seamless premium flight bookings from Los Angeles to Tokyo Narita or Haneda."
+    "metaTitle": "Flights from Los Angeles to Tokyo | FareTransit",
+    "metaDescription": "Review Los Angeles to Tokyo flight options, Narita and Haneda considerations, fare conditions, baggage and reservation assistance.",
+    "reviewedAt": "2026-08-31",
+    "seoStatus": "index"
   },
   {
     "slug": "flight-mia-to-paris",
@@ -30,7 +34,9 @@
     "destinationCode": "CDG",
     "title": "Flights from Miami (MIA) to Paris (CDG)",
     "metaTitle": "Flights from Miami to Paris | FareTransit",
-    "metaDescription": "Expert logistics and premium bookings for flights from Miami to Paris Charles de Gaulle."
+    "metaDescription": "Review Miami to Paris flight options, connections, fare restrictions, baggage considerations and reservation assistance for MIA to CDG travel.",
+    "reviewedAt": "2026-08-31",
+    "seoStatus": "index"
   },
   {
     "slug": "flight-ord-to-fra",
@@ -41,7 +47,9 @@
     "destinationCode": "FRA",
     "title": "Flights from Chicago (ORD) to Frankfurt (FRA)",
     "metaTitle": "Flights from Chicago to Frankfurt | FareTransit",
-    "metaDescription": "Premium international flight logistics from Chicago O'Hare to Frankfurt."
+    "metaDescription": "Review Chicago to Frankfurt flight options, connection planning, fare conditions, baggage considerations and reservation assistance.",
+    "reviewedAt": "2026-08-31",
+    "seoStatus": "index"
   },
   {
     "slug": "flight-sfo-to-syd",
@@ -51,8 +59,10 @@
     "originCode": "SFO",
     "destinationCode": "SYD",
     "title": "Flights from San Francisco (SFO) to Sydney (SYD)",
-    "metaTitle": "Flights from SFO to Sydney | FareTransit",
-    "metaDescription": "Expert booking support for transpacific flights from San Francisco to Sydney."
+    "metaTitle": "Flights from San Francisco to Sydney | FareTransit",
+    "metaDescription": "Review San Francisco to Sydney flight options, arrival-date planning, fare conditions, baggage and reservation support for SFO to SYD travel.",
+    "reviewedAt": "2026-08-31",
+    "seoStatus": "index"
   },
   {
     "slug": "flight-jfk-to-dxb",
@@ -62,8 +72,10 @@
     "originCode": "JFK",
     "destinationCode": "DXB",
     "title": "Flights from New York (JFK) to Dubai (DXB)",
-    "metaTitle": "Flights from JFK to Dubai | FareTransit",
-    "metaDescription": "Luxury flight arrangements and logistics from New York JFK to Dubai."
+    "metaTitle": "Flights from New York to Dubai | FareTransit",
+    "metaDescription": "Review New York to Dubai flight options, long-haul timing, fare conditions, baggage considerations and reservation assistance for JFK to DXB.",
+    "reviewedAt": "2026-08-31",
+    "seoStatus": "index"
   },
   {
     "slug": "flight-dfw-to-lhr",
@@ -74,7 +86,9 @@
     "destinationCode": "LHR",
     "title": "Flights from Dallas (DFW) to London (LHR)",
     "metaTitle": "Flights from Dallas to London | FareTransit",
-    "metaDescription": "Premium flight bookings from Dallas Fort Worth to London Heathrow."
+    "metaDescription": "Review Dallas to London flight options, arrival planning, fare restrictions, baggage considerations and reservation assistance for DFW to LHR.",
+    "reviewedAt": "2026-08-31",
+    "seoStatus": "index"
   },
   {
     "slug": "flight-bos-to-dub",
@@ -85,7 +99,9 @@
     "destinationCode": "DUB",
     "title": "Flights from Boston (BOS) to Dublin (DUB)",
     "metaTitle": "Flights from Boston to Dublin | FareTransit",
-    "metaDescription": "Seamless premium flight bookings from Boston to Dublin, Ireland."
+    "metaDescription": "Review Boston to Dublin flight options, overnight timing, fare conditions, baggage considerations and reservation assistance for BOS to DUB.",
+    "reviewedAt": "2026-08-31",
+    "seoStatus": "index"
   },
   {
     "slug": "train-nyc-to-dc",
@@ -95,8 +111,10 @@
     "originCode": "NYC",
     "destinationCode": "DC",
     "title": "Train from NYC to Washington, D.C.",
-    "metaTitle": "Train from NYC to DC | Book Tickets & Schedules | FareTransit",
-    "metaDescription": "Need a train from NYC to Washington DC? Get optimized schedules, seat selections, and seamless ticketing assistance on the Northeast Corridor."
+    "metaTitle": "Train from NYC to Washington, D.C. | FareTransit",
+    "metaDescription": "Review New York to Washington rail planning, station timing, ticket conditions, luggage and accessibility considerations before travel.",
+    "reviewedAt": "2026-08-31",
+    "seoStatus": "index"
   },
   {
     "slug": "train-dc-to-nyc",
@@ -106,8 +124,10 @@
     "originCode": "DC",
     "destinationCode": "NYC",
     "title": "Train from D.C. to New York City",
-    "metaTitle": "Train from DC to NYC | Schedules & Easy Booking | FareTransit",
-    "metaDescription": "Find the fastest train routes from Washington DC to New York City. Plan your Northeast Corridor travel with zero hassle or booking stress."
+    "metaTitle": "Train from Washington, D.C. to NYC | FareTransit",
+    "metaDescription": "Review Washington to New York rail planning, station timing, ticket conditions, luggage and accessibility considerations before travel.",
+    "reviewedAt": "2026-08-31",
+    "seoStatus": "index"
   },
   {
     "slug": "train-philly-to-nyc",
@@ -117,8 +137,10 @@
     "originCode": "PHL",
     "destinationCode": "NYC",
     "title": "Train from Philadelphia to NYC",
-    "metaTitle": "Train from Philly to NYC | Fast Passenger Routing | FareTransit",
-    "metaDescription": "Coordination and support for train travel from Philadelphia to NYC. Book your Amtrak or regional commuter seats instantly."
+    "metaTitle": "Train from Philadelphia to NYC | FareTransit",
+    "metaDescription": "Review Philadelphia to New York rail planning, station access, ticket conditions, luggage and accessibility considerations before travel.",
+    "reviewedAt": "2026-08-31",
+    "seoStatus": "index"
   },
   {
     "slug": "train-boston-to-nyc",
@@ -128,8 +150,10 @@
     "originCode": "BOS",
     "destinationCode": "NYC",
     "title": "Train from Boston to NYC",
-    "metaTitle": "Train from Boston to NYC | Premium Tickets | FareTransit",
-    "metaDescription": "Expert logistics for Northeast Corridor rail from Boston to New York City."
+    "metaTitle": "Train from Boston to NYC | FareTransit",
+    "metaDescription": "Review Boston to New York rail planning, schedule considerations, ticket conditions, luggage and accessibility needs before travel.",
+    "reviewedAt": "2026-08-31",
+    "seoStatus": "index"
   },
   {
     "slug": "train-chicago-to-stlouis",
@@ -140,7 +164,9 @@
     "destinationCode": "STL",
     "title": "Train from Chicago to St. Louis",
     "metaTitle": "Train from Chicago to St. Louis | FareTransit",
-    "metaDescription": "Book your train travel from Chicago to St. Louis easily with our premium rail advisory."
+    "metaDescription": "Review Chicago to St. Louis rail planning, station timing, ticket flexibility, luggage and accessibility considerations before travel.",
+    "reviewedAt": "2026-08-31",
+    "seoStatus": "index"
   },
   {
     "slug": "train-la-to-sandiego",
@@ -150,8 +176,10 @@
     "originCode": "LA",
     "destinationCode": "SD",
     "title": "Train from Los Angeles to San Diego",
-    "metaTitle": "Train from LA to San Diego | FareTransit",
-    "metaDescription": "Enjoy the scenic Pacific Surfliner route with premium bookings from LA to San Diego."
+    "metaTitle": "Train from Los Angeles to San Diego | FareTransit",
+    "metaDescription": "Review Los Angeles to San Diego rail planning, station choices, current schedule considerations, luggage and accessibility needs.",
+    "reviewedAt": "2026-08-31",
+    "seoStatus": "index"
   },
   {
     "slug": "train-seattle-to-portland",
@@ -161,8 +189,10 @@
     "originCode": "SEA",
     "destinationCode": "PDX",
     "title": "Train from Seattle to Portland",
-    "metaTitle": "Train from Seattle to Portland | Cascades Route | FareTransit",
-    "metaDescription": "Travel the scenic Pacific Northwest on the Cascades route from Seattle to Portland."
+    "metaTitle": "Train from Seattle to Portland | FareTransit",
+    "metaDescription": "Review Seattle to Portland rail planning, station access, schedule timing, luggage and accessibility considerations before travel.",
+    "reviewedAt": "2026-08-31",
+    "seoStatus": "index"
   },
   {
     "slug": "train-nyc-to-albany",
@@ -173,6 +203,8 @@
     "destinationCode": "ALB",
     "title": "Train from NYC to Albany",
     "metaTitle": "Train from NYC to Albany | FareTransit",
-    "metaDescription": "Fast and reliable train bookings from New York City to Albany."
+    "metaDescription": "Review New York to Albany rail planning, arrival timing, ticket conditions, luggage and accessibility considerations before travel.",
+    "reviewedAt": "2026-08-31",
+    "seoStatus": "index"
   }
 ]

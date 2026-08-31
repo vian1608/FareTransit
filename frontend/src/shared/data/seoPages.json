@@ -1,0 +1,274 @@
+[
+  {
+    "path": "/",
+    "pageName": "FareTransit",
+    "title": "FareTransit | Flight Search and Reservation Assistance",
+    "description": "Compare flight options, routes, connections, baggage considerations and travel time with personal reservation assistance from FareTransit.",
+    "type": "WebPage",
+    "lastmod": "2026-08-31"
+  },
+  {
+    "path": "/flights",
+    "pageName": "Flight Search and Planning",
+    "title": "Flight Search, Fare Options & Booking Help | FareTransit",
+    "description": "Search flights, compare fare options, review baggage considerations and get human booking assistance from FareTransit.",
+    "type": "CollectionPage",
+    "lastmod": "2026-08-31"
+  },
+  {
+    "path": "/flights/from-new-york",
+    "pageName": "Flights from New York",
+    "title": "Flights from New York: Route Planning & Booking Help | FareTransit",
+    "description": "Explore popular flight routes from New York and review connections, fare choices, baggage considerations and booking support.",
+    "type": "CollectionPage",
+    "lastmod": "2026-08-31"
+  },
+  {
+    "path": "/flights/from-los-angeles",
+    "pageName": "Flights from Los Angeles",
+    "title": "Flights from Los Angeles: Route Planning & Booking Help | FareTransit",
+    "description": "Explore popular flight routes from Los Angeles and compare itinerary, fare and baggage considerations before booking.",
+    "type": "CollectionPage",
+    "lastmod": "2026-08-31"
+  },
+  {
+    "path": "/airlines",
+    "pageName": "Airline Fare and Booking Guides",
+    "title": "Airline Fare Types, Booking Options & Travel Help | FareTransit",
+    "description": "Learn how airline fare names, baggage, seating, changes and refund conditions can differ and what to compare before booking.",
+    "type": "CollectionPage",
+    "lastmod": "2026-08-31"
+  },
+  {
+    "path": "/baggage",
+    "pageName": "Baggage Planning Guide",
+    "title": "Airline Baggage Planning, Checked Bags & Extra Bags | FareTransit",
+    "description": "Understand carry-on and checked-baggage considerations, extra-bag pricing and what to confirm before adding baggage to a trip.",
+    "type": "CollectionPage",
+    "lastmod": "2026-08-31"
+  },
+  {
+    "path": "/baggage/checked-baggage-fees",
+    "pageName": "Checked Baggage Fees Guide",
+    "title": "Checked Baggage Fees: What Changes the Price? | FareTransit",
+    "description": "Learn why checked-bag prices vary by airline, route, fare, bag count and timing, and what to verify before paying for baggage.",
+    "type": "Article",
+    "lastmod": "2026-08-31"
+  },
+  {
+    "path": "/baggage/extra-baggage",
+    "pageName": "Extra Baggage Guide",
+    "title": "Extra Checked Baggage: Availability, Pricing & Planning | FareTransit",
+    "description": "Planning additional checked bags? Learn how extra-bag availability, airline limits and quoted prices can vary by itinerary.",
+    "type": "Article",
+    "lastmod": "2026-08-31"
+  },
+  {
+    "path": "/fare-types",
+    "pageName": "Airline Fare Types",
+    "title": "Airline Fare Types Explained: Basic, Standard & Flexible | FareTransit",
+    "description": "Compare common airline fare concepts such as basic, standard and flexible options without relying on one airline's naming system.",
+    "type": "CollectionPage",
+    "lastmod": "2026-08-31"
+  },
+  {
+    "path": "/fare-types/basic-economy",
+    "pageName": "Basic Economy Guide",
+    "title": "Basic Economy Explained: Restrictions to Check Before Booking | FareTransit",
+    "description": "Review the seating, change, cancellation and baggage restrictions that may apply to basic or lowest-tier economy fares.",
+    "type": "Article",
+    "lastmod": "2026-08-31"
+  },
+  {
+    "path": "/fare-types/flexible-fares",
+    "pageName": "Flexible Fare Guide",
+    "title": "Flexible Airfares Explained: Changes, Refunds & Fare Differences | FareTransit",
+    "description": "Understand what a flexible airfare may include and why change flexibility does not always eliminate fare differences or other conditions.",
+    "type": "Article",
+    "lastmod": "2026-08-31"
+  },
+  {
+    "path": "/guides",
+    "pageName": "Travel Planning Guides",
+    "title": "Flight Booking & Travel Planning Guides | FareTransit",
+    "description": "Practical guides for booking flights, planning urgent trips, helping family members travel and understanding fare and baggage choices.",
+    "type": "CollectionPage",
+    "lastmod": "2026-08-31"
+  },
+  {
+    "path": "/guides/booking-flights-for-family",
+    "pageName": "Booking Flights for Family",
+    "title": "How to Book Flights for Parents or Family Members | FareTransit",
+    "description": "A practical checklist for booking flights for a parent or family member, including names, contacts, assistance, baggage and itinerary review.",
+    "type": "Article",
+    "lastmod": "2026-08-31"
+  },
+  {
+    "path": "/guides/last-minute-travel",
+    "pageName": "Last-Minute Travel Guide",
+    "title": "Last-Minute Flight Booking Checklist | FareTransit",
+    "description": "Use a structured checklist for urgent flight booking: schedule flexibility, airports, baggage, fare rules, traveler details and support needs.",
+    "type": "Article",
+    "lastmod": "2026-08-31"
+  },
+  {
+    "path": "/about",
+    "pageName": "About FareTransit",
+    "title": "About FareTransit | Independent Travel Search & Reservation Help",
+    "description": "Learn how FareTransit LLC provides independent travel-search and reservation assistance with clear information and human support.",
+    "type": "AboutPage",
+    "lastmod": "2026-08-31"
+  },
+  {
+    "path": "/how-it-works",
+    "pageName": "How FareTransit Works",
+    "title": "How FareTransit Works | Search, Review & Reservation Assistance",
+    "description": "See how FareTransit helps travelers search options, review itinerary and fare details, submit a reservation request and receive follow-up support.",
+    "type": "WebPage",
+    "lastmod": "2026-08-31"
+  },
+  {
+    "path": "/editorial-policy",
+    "pageName": "Editorial Policy",
+    "title": "FareTransit Editorial Policy | Accuracy, Updates & Corrections",
+    "description": "Read how FareTransit prepares, reviews and updates travel information and how to report an error or request a correction.",
+    "type": "WebPage",
+    "lastmod": "2026-08-31"
+  },
+  {
+    "path": "/fees-and-disclosures",
+    "pageName": "Fees and Disclosures",
+    "title": "FareTransit Fees, Availability & Service Disclosures",
+    "description": "Understand FareTransit service pricing, airline availability, baggage quotes and why final travel terms may depend on the airline and itinerary.",
+    "type": "WebPage",
+    "lastmod": "2026-08-31"
+  },
+  {
+    "path": "/hotels",
+    "pageName": "Hotel Search and Booking Assistance",
+    "title": "Hotel Search & Booking Assistance | FareTransit",
+    "description": "Search hotel options and get travel-planning support from FareTransit.",
+    "type": "WebPage",
+    "lastmod": "2026-08-31"
+  },
+  {
+    "path": "/car-rentals",
+    "pageName": "Car Rentals",
+    "title": "Car Rental Search & Travel Assistance | FareTransit",
+    "description": "Compare car-rental options and coordinate transportation as part of your trip planning.",
+    "type": "WebPage",
+    "lastmod": "2026-08-31"
+  },
+  {
+    "path": "/contact",
+    "pageName": "Contact FareTransit",
+    "title": "Contact FareTransit | Travel Assistance",
+    "description": "Contact FareTransit LLC for flight search help, reservation assistance, itinerary support, billing questions and travel inquiries.",
+    "type": "ContactPage",
+    "lastmod": "2026-08-31"
+  },
+  {
+    "path": "/terms",
+    "pageName": "Terms and Conditions",
+    "title": "FareTransit Terms and Conditions",
+    "description": "Review the terms and conditions governing FareTransit services.",
+    "type": "WebPage",
+    "lastmod": "2026-08-31"
+  },
+  {
+    "path": "/privacy-policy",
+    "pageName": "Privacy Policy",
+    "title": "FareTransit Privacy Policy",
+    "description": "Review how FareTransit handles information provided through its website and travel-assistance services.",
+    "type": "WebPage",
+    "lastmod": "2026-08-31"
+  },
+  {
+    "path": "/refund-policy",
+    "pageName": "Refund Policy",
+    "title": "FareTransit Refund Policy",
+    "description": "Review FareTransit refund terms and important airline-dependent conditions.",
+    "type": "WebPage",
+    "lastmod": "2026-08-31"
+  },
+  {
+    "path": "/travel-assistance",
+    "pageName": "Flight Booking Assistance",
+    "title": "Flight Booking Assistance & Human Travel Support | FareTransit",
+    "description": "Get human help reviewing flight options, itinerary details, baggage, seating and reservation questions.",
+    "type": "Service",
+    "lastmod": "2026-08-31"
+  },
+  {
+    "path": "/booking-for-parents",
+    "pageName": "Booking Flights for Parents and Relatives",
+    "title": "Flight Booking Help for Parents & Family | FareTransit",
+    "description": "Get help organizing flight details for a parent or relative, including traveler information, assistance requests and itinerary review.",
+    "type": "Service",
+    "lastmod": "2026-08-31"
+  },
+  {
+    "path": "/urgent-travel",
+    "pageName": "Urgent Travel Assistance",
+    "title": "Urgent Flight Booking Assistance | FareTransit",
+    "description": "Need to travel soon? Review schedule, airport, fare and baggage options with FareTransit travel assistance.",
+    "type": "Service",
+    "lastmod": "2026-08-31"
+  },
+  {
+    "path": "/senior-travel/flight-deals",
+    "pageName": "Senior Flight Assistance",
+    "title": "Senior Flight Booking Assistance | FareTransit",
+    "description": "Flight-search and reservation assistance for older travelers and families coordinating senior travel.",
+    "type": "Service",
+    "lastmod": "2026-08-31"
+  },
+  {
+    "path": "/flight-nyc-to-mia",
+    "pageName": "Flights from New York to Miami",
+    "title": "Flights from NYC to Miami | FareTransit",
+    "description": "Review flight options from New York to Miami and get help comparing itinerary, fare and baggage details.",
+    "type": "Service",
+    "lastmod": "2026-08-31"
+  },
+  {
+    "path": "/flight-lax-to-jfk",
+    "pageName": "Flights from Los Angeles to New York",
+    "title": "Flights from LAX to JFK | FareTransit",
+    "description": "Review flight options from Los Angeles to New York and get help comparing itinerary, fare and baggage details.",
+    "type": "Service",
+    "lastmod": "2026-08-31"
+  },
+  {
+    "path": "/train-nyc-to-dc",
+    "pageName": "Train from New York to Washington, D.C.",
+    "title": "Train from NYC to Washington, D.C. | FareTransit",
+    "description": "Review rail travel options between New York and Washington, D.C. with FareTransit travel-planning assistance.",
+    "type": "Service",
+    "lastmod": "2026-08-31"
+  },
+  {
+    "path": "/train-dc-to-nyc",
+    "pageName": "Train from Washington, D.C. to New York",
+    "title": "Train from Washington, D.C. to NYC | FareTransit",
+    "description": "Review rail travel options between Washington, D.C. and New York with FareTransit travel-planning assistance.",
+    "type": "Service",
+    "lastmod": "2026-08-31"
+  },
+  {
+    "path": "/train-philly-to-nyc",
+    "pageName": "Train from Philadelphia to New York",
+    "title": "Train from Philadelphia to NYC | FareTransit",
+    "description": "Review rail travel options between Philadelphia and New York with FareTransit travel-planning assistance.",
+    "type": "Service",
+    "lastmod": "2026-08-31"
+  },
+  {
+    "path": "/train-boston-to-nyc",
+    "pageName": "Train from Boston to New York",
+    "title": "Train from Boston to NYC | FareTransit",
+    "description": "Review rail travel options between Boston and New York with FareTransit travel-planning assistance.",
+    "type": "Service",
+    "lastmod": "2026-08-31"
+  }
+]

@@ -1,0 +1,30 @@
+name: SEO Quality
+
+on:
+  pull_request:
+    branches: [develop, staging, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  seo-quality:
+    name: SEO registry and indexing integrity
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout candidate revision
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Audit SEO registry and content
+        run: node scripts/seo-audit.mjs
+
+      - name: Verify sitemap and indexing contract
+        working-directory: backend
+        run: node tests/seo_indexing_contract.test.mjs

@@ -1,0 +1,74 @@
+{
+  "/flight-nyc-to-mia": [
+    {"title": "Compare New York airport choices", "text": "New York-area departure options can differ in ground access, schedule and operating airline. Review the airport together with the fare and departure time."},
+    {"title": "Plan for a leisure-heavy route", "text": "For Miami trips, baggage and seat needs can materially change the trip cost. Compare included benefits before selecting the lowest displayed fare."}
+  ],
+  "/flight-lax-to-jfk": [
+    {"title": "Transcontinental timing matters", "text": "Eastbound and westbound schedules can affect arrival-day plans differently. Compare arrival time and total elapsed travel time, not only departure time."},
+    {"title": "Check fare flexibility", "text": "A cross-country trip may be expensive to change close to departure. Compare change and cancellation conditions when travel dates are uncertain."}
+  ],
+  "/routes/flight-nyc-to-lon": [
+    {"title": "Plan both ends of the airport transfer", "text": "For a New York to London itinerary, review the exact departure and arrival airports together with ground transportation and arrival timing."},
+    {"title": "Watch the calendar date", "text": "Overnight transatlantic schedules can arrive on a different calendar day. Confirm the arrival date before arranging hotels, trains or onward travel."}
+  ],
+  "/routes/flight-lax-to-tokyo": [
+    {"title": "Tokyo airport choice can change the ground journey", "text": "When options involve Narita or Haneda, compare the arrival airport as well as the airfare because transfer time into the city can differ."},
+    {"title": "Review arrival date and connection timing", "text": "Long-haul Pacific travel crosses multiple time zones. Confirm the local arrival date and leave enough time for any onward connection."}
+  ],
+  "/routes/flight-mia-to-paris": [
+    {"title": "Compare nonstop and connecting elapsed time", "text": "A connection can lower the headline fare but add significant total travel time. Review the full itinerary before deciding."},
+    {"title": "International baggage can vary by fare", "text": "Do not assume every long-haul economy fare includes the same checked-bag allowance. Review the exact fare benefits returned for the itinerary."}
+  ],
+  "/routes/flight-ord-to-fra": [
+    {"title": "Hub-to-hub options can still differ", "text": "Chicago and Frankfurt are major connecting airports, so compare operating airline, connection structure and total travel time even when the city pair is the same."},
+    {"title": "Leave room for onward plans", "text": "If Frankfurt is a connection point rather than the final destination, build realistic time into separate onward rail or air arrangements."}
+  ],
+  "/routes/flight-sfo-to-syd": [
+    {"title": "International Date Line planning", "text": "Travel between San Francisco and Sydney can shift the calendar date substantially. Confirm the local arrival date before booking accommodation or onward travel."},
+    {"title": "Long-haul comfort and baggage matter", "text": "For a very long itinerary, compare seating, baggage and change conditions as part of the total value rather than focusing only on the base fare."}
+  ],
+  "/routes/flight-jfk-to-dxb": [
+    {"title": "Compare long-haul schedule quality", "text": "For New York to Dubai, departure and arrival time can affect rest and ground-transfer plans. Review the full schedule together with the fare."},
+    {"title": "Check baggage and special-service needs", "text": "International baggage and assistance requests can vary by fare and carrier. Add important mobility, seating or baggage requirements before travel."}
+  ],
+  "/routes/flight-dfw-to-lhr": [
+    {"title": "Arrival timing affects onward travel", "text": "For Dallas to London, verify the local arrival date and time before arranging a separate train, hotel or connecting ticket."},
+    {"title": "Compare restrictions across fare options", "text": "Two economy fares on the same flight can have different seat, baggage, change or refund conditions. Review the benefits attached to the exact fare."}
+  ],
+  "/routes/flight-bos-to-dub": [
+    {"title": "Shorter transatlantic does not mean simple planning", "text": "Boston to Dublin can still involve overnight travel and a different local arrival date. Check the calendar and ground plans carefully."},
+    {"title": "Review the entire international fare", "text": "Check baggage, seating and change conditions before choosing between the lowest fare and a more flexible option."}
+  ],
+  "/train-nyc-to-dc": [
+    {"title": "Station access can decide the best departure", "text": "Compare the train schedule together with the time needed to reach the station and the ground journey after arrival in Washington."},
+    {"title": "Leave margin around fixed appointments", "text": "When traveling for a meeting or event, avoid choosing a schedule with no buffer for boarding, station navigation or service disruption."}
+  ],
+  "/train-dc-to-nyc": [
+    {"title": "Plan the New York arrival", "text": "Consider how the scheduled arrival fits with hotel check-in, meetings or onward local transportation rather than choosing only by departure time."},
+    {"title": "Accessibility requests are easier when arranged early", "text": "If a traveler needs mobility or boarding help, add the request during trip planning instead of waiting until the station when possible."}
+  ],
+  "/train-philly-to-nyc": [
+    {"title": "Compare total door-to-door time", "text": "On a relatively short corridor trip, station access and waiting time can matter nearly as much as the scheduled rail time."},
+    {"title": "Review ticket restrictions", "text": "Different rail options can have different change or cancellation conditions. Review those terms if the travel time may move."}
+  ],
+  "/train-boston-to-nyc": [
+    {"title": "Schedule choice affects the full day", "text": "Boston to New York rail options can occupy a large part of the day. Compare arrival time and station-to-destination travel before choosing."},
+    {"title": "Plan seating and assistance needs", "text": "If seating, accessibility or luggage support matters, note the requirement before travel so it can be reviewed with the itinerary."}
+  ],
+  "/routes/train-chicago-to-stlouis": [
+    {"title": "Compare station timing with ground transport", "text": "Build the trip around actual station arrival and departure times, including the time needed to reach the station and continue after arrival."},
+    {"title": "Keep ticket flexibility in mind", "text": "If the trip is tied to an event or uncertain schedule, review change and cancellation terms before selecting the lowest ticket."}
+  ],
+  "/routes/train-la-to-sandiego": [
+    {"title": "Check the exact station pair", "text": "Los Angeles and San Diego-area rail options can involve different stations. Confirm the station locations before finalizing ground transportation."},
+    {"title": "Review the latest operating schedule", "text": "Rail schedules and service patterns can change. Use current itinerary information for the travel date rather than relying on an older timetable."}
+  ],
+  "/routes/train-seattle-to-portland": [
+    {"title": "Plan around downtown station access", "text": "Rail can be convenient when the departure and arrival stations fit the rest of the trip. Include local transportation time in the comparison."},
+    {"title": "Choose a schedule with realistic buffer", "text": "For time-sensitive onward plans, leave room after the scheduled arrival instead of relying on a zero-buffer connection."}
+  ],
+  "/routes/train-nyc-to-albany": [
+    {"title": "Match the schedule to the onward destination", "text": "Albany-area arrival time should be compared with local transportation or pickup plans, especially for evening travel."},
+    {"title": "Review luggage and accessibility before departure", "text": "If a traveler has larger luggage or mobility needs, confirm the available assistance and station process in advance."}
+  ]
+}
