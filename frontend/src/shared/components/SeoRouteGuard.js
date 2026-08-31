@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import routesData from '../data/routesData.json';
 import seoPages from '../data/seoPages.json';
 import seoContent from '../data/seoContent.json';
+import seoAliases from '../data/seoAliases.json';
 
 const CANONICAL_ORIGIN = 'https://www.faretransit.com';
 
@@ -23,19 +24,7 @@ const ROUTE_PAGE_NAMES = new Map(
     .map((route) => [`/routes/${route.slug}`, route.title || route.metaTitle || route.slug])
 );
 
-export const CANONICAL_ALIASES = {
-  '/senior-travel': '/senior-travel/flight-deals',
-  '/privacy': '/privacy-policy',
-  '/privacypolicy': '/privacy-policy',
-  '/refund': '/refund-policy',
-  '/refundpolicy': '/refund-policy',
-  '/amtrak': '/car-rentals',
-  '/amtrak-assistance': '/car-rentals',
-  '/routes/train-nyc-to-dc': '/train-nyc-to-dc',
-  '/routes/train-dc-to-nyc': '/train-dc-to-nyc',
-  '/routes/train-philly-to-nyc': '/train-philly-to-nyc',
-  '/routes/train-boston-to-nyc': '/train-boston-to-nyc',
-};
+export const CANONICAL_ALIASES = seoAliases;
 
 const normalizePath = (pathname) => {
   if (!pathname || pathname === '/') return '/';
