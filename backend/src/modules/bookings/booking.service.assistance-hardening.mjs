@@ -7,6 +7,8 @@ const clean = (value, max = 1000) => {
   return text ? text.slice(0, max) : null;
 };
 
+const normalizeBaggageCount = value => Math.max(0, Math.min(6, Number.parseInt(value, 10) || 0));
+
 function normalizeAssistance(payload = {}) {
   const source = payload.assistance
     || payload.specialRequests
@@ -19,15 +21,23 @@ function normalizeAssistance(payload = {}) {
   const seatPreference = clean(source.seatingPreference ?? source.seatPreference ?? source.seat_preference, 60) || 'none';
   const wheelchairRequired = Boolean(source.wheelchair ?? source.wheelchairRequired ?? source.wheelchair_required);
   const additionalRequest = clean(source.notes ?? source.additionalRequest ?? source.additional_request, 3000);
+  const additionalBaggageCount = normalizeBaggageCount(
+    source.additionalBaggageCount
+    ?? source.baggageCount
+    ?? source.additional_baggage_count
+    ?? 0
+  );
   const hasSpecialAssistance = wheelchairRequired
     || mealPreference !== 'none'
     || seatPreference !== 'none'
+    || additionalBaggageCount > 0
     || Boolean(additionalRequest);
 
   return {
     meal_preference: mealPreference,
     seat_preference: seatPreference,
     wheelchair_required: wheelchairRequired,
+    additional_baggage_count: additionalBaggageCount,
     additional_request: additionalRequest,
     assistance_status: hasSpecialAssistance ? 'REQUESTED' : 'NONE',
     hasSpecialAssistance,
@@ -40,6 +50,7 @@ function publicAssistance(row = null) {
       mealPreference: 'none',
       seatPreference: 'none',
       wheelchairRequired: false,
+      additionalBaggageCount: 0,
       additionalRequest: null,
       assistanceStatus: 'NONE',
       hasSpecialAssistance: false,
@@ -49,10 +60,12 @@ function publicAssistance(row = null) {
   const mealPreference = row.meal_preference || 'none';
   const seatPreference = row.seat_preference || 'none';
   const wheelchairRequired = Boolean(row.wheelchair_required);
+  const additionalBaggageCount = normalizeBaggageCount(row.additional_baggage_count);
   const additionalRequest = row.additional_request || null;
   const hasSpecialAssistance = wheelchairRequired
     || mealPreference !== 'none'
     || seatPreference !== 'none'
+    || additionalBaggageCount > 0
     || Boolean(additionalRequest);
 
   return {
@@ -60,6 +73,7 @@ function publicAssistance(row = null) {
     mealPreference,
     seatPreference,
     wheelchairRequired,
+    additionalBaggageCount,
     additionalRequest,
     assistanceStatus: row.assistance_status || (hasSpecialAssistance ? 'REQUESTED' : 'NONE'),
     hasSpecialAssistance,
@@ -103,6 +117,7 @@ async function persistAssistance(bookingId, payload) {
     meal_preference: normalized.meal_preference,
     seat_preference: normalized.seat_preference,
     wheelchair_required: normalized.wheelchair_required,
+    additional_baggage_count: normalized.additional_baggage_count,
     additional_request: normalized.additional_request,
     assistance_status: normalized.assistance_status,
     updated_at: new Date().toISOString(),
