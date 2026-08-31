@@ -4,12 +4,22 @@ const digitsOnly = (value) => String(value || '').replace(/\D/g, '');
 
 function detectCardBrand(value) {
   const digits = digitsOnly(value);
+  if (!digits) return '';
+
+  // Give the passenger immediate feedback from the first digit, then refine
+  // the less-common 3-series networks once enough digits are available.
   if (/^4/.test(digits)) return 'Visa';
-  if (/^3[47]/.test(digits)) return 'American Express';
-  if (/^(5[1-5]|2(2[2-9]|[3-6]\d|7[01]|720))/.test(digits)) return 'Mastercard';
-  if (/^6(011|5)/.test(digits)) return 'Discover';
-  if (/^(2131|1800|35)/.test(digits)) return 'JCB';
-  if (/^3(0[0-5]|[68])/.test(digits)) return 'Diners Club';
+  if (/^5/.test(digits)) return 'Mastercard';
+  if (/^6/.test(digits)) return 'Discover';
+
+  if (/^3/.test(digits)) {
+    if (/^3[47]/.test(digits)) return 'American Express';
+    if (/^35/.test(digits)) return digits.length >= 2 ? 'JCB' : 'American Express';
+    if (/^3(0[0-5]|[68])/.test(digits)) return digits.length >= 2 ? 'Diners Club' : 'American Express';
+    return 'American Express';
+  }
+
+  if (/^(2131|1800)/.test(digits)) return 'JCB';
   return digits.length >= 6 ? 'Other' : '';
 }
 
@@ -117,6 +127,12 @@ const PaymentCardEntry = forwardRef(function PaymentCardEntry({ nameOnCard, onNa
           aria-invalid={showError && !passesLuhn(cardNumber)}
           required
         />
+        {brand && (
+          <span className={`booking-v3-detected-brand booking-v3-detected-brand--${brand.toLowerCase().replace(/\s+/g, '-')}`} aria-live="polite">
+            <span className="booking-v3-detected-brand__label">Card type</span>
+            <strong>{brand}</strong>
+          </span>
+        )}
       </label>
 
       <div className="booking-v3-card-row">
@@ -176,9 +192,9 @@ const PaymentCardEntry = forwardRef(function PaymentCardEntry({ nameOnCard, onNa
       </div>
 
       {showError && <p className="booking-v3-card-error" role="alert">{getValidationMessage()}</p>}
-      {brand && <span className="booking-v3-detected-brand" aria-live="polite">Detected card: {brand}</span>}
     </div>
   );
 });
 
+export { detectCardBrand };
 export default PaymentCardEntry;
