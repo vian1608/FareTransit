@@ -4,9 +4,16 @@ import PaymentCardEntry from '../components/PaymentCardEntry';
 import '../pages/BookingPageV3Premium.css';
 import '../pages/BookingPageV3VisualPolish.css';
 
+const FLEX_OFFER_RATE = 0.085;
+
 const money = (value) => {
   const parsed = Number.parseFloat(value);
   return Number.isFinite(parsed) ? Number(parsed.toFixed(2)) : 0;
+};
+
+const promoPrice = (fare) => {
+  const parsed = Number.parseFloat(fare);
+  return Number.isFinite(parsed) ? Math.max(0, Math.round(parsed * FLEX_OFFER_RATE)) : 0;
 };
 
 export default function PaymentBillingStep({
@@ -18,7 +25,6 @@ export default function PaymentBillingStep({
   countries,
   usStates,
   tripProtection,
-  flexAmount,
   baseFare,
   reservationTotal,
   termsAccepted,
@@ -29,14 +35,14 @@ export default function PaymentBillingStep({
 
   const pricingSummary = useMemo(() => {
     const flightFare = money(baseFare);
-    const flexAssist = tripProtection === true ? money(flexAmount) : 0;
+    const flexAssist = tripProtection === true ? promoPrice(flightFare) : 0;
     const total = money(flightFare + flexAssist);
     return {
       flightFare,
       flexAssist,
       total: total || money(reservationTotal),
     };
-  }, [baseFare, flexAmount, reservationTotal, tripProtection]);
+  }, [baseFare, reservationTotal, tripProtection]);
 
   const brandClass = (name) => detectedBrand === name ? ' is-active' : '';
 
@@ -156,7 +162,7 @@ export default function PaymentBillingStep({
 
           <div className="booking-v3-order-summary__rows">
             <div><span>Flight fare</span><strong>${pricingSummary.flightFare.toFixed(2)}</strong></div>
-            <div><span>FareTransit Flex Assist</span><strong>{tripProtection === true ? `$${pricingSummary.flexAssist.toFixed(2)}` : '$0.00'}</strong></div>
+            <div><span>FareTransit Flex Assist {tripProtection === true ? '· Offer' : ''}</span><strong>{tripProtection === true ? `$${pricingSummary.flexAssist.toFixed(2)}` : '$0.00'}</strong></div>
           </div>
 
           <div className="booking-v3-order-summary__total">
@@ -165,7 +171,7 @@ export default function PaymentBillingStep({
           </div>
 
           {tripProtection === true && (
-            <div className="booking-v3-summary-success"><i className="fas fa-check-circle" aria-hidden="true" /><span>Flex Assist is included in this total.</span></div>
+            <div className="booking-v3-summary-success"><i className="fas fa-check-circle" aria-hidden="true" /><span>Flex Assist promotional price is included in this total.</span></div>
           )}
 
           <div className="booking-v3-summary-trust">
