@@ -73,6 +73,7 @@ test('FareTransit premium four-step checkout keeps navigation and totals consist
     assert.match(paymentStep, /BookingPageV3VisualPolish\.css/);
     assert.match(visualCss, /--ft-wine/);
     assert.match(visualCss, /--ft-navy/);
+    assert.match(visualCss, /Avenir Next/);
     assert.match(visualCss, /booking-v3-order-summary/);
     assert.match(visualCss, /booking-v3-detected-brand/);
     assert.match(visualCss, /booking-v3-protection-card/);
