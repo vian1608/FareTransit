@@ -4,12 +4,14 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-
 const ASSISTANCE_STATUSES = new Set(['NONE', 'REQUESTED', 'ACKNOWLEDGED', 'COMPLETED']);
 
 const cleanRef = value => String(value || '').trim();
+const baggageCount = value => Math.max(0, Math.min(6, Number.parseInt(value, 10) || 0));
 
 function hasSpecialAssistance(row = {}) {
   return Boolean(
     row.wheelchair_required
     || (row.meal_preference && row.meal_preference !== 'none')
     || (row.seat_preference && row.seat_preference !== 'none')
+    || baggageCount(row.additional_baggage_count) > 0
     || String(row.additional_request || '').trim()
   );
 }
@@ -21,6 +23,7 @@ function publicAssistance(row = null) {
     mealPreference: source.meal_preference || 'none',
     seatPreference: source.seat_preference || 'none',
     wheelchairRequired: Boolean(source.wheelchair_required),
+    additionalBaggageCount: baggageCount(source.additional_baggage_count),
     additionalRequest: source.additional_request || null,
     assistanceStatus: source.assistance_status || (hasRequest ? 'REQUESTED' : 'NONE'),
     hasSpecialAssistance: hasRequest,
@@ -133,6 +136,7 @@ export const adminAssistanceController = {
           meal_preference: current?.meal_preference || 'none',
           seat_preference: current?.seat_preference || 'none',
           wheelchair_required: Boolean(current?.wheelchair_required),
+          additional_baggage_count: baggageCount(current?.additional_baggage_count),
           additional_request: current?.additional_request || null,
           assistance_status: status,
           updated_at: new Date().toISOString(),
@@ -188,6 +192,7 @@ export const adminAssistanceController = {
           hasSpecialAssistance: assistance.hasSpecialAssistance,
           assistanceStatus: assistance.assistanceStatus,
           wheelchairRequired: assistance.wheelchairRequired,
+          additionalBaggageCount: assistance.additionalBaggageCount,
           flexAssistSelected: flexAssist.selected,
           flexAssistAmount: flexAssist.amount,
         };
