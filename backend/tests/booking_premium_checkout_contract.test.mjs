@@ -11,6 +11,7 @@ const contactStep = read('frontend/src/features/bookings/steps/ContactAssistance
 const protectionStep = read('frontend/src/features/bookings/steps/TripProtectionStep.js');
 const cardEntry = read('frontend/src/features/bookings/components/PaymentCardEntry.js');
 const premiumCss = read('frontend/src/features/bookings/pages/BookingPageV3Premium.css');
+const visualCss = read('frontend/src/features/bookings/pages/BookingPageV3VisualPolish.css');
 const backButton = read('frontend/src/shared/components/CustomerBackButton.js');
 const addonMiddleware = read('backend/src/modules/journey-sessions/checkout-session-booking.middleware.mjs');
 
@@ -56,11 +57,25 @@ test('FareTransit premium four-step checkout keeps navigation and totals consist
     assert.match(paymentStep, /brandClass\('American Express'\)/);
   });
 
+  await t.test('card number entry is capped at 16 digits and Amex at 15', () => {
+    assert.match(cardEntry, /function maxCardDigits/);
+    assert.match(cardEntry, /return \/\^3\[47\]\/.+\? 15 : 16/);
+    assert.match(cardEntry, /digits\.slice\(0, maxCardDigits\(digits\)\)/);
+    assert.match(cardEntry, /maxLength=\{isAmexLength \? 17 : 19\}/);
+  });
+
   await t.test('premium styling is shared across all four steps', () => {
     assert.match(premiumCss, /booking-stepper-v3/);
     assert.match(premiumCss, /booking-v3-passenger/);
     assert.match(premiumCss, /booking-v3-subcard/);
     assert.match(premiumCss, /booking-v3-protection-card/);
     assert.match(premiumCss, /booking-v3-payment-section/);
+    assert.match(paymentStep, /BookingPageV3VisualPolish\.css/);
+    assert.match(visualCss, /--ft-wine/);
+    assert.match(visualCss, /--ft-navy/);
+    assert.match(visualCss, /booking-v3-order-summary/);
+    assert.match(visualCss, /booking-v3-detected-brand/);
+    assert.match(visualCss, /booking-v3-protection-card/);
+    assert.match(visualCss, /booking-v3-passenger/);
   });
 });
