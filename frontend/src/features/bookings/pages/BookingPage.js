@@ -1,3 +1,3 @@
 // BookingPage is intentionally a thin compatibility entry point.
-// The active customer checkout is the three-step implementation in BookingPageV2.
-export { default } from './BookingPageV2';
+// The active customer checkout is the four-step implementation in BookingPageV3.
+export { default } from './BookingPageV3';
