@@ -1,15 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { bookingAPI } from '../../../shared/api/api';
 import journeySessionAPI from '../../../shared/api/journeySessionApi';
-import ItineraryCard from '../components/ItineraryCard';
-import PaymentCardEntry from '../components/PaymentCardEntry';
-import DateOfBirthPicker from '../../../shared/components/DateOfBirthPicker';
-import TravelDatePicker from '../../flights/components/TravelDatePicker';
-import InternationalPhoneInput from '../../../shared/components/InternationalPhoneInput';
-import CountrySelect from '../../../shared/components/CountrySelect';
-import EmailInput from '../../../shared/components/EmailInput';
 import ModifySearchModal from '../../flights/components/ModifySearchModal';
 import { safeUpper } from '../../../shared/utils/itineraryNormalizer';
 import {
@@ -19,8 +12,13 @@ import {
   validatePostalCode,
 } from '../../../shared/utils/validationHelpers';
 import { trackGoogleAdsLeadConversion } from '../../../shared/analytics/googleAds';
+import PassengerDetailsStep from '../steps/PassengerDetailsStep';
+import ContactAssistanceStep from '../steps/ContactAssistanceStep';
+import TripProtectionStep from '../steps/TripProtectionStep';
+import PaymentBillingStep from '../steps/PaymentBillingStep';
 import './BookingPage.css';
 import './BookingPageV3.css';
+import './BookingPageV3Fixes.css';
 
 const DRAFT_KEY = 'fareTransitBookingDraftV3';
 const FLEX_SELECTION_KEY = 'fareTransitFlexAssistSelected';
@@ -122,7 +120,7 @@ const airportCode = (point, fallback = '') => {
   return point.airport || point.code || point.iata || fallback;
 };
 
-function BookingPageV3({ initialJourneyPayload = null }) {
+export default function BookingPageV3({ initialJourneyPayload = null }) {
   const navigate = useNavigate();
   const paymentCardRef = useRef(null);
   const idempotencyKeyRef = useRef(
@@ -140,8 +138,7 @@ function BookingPageV3({ initialJourneyPayload = null }) {
     || readSessionJson('selectedReturnFlight', null);
   const initialSearchParams = initialJourneyPayload?.searchParams || readSessionJson('searchParams', {});
   const savedDraft = readSessionJson(DRAFT_KEY, null);
-  const canRestoreDraft = savedDraft?.flightFingerprint
-    && savedDraft.flightFingerprint === flightFingerprint(selectedFlight);
+  const canRestoreDraft = savedDraft?.flightFingerprint && savedDraft.flightFingerprint === flightFingerprint(selectedFlight);
 
   const initialFlexSelection = (() => {
     const payloadSelection = initialJourneyPayload?.addons?.flexAssist?.selected;
@@ -158,9 +155,7 @@ function BookingPageV3({ initialJourneyPayload = null }) {
       ? savedDraft.passengersList.map(normalizePassengerDraft)
       : buildPassengers(initialSearchParams)
   );
-  const [primaryContact, setPrimaryContact] = useState(canRestoreDraft ? savedDraft.primaryContact : {
-    firstName: '', lastName: '', email: '', phone: '',
-  });
+  const [primaryContact, setPrimaryContact] = useState(canRestoreDraft ? savedDraft.primaryContact : { firstName: '', lastName: '', email: '', phone: '' });
   const [contactSameAsTraveller, setContactSameAsTraveller] = useState(Boolean(canRestoreDraft && savedDraft.contactSameAsTraveller));
   const [specialRequests, setSpecialRequests] = useState(canRestoreDraft ? savedDraft.specialRequests : {
     wheelchair: false,
@@ -171,7 +166,8 @@ function BookingPageV3({ initialJourneyPayload = null }) {
   const [tripProtection, setTripProtection] = useState(
     canRestoreDraft && typeof savedDraft.tripProtection === 'boolean' ? savedDraft.tripProtection : initialFlexSelection
   );
-  const [protectionSaving, setProtectionSaving] = useState(false);
+  const [protectionSyncPending, setProtectionSyncPending] = useState(false);
+  const [protectionSyncWarning, setProtectionSyncWarning] = useState('');
   const [billing, setBilling] = useState(canRestoreDraft ? savedDraft.billing : {
     cardholderName: '',
     country: 'United States',
@@ -264,7 +260,7 @@ function BookingPageV3({ initialJourneyPayload = null }) {
     let nextValue = value;
     if (field === 'title') nextValue = String(value || '').replace(/\.$/, '');
     if (field === 'gender') nextValue = String(value || '').toLowerCase();
-    if (field === 'passportNumber' || field === 'knownTravelerNumber' || field === 'redressNumber') nextValue = safeUpper(value);
+    if (['passportNumber', 'knownTravelerNumber', 'redressNumber'].includes(field)) nextValue = safeUpper(value);
     setPassengersList((previous) => previous.map((passenger, idx) => idx === index ? { ...passenger, [field]: nextValue } : passenger));
     setPassengerValidationErrors((previous) => {
       const next = { ...previous };
@@ -358,35 +354,37 @@ function BookingPageV3({ initialJourneyPayload = null }) {
     return true;
   };
 
-  const selectProtection = async (selected) => {
+  const selectProtection = (selected) => {
     setError('');
     setTripProtection(selected);
+    setProtectionSyncWarning('');
     sessionStorage.setItem(FLEX_SELECTION_KEY, JSON.stringify(selected));
+
     const checkoutToken = sessionStorage.getItem('checkoutSessionToken');
     if (!checkoutToken) return;
 
-    setProtectionSaving(true);
-    try {
-      const latest = await journeySessionAPI.getCheckout(checkoutToken);
-      const latestPayload = latest?.data?.payload || initialJourneyPayload || {};
-      const nextPayload = {
-        ...latestPayload,
-        addons: {
-          ...(latestPayload.addons || {}),
-          flexAssist: {
-            ...(latestPayload.addons?.flexAssist || {}),
-            selected,
+    setProtectionSyncPending(true);
+    (async () => {
+      try {
+        const latest = await journeySessionAPI.getCheckout(checkoutToken);
+        const latestPayload = latest?.data?.payload || initialJourneyPayload || {};
+        const nextPayload = {
+          ...latestPayload,
+          addons: {
+            ...(latestPayload.addons || {}),
+            flexAssist: {
+              ...(latestPayload.addons?.flexAssist || {}),
+              selected,
+            },
           },
-        },
-      };
-      await journeySessionAPI.updateCheckout(checkoutToken, { payload: nextPayload });
-    } catch (requestError) {
-      setTripProtection(null);
-      sessionStorage.removeItem(FLEX_SELECTION_KEY);
-      setError(requestError?.userMessage || requestError?.message || 'We could not save your Flex Assist selection. Please try again.');
-    } finally {
-      setProtectionSaving(false);
-    }
+        };
+        await journeySessionAPI.updateCheckout(checkoutToken, { payload: nextPayload });
+      } catch {
+        setProtectionSyncWarning('Your choice is saved on this page and will be synchronized again when you complete the reservation.');
+      } finally {
+        setProtectionSyncPending(false);
+      }
+    })();
   };
 
   const goToStep = (step) => {
@@ -434,6 +432,8 @@ function BookingPageV3({ initialJourneyPayload = null }) {
         email: primaryContact.email,
         phone: primaryContact.phone,
         passengers: passengersList,
+        assistance: specialRequests,
+        specialRequests,
         flight: { ...flight, returnFlight, specialRequests },
         returnFlight,
         originalApiPrice: pricing.supplierPrice,
@@ -560,277 +560,68 @@ function BookingPageV3({ initialJourneyPayload = null }) {
 
         <form onSubmit={(event) => { event.preventDefault(); if (currentStep === 4) submitReservation(); }}>
           {currentStep === 1 && (
-            <>
-              <section className="booking-v3-section booking-v3-itinerary-section">
-                <div className="booking-v3-section-header">
-                  <div>
-                    <p className="booking-v3-eyebrow"><i className="fas fa-map-marked-alt" /> Your Selected Itinerary</p>
-                    <h1>Review your flight</h1>
-                  </div>
-                  <button type="button" className="booking-v3-secondary" onClick={() => setIsModifySearchOpen(true)}>
-                    <i className="fas fa-pen" aria-hidden="true" /> Modify Search
-                  </button>
-                </div>
-                <div className="booking-v3-fare-card">
-                  <div><span>Today's Fare</span><strong>${pricing.total} <small>USD</small></strong></div>
-                  <p>Per traveler <b>${(Number(pricing.total) / Math.max(1, passengersList.length)).toFixed(2)}</b> × {passengersList.length} traveler{passengersList.length === 1 ? '' : 's'} = <b>${pricing.total} total</b></p>
-                </div>
-                <div className={`booking-itinerary-top-grid ${returnFlight ? 'booking-itinerary-top-grid--roundtrip' : 'booking-itinerary-top-grid--single'}`}>
-                  <ItineraryCard flight={flight} label="Outbound Flight" labelColor="#1e3a5f" isTrain={Boolean(flight?.isTrain)} />
-                  {returnFlight && <ItineraryCard flight={returnFlight} label="Return Flight" labelColor="#8b1538" isTrain={Boolean(returnFlight?.isTrain)} />}
-                </div>
-              </section>
-
-              <section className="booking-v3-section" id="travellers">
-                <div className="booking-v3-section-header booking-v3-section-header--simple">
-                  <div><p className="booking-v3-eyebrow">1. Passenger Details</p><h2>{passengersList.length} Passenger{passengersList.length === 1 ? '' : 's'}</h2></div>
-                </div>
-                <p className="booking-v3-section-intro">Please make sure each full name is entered exactly as it appears on the traveler’s government-issued identification.</p>
-
-                <div className="booking-v3-passenger-list">
-                  {passengersList.map((passenger, index) => (
-                    <div key={index} data-passenger-index={index} className={`passenger-card-block booking-v3-passenger${passengerValidationErrors[index]?.length ? ' tfs-passenger-card-error' : ''}`}>
-                      <div className="booking-v3-passenger-title">
-                        <div><strong>Passenger {index + 1}</strong><span>{safeUpper(passenger.role || 'adult')}</span></div>
-                        <small>All required fields are marked *</small>
-                      </div>
-
-                      <div className="booking-v3-name-grid">
-                        <label className="booking-v3-field booking-v3-title-field">Title *
-                          <select value={passenger.title} onChange={(event) => updatePassenger(index, 'title', event.target.value)}>
-                            <option value="">Select</option><option value="Mr">Mr.</option><option value="Mrs">Mrs.</option><option value="Ms">Ms.</option><option value="Miss">Miss</option><option value="Master">Master</option><option value="Dr">Dr.</option>
-                          </select>
-                        </label>
-                        <label className="booking-v3-field">First Name *<input value={passenger.firstName} onChange={(event) => updatePassenger(index, 'firstName', event.target.value)} placeholder="First Name" /></label>
-                        <label className="booking-v3-field">Middle Name<input value={passenger.middleName} onChange={(event) => updatePassenger(index, 'middleName', event.target.value)} placeholder="Middle Name" /></label>
-                        <label className="booking-v3-field">Last Name *<input value={passenger.lastName} onChange={(event) => updatePassenger(index, 'lastName', event.target.value)} placeholder="Last Name" /></label>
-                        <label className="booking-v3-field booking-v3-suffix-field">Suffix
-                          <select value={passenger.suffix} onChange={(event) => updatePassenger(index, 'suffix', event.target.value)}>
-                            {SUFFIX_OPTIONS.map((suffix) => <option key={suffix || 'none'} value={suffix}>{suffix || '--'}</option>)}
-                          </select>
-                        </label>
-                      </div>
-
-                      <div className="booking-v3-two-grid booking-v3-grid-gap">
-                        <label className="booking-v3-field">Loyalty Program (optional)
-                          <select value={passenger.loyaltyProgram} onChange={(event) => updatePassenger(index, 'loyaltyProgram', event.target.value)}>
-                            {LOYALTY_PROGRAMS.map((program) => <option key={program || 'none'} value={program}>{program || 'Select loyalty program'}</option>)}
-                          </select>
-                        </label>
-                        <label className="booking-v3-field">Frequent Flyer Number (optional)
-                          <input value={passenger.frequentFlyerNumber} onChange={(event) => updatePassenger(index, 'frequentFlyerNumber', event.target.value)} placeholder="Frequent Flyer #" autoComplete="off" />
-                        </label>
-                      </div>
-
-                      <div className="booking-v3-two-grid booking-v3-grid-gap">
-                        <div className="booking-v3-field"><label>Date of Birth *</label><DateOfBirthPicker id={`dob-pass-${index}`} value={passenger.dateOfBirth} onChange={(value) => updatePassenger(index, 'dateOfBirth', value)} /></div>
-                        <label className="booking-v3-field">Gender *
-                          <select value={passenger.gender} onChange={(event) => updatePassenger(index, 'gender', event.target.value)}><option value="">Select Gender</option><option value="male">Male</option><option value="female">Female</option></select>
-                        </label>
-                      </div>
-
-                      <div className="booking-v3-three-grid booking-v3-grid-gap">
-                        <div className="booking-v3-field"><label>Nationality</label><CountrySelect id={`nat-pass-${index}`} value={passenger.nationality} onChange={(value) => updatePassenger(index, 'nationality', value)} /></div>
-                        <label className="booking-v3-field">Passport Number<input value={passenger.passportNumber} onChange={(event) => updatePassenger(index, 'passportNumber', event.target.value)} placeholder="Passport Number" /></label>
-                        <div className="booking-v3-field"><label>Passport Expiry</label><TravelDatePicker id={`passport-exp-${index}`} value={passenger.passportExpiry} onChange={(value) => updatePassenger(index, 'passportExpiry', value)} placeholder="YYYY-MM-DD" /></div>
-                      </div>
-
-                      <div className="booking-v3-secure-flight-info">
-                        <h3>Secure Flight Info <i className="fas fa-info-circle" aria-hidden="true" /></h3>
-                        <div className="booking-v3-two-grid">
-                          <label className="booking-v3-field">Known Traveler # (optional)<input value={passenger.knownTravelerNumber} onChange={(event) => updatePassenger(index, 'knownTravelerNumber', event.target.value)} placeholder="Known Traveler #" autoComplete="off" /></label>
-                          <label className="booking-v3-field">Redress # (optional)<input value={passenger.redressNumber} onChange={(event) => updatePassenger(index, 'redressNumber', event.target.value)} placeholder="Redress #" autoComplete="off" /></label>
-                        </div>
-                      </div>
-
-                      {passengerValidationErrors[index]?.length > 0 && <p className="booking-v3-inline-error">Please check: {passengerValidationErrors[index].join(', ')}</p>}
-                    </div>
-                  ))}
-                </div>
-
-                <div className="booking-v3-actions booking-v3-actions--end">
-                  <button type="button" className="booking-v3-primary" onClick={() => goToStep(2)}>Continue to Contact & Assistance <span aria-hidden="true">→</span></button>
-                </div>
-              </section>
-            </>
+            <PassengerDetailsStep
+              flight={flight}
+              returnFlight={returnFlight}
+              pricing={pricing}
+              passengers={passengersList}
+              passengerErrors={passengerValidationErrors}
+              suffixOptions={SUFFIX_OPTIONS}
+              loyaltyPrograms={LOYALTY_PROGRAMS}
+              onPassengerChange={updatePassenger}
+              onModifySearch={() => setIsModifySearchOpen(true)}
+              onContinue={() => goToStep(2)}
+            />
           )}
 
           {currentStep === 2 && (
-            <section className="booking-v3-section">
-              <div className="booking-v3-section-header booking-v3-section-header--simple">
-                <div><p className="booking-v3-eyebrow">2. Contact & Assistance</p><h1>How should we contact you?</h1></div>
-              </div>
-
-              <div className="booking-v3-subcard">
-                <h2>Primary Contact Details</h2>
-                <label className="booking-v3-toggle-row"><input type="checkbox" checked={contactSameAsTraveller} onChange={(event) => setContactSameAsTraveller(event.target.checked)} /><span>Use Passenger #1 as primary contact</span></label>
-                <div className="booking-v3-two-grid booking-v3-grid-gap">
-                  <label className="booking-v3-field">Contact First Name *<input value={primaryContact.firstName} onChange={(event) => setPrimaryContact((previous) => ({ ...previous, firstName: event.target.value }))} /></label>
-                  <label className="booking-v3-field">Contact Last Name *<input value={primaryContact.lastName} onChange={(event) => setPrimaryContact((previous) => ({ ...previous, lastName: event.target.value }))} /></label>
-                </div>
-                <div className="booking-v3-two-grid booking-v3-grid-gap">
-                  <div className="booking-v3-field"><label>Email Address (For E-Ticket) *</label><EmailInput id="contact-email" value={primaryContact.email} onChange={(value) => setPrimaryContact((previous) => ({ ...previous, email: value }))} required /></div>
-                  <div className="booking-v3-field"><label>Phone Number (For Flight Updates) *</label><InternationalPhoneInput id="contact-phone" value={primaryContact.phone} onChange={(value) => setPrimaryContact((previous) => ({ ...previous, phone: value }))} required /></div>
-                </div>
-              </div>
-
-              <div className="booking-v3-subcard">
-                <h2>Special Requests & Preferences</h2>
-                <div className="booking-v3-two-grid booking-v3-grid-gap">
-                  <label className="booking-v3-field">Meal Preference
-                    <select value={specialRequests.mealPreference} onChange={(event) => setSpecialRequests((previous) => ({ ...previous, mealPreference: event.target.value }))}>
-                      <option value="none">Standard Airline Meal</option><option value="vegetarian">Vegetarian / Vegan</option><option value="kosher">Kosher</option><option value="halal">Halal</option><option value="child">Child Meal</option>
-                    </select>
-                  </label>
-                  <label className="booking-v3-field">Seat Preference
-                    <select value={specialRequests.seatingPreference} onChange={(event) => setSpecialRequests((previous) => ({ ...previous, seatingPreference: event.target.value }))}>
-                      <option value="none">No Preference</option><option value="aisle">Aisle Seat</option><option value="window">Window Seat</option><option value="extra_legroom">Extra Legroom (if available)</option>
-                    </select>
-                  </label>
-                </div>
-                <label className="booking-v3-toggle-row booking-v3-grid-gap"><input type="checkbox" checked={specialRequests.wheelchair} onChange={(event) => setSpecialRequests((previous) => ({ ...previous, wheelchair: event.target.checked }))} /><span>Request Wheelchair Assistance</span></label>
-                <label className="booking-v3-field booking-v3-grid-gap">Additional Airline / Assistance Requests<textarea rows={4} value={specialRequests.notes} onChange={(event) => setSpecialRequests((previous) => ({ ...previous, notes: event.target.value }))} placeholder="Special assistance, seating, or other requests" /></label>
-              </div>
-
-              <div className="booking-v3-actions">
-                <button type="button" className="booking-v3-icon-back" aria-label="Previous step" onClick={() => goToStep(1)}>‹</button>
-                <button type="button" className="booking-v3-primary" onClick={() => goToStep(3)}>Continue to Trip Protection <span aria-hidden="true">→</span></button>
-              </div>
-            </section>
+            <ContactAssistanceStep
+              primaryContact={primaryContact}
+              setPrimaryContact={setPrimaryContact}
+              contactSameAsTraveller={contactSameAsTraveller}
+              setContactSameAsTraveller={setContactSameAsTraveller}
+              specialRequests={specialRequests}
+              setSpecialRequests={setSpecialRequests}
+              onBack={() => goToStep(1)}
+              onContinue={() => goToStep(3)}
+            />
           )}
 
           {currentStep === 3 && (
-            <section className="booking-v3-section booking-v3-protection-section">
-              <div className="booking-v3-section-header booking-v3-section-header--simple">
-                <div><p className="booking-v3-eyebrow">3. Trip Protection & Baggage Fees</p><h1>Extra help when travel plans change</h1></div>
-              </div>
-              <p className="booking-v3-section-intro">Add FareTransit Flex Assist for your trip from {origin} to {destination}{returnFlight ? ` and back to ${finalDestination}` : ''}.</p>
-              <p className="booking-v3-required-choice"><b>* Required:</b> Select Yes or No to continue</p>
-
-              <button type="button" className={`booking-v3-protection-card${tripProtection === true ? ' is-selected' : ''}`} onClick={() => selectProtection(true)} disabled={protectionSaving}>
-                <span className="booking-v3-radio" aria-hidden="true"><span /></span>
-                <div className="booking-v3-protection-content">
-                  <div className="booking-v3-protection-choice-row">
-                    <strong>Yes, add FareTransit Flex Assist for ${flexAmount.toFixed(2)} total.</strong>
-                    <span className="booking-v3-recommended">HIGHLY RECOMMENDED</span>
-                  </div>
-                  <div className="booking-v3-benefits">
-                    <div><i className="fas fa-exchange-alt" /><span><b>Changes made easier</b><small>Get help reviewing flight-change and rebooking options when plans change.</small></span></div>
-                    <div><i className="far fa-clock" /><span><b>Delay & rebooking support</b><small>A FareTransit specialist can help you navigate available alternatives.</small></span></div>
-                    <div><i className="fas fa-suitcase" /><span><b>Baggage assistance</b><small>Get help coordinating baggage requests and airline support.</small></span></div>
-                    <div><i className="fas fa-headset" /><span><b>Anytime help</b><small>FareTransit travel specialists are available to assist with your reservation.</small></span></div>
-                  </div>
-                </div>
-              </button>
-
-              <button type="button" className={`booking-v3-protection-no${tripProtection === false ? ' is-selected' : ''}`} onClick={() => selectProtection(false)} disabled={protectionSaving}>
-                <span className="booking-v3-radio" aria-hidden="true"><span /></span>
-                <strong>No, do not add Flex Assist to my ${Number(pricing.total).toFixed(2)} trip.</strong>
-              </button>
-
-              <p className="booking-v3-flex-disclaimer">Flex Assist is a FareTransit agency service, not travel insurance or an airline flexible fare. Airline fare differences, penalties, taxes, availability and fare rules may still apply.</p>
-
-              <div className="booking-v3-actions">
-                <button type="button" className="booking-v3-icon-back" aria-label="Previous step" onClick={() => goToStep(2)}>‹</button>
-                <button type="button" className="booking-v3-primary" onClick={() => goToStep(4)} disabled={protectionSaving || typeof tripProtection !== 'boolean'}>{protectionSaving ? 'Saving selection…' : <>Continue to Payment <span aria-hidden="true">→</span></>}</button>
-              </div>
-            </section>
+            <TripProtectionStep
+              origin={origin}
+              destination={destination}
+              finalDestination={finalDestination}
+              hasReturn={Boolean(returnFlight)}
+              tripProtection={tripProtection}
+              flexAmount={flexAmount}
+              baseFare={pricing.total}
+              syncPending={protectionSyncPending}
+              syncWarning={protectionSyncWarning}
+              onSelect={selectProtection}
+              onBack={() => goToStep(2)}
+              onContinue={() => goToStep(4)}
+            />
           )}
 
           {currentStep === 4 && (
-            <section className="booking-v3-section booking-v3-payment-section">
-              <div className="booking-v3-section-header booking-v3-section-header--simple">
-                <div><p className="booking-v3-eyebrow">4. Payment & Billing</p><h1>Card & Billing Details</h1></div>
-              </div>
-
-              <div className="booking-v3-checkout-summary">
-                <div><span>Trip</span><strong>{origin} → {destination}{returnFlight ? ` → ${finalDestination}` : ''}</strong></div>
-                <div><span>Travelers</span><strong>{passengersList.length}</strong></div>
-                <div><span>Reservation Total</span><strong className="booking-itinerary-pricing-summary__discounted">${reservationTotal.toFixed(2)} USD</strong></div>
-              </div>
-
-              <div className="booking-v3-payment-card card-payment-container">
-                <div className="booking-v3-payment-title-row">
-                  <div className="booking-v3-payment-title"><span className="booking-v3-payment-radio"><span /></span><h2>Add New Credit or Debit Card</h2></div>
-                  <div className="booking-v3-card-logos" aria-label="Accepted card brands">
-                    <i className="fab fa-cc-amex" title="American Express" /><i className="fab fa-cc-visa" title="Visa" /><i className="fab fa-cc-mastercard" title="Mastercard" /><i className="fab fa-cc-discover" title="Discover" /><i className="fab fa-cc-jcb" title="JCB" /><i className="fab fa-cc-diners-club" title="Diners Club" /><span>UATP</span>
-                  </div>
-                </div>
-                <p className="booking-v3-required-note">All fields are required unless noted</p>
-
-                <PaymentCardEntry
-                  ref={paymentCardRef}
-                  nameOnCard={billing.cardholderName}
-                  onNameChange={(value) => setBilling((previous) => ({ ...previous, cardholderName: value }))}
-                  onFocus={() => { setCardError(''); setFieldErrors({}); }}
-                />
-                {fieldErrors.cardholderName && <p className="booking-v3-field-error">{fieldErrors.cardholderName}</p>}
-
-                <label className="booking-v3-floating-field booking-v3-payment-full-field">
-                  <span>Country</span>
-                  <select value={billing.country} onChange={(event) => setBilling((previous) => ({ ...previous, country: event.target.value, state: event.target.value === 'United States' ? previous.state : '' }))}>
-                    {COUNTRY_OPTIONS.map((country) => <option key={country} value={country}>{country}</option>)}
-                  </select>
-                </label>
-                {fieldErrors.country && <p className="booking-v3-field-error">{fieldErrors.country}</p>}
-
-                <label className="booking-v3-floating-field booking-v3-payment-full-field">
-                  <span>Address Line 1</span>
-                  <input id="billingAddress" value={billing.addressLine1} onChange={(event) => setBilling((previous) => ({ ...previous, addressLine1: event.target.value }))} placeholder="Address Line 1" autoComplete="address-line1" />
-                </label>
-                {fieldErrors.addressLine1 && <p className="booking-v3-field-error">{fieldErrors.addressLine1}</p>}
-
-                <label className="booking-v3-floating-field booking-v3-payment-full-field">
-                  <span>Address Line 2 (optional)</span>
-                  <input value={billing.addressLine2} onChange={(event) => setBilling((previous) => ({ ...previous, addressLine2: event.target.value }))} placeholder="Address Line 2" autoComplete="address-line2" />
-                </label>
-
-                <div className="booking-v3-address-row">
-                  <label className="booking-v3-floating-field">
-                    <span>City</span>
-                    <input value={billing.city} onChange={(event) => setBilling((previous) => ({ ...previous, city: event.target.value }))} placeholder="City" autoComplete="address-level2" />
-                  </label>
-                  <label className="booking-v3-floating-field">
-                    <span>State/Province</span>
-                    {billing.country === 'United States' ? (
-                      <select value={billing.state} onChange={(event) => setBilling((previous) => ({ ...previous, state: event.target.value }))} autoComplete="address-level1">
-                        <option value="">State/Province</option>
-                        {US_STATES.map(([code, name]) => <option key={code} value={code}>{name}</option>)}
-                      </select>
-                    ) : (
-                      <input value={billing.state} onChange={(event) => setBilling((previous) => ({ ...previous, state: event.target.value }))} placeholder="State/Province" autoComplete="address-level1" />
-                    )}
-                  </label>
-                  <label className="booking-v3-floating-field">
-                    <span>Postal Code</span>
-                    <input value={billing.postalCode} onChange={(event) => setBilling((previous) => ({ ...previous, postalCode: event.target.value }))} placeholder="Postal Code" autoComplete="postal-code" />
-                  </label>
-                </div>
-                {(fieldErrors.city || fieldErrors.state || fieldErrors.postalCode) && <p className="booking-v3-field-error">{fieldErrors.city || fieldErrors.state || fieldErrors.postalCode}</p>}
-              </div>
-
-              <div className="booking-v3-price-breakdown price-breakdown-section">
-                <div className="price-row"><span>Flight fare</span><strong>${Number(pricing.total).toFixed(2)}</strong></div>
-                <div className="price-row"><span>FareTransit Flex Assist</span><strong>{tripProtection ? `$${flexAmount.toFixed(2)}` : '$0.00'}</strong></div>
-                <div className="price-row price-row--total"><span>Reservation total</span><strong className="price-total-amount booking-itinerary-pricing-summary__discounted">${reservationTotal.toFixed(2)} USD</strong></div>
-              </div>
-
-              <div className="verification-block" />
-
-              <div className="booking-v3-availability-note"><i className="fas fa-headset" aria-hidden="true" /><p>Our travel specialist may call you to confirm your itinerary based on availability.</p></div>
-
-              <label className="booking-v3-terms">
-                <input type="checkbox" checked={termsAccepted} onChange={(event) => setTermsAccepted(event.target.checked)} />
-                <span>I agree to the <Link to="/terms" target="_blank">Terms of Service</Link>, <Link to="/privacy-policy" target="_blank">Privacy Policy</Link>, and <Link to="/refund-policy" target="_blank">Refund Policy</Link>. I verify that passenger details match official identification.</span>
-              </label>
-
-              <div className="booking-v3-actions">
-                <button type="button" className="booking-v3-icon-back" aria-label="Previous step" onClick={() => goToStep(3)}>‹</button>
-                <button type="submit" className="amtrak-btn amtrak-btn--cta amtrak-btn--full booking-v3-primary booking-v3-submit-btn" disabled={processing || !termsAccepted}>
-                  {processing ? <><i className="fas fa-circle-notch fa-spin" /> Processing Reservation…</> : <span>Complete Reservation</span>}
-                </button>
-              </div>
-            </section>
+            <PaymentBillingStep
+              paymentCardRef={paymentCardRef}
+              billing={billing}
+              setBilling={setBilling}
+              fieldErrors={fieldErrors}
+              clearCardErrors={() => { setCardError(''); setFieldErrors({}); }}
+              countries={COUNTRY_OPTIONS}
+              usStates={US_STATES}
+              tripProtection={tripProtection}
+              flexAmount={flexAmount}
+              baseFare={pricing.total}
+              reservationTotal={reservationTotal}
+              termsAccepted={termsAccepted}
+              setTermsAccepted={setTermsAccepted}
+              processing={processing}
+              onBack={() => goToStep(3)}
+            />
           )}
         </form>
       </main>
@@ -858,5 +649,3 @@ function BookingPageV3({ initialJourneyPayload = null }) {
     </div>
   );
 }
-
-export default BookingPageV3;
