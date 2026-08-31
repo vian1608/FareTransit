@@ -21,10 +21,14 @@ const checkout = {
 
 const quote = buildAuthoritativeTripAddonQuote(checkout);
 assert.equal(quote.ticketBase, 1000, 'ticket base must be canonical party selling price');
-assert.equal(quote.flexAssist.rate, 0.10, 'browser cannot override Flex rate');
-assert.equal(quote.flexAssist.price, 100, 'Flex must be exactly 10% of pre-voucher ticket base');
+assert.equal(quote.flexAssist.regularRate, 0.11, 'browser cannot override the Flex regular schedule');
+assert.equal(quote.flexAssist.offerRate, 0.085, 'browser cannot override the Flex offer schedule');
+assert.equal(quote.flexAssist.regularPrice, 110, 'regular Flex price must follow the server schedule');
+assert.equal(quote.flexAssist.offerPrice, 85, 'promotional Flex price must follow the server schedule');
+assert.equal(quote.flexAssist.price, 85, 'the amount charged with the booking is the promotional price');
+assert.equal(quote.flexAssist.savings, 25);
 assert.equal(quote.flexAssist.termsVersion, 'FLEX_V1');
-assert.equal(quote.addOnTotal, 100, 'request-only baggage cannot enter airfare add-on total');
+assert.equal(quote.addOnTotal, 85, 'request-only baggage cannot enter airfare add-on total');
 assert.equal(quote.baggage[0].quantity, 3, 'baggage must be capped at three per traveler/direction');
 assert.equal(quote.baggage[0].unitPrice, 0, 'browser baggage price must be ignored');
 assert.equal(quote.baggage[0].totalPrice, 0);
@@ -32,9 +36,10 @@ assert.equal(quote.baggage[0].termsVersion, 'BAGGAGE_REQUEST_V1');
 
 const priced = applyAuthoritativeTripAddonPricing({ customer_price: 1, voucher_discount: 50, minimum_payable_floor: 0 }, quote);
 assert.equal(priced.ticket_component_total, 950, 'voucher applies to ticket component');
-assert.equal(priced.flex_assist_fee, 100, 'voucher must not discount Flex');
-assert.equal(priced.customer_price, 1050, 'final total = discounted ticket + Flex only');
-assert.equal(priced.price_before_voucher, 1100);
+assert.equal(priced.flex_assist_fee, 85, 'voucher must not discount the Flex promotional price');
+assert.equal(priced.flex_assist_regular_price, 110, 'regular Flex comparison price remains auditable');
+assert.equal(priced.customer_price, 1035, 'final total = discounted ticket + promotional Flex only');
+assert.equal(priced.price_before_voucher, 1085);
 
 const noFlex = buildAuthoritativeTripAddonQuote({
   searchParams: { adults: 1 },
