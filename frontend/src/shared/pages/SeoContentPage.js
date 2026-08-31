@@ -3,7 +3,7 @@ import { Link, Navigate, useLocation } from 'react-router-dom';
 import SeoPage from '../components/SeoPage';
 import seoPages from '../data/seoPages.json';
 import seoContent from '../data/seoContent.json';
-import { analytics } from '../utils/analytics';
+import { trackSeoInternalClick, trackSeoPageView } from '../utils/ga4Seo';
 import './SeoContentPage.css';
 
 const pageByPath = new Map(seoPages.map((page) => [page.path, page]));
@@ -41,10 +41,12 @@ export default function SeoContentPage() {
   const breadcrumbs = useMemo(() => buildBreadcrumbs(path), [path]);
 
   useEffect(() => {
-    if (content && meta) {
-      analytics.trackSeoPageView(path);
-    }
+    if (content && meta) trackSeoPageView(path);
   }, [content, meta, path]);
+
+  const trackLink = (linkPath, linkType = 'internal') => {
+    trackSeoInternalClick({ pagePath: path, linkPath, linkType });
+  };
 
   if (!content || !meta) {
     return <Navigate to="/" replace />;
@@ -70,7 +72,7 @@ export default function SeoContentPage() {
               {crumb.current ? (
                 <span aria-current="page">{crumb.name}</span>
               ) : (
-                <Link to={crumb.path}>{crumb.name}</Link>
+                <Link to={crumb.path} onClick={() => trackLink(crumb.path, 'breadcrumb')}>{crumb.name}</Link>
               )}
             </React.Fragment>
           ))}
@@ -101,7 +103,9 @@ export default function SeoContentPage() {
                 {section.links?.length > 0 && (
                   <div className="seo-inline-links">
                     {section.links.map((link) => (
-                      <Link to={link.to} key={link.to}>{link.label}<span aria-hidden="true"> →</span></Link>
+                      <Link to={link.to} key={link.to} onClick={() => trackLink(link.to, 'contextual')}>
+                        {link.label}<span aria-hidden="true"> →</span>
+                      </Link>
                     ))}
                   </div>
                 )}
@@ -115,7 +119,9 @@ export default function SeoContentPage() {
               <h2>Continue planning</h2>
               <div className="seo-related-links">
                 {content.relatedLinks?.map((link) => (
-                  <Link to={link.to} key={link.to}>{link.label}<span aria-hidden="true">→</span></Link>
+                  <Link to={link.to} key={link.to} onClick={() => trackLink(link.to, 'related')}>
+                    {link.label}<span aria-hidden="true">→</span>
+                  </Link>
                 ))}
               </div>
             </div>
@@ -123,7 +129,7 @@ export default function SeoContentPage() {
             <div className="seo-trust-card">
               <strong>Independent travel assistance</strong>
               <p>FareTransit is an independent travel agency/service provider. Airline names and trademarks belong to their respective owners.</p>
-              <Link to="/about">About FareTransit</Link>
+              <Link to="/about" onClick={() => trackLink('/about', 'trust')}>About FareTransit</Link>
             </div>
           </aside>
         </main>
@@ -135,14 +141,20 @@ export default function SeoContentPage() {
               <h2>{content.cta.title}</h2>
               <p>{content.cta.text}</p>
             </div>
-            <Link className="seo-content-cta__button" to={content.cta.to}>{content.cta.label}</Link>
+            <Link
+              className="seo-content-cta__button"
+              to={content.cta.to}
+              onClick={() => trackLink(content.cta.to, 'cta')}
+            >
+              {content.cta.label}
+            </Link>
           </section>
         )}
 
         <div className="seo-reviewed-note">
           <span>Reviewed {meta.lastmod}</span>
           <span aria-hidden="true">•</span>
-          <Link to="/editorial-policy">Editorial policy</Link>
+          <Link to="/editorial-policy" onClick={() => trackLink('/editorial-policy', 'editorial-policy')}>Editorial policy</Link>
         </div>
       </div>
     </div>
