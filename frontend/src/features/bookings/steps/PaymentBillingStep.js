@@ -4,6 +4,7 @@ import AddressAutocompleteInput from '../../../shared/components/AddressAutocomp
 import PaymentCardEntry from '../components/PaymentCardEntry';
 import '../pages/BookingPageV3Premium.css';
 import '../pages/BookingPageV3VisualPolish.css';
+import '../pages/BookingPageV3PaymentFixes.css';
 
 const FLEX_OFFER_RATE = 0.085;
 
