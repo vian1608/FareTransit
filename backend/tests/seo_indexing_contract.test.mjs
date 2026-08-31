@@ -91,7 +91,8 @@ assert.match(indexHtml, /"@type": "TravelAgency"/);
 assert.match(indexHtml, /"@type": "WebSite"/);
 assert.match(indexHtml, /"legalName": "FareTransit LLC"/);
 assert.match(indexHtml, /"@type": "PostalAddress"/);
-assert.match(indexHtml, /"addressLocality": "Casper"/);
+assert.match(indexHtml, /"addressLocality": "Sheridan"/);
+assert.match(indexHtml, /"postalCode": "82801"/);
 
 const vercelConfig = JSON.parse(vercel);
 const canonicalHostRedirect = (vercelConfig.redirects || []).find((rule) =>
