@@ -5,6 +5,7 @@ const ORIGIN = 'https://www.faretransit.com';
 
 const organizationRef = { '@id': `${ORIGIN}/#organization` };
 const websiteRef = { '@id': `${ORIGIN}/#website` };
+const WEBPAGE_TYPES = new Set(['WebPage', 'AboutPage', 'ContactPage', 'CollectionPage']);
 
 export default function SeoPage({
   path,
@@ -19,10 +20,11 @@ export default function SeoPage({
   const canonicalPath = path === '/' ? '/' : path.replace(/\/+$/, '');
   const canonicalUrl = `${ORIGIN}${canonicalPath}`;
   const imageUrl = image.startsWith('http') ? image : `${ORIGIN}${image}`;
+  const webPageType = WEBPAGE_TYPES.has(type) ? type : 'WebPage';
 
   const webPageSchema = {
     '@context': 'https://schema.org',
-    '@type': type === 'Article' ? 'WebPage' : type,
+    '@type': webPageType,
     '@id': `${canonicalUrl}#webpage`,
     url: canonicalUrl,
     name: pageName || title,
@@ -42,6 +44,17 @@ export default function SeoPage({
     publisher: organizationRef,
     author: organizationRef,
     ...(dateModified ? { dateModified } : {}),
+  } : null;
+
+  const serviceSchema = type === 'Service' ? {
+    '@context': 'https://schema.org',
+    '@type': 'Service',
+    '@id': `${canonicalUrl}#service`,
+    name: pageName || title,
+    description,
+    url: canonicalUrl,
+    provider: organizationRef,
+    areaServed: { '@type': 'Country', name: 'United States' },
   } : null;
 
   const breadcrumbItems = breadcrumbs.length
@@ -76,13 +89,14 @@ export default function SeoPage({
       <meta property="og:url" content={canonicalUrl} />
       <meta property="og:image" content={imageUrl} />
 
-      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:card" content="summary" />
       <meta name="twitter:title" content={title} />
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={imageUrl} />
 
       <script type="application/ld+json">{JSON.stringify(webPageSchema)}</script>
       {articleSchema && <script type="application/ld+json">{JSON.stringify(articleSchema)}</script>}
+      {serviceSchema && <script type="application/ld+json">{JSON.stringify(serviceSchema)}</script>}
       {breadcrumbSchema && <script type="application/ld+json">{JSON.stringify(breadcrumbSchema)}</script>}
     </Helmet>
   );
