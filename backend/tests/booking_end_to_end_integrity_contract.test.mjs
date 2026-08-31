@@ -14,6 +14,7 @@ const traveller = read('backend/src/modules/travellers/traveller.service.mjs');
 const travellerRepo = read('backend/src/modules/travellers/traveller.repository.mjs');
 const passengerProfile = read('backend/src/modules/bookings/booking.service.passenger-profile-hardening.mjs');
 const bookingPage = read('frontend/src/features/bookings/pages/BookingPageV3.js');
+const paymentStep = read('frontend/src/features/bookings/steps/PaymentBillingStep.js');
 const paymentCard = read('frontend/src/features/bookings/components/PaymentCardEntry.js');
 const manualRoutes = read('backend/src/modules/secure-payments/secure-payment.routes.mjs');
 const createNormalization = read('backend/src/modules/bookings/booking-create-normalization.mjs');
@@ -87,7 +88,7 @@ assert.match(passengerProfile, /redress_number/);
 // The public form may visually accept the complete card number and CID/CVV, but
 // those values live only in PaymentCardEntry. The booking payload contains only
 // masked metadata plus billing data, and the backend still rejects sensitive keys.
-assert.match(bookingPage, /PaymentCardEntry/);
+assert.match(paymentStep, /PaymentCardEntry/);
 assert.match(bookingPage, /getMaskedMetadata/);
 assert.match(bookingPage, /cardLast4:\s*card\.last4/);
 assert.match(bookingPage, /cardBrand:\s*card\.cardBrand/);
