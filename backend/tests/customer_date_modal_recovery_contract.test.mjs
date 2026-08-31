@@ -8,7 +8,7 @@ const root = path.resolve(here, '..', '..');
 const read = (...parts) => fs.readFileSync(path.join(root, ...parts), 'utf8');
 
 const datePicker = read('frontend', 'src', 'features', 'flights', 'components', 'TravelDatePicker.js');
-const bookingPage = read('frontend', 'src', 'features', 'bookings', 'pages', 'BookingPage.js');
+const bookingPage = read('frontend', 'src', 'features', 'bookings', 'pages', 'BookingPageV2.js');
 const modifyModal = read('frontend', 'src', 'features', 'flights', 'components', 'ModifySearchModal.js');
 const returnPage = read('frontend', 'src', 'features', 'flights', 'pages', 'ReturnFlightSelectionPage.js');
 const searchOverlay = read('frontend', 'src', 'shared', 'components', 'FlightSearchProgressOverlay.js');

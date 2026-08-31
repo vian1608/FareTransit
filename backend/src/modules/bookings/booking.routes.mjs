@@ -4,11 +4,14 @@ import rateLimit from '../../middleware/rate-limit.mjs';
 import { abandonedBookingRouter } from '../abandoned-bookings/abandoned-booking.routes.mjs';
 import { normalizeBookingCreateRequest } from './booking-create-normalization.mjs';
 import applyVoucherPricingToBooking from '../vouchers/voucher-booking.middleware.mjs';
+import syncTripAddonRequestToCheckout from '../journey-sessions/trip-addon-request-sync.middleware.mjs';
 import completeJourneySessionAfterBooking from '../journey-sessions/checkout-session-booking.middleware.mjs';
 import './booking.repository.egress-hardening.mjs';
 import './booking.service.status-hardening.mjs';
 import './booking.service.addon-hardening.mjs';
 import './booking.service.trip-addon-parity-hardening.mjs';
+import './booking.service.passenger-profile-hardening.mjs';
+import './booking.service.assistance-hardening.mjs';
 
 const router = express.Router();
 
@@ -35,6 +38,7 @@ router.post(
   bookingRateLimiter,
   normalizeBookingCreateRequest,
   applyVoucherPricingToBooking,
+  syncTripAddonRequestToCheckout,
   completeJourneySessionAfterBooking,
   bookingController.create
 );

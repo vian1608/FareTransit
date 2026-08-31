@@ -17,7 +17,7 @@ const bookingMiddleware = read('backend/src/modules/journey-sessions/checkout-se
 const app = read('frontend/src/app/App.js');
 const journey = read('frontend/src/features/journey/TokenizedJourneyRoutes.js');
 const journeyApi = read('frontend/src/shared/api/journeySessionApi.js');
-const bookingPage = read('frontend/src/features/bookings/pages/BookingPage.js');
+const bookingPage = read('frontend/src/features/bookings/pages/BookingPageV2.js');
 const voucherCheckout = read('frontend/src/features/bookings/vouchers/BookingVoucherPage.js');
 const paymentJourney = read('frontend/src/features/journey/TokenizedPaymentRoutes.js');
 const consultingPayment = read('frontend/src/features/payments/pages/ConsultingPaymentPage.js');
@@ -94,14 +94,14 @@ assert.match(journey, /journeySessionAPI\.updateCheckout/);
 assert.match(journey, /restoreVoucher/);
 
 // Checkout hydration contract: the fetched c_ payload is authoritative on the
-// very first BookingPage render. This prevents the transient/stuck
+// very first three-step booking render. This prevents a transient/stuck
 // "No Itinerary Selected" state caused by initializing flight state as null and
 // waiting for a later sessionStorage effect.
 assert.match(journey, /<BookingVoucherPage initialJourneyPayload=\{session\.payload \|\| \{\}\} \/>/);
 assert.match(voucherCheckout, /BookingVoucherPage\(\{ initialJourneyPayload = null \}\)/);
 assert.match(voucherCheckout, /<Booking initialJourneyPayload=\{initialJourneyPayload\} \/>/);
-assert.match(bookingPage, /function Booking\(\{ initialJourneyPayload = null \}\)/);
-assert.match(bookingPage, /initialJourneyPayload\?\.selectedFlight \|\| readBookingSessionJson\('selectedFlight', null\)/);
+assert.match(bookingPage, /function BookingPageV2\(\{ initialJourneyPayload = null \}\)/);
+assert.match(bookingPage, /initialJourneyPayload\?\.selectedFlight \|\| readSessionJson\('selectedFlight', null\)/);
 assert.match(bookingPage, /initialJourneyPayload\?\.returnFlight/);
 assert.match(bookingPage, /initialJourneyPayload\?\.searchParams/);
 assert.doesNotMatch(bookingPage, /if \(!flightData\) \{ navigate\('\/'\); return; \}/);

@@ -11,10 +11,16 @@ const repo = read('backend/src/modules/bookings/booking.repository.mjs');
 const service = read('backend/src/modules/bookings/booking.service.mjs');
 const mapper = read('backend/src/modules/bookings/booking.mapper.mjs');
 const traveller = read('backend/src/modules/travellers/traveller.service.mjs');
-const bookingPage = read('frontend/src/features/bookings/pages/BookingPage.js');
-const manualCheckout = read('frontend/src/features/secure-payments/ManualPaymentCardFields.js');
-const securePaymentRoutes = read('backend/src/modules/secure-payments/secure-payment.routes.mjs');
+const travellerRepo = read('backend/src/modules/travellers/traveller.repository.mjs');
+const passengerProfile = read('backend/src/modules/bookings/booking.service.passenger-profile-hardening.mjs');
+const bookingPage = read('frontend/src/features/bookings/pages/BookingPageV3.js');
+const paymentStep = read('frontend/src/features/bookings/steps/PaymentBillingStep.js');
+const paymentCard = read('frontend/src/features/bookings/components/PaymentCardEntry.js');
+const manualRoutes = read('backend/src/modules/secure-payments/secure-payment.routes.mjs');
+const createNormalization = read('backend/src/modules/bookings/booking-create-normalization.mjs');
+const routeIndex = read('backend/src/routes/index.mjs');
 const migration = read('backend/migrations/035_booking_integrity_hardening.sql');
+const passengerMigration = read('backend/migrations/122_passenger_loyalty_fields.sql');
 
 // Booking creation is database-authoritative. Never report success from a fake
 // memory-only UUID or swallow a failed contact/payment write.
@@ -32,7 +38,7 @@ assert.match(mapper, /idempotency_key:\s*clientReqId/);
 assert.match(repo, /client_request_id:\s*clientReqId/);
 assert.match(repo, /idempotency_key:/);
 
-// Payment state reaching Postgres is canonical after migration 033.
+// Payment state reaching Postgres is canonical.
 assert.match(mapper, /payment_status:\s*String\(payload\.paymentStatus \|\| 'PENDING'\)\.toUpperCase\(\)/);
 assert.match(service, /paymentStatus:\s*'PENDING'/);
 assert.match(service, /payment_status:\s*'PENDING'/);
@@ -45,13 +51,17 @@ assert.match(service, /const contactEmail = String\(payload\.email/);
 assert.match(service, /rawPhone\.match\(\/\^\(\\\+\\d\{1,4\}\)\\s\+\//);
 assert.doesNotMatch(service, /rawPhone\.startsWith\('\+'\) \? rawPhone\.split\(' '\)\[0\]/);
 
-// Passenger contract: visible required fields are required server-side and the
-// customer UI must use the same shared React-side completion predicate.
+// Passenger contract: visible required fields are validated in step one and the
+// backend independently enforces the same identity requirements.
 assert.match(traveller, /Title is required/);
 assert.match(traveller, /Gender is required/);
-assert.match(bookingPage, /PASSENGER_REQUIRED_FIELDS/);
-assert.match(bookingPage, /isPassengerRequiredComplete/);
-assert.match(bookingPage, /getMissingPassengerFields/);
+assert.match(bookingPage, /const validateTravellers = \(\) =>/);
+assert.match(bookingPage, /\['title', 'Title'\]/);
+assert.match(bookingPage, /\['firstName', 'First Name'\]/);
+assert.match(bookingPage, /\['lastName', 'Last Name'\]/);
+assert.match(bookingPage, /\['gender', 'Gender'\]/);
+assert.match(bookingPage, /\['dateOfBirth', 'Date of Birth'\]/);
+assert.match(bookingPage, /validateDateOfBirth/);
 
 // Explicit infant types survive search -> checkout -> persisted traveller row.
 assert.match(bookingPage, /infantsInSeat/);
@@ -63,29 +73,47 @@ assert.match(mapper, /infantType:\s*t\.infant_type/);
 assert.match(migration, /ADD COLUMN IF NOT EXISTS infant_type VARCHAR\(20\)/);
 assert.match(migration, /'IN_SEAT','ON_LAP'|'IN_SEAT', 'ON_LAP'/);
 
-// Card security contract: the booking page collects only masked manual payment
-// metadata. FareTransit never accepts or stores a full PAN/card number or CVV.
-assert.match(bookingPage, /ManualPaymentCardFields/);
-assert.match(bookingPage, /secureCardRef/);
-assert.match(bookingPage, /secureBooking/);
-assert.match(bookingPage, /payment_provider:\s*'manual'/);
-assert.doesNotMatch(bookingPage, /cleanCardNum/);
+// Suffix, loyalty and secure-flight reference fields have durable DB storage.
+assert.match(passengerMigration, /suffix varchar\(20\)/i);
+assert.match(passengerMigration, /loyalty_program varchar\(100\)/i);
+assert.match(passengerMigration, /frequent_flyer_number varchar\(100\)/i);
+assert.match(passengerMigration, /known_traveler_number varchar\(100\)/i);
+assert.match(passengerMigration, /redress_number varchar\(100\)/i);
+assert.match(travellerRepo, /loyalty_program:/);
+assert.match(travellerRepo, /frequent_flyer_number:/);
+assert.match(passengerProfile, /persistProfiles/);
+assert.match(passengerProfile, /known_traveler_number/);
+assert.match(passengerProfile, /redress_number/);
+
+// The public form may visually accept the complete card number and CID/CVV, but
+// those values live only in PaymentCardEntry. The booking payload contains only
+// masked metadata plus billing data, and the backend still rejects sensitive keys.
+assert.match(paymentStep, /PaymentCardEntry/);
+assert.match(bookingPage, /getMaskedMetadata/);
+assert.match(bookingPage, /cardLast4:\s*card\.last4/);
+assert.match(bookingPage, /cardBrand:\s*card\.cardBrand/);
+assert.match(bookingPage, /billingPostalCode:\s*billing\.postalCode/);
 assert.doesNotMatch(bookingPage, /cardNumber\s*:/);
 assert.doesNotMatch(bookingPage, /\bcvv\s*:/i);
-assert.match(manualCheckout, /getMaskedMetadata/);
-assert.match(manualCheckout, /last4/);
-assert.match(manualCheckout, /expMonth/);
-assert.match(manualCheckout, /expYear/);
-assert.doesNotMatch(manualCheckout, /createAliases|panAlias|cvvAlias|card-number|security-code|VGSCollect|VGSShow/i);
-assert.match(securePaymentRoutes, /SENSITIVE_CARD_DATA_NOT_ACCEPTED/);
-assert.match(securePaymentRoutes, /rejectSensitiveCardPayload/);
-assert.match(securePaymentRoutes, /payment_provider:\s*'manual'/);
-assert.match(securePaymentRoutes, /tokenization_status:\s*'MANUAL_METADATA'/);
+assert.match(paymentCard, /const \[cardNumber, setCardNumber\] = useState\(''\)/);
+assert.match(paymentCard, /const \[securityCode, setSecurityCode\] = useState\(''\)/);
+assert.match(paymentCard, /autoComplete="cc-number"/);
+assert.match(paymentCard, /autoComplete="cc-csc"/);
+assert.match(paymentCard, /getMaskedMetadata/);
+assert.doesNotMatch(paymentCard, /bookingAPI|sessionStorage|localStorage|fetch\(/);
+assert.match(manualRoutes, /SENSITIVE_CARD_DATA_NOT_ACCEPTED/);
+assert.match(manualRoutes, /rejectSensitiveCardPayload/);
+assert.match(manualRoutes, /payment_provider:\s*'manual'/);
+assert.match(manualRoutes, /card_last4/);
+assert.match(manualRoutes, /billing_postal_code/);
+assert.match(createNormalization, /normalized\.payment_provider = 'manual'/);
+assert.doesNotMatch(routeIndex, /nmi-vault|paypalController|whopRouter|paymentRouter/);
 
-// Checkout token is a stable idempotency identity, and confirmation prefers the
-// opaque read token when available.
+// Checkout token is a stable idempotency identity, Flex is stored into that
+// checkout session, and confirmation prefers the opaque reservation-read token.
 assert.match(bookingPage, /checkout:\$\{sessionStorage\.getItem\('checkoutSessionToken'\)\}/);
-assert.match(bookingPage, /reservationReadToken/);
-assert.match(bookingPage, /const confirmationRef = readToken \|\| bCode/);
+assert.match(bookingPage, /journeySessionAPI\.updateCheckout/);
+assert.match(bookingPage, /flexAssist/);
+assert.match(bookingPage, /reservationReadToken \|\| bookingCode/);
 
 console.log('booking end-to-end integrity contract: PASS');

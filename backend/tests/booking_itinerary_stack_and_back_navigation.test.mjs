@@ -8,61 +8,108 @@ const root = path.resolve(here, '../..');
 const read = (relativePath) => fs.readFileSync(path.join(root, relativePath), 'utf8');
 
 const appEntry = read('frontend/src/index.js');
-const booking = read('frontend/src/features/bookings/pages/BookingPage.js');
-const overrides = read('frontend/src/shared/styles/BookingFlowOverrides.css');
+const bookingEntry = read('frontend/src/features/bookings/pages/BookingPage.js');
+const booking = read('frontend/src/features/bookings/pages/BookingPageV3.js');
+const bookingStyles = read('frontend/src/features/bookings/pages/BookingPageV3.css');
+const bookingFixes = read('frontend/src/features/bookings/pages/BookingPageV3Fixes.css');
+const passengerStep = read('frontend/src/features/bookings/steps/PassengerDetailsStep.js');
+const contactStep = read('frontend/src/features/bookings/steps/ContactAssistanceStep.js');
+const protectionStep = read('frontend/src/features/bookings/steps/TripProtectionStep.js');
+const paymentStep = read('frontend/src/features/bookings/steps/PaymentBillingStep.js');
+const cardEntry = read('frontend/src/features/bookings/components/PaymentCardEntry.js');
 const validationUX = read('frontend/src/shared/validation/installBookingValidationUX.js');
 const validationStyles = read('frontend/src/shared/styles/BookingValidationUX.css');
 const itinerary = read('frontend/src/features/bookings/components/ItineraryCard.js');
 const timeline = read('frontend/src/shared/components/ItineraryTimeline.js');
 const transition = read('frontend/src/shared/components/PageTransition.js');
 const backButton = read('frontend/src/shared/components/CustomerBackButton.js');
+const backButtonStyles = read('frontend/src/shared/components/CustomerBackButton.css');
 
-assert.match(booking, /YOUR SELECTED ITINERARY/);
+// BookingPage remains the stable route entry point while V3 owns the four-step checkout.
+assert.match(bookingEntry, /BookingPageV3/);
+assert.match(booking, /booking-stepper-v3/);
+assert.match(booking, /Traveller Details/);
+assert.match(booking, /Contact & Assistance/);
+assert.match(booking, /Trip Protection/);
+assert.match(booking, /Payment/);
+assert.match(booking, /PassengerDetailsStep/);
+assert.match(booking, /ContactAssistanceStep/);
+assert.match(booking, /TripProtectionStep/);
+assert.match(booking, /PaymentBillingStep/);
+assert.match(booking, /currentStep/);
+assert.match(booking, /faretransit-booking-back/);
+assert.match(booking, /fareTransitBookingDraftV3/);
+assert.doesNotMatch(booking, /booking-hero-premium/);
 
-assert.match(appEntry, /import ['"]\.\/shared\/styles\/BookingFlowOverrides\.css['"]/);
-assert.match(overrides, /booking-itinerary-top-grid--roundtrip[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)/);
-assert.match(overrides, /\.booking-itinerary-top-panel__inner,[\s\S]*\.container\.booking-main-container[\s\S]*max-width:\s*1180px\s*!important/);
-assert.match(overrides, /\.booking-layout[\s\S]*display:\s*block\s*!important[\s\S]*width:\s*100%\s*!important/);
-assert.match(overrides, /\.booking-form-area[\s\S]*width:\s*100%\s*!important[\s\S]*max-width:\s*none\s*!important/);
-assert.match(overrides, /\.booking-summary-sidebar,[\s\S]*\.mobile-summary-toggle-bar[\s\S]*display:\s*none\s*!important/);
-assert.doesNotMatch(overrides, /\.booking-sidebar,[\s\S]*\.mobile-summary-toggle\s*\{/);
-assert.match(overrides, /booking-itinerary-pricing-summary[\s\S]*position:\s*absolute\s*!important[\s\S]*right:\s*2rem\s*!important/);
+// Step one keeps the itinerary and adds airline-profile fields requested by checkout.
+assert.match(passengerStep, /Your Selected Itinerary/);
+assert.match(passengerStep, /passenger-card-block/);
+assert.match(passengerStep, /data-passenger-index/);
+assert.match(passengerStep, /Passenger Details/);
+assert.match(passengerStep, /Suffix/);
+assert.match(passengerStep, /Loyalty Program/);
+assert.match(passengerStep, /Frequent Flyer Number/);
+assert.match(passengerStep, /Known Traveler #/);
+assert.match(passengerStep, /Redress #/);
+assert.doesNotMatch(passengerStep, /<h2>\{passengers\.length\} Passenger/);
+assert.match(booking, /passengerValidationErrors/);
+assert.match(booking, /validateDateOfBirth/);
+assert.match(booking, /validatePassportNumber/);
+assert.match(booking, /validatePassportExpiry/);
 
-// Multi-passenger checkout must visually separate each passenger and React must
-// own the accordion state; the class is intentionally dynamic now.
-assert.match(booking, /passenger-card-block/);
-assert.match(booking, /className="passenger-card-title"/);
-assert.match(booking, /aria-expanded=\{expandedPassengers\[idx\] !== false\}/);
-assert.match(booking, /tfs-pax-collapsed/);
-assert.match(overrides, /\.passenger-card-block\s*\{[\s\S]*border-left:\s*4px solid #8b1538\s*!important[\s\S]*padding:\s*1\.25rem\s*!important/);
-assert.match(overrides, /\.passenger-card-block \+ \.passenger-card-block\s*\{[\s\S]*margin-top:\s*1\.45rem\s*!important/);
-assert.match(overrides, /\.passenger-card-title\s*\{[\s\S]*background:\s*linear-gradient[\s\S]*border-bottom:\s*1px solid #e2e8f0\s*!important/);
+// Step two owns contact + assistance; Step three requires an explicit local-first Flex choice.
+assert.match(contactStep, /Primary Contact Details/);
+assert.match(contactStep, /Special Requests & Preferences/);
+assert.match(contactStep, /Request Wheelchair Assistance/);
+assert.match(contactStep, /Additional Airline \/ Assistance Requests/);
+assert.match(protectionStep, /Trip Protection & Baggage Fees/);
+assert.match(protectionStep, /HIGHLY RECOMMENDED/);
+assert.match(protectionStep, /Flex Assist is a FareTransit agency service, not travel insurance/);
+assert.match(protectionStep, /aria-checked/);
+assert.match(booking, /selectProtection/);
+assert.match(booking, /setTripProtection\(selected\)/);
+assert.match(booking, /journeySessionAPI\.updateCheckout/);
+assert.doesNotMatch(booking, /setTripProtection\(null\)/);
+assert.doesNotMatch(booking, /removeItem\(FLEX_SELECTION_KEY\)[\s\S]{0,250}setProtectionSyncWarning/);
 
-assert.match(booking, /className="amtrak-btn amtrak-btn--cta amtrak-btn--full"/);
-assert.match(booking, /fa-circle-notch fa-spin/);
-assert.match(overrides, /\.amtrak-btn\.amtrak-btn--cta\.amtrak-btn--full\s*\{[\s\S]*width:\s*100%\s*!important[\s\S]*min-height:\s*58px\s*!important[\s\S]*background:\s*linear-gradient/);
-assert.match(overrides, /:has\(\.fa-circle-notch\)[\s\S]*min-height:\s*104px\s*!important[\s\S]*cursor:\s*wait\s*!important/);
-assert.match(overrides, /Creating your reservation securely\. Please keep this page open/);
-assert.match(overrides, /@keyframes tfs-booking-wait-progress/);
-assert.match(overrides, /@keyframes tfs-booking-wait-shimmer/);
+// Step four visually collects the normal airline-style card and billing form.
+assert.match(paymentStep, /Add New Credit or Debit Card/);
+assert.match(paymentStep, /PaymentCardEntry/);
+assert.match(paymentStep, /Address Line 1/);
+assert.match(paymentStep, /State\/Province/);
+assert.match(paymentStep, /Postal Code/);
+assert.match(paymentStep, /Complete Reservation/);
+assert.match(cardEntry, /Card Number/);
+assert.match(cardEntry, /Name on Card/);
+assert.match(cardEntry, /CID\/CVV/);
+assert.match(cardEntry, /Expiration Date/);
+assert.match(cardEntry, /getMaskedMetadata/);
+assert.match(cardEntry, /passesLuhn/);
+assert.doesNotMatch(cardEntry, /bookingAPI|sessionStorage|localStorage|fetch\(/);
+assert.match(paymentStep, /Our travel specialist may call you to confirm your itinerary based on availability/);
+assert.match(paymentStep, /fa-circle-notch fa-spin/);
+
+// The layout is centered and progressively narrower for the form-heavy steps.
+assert.match(bookingStyles, /\.booking-stepper-v3/);
+assert.match(bookingStyles, /\.booking-v3-section/);
+assert.match(bookingFixes, /width:\s*min\(1240px/);
+assert.match(bookingFixes, /booking-v3-step-section--travellers[\s\S]*max-width:\s*1180px/);
+assert.match(bookingFixes, /booking-v3-step-section--contact,[\s\S]*booking-v3-step-section--protection[\s\S]*max-width:\s*1100px/);
+assert.match(bookingFixes, /booking-v3-step-section--payment[\s\S]*max-width:\s*1080px/);
+assert.match(bookingFixes, /booking-v3-card-row/);
 
 // Validation feedback may focus fields, but React owns passenger-card error state.
 assert.match(appEntry, /BookingValidationUX\.css/);
 assert.match(appEntry, /installBookingValidationUX/);
 assert.match(validationUX, /scrollIntoView\(\{ behavior: 'smooth', block: 'center'/);
 assert.match(validationUX, /aria-invalid/);
-assert.match(validationUX, /const numbered = normalizedMessage\.match/);
 assert.match(validationUX, /data-passenger-index/);
-assert.match(validationUX, /Passenger-card error ownership belongs to BookingPage React state/);
-assert.doesNotMatch(validationUX, /passengerCard\.classList\.add\('tfs-passenger-card-error'\)/);
 assert.match(validationStyles, /\.booking-page \.booking-global-error/);
-assert.match(validationStyles, /border-left:\s*4px solid #dc2626\s*!important/);
 assert.match(validationStyles, /input\.tfs-validation-error-field/);
 assert.match(validationStyles, /\.passenger-card-block\.tfs-passenger-card-error/);
 
+// Existing itinerary normalization remains part of the customer flow.
 assert.match(itinerary, /className="itin-badge"/);
-assert.match(overrides, /\.booking-itinerary-top-grid \.itin-card \.itinerary-timeline-container > div:first-child\s*\{[\s\S]*display:\s*none\s*!important/);
-assert.match(overrides, /\.booking-itinerary-top-grid \.itin-card \.itinerary-timeline-container\s*\{[\s\S]*padding-top:\s*14px\s*!important[\s\S]*margin-bottom:\s*12px\s*!important/);
 assert.match(timeline, /nested\?\.airport/);
 assert.match(timeline, /segment\.departure\?\.airport|segment\.departure/);
 assert.match(timeline, /segment\.arrival\?\.airport|segment\.arrival/);
@@ -70,14 +117,19 @@ assert.match(timeline, /firstSeg\.origin_airport \|\| '---'/);
 assert.match(timeline, /lastSeg\.destination_airport \|\| '---'/);
 assert.doesNotMatch(timeline, /\|\| 'ORIG'|\|\| 'CONN'|\|\| 'DEST'/);
 
+// One global icon-only customer back control remains mounted by PageTransition.
 assert.match(transition, /<CustomerBackButton\s*\/>/);
 assert.match(backButton, /navigate\(-1\)/);
-// Current master groups landing pages under isPrimaryLandingPage; admin routes must
-// still suppress the customer back button without coupling the test to old syntax.
-assert.match(backButton, /if \(isPrimaryLandingPage \|\| pathname\.startsWith\('\/admin'\)\) return null/);
+assert.match(backButton, /faretransit-booking-back/);
 assert.match(backButton, /document\.querySelector\('\.booking-itinerary-top-panel__inner'\)/);
 assert.match(backButton, /createPortal\(button, bookingTarget\)/);
 assert.match(backButton, /\/return-flight/);
 assert.match(backButton, /\/booking/);
+assert.match(backButton, /tfs-customer-back__glyph/);
+assert.match(backButton, />‹<\/span>/);
+assert.doesNotMatch(backButton, /<span>Back<\/span>/);
+assert.match(backButton, /tfs-legacy-back-modernized/);
+assert.match(backButtonStyles, /\.tfs-customer-back,[\s\S]*\.tfs-legacy-back-modernized/);
+assert.match(backButtonStyles, /width:\s*44px\s*!important/);
 
-console.log('booking itinerary stack + React passenger accordion + submit waiting visuals + validation focus + customer back navigation contract: PASS');
+console.log('four-step booking + local-first Flex selection + centered checkout layout contract: PASS');

@@ -1,0 +1,40 @@
+.aob-host {
+  margin-top: 6px;
+}
+
+.aob-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.aob-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 999px;
+  padding: 4px 7px;
+  font-size: .64rem;
+  line-height: 1;
+  font-weight: 900;
+  letter-spacing: .025em;
+  white-space: nowrap;
+}
+
+.aob-badge--assistance {
+  color: #8b1538;
+  background: #fff1f5;
+  border: 1px solid #e7b6c5;
+}
+
+.aob-badge--wheelchair {
+  color: #fff;
+  background: #8b1538;
+  border-color: #8b1538;
+}
+
+.aob-badge--flex {
+  color: #166534;
+  background: #effaf3;
+  border: 1px solid #b8dec5;
+}
