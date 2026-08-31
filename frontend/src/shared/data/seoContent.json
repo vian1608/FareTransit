@@ -1,0 +1,497 @@
+{
+  "/flights": {
+    "eyebrow": "FLIGHT PLANNING",
+    "heroTitle": "Plan flights with clearer fare, baggage and itinerary information",
+    "heroText": "FareTransit combines flight search with human reservation assistance so travelers can compare schedules, fare choices, baggage considerations and support needs before completing a reservation.",
+    "sections": [
+      {
+        "heading": "Start with the itinerary, not only the headline fare",
+        "paragraphs": [
+          "A lower fare can come with a longer connection, a less convenient airport, tighter baggage rules or a more restrictive change policy. Compare the whole itinerary before choosing an option.",
+          "FareTransit search results are designed to help you review departure and arrival times, stops, operating airlines and the details available for the selected itinerary."
+        ],
+        "bullets": ["Departure and arrival airports", "Total travel time and connections", "Fare options when available", "Baggage information when available", "Traveler assistance requirements"]
+      },
+      {
+        "heading": "Understand the fare before you continue",
+        "paragraphs": [
+          "Airlines use different names for their fare products. Instead of assuming every airline uses the same labels, compare the benefits and restrictions attached to the actual fare shown for your itinerary.",
+          "Review seating, baggage, change and refund conditions before selecting a fare."
+        ],
+        "links": [
+          {"label": "Learn about airline fare types", "to": "/fare-types"},
+          {"label": "Read the baggage planning guide", "to": "/baggage"}
+        ]
+      },
+      {
+        "heading": "Popular route planning",
+        "paragraphs": ["Use FareTransit route pages to review common planning considerations before starting a live search."],
+        "links": [
+          {"label": "New York to London flights", "to": "/routes/flight-nyc-to-lon"},
+          {"label": "Los Angeles to Tokyo flights", "to": "/routes/flight-lax-to-tokyo"},
+          {"label": "New York to Miami flights", "to": "/flight-nyc-to-mia"},
+          {"label": "Los Angeles to New York flights", "to": "/flight-lax-to-jfk"}
+        ]
+      }
+    ],
+    "relatedLinks": [
+      {"label": "Flights from New York", "to": "/flights/from-new-york"},
+      {"label": "Flights from Los Angeles", "to": "/flights/from-los-angeles"},
+      {"label": "Flight booking assistance", "to": "/travel-assistance"},
+      {"label": "How FareTransit works", "to": "/how-it-works"}
+    ],
+    "cta": {"title": "Ready to compare live flight options?", "text": "Start a flight search and review the itinerary that fits your trip.", "label": "Search Flights", "to": "/"}
+  },
+  "/flights/from-new-york": {
+    "eyebrow": "NEW YORK FLIGHT HUB",
+    "heroTitle": "Flights from New York: compare airports, routes and fare choices",
+    "heroText": "New York travelers may have multiple airport and itinerary choices. Review the complete trip, including airport, stops, fare restrictions and baggage needs, rather than comparing price alone.",
+    "sections": [
+      {
+        "heading": "Choose the airport that works for the whole trip",
+        "paragraphs": [
+          "A New York-area flight can differ meaningfully by departure airport, connection pattern and ground-transport requirements. Compare the airport and schedule together when deciding whether an itinerary is practical.",
+          "For international trips, also review connection time and arrival-airport details before booking."
+        ]
+      },
+      {
+        "heading": "Popular FareTransit route pages from New York",
+        "links": [
+          {"label": "New York to London", "to": "/routes/flight-nyc-to-lon"},
+          {"label": "New York to Dubai", "to": "/routes/flight-jfk-to-dxb"},
+          {"label": "New York to Miami", "to": "/flight-nyc-to-mia"}
+        ]
+      },
+      {
+        "heading": "Before selecting a fare",
+        "bullets": ["Check whether the fare permits advance seat selection", "Review carry-on and checked-baggage terms", "Check change and cancellation restrictions", "Confirm traveler names exactly match identification", "Add accessibility or mobility requests before travel"]
+      }
+    ],
+    "relatedLinks": [
+      {"label": "Airline fare types", "to": "/fare-types"},
+      {"label": "Checked baggage fees guide", "to": "/baggage/checked-baggage-fees"},
+      {"label": "Booking flights for family", "to": "/guides/booking-flights-for-family"}
+    ],
+    "cta": {"title": "Search flights from New York", "text": "Enter your dates and destination to compare current itinerary options.", "label": "Start Flight Search", "to": "/"}
+  },
+  "/flights/from-los-angeles": {
+    "eyebrow": "LOS ANGELES FLIGHT HUB",
+    "heroTitle": "Flights from Los Angeles: plan long-distance and connecting trips carefully",
+    "heroText": "For trips from Los Angeles, schedule, connection time, fare flexibility and baggage can matter as much as the base fare. Compare the complete itinerary before continuing.",
+    "sections": [
+      {
+        "heading": "Review long-haul itineraries as a complete journey",
+        "paragraphs": [
+          "Long-distance itineraries can vary by operating airline, connection airport and total elapsed travel time. A slightly different schedule can materially change the convenience of the trip.",
+          "When a connection is involved, review the connection duration and whether the baggage or terminal process adds complexity."
+        ]
+      },
+      {
+        "heading": "Popular FareTransit route pages from Los Angeles",
+        "links": [
+          {"label": "Los Angeles to Tokyo", "to": "/routes/flight-lax-to-tokyo"},
+          {"label": "Los Angeles to New York", "to": "/flight-lax-to-jfk"}
+        ]
+      },
+      {
+        "heading": "Compare more than cabin names",
+        "paragraphs": ["Airline fare labels vary. Focus on the benefits and restrictions attached to the option shown for the selected itinerary."],
+        "links": [{"label": "Read the fare types guide", "to": "/fare-types"}]
+      }
+    ],
+    "relatedLinks": [
+      {"label": "Baggage planning", "to": "/baggage"},
+      {"label": "Flexible fares", "to": "/fare-types/flexible-fares"},
+      {"label": "Last-minute travel checklist", "to": "/guides/last-minute-travel"}
+    ],
+    "cta": {"title": "Search flights from Los Angeles", "text": "Compare current flight options for your dates and destination.", "label": "Start Flight Search", "to": "/"}
+  },
+  "/airlines": {
+    "eyebrow": "AIRLINE PLANNING",
+    "heroTitle": "Airline fare names differ. Compare the actual benefits instead.",
+    "heroText": "One airline may use words such as Basic, Main, Standard, Saver or Flex while another uses a different naming system. FareTransit treats the airline's displayed fare name as the source label and compares practical benefits separately.",
+    "sections": [
+      {
+        "heading": "What to compare between airline fare options",
+        "bullets": ["Carry-on allowance", "Checked-bag terms", "Advance seat selection", "Changes and fare differences", "Cancellation or refund conditions", "Priority or boarding benefits when offered"]
+      },
+      {
+        "heading": "Do not infer rules from the fare name alone",
+        "paragraphs": [
+          "A word such as Flex or Standard does not have one universal meaning across airlines. Always review the conditions attached to the exact option and itinerary.",
+          "When live search data contains fare-family or baggage information, FareTransit can display those details alongside the itinerary. If a detail is unavailable, it should be confirmed before purchase rather than guessed."
+        ]
+      },
+      {
+        "heading": "Use normalized concepts without changing the airline's name",
+        "paragraphs": ["FareTransit can group benefits into concepts such as more restrictive, standard or more flexible while still showing the airline's native fare label to the traveler."]
+      }
+    ],
+    "relatedLinks": [
+      {"label": "Fare types explained", "to": "/fare-types"},
+      {"label": "Basic economy guide", "to": "/fare-types/basic-economy"},
+      {"label": "Flexible fare guide", "to": "/fare-types/flexible-fares"},
+      {"label": "Baggage planning", "to": "/baggage"}
+    ],
+    "cta": {"title": "Compare a live itinerary", "text": "Search current flight options and review the fare information returned for the itinerary.", "label": "Search Flights", "to": "/"}
+  },
+  "/baggage": {
+    "eyebrow": "BAGGAGE PLANNING",
+    "heroTitle": "Plan baggage before booking so the total trip cost is clearer",
+    "heroText": "Baggage rules and prices can vary by airline, route, fare, bag count and timing. FareTransit shows baggage information only when reliable itinerary-level information is available and avoids inventing a price when it is not.",
+    "sections": [
+      {
+        "heading": "Carry-on and checked baggage are separate decisions",
+        "paragraphs": ["A fare may include a carry-on while checked baggage remains chargeable, or the rules may differ by fare product. Review each allowance separately."],
+        "bullets": ["Carry-on allowance", "Personal-item allowance", "First checked bag", "Additional checked bags", "Weight and size limits", "Special or oversized items"]
+      },
+      {
+        "heading": "When FareTransit can show a checked-bag quote",
+        "paragraphs": [
+          "If the selected itinerary returns an exact checked-bag price through the live flight data source, FareTransit may show an additional-baggage option during the reservation flow.",
+          "If an exact price is not returned, the site should not manufacture a baggage price. Availability and final airline conditions can instead be reviewed after the reservation request."
+        ]
+      },
+      {
+        "heading": "Baggage pricing and agency service pricing",
+        "paragraphs": ["A FareTransit baggage-related quote may include agency service pricing in addition to the underlying airline price basis. The displayed quote and applicable terms should be reviewed before any separate post-booking baggage payment is made."],
+        "links": [{"label": "Read fees and disclosures", "to": "/fees-and-disclosures"}]
+      }
+    ],
+    "relatedLinks": [
+      {"label": "Checked baggage fees guide", "to": "/baggage/checked-baggage-fees"},
+      {"label": "Extra baggage guide", "to": "/baggage/extra-baggage"},
+      {"label": "Airline fare types", "to": "/fare-types"}
+    ],
+    "cta": {"title": "Check baggage information for a live trip", "text": "Start a flight search. Baggage pricing appears only when the itinerary data provides it.", "label": "Search Flights", "to": "/"}
+  },
+  "/baggage/checked-baggage-fees": {
+    "eyebrow": "BAGGAGE GUIDE",
+    "heroTitle": "Why checked-baggage fees can change from one itinerary to another",
+    "heroText": "Checked-bag pricing is not always a single airline-wide number. The amount can depend on the fare, route, number of bags, traveler status and when the bag is added.",
+    "sections": [
+      {
+        "heading": "Factors that can affect a checked-bag price",
+        "bullets": ["Airline and operating carrier", "Domestic or international itinerary", "Fare product", "First bag versus additional bags", "Bag weight and dimensions", "Loyalty status or eligible card benefits", "Airport versus advance purchase"]
+      },
+      {
+        "heading": "Use itinerary-level information when possible",
+        "paragraphs": ["A generic baggage table is useful for orientation, but the best information is tied to the actual fare and itinerary being considered. That is why FareTransit only enables priced baggage selection when an exact baggage amount is returned for the selected trip."]
+      },
+      {
+        "heading": "Confirm unusual baggage before travel",
+        "paragraphs": ["Sports equipment, oversized items, medical equipment and other special baggage can have separate rules. Confirm those requirements with the airline or travel specialist before arriving at the airport."]
+      }
+    ],
+    "relatedLinks": [
+      {"label": "Baggage planning hub", "to": "/baggage"},
+      {"label": "Extra baggage planning", "to": "/baggage/extra-baggage"},
+      {"label": "Fare types explained", "to": "/fare-types"}
+    ],
+    "cta": {"title": "Review baggage with a live itinerary", "text": "Search flights to see whether itinerary-level baggage pricing is available.", "label": "Search Flights", "to": "/"}
+  },
+  "/baggage/extra-baggage": {
+    "eyebrow": "BAGGAGE GUIDE",
+    "heroTitle": "Adding extra checked baggage: price is only part of the decision",
+    "heroText": "Additional bags may be subject to different prices, limits and availability than the first checked bag. Plan the quantity and confirm the airline's current conditions before travel.",
+    "sections": [
+      {
+        "heading": "Do not assume every additional bag costs the same",
+        "paragraphs": ["The first checked bag, second bag and later bags can have different pricing or availability. FareTransit should only let a traveler select the number of bags for which a reliable quote is available."]
+      },
+      {
+        "heading": "Post-booking baggage requests",
+        "paragraphs": ["When baggage is requested through FareTransit, the reservation can record the request so staff can review availability and the applicable quote. Baggage payment may occur separately after the flight reservation is created."],
+        "links": [{"label": "Read fees and disclosures", "to": "/fees-and-disclosures"}]
+      },
+      {
+        "heading": "Prepare the bag details",
+        "bullets": ["Number of checked bags", "Approximate weight", "Oversized or unusual items", "Mobility or medical equipment", "Whether baggage is required on every segment"]
+      }
+    ],
+    "relatedLinks": [
+      {"label": "Checked baggage fees", "to": "/baggage/checked-baggage-fees"},
+      {"label": "Travel assistance", "to": "/travel-assistance"}
+    ],
+    "cta": {"title": "Need baggage help with a reservation?", "text": "Search your itinerary or contact FareTransit for assistance reviewing the request.", "label": "Contact FareTransit", "to": "/contact"}
+  },
+  "/fare-types": {
+    "eyebrow": "FARE GUIDE",
+    "heroTitle": "Compare airline fare types by benefits, not by marketing names",
+    "heroText": "Airlines use different labels for their fare products. A better comparison looks at what the fare actually allows: baggage, seats, changes, cancellations, refunds and other included benefits.",
+    "sections": [
+      {
+        "heading": "A practical three-level comparison",
+        "paragraphs": ["FareTransit may summarize fare characteristics into broad concepts for easier comparison while preserving the airline's native fare name."],
+        "bullets": ["More restrictive: lower flexibility and more add-on fees", "Standard: typical economy benefits with moderate restrictions", "More flexible: stronger change or refund conditions, depending on the airline"]
+      },
+      {
+        "heading": "The airline's exact terms control",
+        "paragraphs": ["A normalized category is a comparison aid, not a substitute for the airline's rules. Always review the fare conditions shown for the exact itinerary before confirming a reservation."]
+      },
+      {
+        "heading": "Questions to answer before choosing",
+        "bullets": ["Can I choose a seat?", "What baggage is included?", "Can I change the trip?", "Would a fare difference still apply?", "Is the ticket refundable or credit-only?", "Does the fare earn the benefits I expect?"]
+      }
+    ],
+    "relatedLinks": [
+      {"label": "Basic economy explained", "to": "/fare-types/basic-economy"},
+      {"label": "Flexible fares explained", "to": "/fare-types/flexible-fares"},
+      {"label": "Airline planning guide", "to": "/airlines"}
+    ],
+    "cta": {"title": "Compare live fare options", "text": "Search a flight and review the fare names and benefits returned for that itinerary.", "label": "Search Flights", "to": "/"}
+  },
+  "/fare-types/basic-economy": {
+    "eyebrow": "FARE GUIDE",
+    "heroTitle": "Basic economy: check the restrictions before choosing the lowest fare",
+    "heroText": "The lowest economy tier can be useful when price matters most, but restrictions may apply to seating, changes, baggage or other benefits. The exact rules vary by airline and itinerary.",
+    "sections": [
+      {
+        "heading": "Common areas to review",
+        "bullets": ["Seat assignment or advance seat-selection fees", "Carry-on and checked-bag allowance", "Change eligibility", "Cancellation or travel-credit rules", "Boarding or upgrade limitations", "Frequent-flyer earning or benefit restrictions"]
+      },
+      {
+        "heading": "When a higher fare may be worth comparing",
+        "paragraphs": ["If your dates may change, you need checked baggage, you want advance seats or you value stronger cancellation terms, compare the total cost and flexibility of the next fare option rather than looking at the starting price alone."]
+      },
+      {
+        "heading": "Do not assume every 'basic' fare is identical",
+        "paragraphs": ["Airline policies differ and can change. Use the restrictions shown with the actual itinerary as the controlling information."]
+      }
+    ],
+    "relatedLinks": [
+      {"label": "All fare types", "to": "/fare-types"},
+      {"label": "Flexible fares", "to": "/fare-types/flexible-fares"},
+      {"label": "Baggage planning", "to": "/baggage"}
+    ],
+    "cta": {"title": "Compare the total trip cost", "text": "Search current fares and compare included benefits before choosing.", "label": "Search Flights", "to": "/"}
+  },
+  "/fare-types/flexible-fares": {
+    "eyebrow": "FARE GUIDE",
+    "heroTitle": "Flexible fares can reduce restrictions, but read what 'flexible' actually includes",
+    "heroText": "A more flexible ticket may allow easier changes or stronger refund options, but fare differences, deadlines and other conditions can still apply.",
+    "sections": [
+      {
+        "heading": "Change flexibility is not always a free price change",
+        "paragraphs": ["A ticket may waive a change fee while still requiring the traveler to pay any difference between the original fare and the new flight. Check both concepts separately."]
+      },
+      {
+        "heading": "Refundable, changeable and travel-credit eligible are different",
+        "bullets": ["Refundable: money may be returned under the fare terms", "Changeable: itinerary changes may be permitted", "Travel credit: cancellation may produce a future-use credit instead of a cash refund"]
+      },
+      {
+        "heading": "Compare flexibility to the likelihood you will use it",
+        "paragraphs": ["A higher fare can be valuable for uncertain travel plans, but the best option depends on the trip, the price difference and the exact airline terms."]
+      }
+    ],
+    "relatedLinks": [
+      {"label": "Fare types explained", "to": "/fare-types"},
+      {"label": "Basic economy guide", "to": "/fare-types/basic-economy"},
+      {"label": "Last-minute travel", "to": "/guides/last-minute-travel"}
+    ],
+    "cta": {"title": "Compare current fare options", "text": "Search flights and review the conditions attached to each available fare.", "label": "Search Flights", "to": "/"}
+  },
+  "/guides": {
+    "eyebrow": "TRAVEL GUIDES",
+    "heroTitle": "Practical booking guides for real travel decisions",
+    "heroText": "FareTransit guides focus on decisions travelers actually need to make: who is traveling, when plans may change, which baggage is needed and what support should be arranged before departure.",
+    "sections": [
+      {
+        "heading": "Planning for someone else",
+        "paragraphs": ["When booking for a parent, relative or another traveler, accurate passenger details and a reliable contact plan are essential."],
+        "links": [{"label": "Booking flights for family", "to": "/guides/booking-flights-for-family"}]
+      },
+      {
+        "heading": "When travel is urgent",
+        "paragraphs": ["A short planning window makes schedule flexibility, airport choice and fare conditions more important."],
+        "links": [{"label": "Last-minute travel checklist", "to": "/guides/last-minute-travel"}]
+      },
+      {
+        "heading": "Understand the cost around the fare",
+        "links": [
+          {"label": "Baggage planning", "to": "/baggage"},
+          {"label": "Fare types explained", "to": "/fare-types"}
+        ]
+      }
+    ],
+    "relatedLinks": [
+      {"label": "Travel assistance", "to": "/travel-assistance"},
+      {"label": "How FareTransit works", "to": "/how-it-works"},
+      {"label": "Flights hub", "to": "/flights"}
+    ],
+    "cta": {"title": "Need help with a specific trip?", "text": "Search flights or contact a FareTransit travel specialist.", "label": "Search Flights", "to": "/"}
+  },
+  "/guides/booking-flights-for-family": {
+    "eyebrow": "TRAVEL GUIDE",
+    "heroTitle": "Booking a flight for a parent or family member: a practical checklist",
+    "heroText": "The person paying for the trip may not be the traveler. Collect the traveler's exact information and support requirements before starting the reservation.",
+    "sections": [
+      {
+        "heading": "Collect the passenger details first",
+        "bullets": ["Full legal name exactly as shown on identification", "Date of birth", "Gender information required for the reservation", "Passport details for applicable international travel", "Known Traveler or Redress number when relevant", "Frequent-flyer number if the traveler wants it added"]
+      },
+      {
+        "heading": "Plan who receives updates",
+        "paragraphs": ["Decide whether reservation updates should go directly to the traveler, to the person managing the trip or to both where the booking process supports it. The traveler should still have access to the itinerary and airline information needed on travel day."]
+      },
+      {
+        "heading": "Ask about assistance before booking",
+        "bullets": ["Wheelchair or mobility assistance", "Meal preference", "Seat preference", "Additional baggage", "Connection concerns", "Other airline or airport assistance requests"]
+      },
+      {
+        "heading": "Review the fare for flexibility",
+        "paragraphs": ["If the traveler's plans are uncertain or someone else is coordinating the journey, compare change and cancellation conditions rather than choosing only by price."]
+      }
+    ],
+    "relatedLinks": [
+      {"label": "Booking assistance for parents", "to": "/booking-for-parents"},
+      {"label": "Fare types explained", "to": "/fare-types"},
+      {"label": "Baggage planning", "to": "/baggage"}
+    ],
+    "cta": {"title": "Coordinate a family member's trip", "text": "Search the itinerary or ask FareTransit for reservation assistance.", "label": "Get Travel Assistance", "to": "/travel-assistance"}
+  },
+  "/guides/last-minute-travel": {
+    "eyebrow": "TRAVEL GUIDE",
+    "heroTitle": "Last-minute flight booking: focus on options you can actually use",
+    "heroText": "When travel is urgent, the cheapest itinerary may not be the most practical. Prioritize schedule, airport, traveler readiness and fare conditions in that order.",
+    "sections": [
+      {
+        "heading": "Widen the search where practical",
+        "bullets": ["Check nearby departure or arrival airports", "Compare nonstop and one-stop options", "Review flights earlier or later in the day", "Consider whether a longer connection is operationally safer than a very tight one"]
+      },
+      {
+        "heading": "Have traveler information ready",
+        "paragraphs": ["Urgent booking is easier when passenger names, dates of birth, contact details and any passport information are ready before selecting the itinerary."]
+      },
+      {
+        "heading": "Pay attention to the fare rules",
+        "paragraphs": ["A last-minute trip can still change. Compare the restriction level of the fare, especially if the purpose or timing of travel is uncertain."],
+        "links": [{"label": "Flexible fares explained", "to": "/fare-types/flexible-fares"}]
+      },
+      {
+        "heading": "Arrange assistance immediately",
+        "paragraphs": ["If the traveler needs wheelchair, mobility, seating or other support, add the request during the reservation process rather than waiting until the airport when possible."]
+      }
+    ],
+    "relatedLinks": [
+      {"label": "Urgent travel assistance", "to": "/urgent-travel"},
+      {"label": "Baggage planning", "to": "/baggage"},
+      {"label": "Flight search hub", "to": "/flights"}
+    ],
+    "cta": {"title": "Traveling soon?", "text": "Search current flights or request help reviewing an urgent itinerary.", "label": "Urgent Travel Help", "to": "/urgent-travel"}
+  },
+  "/about": {
+    "eyebrow": "ABOUT FARETRANSIT",
+    "heroTitle": "Independent travel search and reservation assistance with human support",
+    "heroText": "FareTransit LLC helps travelers search and review travel options, submit reservation information and receive human assistance for itinerary, baggage and service questions.",
+    "sections": [
+      {
+        "heading": "What FareTransit does",
+        "bullets": ["Flight and travel-option search", "Reservation assistance", "Itinerary review", "Baggage and fare-information review when available", "Traveler assistance requests", "Post-reservation support coordination"]
+      },
+      {
+        "heading": "Independent agency disclosure",
+        "paragraphs": ["FareTransit is an independent travel agency/service provider. Airline names and trademarks belong to their respective owners. FareTransit should not be understood as an airline's official website or customer-service department unless a relationship is expressly stated."]
+      },
+      {
+        "heading": "Clear information over invented certainty",
+        "paragraphs": ["Travel prices, fare rules and availability can change. When live data does not provide a reliable detail, FareTransit aims to state that the information requires confirmation rather than inventing a value."]
+      }
+    ],
+    "relatedLinks": [
+      {"label": "How FareTransit works", "to": "/how-it-works"},
+      {"label": "Fees and disclosures", "to": "/fees-and-disclosures"},
+      {"label": "Editorial policy", "to": "/editorial-policy"},
+      {"label": "Contact FareTransit", "to": "/contact"}
+    ],
+    "cta": {"title": "Plan a trip with FareTransit", "text": "Search available travel options or contact the team for assistance.", "label": "Search Flights", "to": "/"}
+  },
+  "/how-it-works": {
+    "eyebrow": "HOW IT WORKS",
+    "heroTitle": "From flight search to reservation follow-up",
+    "heroText": "FareTransit is designed around a simple sequence: search, review the itinerary, provide traveler and assistance details, review the reservation total and submit the request.",
+    "sections": [
+      {
+        "heading": "1. Search and compare",
+        "paragraphs": ["Enter the trip details and compare available flight options. Review timing, stops, operating airline and the fare information returned by the live search source."]
+      },
+      {
+        "heading": "2. Review traveler and support needs",
+        "paragraphs": ["Enter the traveler's legal information and optional loyalty details. Add meal, seat, wheelchair, baggage or other assistance requests where applicable."]
+      },
+      {
+        "heading": "3. Review optional services and the total",
+        "paragraphs": ["If an optional FareTransit service is offered, its displayed price should be included in the reservation total when selected. Baggage requests can be handled separately when the itinerary returns reliable baggage pricing."]
+      },
+      {
+        "heading": "4. Submit the reservation request",
+        "paragraphs": ["After submission, a FareTransit specialist may contact the traveler to confirm itinerary availability or follow up on service requests. Airline availability and fare terms remain subject to confirmation until ticketing is completed."]
+      }
+    ],
+    "relatedLinks": [
+      {"label": "About FareTransit", "to": "/about"},
+      {"label": "Fees and disclosures", "to": "/fees-and-disclosures"},
+      {"label": "Flight booking assistance", "to": "/travel-assistance"}
+    ],
+    "cta": {"title": "Start with a flight search", "text": "Compare current flight options for your itinerary.", "label": "Search Flights", "to": "/"}
+  },
+  "/editorial-policy": {
+    "eyebrow": "EDITORIAL POLICY",
+    "heroTitle": "How FareTransit prepares and maintains travel information",
+    "heroText": "FareTransit aims to publish practical, understandable travel information while distinguishing general guidance from live airline, fare and itinerary data.",
+    "sections": [
+      {
+        "heading": "Accuracy and source hierarchy",
+        "paragraphs": ["For changing airline rules, prices or itinerary details, live travel data and official airline information should take priority over generic explanatory content. FareTransit content should avoid presenting an estimate as a confirmed airline rule."]
+      },
+      {
+        "heading": "Review and updates",
+        "paragraphs": ["Evergreen guides are reviewed when product behavior, airline practices or traveler requirements materially change. Pages that depend on changing information should include a review date and should be updated or removed when they can no longer be maintained responsibly."]
+      },
+      {
+        "heading": "Corrections",
+        "paragraphs": ["If you believe a FareTransit page contains an error, contact support@faretransit.com with the page URL and the information that should be reviewed. Material corrections should be made promptly after verification."]
+      },
+      {
+        "heading": "No fabricated reviews, prices or airline affiliations",
+        "paragraphs": ["FareTransit editorial content should not invent customer reviews, airline partnerships, availability, prices or policies for search visibility. Airline names and trademarks remain the property of their respective owners."]
+      }
+    ],
+    "relatedLinks": [
+      {"label": "About FareTransit", "to": "/about"},
+      {"label": "Fees and disclosures", "to": "/fees-and-disclosures"},
+      {"label": "Contact", "to": "/contact"}
+    ],
+    "cta": {"title": "Report a content issue", "text": "Send the page URL and correction details to the FareTransit team.", "label": "Contact FareTransit", "to": "/contact"}
+  },
+  "/fees-and-disclosures": {
+    "eyebrow": "FEES & DISCLOSURES",
+    "heroTitle": "Understand agency services, airline availability and separate travel charges",
+    "heroText": "FareTransit provides independent travel-search and reservation assistance. Airline fares, baggage, optional agency services and other travel charges can have different pricing and fulfillment rules.",
+    "sections": [
+      {
+        "heading": "Airline fare and availability",
+        "paragraphs": ["A flight price or itinerary shown during search can change before ticketing. A FareTransit specialist may contact the traveler to confirm the itinerary based on current availability."]
+      },
+      {
+        "heading": "FareTransit optional services",
+        "paragraphs": ["Optional FareTransit services, when offered, should display their price before selection and should be reflected in the reservation summary when selected. These services are separate from an airline's own fare family unless expressly stated otherwise."]
+      },
+      {
+        "heading": "Baggage quotes",
+        "paragraphs": ["When exact baggage pricing is available from live itinerary data, FareTransit may present a baggage-related quote. That quote may include agency service pricing above the underlying airline price basis. Baggage payment can be collected separately after reservation creation, subject to availability and confirmation."]
+      },
+      {
+        "heading": "Airline rules remain controlling",
+        "paragraphs": ["Baggage acceptance, fare restrictions, schedule changes, refunds and other airline-operated services remain subject to the airline's applicable rules and the exact ticket or itinerary conditions."]
+      }
+    ],
+    "relatedLinks": [
+      {"label": "How FareTransit works", "to": "/how-it-works"},
+      {"label": "Baggage planning", "to": "/baggage"},
+      {"label": "Fare types explained", "to": "/fare-types"},
+      {"label": "Terms and Conditions", "to": "/terms"}
+    ],
+    "cta": {"title": "Have a pricing or service question?", "text": "Contact FareTransit before completing a reservation if anything is unclear.", "label": "Contact FareTransit", "to": "/contact"}
+  }
+}
