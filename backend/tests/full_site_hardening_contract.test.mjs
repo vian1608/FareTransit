@@ -32,6 +32,9 @@ const contact = read('frontend', 'src', 'shared', 'pages', 'ContactInfoPage.js')
 const terms = read('frontend', 'src', 'shared', 'pages', 'TermsAndConditionsPage.js');
 const privacy = read('frontend', 'src', 'shared', 'pages', 'PrivacyPolicyPage.js');
 const refund = read('frontend', 'src', 'shared', 'pages', 'RefundPolicyPage.js');
+const infoLayout = read('frontend', 'src', 'shared', 'components', 'InfoPageLayout.js');
+const infoStyles = read('frontend', 'src', 'shared', 'styles', 'InfoPages.css');
+const pageTransition = read('frontend', 'src', 'shared', 'components', 'PageTransition.js');
 
 assert.match(seoGuard, /VALID_ROUTE_PATHS/);
 assert.match(seoGuard, /routesData/);
@@ -50,7 +53,27 @@ assert.match(seoGuard, /params\.set\('travelClass'/);
 for (const [name, source] of Object.entries({ contact, terms, privacy, refund })) {
   assert.match(source, /<Helmet>/, `${name} is missing Helmet metadata`);
   assert.match(source, /https:\/\/www\.faretransit\.com\//, `${name} is missing www canonical metadata`);
+  assert.match(source, /InfoPageShell/, `${name} is not using the shared modern information-page shell`);
 }
+
+// Public information pages should use a consistent modern shell with breadcrumbs,
+// structured content, contextual support, and no disconnected floating back control.
+assert.match(infoLayout, /info-breadcrumbs/);
+assert.match(infoLayout, /info-toc/);
+assert.match(infoLayout, /InfoSupportCTA/);
+assert.match(infoLayout, /SUPPORT_PHONE_HREF/);
+assert.match(infoStyles, /\.info-hero/);
+assert.match(infoStyles, /\.info-section/);
+assert.match(infoStyles, /\.contact-method-card/);
+assert.match(pageTransition, /isInformationPage/);
+for (const route of ['/contact', '/terms', '/privacy-policy', '/refund-policy']) {
+  assert.ok(pageTransition.includes(`'${route}'`), `PageTransition does not suppress the floating back control on ${route}`);
+}
+assert.match(contact, /contact-method-card/);
+assert.match(contact, /SUPPORT_PHONE_HREF/);
+assert.match(terms, /toc=\{TOC\}/);
+assert.match(privacy, /toc=\{TOC\}/);
+assert.match(refund, /toc=\{TOC\}/);
 
 for (const [name, source] of Object.entries({ flightRoute, trainRoute, travelAssistance })) {
   assert.match(source, /clientRequestId/, `${name} is missing idempotency identity`);
@@ -136,4 +159,4 @@ assert.match(sensitiveGuard, /controller\.abort\(\)/);
 assert.match(api, /timeout: DEFAULT_API_TIMEOUT_MS/);
 assert.match(api, /DEFAULT_API_TIMEOUT_MS/);
 
-console.log('Full-site hardening contract passed: SEO, leads, search, confirmations, auth, payments, and async-button safety.');
+console.log('Full-site hardening contract passed: SEO, modern info pages, leads, search, confirmations, auth, payments, and async-button safety.');
