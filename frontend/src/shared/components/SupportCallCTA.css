@@ -180,8 +180,8 @@
   flex-wrap: wrap;
 }
 
-/* Checkout/payment support appears within the page at the decision point in
-   addition to the always-available sticky phone control. */
+/* Checkout/payment support appears within the page at the decision point. The
+   shared layer hides its sticky companion whenever this inline CTA is visible. */
 .support-call-cta--journey-portal {
   margin-top: 1rem;
 }
@@ -198,7 +198,8 @@
   text-align: left;
 }
 
-/* Always-available desktop assistance. */
+/* Sticky assistance appears only when SupportCallLayer determines that the
+   primary inline phone option has been passed and no inline CTA is visible. */
 .support-call-sticky {
   position: fixed;
   right: 20px;
@@ -242,6 +243,7 @@
 }
 
 @media (max-width: 900px) {
+  .product-search-card__support .support-call-cta--card,
   .product-search-card__heading .support-call-cta--card {
     width: min(350px, 100%);
   }
@@ -256,6 +258,7 @@
     padding-bottom: calc(62px + env(safe-area-inset-bottom));
   }
 
+  .product-search-card__support .support-call-cta--card,
   .product-search-card__heading .support-call-cta--card {
     width: 100%;
   }
@@ -272,10 +275,16 @@
     min-width: 116px;
   }
 
-  /* On small screens the sticky bottom bar is the easiest and largest phone
-     target. Avoid duplicating an absolutely-positioned flight-card CTA. */
+  /* On phones the flight-page call option belongs below the form instead of
+     floating over the search header. Because the portal is appended to the
+     search card, static positioning places it naturally after the form. */
   .support-call-cta--flight-search-portal {
-    display: none !important;
+    position: static;
+    display: flex !important;
+    width: 100%;
+    max-width: none;
+    min-height: 54px;
+    margin-top: 0.9rem;
   }
 
   .support-call-cta--results-portal,

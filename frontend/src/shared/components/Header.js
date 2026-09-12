@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_HREF } from '../constants/supportContact';
 import './Header.css';
 import './HeaderLayoutOverrides.css';
 
@@ -70,18 +69,6 @@ function Header() {
             <h1>FareTransit</h1>
           </Link>
         </div>
-
-        {!isAdminRoute && (
-          <a
-            className="header-mobile-call"
-            href={SUPPORT_PHONE_HREF}
-            aria-label={`Call FareTransit at ${SUPPORT_PHONE_DISPLAY}`}
-            onClick={closeMenu}
-          >
-            <i className="fas fa-phone-alt" aria-hidden="true" />
-            <span>Call Now</span>
-          </a>
-        )}
 
         <button
           type="button"
