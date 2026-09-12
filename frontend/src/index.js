@@ -32,6 +32,7 @@ import { installSensitiveDataGuards } from './shared/security/installSensitiveDa
 import { installBookingValidationUX } from './shared/validation/installBookingValidationUX';
 import { installFareBreakdownUX } from './shared/pricing/installFareBreakdownUX';
 import { installMobileBookingUX } from './shared/mobile/installMobileBookingUX';
+import { installCarVehicleCarouselUX } from './shared/mobile/installCarVehicleCarousel';
 import { installPrimaryContactSyncUX } from './shared/contact/installPrimaryContactSyncUX';
 import { installTripAddonsUX } from './features/bookings/addons/installTripAddonsUX';
 
@@ -39,6 +40,7 @@ installSensitiveDataGuards();
 installBookingValidationUX();
 installFareBreakdownUX();
 installMobileBookingUX();
+installCarVehicleCarouselUX();
 installPrimaryContactSyncUX();
 installTripAddonsUX();
 
