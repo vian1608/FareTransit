@@ -57,6 +57,9 @@ if (!supportCss.includes('position: static;') || !supportCss.includes('.support-
 if (carPage.includes('className="car-mobile-cta"') || !carPage.includes('data-support-call-primary')) {
   fail('Car Rentals still has a second fixed mobile CTA or lacks a primary hero CTA marker.');
 }
+if (!carPage.includes("import MobileServiceSwitcher") || !carPage.includes('<MobileServiceSwitcher active="cars" />')) {
+  fail('Car Rentals is missing the shared mobile-only travel service switcher.');
+}
 if (!guardrails.includes('.hero-slider .service-nav') || !guardrails.includes('.header-mobile-call') || !guardrails.includes('.car-mobile-cta')) {
   fail('Legacy duplicate-surface guardrails are incomplete.');
 }
@@ -65,4 +68,4 @@ if (!index.includes("import './shared/styles/ResponsiveTravelRedundancy.css';"))
 }
 
 console.log('Responsive travel redundancy audit passed.');
-console.log('Verified desktop single navigation, mobile-only travel switching, viewport-aware call support, and clean mobile CTA handoff.');
+console.log('Verified desktop single navigation, mobile-only travel switching on Flights/Hotels/Car Rentals, viewport-aware call support, and clean mobile CTA handoff.');
