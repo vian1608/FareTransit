@@ -19,6 +19,7 @@ const supportCta = read('frontend/src/shared/components/SupportCallCTA.js');
 const supportCss = read('frontend/src/shared/components/SupportCallCTA.css');
 const carPage = read('frontend/src/features/cars/pages/CarRentalsHomePage.js');
 const carCss = read('frontend/src/features/cars/pages/CarRentalsHomePage.css');
+const carCarousel = read('frontend/src/shared/mobile/installCarVehicleCarousel.js');
 const hotelPage = read('frontend/src/features/hotels/pages/HotelSearchPage.js');
 const guardrails = read('frontend/src/shared/styles/ResponsiveTravelRedundancy.css');
 const index = read('frontend/src/index.js');
@@ -74,6 +75,12 @@ if (!carCss.includes('height: 380px;') || !carCss.includes('margin: auto 0 0.2re
 if (!carCss.includes('scroll-snap-type: x mandatory') || !carCss.includes('overflow-x: auto') || !carCss.includes('flex: 0 0 min(78vw, 280px)')) {
   fail('Car Rentals mobile vehicle categories must remain a horizontal swipe slider.');
 }
+if (!carCarousel.includes("const MOBILE_QUERY = '(max-width: 700px)'") || !carCarousel.includes('window.setInterval(advance, AUTOPLAY_INTERVAL_MS)') || !carCarousel.includes("behavior: 'smooth'") || !carCarousel.includes('prefers-reduced-motion: reduce') || !carCarousel.includes('pauseAfterInteraction')) {
+  fail('Car Rentals mobile vehicle carousel must auto-advance, preserve manual interaction, and respect reduced-motion preferences.');
+}
+if (!index.includes("import { installCarVehicleCarouselUX } from './shared/mobile/installCarVehicleCarousel';") || !index.includes('installCarVehicleCarouselUX();')) {
+  fail('Car Rentals mobile vehicle carousel installer is not enabled globally.');
+}
 if (!guardrails.includes('.hero-slider .service-nav') || !guardrails.includes('.header-mobile-call') || !guardrails.includes('.car-mobile-cta')) {
   fail('Legacy duplicate-surface guardrails are incomplete.');
 }
@@ -82,4 +89,4 @@ if (!index.includes("import './shared/styles/ResponsiveTravelRedundancy.css';"))
 }
 
 console.log('Responsive travel redundancy audit passed.');
-console.log('Verified desktop single navigation, mobile-only travel switching on Flights/Hotels/Car Rentals, viewport-aware call support, and clean mobile CTA handoff.');
+console.log('Verified desktop single navigation, mobile-only travel switching on Flights/Hotels/Car Rentals, viewport-aware call support, and auto-advancing mobile car vehicle categories.');
