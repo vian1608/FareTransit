@@ -18,6 +18,8 @@ const supportLayer = read('frontend/src/shared/components/SupportCallLayer.js');
 const supportCta = read('frontend/src/shared/components/SupportCallCTA.js');
 const supportCss = read('frontend/src/shared/components/SupportCallCTA.css');
 const carPage = read('frontend/src/features/cars/pages/CarRentalsHomePage.js');
+const carCss = read('frontend/src/features/cars/pages/CarRentalsHomePage.css');
+const hotelPage = read('frontend/src/features/hotels/pages/HotelSearchPage.js');
 const guardrails = read('frontend/src/shared/styles/ResponsiveTravelRedundancy.css');
 const index = read('frontend/src/index.js');
 
@@ -59,6 +61,15 @@ if (carPage.includes('className="car-mobile-cta"') || !carPage.includes('data-su
 }
 if (!carPage.includes("import MobileServiceSwitcher") || !carPage.includes('<MobileServiceSwitcher active="cars" />')) {
   fail('Car Rentals is missing the shared mobile-only travel service switcher.');
+}
+if ((hotelPage.match(/id: 'hotel-search-/g) || []).length !== 4) {
+  fail('Hotel hero must expose four slides to match the Flights carousel.');
+}
+if (!productCss.includes('border-top-left-radius: 22px !important') || !productCss.includes('border-top-right-radius: 22px !important')) {
+  fail('Flights mobile search card is missing explicit rounded top corners.');
+}
+if (!carCss.includes('height: 380px;') || !carCss.includes('margin: auto 0 0.2rem;') || !carCss.includes('flex: 0 0 36%;')) {
+  fail('Car Rentals mobile hero is missing the compact shared-layout alignment rules.');
 }
 if (!guardrails.includes('.hero-slider .service-nav') || !guardrails.includes('.header-mobile-call') || !guardrails.includes('.car-mobile-cta')) {
   fail('Legacy duplicate-surface guardrails are incomplete.');

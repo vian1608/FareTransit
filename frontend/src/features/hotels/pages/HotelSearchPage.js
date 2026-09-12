@@ -28,6 +28,20 @@ const hotelHeroSlides = [
     title: 'Find the Right Stay for Your Trip',
     lead: 'Search by destination, dates and guests, then request the property you want without losing the booking trail.',
     image: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1800&q=80'
+  },
+  {
+    id: 'hotel-search-3',
+    eyebrow: 'City Hotels & Business Stays',
+    title: 'Stay Close to What Matters',
+    lead: 'Compare well-located properties, guest ratings and practical amenities for the way you plan to travel.',
+    image: 'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?auto=format&fit=crop&w=1800&q=80'
+  },
+  {
+    id: 'hotel-search-4',
+    eyebrow: 'Resorts, Escapes & Longer Stays',
+    title: 'Plan a Stay That Fits the Whole Trip',
+    lead: 'Review resort and extended-stay options with clear dates, guest details and a trackable reservation request.',
+    image: 'https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?auto=format&fit=crop&w=1800&q=80'
   }
 ];
 
