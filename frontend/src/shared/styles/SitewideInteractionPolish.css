@@ -1,9 +1,9 @@
 /*
- * FareTransit — final sitewide interaction polish.
+ * FareTransit — sitewide interaction polish.
  *
- * This layer deliberately targets real interactive controls only. Static content
- * cards are excluded so hover motion never implies that a non-clickable surface
- * can be activated.
+ * Real controls get strong hover/focus/pressed feedback. Informational car-rental
+ * cards get a softer visual lift so the page feels responsive without changing
+ * their semantics or cursor into a fake clickable target.
  */
 
 :root {
@@ -113,15 +113,39 @@ a[href][class*="action"]:focus-visible {
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: linear-gradient(110deg, transparent 10%, rgba(255, 255, 255, .16) 48%, transparent 80%);
+  background: linear-gradient(110deg, transparent 10%, rgba(255, 255, 255, .18) 48%, transparent 80%);
   transform: translateX(-125%);
   transition: transform .42s var(--tfs-interaction-ease);
   pointer-events: none;
 }
 
+/* Car-rental informational surfaces --------------------------------------- */
+.car-rentals-home-page .car-brand-card,
+.car-rentals-home-page .car-how-card,
+.car-rentals-home-page .car-benefit-card,
+.car-rentals-home-page .car-vehicle-card {
+  transition:
+    transform .22s var(--tfs-interaction-ease),
+    box-shadow .22s ease,
+    border-color .22s ease,
+    background-color .22s ease;
+}
+
+.car-rentals-home-page .car-brand-logo,
+.car-rentals-home-page .car-how-card__icon,
+.car-rentals-home-page .car-how-card__number,
+.car-rentals-home-page .car-benefit-icon,
+.car-rentals-home-page .car-vehicle-card > i {
+  transition:
+    transform .22s var(--tfs-interaction-ease),
+    background-color .22s ease,
+    color .22s ease,
+    box-shadow .22s ease;
+}
+
 @media (hover: hover) and (pointer: fine) {
   .car-rentals-home-page .car-ppc-button:hover {
-    transform: translateY(-3px);
+    transform: translateY(-4px) scale(1.015);
   }
 
   .car-rentals-home-page .car-ppc-button:hover::after {
@@ -131,22 +155,67 @@ a[href][class*="action"]:focus-visible {
   .car-rentals-home-page .car-ppc-button--primary:hover {
     color: #fff;
     background: linear-gradient(135deg, #167fd9, #075fac);
-    border-color: rgba(255, 255, 255, .12);
-    box-shadow: 0 18px 38px rgba(30, 136, 229, .38);
+    border-color: rgba(255, 255, 255, .18);
+    box-shadow: 0 20px 42px rgba(30, 136, 229, .42);
   }
 
   .car-rentals-home-page .car-ppc-button--secondary:hover {
     color: #fff;
-    background: rgba(255, 255, 255, .18);
-    border-color: rgba(255, 255, 255, .82);
-    box-shadow: 0 12px 30px rgba(0, 0, 0, .18);
+    background: rgba(255, 255, 255, .20);
+    border-color: rgba(255, 255, 255, .9);
+    box-shadow: 0 14px 32px rgba(0, 0, 0, .20);
   }
 
   .car-rentals-home-page .car-ppc-button--outline:hover {
     color: #075fac;
-    background: #f1f8ff;
-    border-color: rgba(30, 136, 229, .52);
-    box-shadow: 0 12px 28px rgba(13, 43, 69, .12);
+    background: #eef7ff;
+    border-color: rgba(30, 136, 229, .58);
+    box-shadow: 0 14px 30px rgba(13, 43, 69, .14);
+  }
+
+  .car-rentals-home-page .car-brand-card:hover {
+    transform: translateY(-6px);
+    border-color: rgba(30, 136, 229, .34);
+    background: #fbfdff;
+    box-shadow: 0 18px 38px rgba(13, 43, 69, .14);
+  }
+
+  .car-rentals-home-page .car-brand-card:hover .car-brand-logo {
+    transform: scale(1.055);
+  }
+
+  .car-rentals-home-page .car-how-card:hover,
+  .car-rentals-home-page .car-benefit-card:hover {
+    transform: translateY(-6px);
+    border-color: rgba(30, 136, 229, .34);
+    background: #fbfdff;
+    box-shadow: 0 18px 38px rgba(13, 43, 69, .13);
+  }
+
+  .car-rentals-home-page .car-how-card:hover .car-how-card__icon,
+  .car-rentals-home-page .car-benefit-card:hover .car-benefit-icon {
+    transform: translateY(-2px) scale(1.07);
+    background: #1e88e5;
+    color: #fff;
+    box-shadow: 0 9px 20px rgba(30, 136, 229, .25);
+  }
+
+  .car-rentals-home-page .car-how-card:hover .car-how-card__number {
+    transform: scale(1.08);
+    background: #1e88e5;
+    color: #fff;
+  }
+
+  .car-rentals-home-page .car-vehicle-card:hover {
+    transform: translateY(-6px);
+    border-color: rgba(30, 136, 229, .38);
+    background: #f5faff;
+    box-shadow: 0 17px 34px rgba(13, 43, 69, .13);
+  }
+
+  .car-rentals-home-page .car-vehicle-card:hover > i {
+    transform: translateY(-2px) scale(1.12);
+    color: #0d6fca;
   }
 
   .car-rentals-home-page .car-faq-item summary:hover {
@@ -187,7 +256,16 @@ a[href][class*="action"]:focus-visible {
   a[href][class*="button"],
   a[href][class*="cta"],
   a[href][class*="action"],
-  .car-rentals-home-page .car-ppc-button::after {
+  .car-rentals-home-page .car-ppc-button::after,
+  .car-rentals-home-page .car-brand-card,
+  .car-rentals-home-page .car-how-card,
+  .car-rentals-home-page .car-benefit-card,
+  .car-rentals-home-page .car-vehicle-card,
+  .car-rentals-home-page .car-brand-logo,
+  .car-rentals-home-page .car-how-card__icon,
+  .car-rentals-home-page .car-how-card__number,
+  .car-rentals-home-page .car-benefit-icon,
+  .car-rentals-home-page .car-vehicle-card > i {
     transition: none !important;
   }
 
@@ -195,7 +273,11 @@ a[href][class*="action"]:focus-visible {
   a[href][class*="button"]:hover,
   a[href][class*="cta"]:hover,
   a[href][class*="action"]:hover,
-  .car-rentals-home-page .car-ppc-button:hover {
+  .car-rentals-home-page .car-ppc-button:hover,
+  .car-rentals-home-page .car-brand-card:hover,
+  .car-rentals-home-page .car-how-card:hover,
+  .car-rentals-home-page .car-benefit-card:hover,
+  .car-rentals-home-page .car-vehicle-card:hover {
     transform: none !important;
   }
 }
