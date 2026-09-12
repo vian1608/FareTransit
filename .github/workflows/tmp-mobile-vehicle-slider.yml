@@ -28,56 +28,55 @@ jobs:
           css_path = Path('frontend/src/features/cars/pages/CarRentalsHomePage.css')
           css = css_path.read_text()
           marker = '/* Mobile vehicle category slider: keep the page compact while preserving the desktop grid. */'
-          block = r'''
+          block = """
+          /* Mobile vehicle category slider: keep the page compact while preserving the desktop grid. */
+          @media (max-width: 700px) {
+            .car-vehicle-grid {
+              display: flex;
+              grid-template-columns: none;
+              gap: 0.85rem;
+              margin-top: 1.6rem;
+              padding: 0.25rem 0 0.9rem;
+              overflow-x: auto;
+              overflow-y: hidden;
+              scroll-snap-type: x mandatory;
+              scroll-padding-inline: 0.1rem;
+              overscroll-behavior-inline: contain;
+              -webkit-overflow-scrolling: touch;
+              scrollbar-width: none;
+            }
 
-/* Mobile vehicle category slider: keep the page compact while preserving the desktop grid. */
-@media (max-width: 700px) {
-  .car-vehicle-grid {
-    display: flex;
-    grid-template-columns: none;
-    gap: 0.85rem;
-    margin-top: 1.6rem;
-    padding: 0.25rem 0 0.9rem;
-    overflow-x: auto;
-    overflow-y: hidden;
-    scroll-snap-type: x mandatory;
-    scroll-padding-inline: 0.1rem;
-    overscroll-behavior-inline: contain;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-  }
+            .car-vehicle-grid::-webkit-scrollbar {
+              display: none;
+            }
 
-  .car-vehicle-grid::-webkit-scrollbar {
-    display: none;
-  }
+            .car-vehicle-card {
+              flex: 0 0 min(78vw, 280px);
+              min-height: 138px;
+              scroll-snap-align: start;
+              scroll-snap-stop: always;
+            }
+          }
 
-  .car-vehicle-card {
-    flex: 0 0 min(78vw, 280px);
-    min-height: 138px;
-    scroll-snap-align: start;
-    scroll-snap-stop: always;
-  }
-}
-
-@media (max-width: 380px) {
-  .car-vehicle-card {
-    flex-basis: 82vw;
-  }
-}
-'''
+          @media (max-width: 380px) {
+            .car-vehicle-card {
+              flex-basis: 82vw;
+            }
+          }
+          """
           if marker not in css:
-              css_path.write_text(css.rstrip() + block + '\n')
+              import textwrap
+              css_path.write_text(css.rstrip() + '\n\n' + textwrap.dedent(block).strip() + '\n')
 
           audit_path = Path('frontend/scripts/verify-responsive-travel-redundancy.js')
           audit = audit_path.read_text()
           audit_marker = "if (!carCss.includes('scroll-snap-type: x mandatory')"
-          insertion = """if (!carCss.includes('scroll-snap-type: x mandatory') || !carCss.includes('overflow-x: auto') || !carCss.includes('flex: 0 0 min(78vw, 280px)')) {\n  fail('Car Rentals mobile vehicle categories must remain a horizontal swipe slider.');\n}\n"""
+          insertion = "if (!carCss.includes('scroll-snap-type: x mandatory') || !carCss.includes('overflow-x: auto') || !carCss.includes('flex: 0 0 min(78vw, 280px)')) {\n  fail('Car Rentals mobile vehicle categories must remain a horizontal swipe slider.');\n}\n"
           anchor = "if (!guardrails.includes('.hero-slider .service-nav')"
           if audit_marker not in audit:
               if anchor not in audit:
                   raise SystemExit('Could not find responsive audit insertion anchor')
-              audit = audit.replace(anchor, insertion + anchor, 1)
-              audit_path.write_text(audit)
+              audit_path.write_text(audit.replace(anchor, insertion + anchor, 1))
           PY
 
       - name: Commit slider implementation
