@@ -3,8 +3,35 @@ import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
 import { SUPPORT_PHONE_HREF, SUPPORT_PHONE_DISPLAY } from '../../../shared/constants/supportContact';
 import './CarRentalsHomePage.css';
+import './CarRentalBrandLogos.css';
 
-const RENTAL_BRANDS = ['Hertz', 'Avis', 'Budget', 'Enterprise', 'Sixt'];
+const RENTAL_BRANDS = [
+  {
+    key: 'hertz',
+    name: 'Hertz',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/4/42/Hertz_Car_Rental_logo.svg'
+  },
+  {
+    key: 'avis',
+    name: 'Avis',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/f/fd/Avis_logo.svg'
+  },
+  {
+    key: 'budget',
+    name: 'Budget',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/8/8f/Budget_logo.svg'
+  },
+  {
+    key: 'enterprise',
+    name: 'Enterprise',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/e/e9/Enterprise_Rent-A-Car_Logo.svg'
+  },
+  {
+    key: 'sixt',
+    name: 'Sixt',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/f/f4/Sixt_Logo_2023.svg'
+  }
+];
 
 const HOW_IT_WORKS = [
   {
@@ -156,8 +183,14 @@ function CarRentalsHomePage() {
 
             <div className="car-brand-grid" aria-label="Rental brands">
               {RENTAL_BRANDS.map((brand) => (
-                <div className="car-brand-card" key={brand}>
-                  <span>{brand}</span>
+                <div className="car-brand-card car-brand-card--logo" key={brand.key} title={brand.name}>
+                  <img
+                    className={`car-brand-logo car-brand-logo--${brand.key}`}
+                    src={brand.logo}
+                    alt={`${brand.name} logo`}
+                    loading="lazy"
+                    decoding="async"
+                  />
                 </div>
               ))}
             </div>
