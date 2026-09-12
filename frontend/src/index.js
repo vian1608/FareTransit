@@ -18,7 +18,6 @@ import './features/bookings/addons/BaggageAncillary.css';
 import './features/bookings/addons/TripAddonsEnhancement.css';
 import './shared/styles/SitewideInteractionPolish.css';
 import './shared/styles/ResponsiveTravelRedundancy.css';
-import './shared/styles/CarVehicleMobileSlider.css';
 import App from './app/App';
 import BackOfficeRouter from './features/backoffice/BackOfficeRouter';
 import SecurePaymentPage from './features/secure-payments/SecurePaymentPage';
