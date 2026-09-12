@@ -58,16 +58,24 @@ async function run() {
   );
 
   assert.ok(
-    interactions.includes('.car-rentals-home-page .car-faq-item summary:hover'),
-    'Interactive car-rental FAQ summaries must expose a hover state'
+    interactions.includes('.car-rentals-home-page .car-brand-card:hover') &&
+      interactions.includes('.car-rentals-home-page .car-how-card:hover') &&
+      interactions.includes('.car-rentals-home-page .car-benefit-card:hover') &&
+      interactions.includes('.car-rentals-home-page .car-vehicle-card:hover'),
+    'Every major car-rental information card group must expose visible desktop hover feedback'
   );
 
   assert.ok(
-    !interactions.includes('.car-brand-card:hover') &&
-      !interactions.includes('.car-how-card:hover') &&
-      !interactions.includes('.car-benefit-card:hover') &&
-      !interactions.includes('.car-vehicle-card:hover'),
-    'Static informational cards must not masquerade as clickable controls'
+    interactions.includes('.car-rentals-home-page .car-brand-card:hover .car-brand-logo') &&
+      interactions.includes('.car-rentals-home-page .car-how-card:hover .car-how-card__icon') &&
+      interactions.includes('.car-rentals-home-page .car-benefit-card:hover .car-benefit-icon') &&
+      interactions.includes('.car-rentals-home-page .car-vehicle-card:hover > i'),
+    'Car-rental hover feedback must include the logo/icon layer, not only the outer card shadow'
+  );
+
+  assert.ok(
+    interactions.includes('.car-rentals-home-page .car-faq-item summary:hover'),
+    'Interactive car-rental FAQ summaries must expose a hover state'
   );
 
   assert.ok(
