@@ -79,6 +79,9 @@ if (!carCss.includes('scroll-snap-type: x mandatory') || !carCss.includes('overf
 if (!carCarousel.includes("const MOBILE_QUERY = '(max-width: 700px)'") || !carCarousel.includes('window.setInterval(advance, AUTOPLAY_INTERVAL_MS)') || !carCarousel.includes("behavior: reducedMotionQuery.matches ? 'auto' : 'smooth'") || !carCarousel.includes('prefers-reduced-motion: reduce') || !carCarousel.includes('pauseAfterInteraction')) {
   fail('Car Rentals mobile vehicle carousel must auto-advance, preserve manual interaction, and respect reduced-motion preferences.');
 }
+if (!carCarousel.includes('const EDGE_SWIPE_THRESHOLD_PX = 42') || !carCarousel.includes('beginEdgeSwipe') || !carCarousel.includes('completeEdgeSwipe') || !carCarousel.includes('startIndex === cards.length - 1') || !carCarousel.includes('scrollToCard(0, true)') || !carCarousel.includes('startIndex === 0') || !carCarousel.includes('scrollToCard(cards.length - 1, true)')) {
+  fail('Car Rentals mobile vehicle carousel must wrap manual edge swipes from last-to-first and first-to-last.');
+}
 if (!carCarousel.includes("import './CarVehicleCarouselDots.css';") || !carCarousel.includes("className = 'car-vehicle-carousel-dot'") || !carCarousel.includes('setActiveDot') || !carCarousel.includes("grid.addEventListener('scroll', scheduleDotSync")) {
   fail('Car Rentals mobile vehicle carousel must expose synced pagination dots for autoplay and manual swiping.');
 }
@@ -96,4 +99,4 @@ if (!index.includes("import './shared/styles/ResponsiveTravelRedundancy.css';"))
 }
 
 console.log('Responsive travel redundancy audit passed.');
-console.log('Verified desktop single navigation, mobile-only travel switching on Flights/Hotels/Car Rentals, viewport-aware call support, and auto-advancing mobile car vehicle categories with compact synced pagination dots.');
+console.log('Verified desktop single navigation, mobile-only travel switching on Flights/Hotels/Car Rentals, viewport-aware call support, and cyclic auto-advancing mobile car vehicle categories with compact synced pagination dots.');
