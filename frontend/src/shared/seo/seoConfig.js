@@ -42,20 +42,12 @@ export const CORE_SEO_PAGES = {
     title: 'Flights from New York to Miami | FareTransit',
     description: 'Review flight options from New York to Miami and request FareTransit assistance with schedules, connections, cabin choices and reservation details.',
     parent: '/flights',
-    service: {
-      name: 'Flight assistance from New York to Miami',
-      serviceType: 'Flight booking assistance',
-    },
   },
   '/flight-lax-to-jfk': {
     pageName: 'Flights from Los Angeles to New York',
     title: 'Flights from Los Angeles to New York | FareTransit',
     description: 'Review flight options from Los Angeles to New York JFK and request FareTransit assistance with schedules, cabins, baggage and reservation details.',
     parent: '/flights',
-    service: {
-      name: 'Flight assistance from Los Angeles to New York',
-      serviceType: 'Flight booking assistance',
-    },
   },
   '/travel-assistance': {
     pageName: 'Flight Booking Assistance',
