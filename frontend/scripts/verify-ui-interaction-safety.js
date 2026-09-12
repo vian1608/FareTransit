@@ -68,8 +68,11 @@ for (const required of [
 }
 
 const supportComponent = read('frontend/src/shared/components/SupportCallCTA.js');
-if (!supportComponent.includes("import './SupportCallCTASafety.css';")) {
-  fail('SupportCallCTA must load its contrast-safety stylesheet after the base stylesheet');
+if (!supportComponent.includes("import './SupportCallCTA.css';") || !supportComponent.includes("import './SupportCallCTASafety.css';")) {
+  fail('SupportCallCTA must load its base stylesheet followed by the contrast-safety stylesheet');
+}
+if (supportComponent.indexOf("import './SupportCallCTASafety.css';") < supportComponent.indexOf("import './SupportCallCTA.css';")) {
+  fail('SupportCallCTASafety.css must load after SupportCallCTA.css');
 }
 if (!supportComponent.includes('href={SUPPORT_PHONE_HREF}')) {
   fail('SupportCallCTA must continue using the centralized support telephone href');
@@ -121,7 +124,6 @@ const majorInteractionFiles = [
   ['frontend/src/shared/components/Header.css', [':hover']],
   ['frontend/src/shared/components/Footer.css', [':hover']],
   ['frontend/src/shared/components/ServiceNav.css', [':hover']],
-  ['frontend/src/features/cars/pages/CarRentalsHomePage.css', [':focus-visible']],
 ];
 for (const [relativePath, requiredTokens] of majorInteractionFiles) {
   const content = read(relativePath);
@@ -136,6 +138,7 @@ for (const required of [
   '.car-rentals-home-page .car-benefit-card:hover',
   '.car-rentals-home-page .car-vehicle-card:hover',
   '.car-rentals-home-page .car-ppc-button--primary:hover',
+  '.car-rentals-home-page .car-ppc-button:focus-visible',
 ]) {
   if (!interactions.includes(required)) fail(`car-rental interaction coverage is missing ${required}`);
 }
