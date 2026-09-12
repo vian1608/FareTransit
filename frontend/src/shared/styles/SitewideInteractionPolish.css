@@ -13,8 +13,9 @@
 
 /*
  * A large part of the customer site uses anchors/React Links styled as buttons.
- * The older global interaction layer covered native buttons but not these CTA
- * anchors, leaving some pages visually flat on mouse hover.
+ * Keep the global layer limited to interaction properties only. Do not force
+ * descendant text/icon colors here: composite CTAs such as SupportCallCTA own
+ * multiple foreground colors and must remain in control of their descendants.
  */
 a[href][class*="btn"],
 a[href][class*="button"],
@@ -31,19 +32,6 @@ a[href][class*="action"] {
     color .18s ease,
     opacity .18s ease;
   will-change: transform;
-}
-
-/* Keep genuine button labels/icons owned by the button color. This also guards
- * against broad page-level descendant selectors accidentally recoloring them. */
-a[href][class*="btn"] > span,
-a[href][class*="button"] > span,
-a[href][class*="cta"] > span,
-a[href][class*="action"] > span,
-a[href][class*="btn"] > i,
-a[href][class*="button"] > i,
-a[href][class*="cta"] > i,
-a[href][class*="action"] > i {
-  color: inherit;
 }
 
 @media (hover: hover) and (pointer: fine) {
