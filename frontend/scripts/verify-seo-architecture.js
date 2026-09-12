@@ -37,6 +37,9 @@ mustContain(footer, '<Link to="/flights">Flights</Link>', 'Footer flight navigat
 mustContain(mobileSwitcher, "to: '/flights'", 'Mobile flight navigation');
 mustContain(homepage, 'Travel Booking Assistance for Flights, Hotels &amp; Car Rentals', 'Brand homepage H1');
 
+const sitemapUrls = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]);
+const sitemapPaths = sitemapUrls.map((url) => new URL(url).pathname.replace(/\/+$/, '') || '/');
+
 [
   '/flights',
   '/hotels',
@@ -49,7 +52,9 @@ mustContain(homepage, 'Travel Booking Assistance for Flights, Hotels &amp; Car R
   '/car-rentals/orlando',
   '/car-rentals/lax',
   '/car-rentals/jfk',
-].forEach((urlPath) => mustContain(sitemap, `<loc>https://www.faretransit.com${urlPath}</loc>`, `Sitemap ${urlPath}`));
+].forEach((urlPath) => {
+  if (!sitemapPaths.includes(urlPath)) fail(`Sitemap ${urlPath} is missing.`);
+});
 
 [
   '/search',
@@ -59,9 +64,8 @@ mustContain(homepage, 'Travel Booking Assistance for Flights, Hotels &amp; Car R
   '/payment',
   '/my-bookings',
 ].forEach((urlPath) => {
-  if (sitemap.includes(`<loc>https://www.faretransit.com${urlPath}`)) {
-    fail(`Transactional/result URL leaked into sitemap: ${urlPath}`);
-  }
+  const leaked = sitemapPaths.some((pathname) => pathname === urlPath || pathname.startsWith(`${urlPath}/`));
+  if (leaked) fail(`Transactional/result URL leaked into sitemap: ${urlPath}`);
 });
 
 mustContain(vercel, '"source": "/hotels/results"', 'Hotel results HTTP noindex rule');
