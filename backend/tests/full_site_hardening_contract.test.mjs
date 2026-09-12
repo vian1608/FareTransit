@@ -74,14 +74,20 @@ assert.match(carResultCard, /window\.location\.assign/);
 assert.match(carResults, /requestSequence/);
 assert.match(carResults, /pageToken/);
 assert.match(carResults, /normalizeError/);
-// Current master intentionally presents car-rental phone assistance on the public
-// landing page. Keep the hardening contract aligned with that production behavior
-// rather than the superseded inline car-search form/default-date implementation.
+// The public car-rental landing page is intentionally call-first because FareTransit
+// does not expose live car inventory there. Keep search/results internals hardened,
+// while preventing the PPC landing page from regressing back to an online search UI.
 assert.match(carHome, /SUPPORT_PHONE_HREF/);
-assert.match(carHome, /POPULAR_AIRPORTS/);
-assert.match(carHome, /aria-label="Car rental phone assistance"/);
-assert.match(carHome, /serviceNavActive="cars"/);
-assert.match(carHome, /SeamlessAdvisorySection variant="flight"/);
+assert.match(carHome, /SUPPORT_PHONE_DISPLAY/);
+assert.match(carHome, /RENTAL_BRANDS/);
+for (const brand of ['Hertz', 'Avis', 'Budget', 'Enterprise', 'Sixt']) {
+  assert.ok(carHome.includes(brand), `Car landing page is missing ${brand}`);
+}
+assert.match(carHome, /to="\/contact"/);
+assert.match(carHome, /car-mobile-cta/);
+assert.match(carHome, /not affiliated with or endorsed by/);
+assert.doesNotMatch(carHome, /CarSearchForm/);
+assert.doesNotMatch(carHome, /ProductSearchCard/);
 
 assert.match(returnFlights, /setError\(normalizeError/);
 assert.match(returnFlights, /Return Flight Search Failed/);

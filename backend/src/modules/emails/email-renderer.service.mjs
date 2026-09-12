@@ -2,6 +2,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import Handlebars from 'handlebars';
+import env from '../../config/env.mjs';
 import { buildCanonicalItinerary } from '../../shared/utils/airline-lookup.mjs';
 import passengerAuthorizationService from '../authorizations/passenger-authorization.service.mjs';
 import bookingRepository from '../bookings/booking.repository.mjs';
@@ -68,7 +69,7 @@ export const emailRendererService = {
             {{{itineraryHtml}}}
           </div>
           <hr />
-          <p style="font-size: 12px; color: #64748b;">Support: support@faretransit.com | +1 (213) 965-9727 | www.faretransit.com</p>
+          <p style="font-size: 12px; color: #64748b;">Support: support@faretransit.com | ${env.supportPhoneDisplay} | www.faretransit.com</p>
         </div>
       `;
     } else {
@@ -108,7 +109,7 @@ export const emailRendererService = {
       itineraryHtml,
       itineraryText,
       supportEmail: 'support@faretransit.com',
-      supportPhone: '+1 (213) 965-9727',
+      supportPhone: env.supportPhoneDisplay,
       websiteUrl: 'https://www.faretransit.com'
     };
 
@@ -127,7 +128,7 @@ Customer Total: ${currencySymbol}${customerTotal} ${currency}
 Itinerary Summary:
 ${itineraryText}
 
-For support, contact support@faretransit.com or call +1 (213) 965-9727.
+For support, contact support@faretransit.com or call ${env.supportPhoneDisplay}.
 www.faretransit.com
     `.trim();
 
@@ -243,7 +244,7 @@ www.faretransit.com
         cardBrand: (paymentMethod.card_brand || paymentMethod.cardBrand || 'Card').toUpperCase(),
         cardholderName: paymentMethod.cardholder_name || paymentMethod.cardholderName || passengerName,
         supportEmail: 'support@faretransit.com',
-        supportPhone: '+1 (213) 965-9727'
+        supportPhone: env.supportPhoneDisplay
       });
     } else {
       html = `
@@ -257,7 +258,7 @@ www.faretransit.com
           </div>
           <p style="font-size: 12px; color: #64748b;">Or copy this URL: ${authUrl}</p>
           <hr />
-          <p style="font-size: 12px; color: #64748b;">FareTransit Support: support@faretransit.com | +1 (213) 965-9727</p>
+          <p style="font-size: 12px; color: #64748b;">FareTransit Support: support@faretransit.com | ${env.supportPhoneDisplay}</p>
         </div>
       `;
     }
@@ -278,7 +279,7 @@ ${authUrl}
 
 This authorization link expires in 24 hours.
 
-Support: support@faretransit.com | +1 (213) 965-9727 | www.faretransit.com
+Support: support@faretransit.com | ${env.supportPhoneDisplay} | www.faretransit.com
     `.trim();
 
     return {
@@ -344,7 +345,7 @@ Support: support@faretransit.com | +1 (213) 965-9727 | www.faretransit.com
         customerTotal,
         currency,
         supportEmail: 'support@faretransit.com',
-        supportPhone: '+1 (213) 965-9727'
+        supportPhone: env.supportPhoneDisplay
       });
     } else {
       html = `
@@ -358,7 +359,7 @@ Support: support@faretransit.com | +1 (213) 965-9727 | www.faretransit.com
             <li><strong>Total Amount Paid:</strong> $${customerTotal} ${currency}</li>
           </ul>
           <hr />
-          <p style="font-size: 12px; color: #64748b;">FareTransit Support: support@faretransit.com | +1 (213) 965-9727</p>
+          <p style="font-size: 12px; color: #64748b;">FareTransit Support: support@faretransit.com | ${env.supportPhoneDisplay}</p>
         </div>
       `;
     }
@@ -375,7 +376,7 @@ Airline PNR: ${pnr || 'NOT_ISSUED'}
 E-Ticket Number: ${ticketNo || 'NOT_ISSUED'}
 Customer Total: $${customerTotal} ${currency}
 
-Support: support@faretransit.com | +1 (213) 965-9727 | www.faretransit.com
+Support: support@faretransit.com | ${env.supportPhoneDisplay} | www.faretransit.com
     `.trim();
 
     return {

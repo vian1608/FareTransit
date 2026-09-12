@@ -5,6 +5,7 @@ import analytics, { trackLeadConversion } from '../../../shared/utils/analytics'
 import {
   SUPPORT_PHONE_DISPLAY,
   SUPPORT_PHONE_HREF,
+  SUPPORT_PHONE_SCHEMA,
 } from '../../../shared/constants/supportContact';
 import './SeniorTravelPage.css';
 
@@ -312,10 +313,10 @@ export default function SeniorTravelPage() {
               '@type': 'Organization',
               name: 'FareTransit',
               url: 'https://faretransit.com',
-              telephone: '+12139659727',
+              telephone: SUPPORT_PHONE_SCHEMA,
               contactPoint: {
                 '@type': 'ContactPoint',
-                telephone: '+1-213-965-9727',
+                telephone: SUPPORT_PHONE_SCHEMA,
                 contactType: 'customer service',
                 areaServed: 'US',
                 availableLanguage: 'English',
