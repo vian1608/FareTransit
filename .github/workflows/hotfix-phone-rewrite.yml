@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - hotfix/faretransit-phone-888-780-8855
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: write
