@@ -17,7 +17,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "prebuild": "node scripts/verify-business-phone.js",
+    "prebuild": "node scripts/verify-business-phone.js && node scripts/verify-ui-interaction-safety.js",
     "build": "CI=false react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
