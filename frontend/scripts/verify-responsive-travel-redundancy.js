@@ -71,6 +71,9 @@ if (!productCss.includes('border-top-left-radius: 22px !important') || !productC
 if (!carCss.includes('height: 380px;') || !carCss.includes('margin: auto 0 0.2rem;') || !carCss.includes('flex: 0 0 36%;')) {
   fail('Car Rentals mobile hero is missing the compact shared-layout alignment rules.');
 }
+if (!carCss.includes('scroll-snap-type: x mandatory') || !carCss.includes('overflow-x: auto') || !carCss.includes('flex: 0 0 min(78vw, 280px)')) {
+  fail('Car Rentals mobile vehicle categories must remain a horizontal swipe slider.');
+}
 if (!guardrails.includes('.hero-slider .service-nav') || !guardrails.includes('.header-mobile-call') || !guardrails.includes('.car-mobile-cta')) {
   fail('Legacy duplicate-surface guardrails are incomplete.');
 }
