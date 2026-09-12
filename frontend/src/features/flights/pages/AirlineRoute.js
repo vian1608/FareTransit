@@ -5,6 +5,7 @@ import airlinesData from '../../../shared/data/airlinesData.json';
 import airlineKeywords from '../../../shared/data/airline-keywords.json';
 import { inquiryAPI } from '../../../shared/api/api';
 import { trackLeadConversion } from '../../../shared/utils/analytics';
+import { SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_HREF } from '../../../shared/constants/supportContact';
 import './AirlineRoute.css';
 
 const AirlineRoute = () => {
@@ -127,11 +128,11 @@ const AirlineRoute = () => {
 
           {/* HIGH-CONVERSION CLICK TO DIAL CALL ASSET */}
           <div className="hero-call-action">
-            <a href={`tel:${airline.phone}`} className="call-btn">
+            <a href={SUPPORT_PHONE_HREF} className="call-btn">
               <svg className="call-icon" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56a.977.977 0 00-1.01.24l-2.2 2.2c-2.83-1.44-5.15-3.75-6.59-6.59l2.2-2.21c.28-.26.36-.65.25-1A11.36 11.36 0 018.5 4c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1 0 9.39 7.61 17 17 17 .55 0 1-.45 1-1v-3.5c0-.55-.45-1-1-1z"/>
               </svg>
-              <span>Call Instant Booking Support: {airline.phone}</span>
+              <span>Call Instant Booking Support: {SUPPORT_PHONE_DISPLAY}</span>
             </a>
             <p className="call-disclaimer">Speak with a live booking professional to manage changes, multi-city updates, or seat confirmations instantly.</p>
           </div>
