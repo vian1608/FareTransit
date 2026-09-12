@@ -33,10 +33,6 @@
   border-bottom-color: var(--tfs-gold-300, #ead58e);
 }
 
-.header-mobile-call {
-  display: none;
-}
-
 @media (max-width: 768px) {
   .header.header--flights .nav {
     background: linear-gradient(145deg, var(--tfs-wine-700, #861b3d), var(--tfs-wine-950, #3b0a1c));
@@ -77,28 +73,6 @@
     height: 40px;
     border-radius: 8px;
   }
-
-  .header-mobile-call {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.38rem;
-    min-height: 38px;
-    padding: 0 0.72rem;
-    border-radius: 9px;
-    background: #f5d78e;
-    color: #571127;
-    text-decoration: none;
-    font-size: 0.78rem;
-    font-weight: 800;
-    white-space: nowrap;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.16);
-    flex: 0 0 auto;
-  }
-
-  .header-mobile-call i {
-    font-size: 0.78rem;
-  }
 }
 
 @media (max-width: 640px) {
@@ -122,12 +96,6 @@
   .header .logo i,
   .header .logo-icon {
     font-size: 1.15rem;
-  }
-
-  .header-mobile-call {
-    min-height: 36px;
-    padding: 0 0.58rem;
-    font-size: 0.73rem;
   }
 
   .header .nav-toggle {
