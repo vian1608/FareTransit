@@ -82,8 +82,8 @@ if (!carCarousel.includes("const MOBILE_QUERY = '(max-width: 700px)'") || !carCa
 if (!carCarousel.includes("import './CarVehicleCarouselDots.css';") || !carCarousel.includes("className = 'car-vehicle-carousel-dot'") || !carCarousel.includes('setActiveDot') || !carCarousel.includes("grid.addEventListener('scroll', scheduleDotSync")) {
   fail('Car Rentals mobile vehicle carousel must expose synced pagination dots for autoplay and manual swiping.');
 }
-if (!carCarouselDotsCss.includes('.car-vehicle-carousel-dots') || !carCarouselDotsCss.includes('.car-vehicle-carousel-dot.is-active') || !carCarouselDotsCss.includes('@media (max-width: 700px)')) {
-  fail('Car Rentals mobile carousel pagination-dot styling is missing or not mobile-scoped.');
+if (!carCarouselDotsCss.includes('.car-vehicle-carousel-dots') || !carCarouselDotsCss.includes('.car-vehicle-carousel-dot.is-active::before') || !carCarouselDotsCss.includes('background: transparent !important') || !carCarouselDotsCss.includes('min-height: 28px !important') || !carCarouselDotsCss.includes('@media (max-width: 700px)')) {
+  fail('Car Rentals mobile pagination dots must isolate their visual size from global button sizing.');
 }
 if (!index.includes("import { installCarVehicleCarouselUX } from './shared/mobile/installCarVehicleCarousel';") || !index.includes('installCarVehicleCarouselUX();')) {
   fail('Car Rentals mobile vehicle carousel installer is not enabled globally.');
@@ -96,4 +96,4 @@ if (!index.includes("import './shared/styles/ResponsiveTravelRedundancy.css';"))
 }
 
 console.log('Responsive travel redundancy audit passed.');
-console.log('Verified desktop single navigation, mobile-only travel switching on Flights/Hotels/Car Rentals, viewport-aware call support, and auto-advancing mobile car vehicle categories with synced pagination dots.');
+console.log('Verified desktop single navigation, mobile-only travel switching on Flights/Hotels/Car Rentals, viewport-aware call support, and auto-advancing mobile car vehicle categories with compact synced pagination dots.');
