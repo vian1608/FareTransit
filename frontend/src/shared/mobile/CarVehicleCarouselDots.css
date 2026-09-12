@@ -7,44 +7,72 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.5rem;
-    margin: 0.1rem auto 1.15rem;
-    min-height: 28px;
+    gap: 0.1rem;
+    margin: 0.2rem auto 1rem;
+    min-height: 32px;
   }
 
+  /*
+   * Keep the real button transparent and use ::before for the visible dot.
+   * This isolates pagination visuals from site-wide button min-size/padding rules.
+   */
   .car-vehicle-carousel-dot {
-    width: 9px;
-    height: 9px;
-    padding: 0;
-    border: 0;
-    border-radius: 999px;
-    background: rgba(30, 136, 229, 0.26);
-    box-shadow: none;
+    position: relative !important;
+    display: grid !important;
+    place-items: center !important;
+    flex: 0 0 28px !important;
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    min-height: 28px !important;
+    max-width: 28px !important;
+    max-height: 28px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 50% !important;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    font-size: 0 !important;
+    line-height: 0 !important;
     cursor: pointer;
-    transform: none;
+    overflow: visible;
+    transform: none !important;
+    filter: none !important;
+  }
+
+  .car-vehicle-carousel-dot::before {
+    content: '';
+    display: block;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: rgba(30, 136, 229, 0.28);
     transition: width 180ms ease, background-color 180ms ease, transform 180ms ease;
   }
 
-  .car-vehicle-carousel-dot:hover,
-  .car-vehicle-carousel-dot:focus-visible {
-    background: rgba(30, 136, 229, 0.55);
-    transform: scale(1.12);
+  .car-vehicle-carousel-dot:hover::before,
+  .car-vehicle-carousel-dot:focus-visible::before {
+    background: rgba(30, 136, 229, 0.58);
+    transform: scale(1.08);
   }
 
-  .car-vehicle-carousel-dot.is-active {
-    width: 22px;
+  .car-vehicle-carousel-dot.is-active::before {
+    width: 20px;
     background: var(--car-blue, #1e88e5);
   }
 
   .car-vehicle-carousel-dot:focus-visible {
-    outline: 2px solid #fff;
-    outline-offset: 2px;
-    box-shadow: 0 0 0 4px rgba(30, 136, 229, 0.3);
+    outline: 2px solid rgba(30, 136, 229, 0.55) !important;
+    outline-offset: 1px !important;
+    box-shadow: none !important;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .car-vehicle-carousel-dot {
+  .car-vehicle-carousel-dot::before {
     transition: none;
   }
 }
