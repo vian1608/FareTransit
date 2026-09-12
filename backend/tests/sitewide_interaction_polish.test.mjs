@@ -33,10 +33,16 @@ async function run() {
     'Hover-only motion must be gated to devices that actually support hover'
   );
 
+  const carLabelRule = interactions.slice(
+    interactions.indexOf('.car-rentals-home-page .car-ppc-button > span'),
+    interactions.indexOf('.car-rentals-home-page .car-ppc-button > i')
+  );
   assert.ok(
-    interactions.includes('.car-rentals-home-page .car-ppc-button > span') &&
-      interactions.includes('color: inherit;'),
-    'Car-rental CTA labels must inherit their button foreground color'
+    carLabelRule.includes('color: inherit;') &&
+      carLabelRule.includes('font-size: inherit;') &&
+      carLabelRule.includes('font-weight: inherit;') &&
+      carLabelRule.includes('line-height: inherit;'),
+    'Car-rental CTA labels must inherit the full button foreground and typography'
   );
 
   assert.ok(
