@@ -5,6 +5,7 @@ import Footer from '../shared/components/Footer';
 import PageTransition from '../shared/components/PageTransition';
 import ScrollToTop from '../shared/components/ScrollToTop';
 import SeoRouteGuard from '../shared/components/SeoRouteGuard';
+import TravelHomePage from '../shared/pages/TravelHomePage';
 import Home from '../features/flights/pages/Home';
 import SearchResults from '../features/flights/pages/SearchResultsPage';
 import SignIn from '../features/customers/pages/SignInPage';
@@ -45,8 +46,10 @@ import {
 import { PaymentBootstrap, TokenizedPaymentPage } from '../features/journey/TokenizedPaymentRoutes';
 
 import CarRentalsHomePage from '../features/cars/pages/CarRentalsHomePage';
+import CarRentalLocationPage from '../features/cars/pages/CarRentalLocationPage';
 import CarSearchUrlGuard from '../features/cars/pages/CarSearchUrlGuard';
 import HotelSearchPage from '../features/hotels/pages/HotelSearchPage';
+import HotelDestinationPage from '../features/hotels/pages/HotelDestinationPage';
 
 function LegacyAirlineRedirect() {
   const { airlineSlug } = useParams();
@@ -73,16 +76,19 @@ function App() {
           <AppErrorBoundary>
             <PageTransition>
               <Routes>
-                <Route path="/" element={<Home />} />
+                <Route path="/" element={<TravelHomePage />} />
+                <Route path="/flights" element={<Home />} />
 
                 {/* Hotel search is URL-authoritative; all booking requests return through CRM. */}
                 <Route path="/hotels" element={<HotelSearchPage />} />
                 <Route path="/hotels/results" element={<HotelSearchPage />} />
+                <Route path="/hotels/:destinationSlug" element={<HotelDestinationPage />} />
 
                 {/* Car Rentals: results are URL-authoritative and copy/paste safe. */}
                 <Route path="/car-rentals" element={<CarRentalsHomePage />} />
                 <Route path="/car-rentals/search" element={<CarSearchUrlGuard />} />
                 <Route path="/car-rentals/results" element={<CarSearchUrlGuard />} />
+                <Route path="/car-rentals/:locationSlug" element={<CarRentalLocationPage />} />
 
                 {/* Legacy Amtrak Route Redirect */}
                 <Route path="/amtrak" element={<Navigate to="/car-rentals" replace />} />
@@ -149,10 +155,9 @@ function App() {
                 {/* Flight Routes */}
                 <Route path="/flight-nyc-to-mia" element={
                   <FlightRoute
-                    title="Flights from NYC to Miami (MIA)"
-                    metaTitle="Flights from NYC to Miami | Fast Booking & Deals | FareTransit"
-                    metaDescription="Find best flight deals and seamless advisory for non-stop flights from New York to Miami."
-                    keywords="flights from nyc to mia, new york to miami flights, nyc to miami plane tickets"
+                    title="Flights from New York to Miami (MIA)"
+                    metaTitle="Flights from New York to Miami | FareTransit"
+                    metaDescription="Review flight options from New York to Miami and request FareTransit assistance with schedules, connections, cabin choices and reservation details."
                     originCity="New York City"
                     destinationCity="Miami"
                     originCode="NYC"
@@ -162,9 +167,8 @@ function App() {
                 <Route path="/flight-lax-to-jfk" element={
                   <FlightRoute
                     title="Flights from Los Angeles (LAX) to New York (JFK)"
-                    metaTitle="Flights from LAX to JFK | Transcontinental Deals | FareTransit"
-                    metaDescription="Book premium transcontinental flights from Los Angeles to New York JFK with expert logistics."
-                    keywords="flights from lax to jfk, los angeles to new york flights, lax to jfk tickets"
+                    metaTitle="Flights from Los Angeles to New York | FareTransit"
+                    metaDescription="Review flight options from Los Angeles to New York JFK and request FareTransit assistance with schedules, cabins, baggage and reservation details."
                     originCity="Los Angeles"
                     destinationCity="New York"
                     originCode="LAX"

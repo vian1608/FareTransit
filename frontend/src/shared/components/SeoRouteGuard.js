@@ -2,11 +2,13 @@ import React, { useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useLocation, useNavigate } from 'react-router-dom';
 import routesData from '../data/routesData.json';
-
-const CANONICAL_ORIGIN = 'https://www.faretransit.com';
+import { hotelDestinationSlugs, hotelDestinations } from '../data/hotelDestinations';
+import { carRentalLocationSlugs, carRentalLocations } from '../data/carRentalLocations';
+import { CANONICAL_ORIGIN, getCoreSeo, serviceSchemaFor } from '../seo/seoConfig';
 
 const INDEXABLE_EXACT = new Set([
   '/',
+  '/flights',
   '/hotels',
   '/car-rentals',
   '/contact',
@@ -26,19 +28,6 @@ const INDEXABLE_EXACT = new Set([
 ]);
 
 const PAGE_NAMES = {
-  '/': 'FareTransit',
-  '/hotels': 'Hotel Search and Booking Assistance',
-  '/car-rentals': 'Car Rentals',
-  '/contact': 'Contact FareTransit',
-  '/terms': 'Terms and Conditions',
-  '/privacy-policy': 'Privacy Policy',
-  '/refund-policy': 'Refund Policy',
-  '/travel-assistance': 'Flight Booking Assistance',
-  '/booking-for-parents': 'Booking Flights for Parents and Relatives',
-  '/urgent-travel': 'Urgent Travel Assistance',
-  '/senior-travel/flight-deals': 'Senior Flight Assistance',
-  '/flight-nyc-to-mia': 'Flights from New York to Miami',
-  '/flight-lax-to-jfk': 'Flights from Los Angeles to New York',
   '/train-nyc-to-dc': 'Train from New York to Washington, D.C.',
   '/train-dc-to-nyc': 'Train from Washington, D.C. to New York',
   '/train-philly-to-nyc': 'Train from Philadelphia to New York',
@@ -49,11 +38,14 @@ const VALID_ROUTE_PATHS = new Set(
   routesData.filter((route) => route?.slug).map((route) => `/routes/${route.slug}`)
 );
 
-const ROUTE_PAGE_NAMES = new Map(
+const ROUTE_BY_PATH = new Map(
   routesData
     .filter((route) => route?.slug)
-    .map((route) => [`/routes/${route.slug}`, route.title || route.metaTitle || route.slug])
+    .map((route) => [`/routes/${route.slug}`, route])
 );
+
+const VALID_HOTEL_PATHS = new Set(hotelDestinationSlugs.map((slug) => `/hotels/${slug}`));
+const VALID_CAR_PATHS = new Set(carRentalLocationSlugs.map((slug) => `/car-rentals/${slug}`));
 
 const CANONICAL_ALIASES = {
   '/senior-travel': '/senior-travel/flight-deals',
@@ -75,11 +67,74 @@ const normalizePath = (pathname) => {
 };
 
 function isIndexablePath(pathname) {
-  return INDEXABLE_EXACT.has(pathname) || VALID_ROUTE_PATHS.has(pathname);
+  return INDEXABLE_EXACT.has(pathname)
+    || VALID_ROUTE_PATHS.has(pathname)
+    || VALID_HOTEL_PATHS.has(pathname)
+    || VALID_CAR_PATHS.has(pathname);
 }
 
-function getPageName(pathname) {
-  return PAGE_NAMES[pathname] || ROUTE_PAGE_NAMES.get(pathname) || 'FareTransit';
+function getDestinationSeo(pathname) {
+  if (VALID_HOTEL_PATHS.has(pathname)) {
+    const slug = pathname.split('/').pop();
+    const destination = hotelDestinations[slug];
+    return {
+      pageName: destination.pageName,
+      title: destination.title,
+      description: destination.description,
+      parent: '/hotels',
+      service: {
+        name: `Hotel booking assistance in ${destination.city}`,
+        serviceType: 'Hotel booking assistance',
+      },
+    };
+  }
+
+  if (VALID_CAR_PATHS.has(pathname)) {
+    const slug = pathname.split('/').pop();
+    const rental = carRentalLocations[slug];
+    return {
+      pageName: rental.pageName,
+      title: rental.title,
+      description: rental.description,
+      parent: '/car-rentals',
+      service: {
+        name: `Car rental booking assistance for ${rental.label}`,
+        serviceType: 'Car rental booking assistance',
+      },
+    };
+  }
+
+  return null;
+}
+
+function getRouteSeo(pathname) {
+  const route = ROUTE_BY_PATH.get(pathname);
+  if (!route) return null;
+  const isFlight = route.type === 'flight';
+  return {
+    pageName: route.title || route.metaTitle || route.slug,
+    title: route.metaTitle,
+    description: route.metaDescription,
+    parent: isFlight ? '/flights' : null,
+  };
+}
+
+function getSeo(pathname) {
+  return getCoreSeo(pathname)
+    || getDestinationSeo(pathname)
+    || getRouteSeo(pathname)
+    || (PAGE_NAMES[pathname] ? { pageName: PAGE_NAMES[pathname] } : null);
+}
+
+function getPageName(pathname, seo) {
+  return seo?.pageName || PAGE_NAMES[pathname] || 'FareTransit';
+}
+
+function parentLabel(parentPath) {
+  if (parentPath === '/flights') return 'Flights';
+  if (parentPath === '/hotels') return 'Hotels';
+  if (parentPath === '/car-rentals') return 'Car Rentals';
+  return null;
 }
 
 export default function SeoRouteGuard() {
@@ -88,6 +143,7 @@ export default function SeoRouteGuard() {
   const normalizedPath = normalizePath(location.pathname);
   const canonicalPath = CANONICAL_ALIASES[normalizedPath] || normalizedPath;
   const indexable = isIndexablePath(canonicalPath);
+  const seo = getSeo(canonicalPath);
 
   useEffect(() => {
     if (normalizedPath !== '/search') return;
@@ -109,7 +165,7 @@ export default function SeoRouteGuard() {
   }, [location.search, navigate, normalizedPath]);
 
   const canonicalUrl = `${CANONICAL_ORIGIN}${canonicalPath === '/' ? '/' : canonicalPath}`;
-  const pageName = getPageName(canonicalPath);
+  const pageName = getPageName(canonicalPath, seo);
   const robotsValue = indexable
     ? 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1'
     : 'noindex, nofollow, noarchive';
@@ -120,28 +176,53 @@ export default function SeoRouteGuard() {
     '@id': `${canonicalUrl}#webpage`,
     url: canonicalUrl,
     name: pageName,
+    ...(seo?.description ? { description: seo.description } : {}),
     isPartOf: { '@id': `${CANONICAL_ORIGIN}/#website` },
-    about: { '@id': `${CANONICAL_ORIGIN}/#organization` },
+    about: seo?.service
+      ? { '@id': `${canonicalUrl}#service` }
+      : { '@id': `${CANONICAL_ORIGIN}/#organization` },
   } : null;
 
-  const breadcrumbData = indexable && canonicalPath !== '/' && canonicalPath !== '/senior-travel/flight-deals' ? {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
+  let breadcrumbData = null;
+  if (indexable && canonicalPath !== '/') {
+    const itemListElement = [
       {
         '@type': 'ListItem',
         position: 1,
         name: 'Home',
         item: `${CANONICAL_ORIGIN}/`,
       },
-      {
-        '@type': 'ListItem',
-        position: 2,
-        name: pageName,
-        item: canonicalUrl,
-      },
-    ],
-  } : null;
+    ];
+
+    if (seo?.parent) {
+      const label = parentLabel(seo.parent);
+      if (label) {
+        itemListElement.push({
+          '@type': 'ListItem',
+          position: itemListElement.length + 1,
+          name: label,
+          item: `${CANONICAL_ORIGIN}${seo.parent}`,
+        });
+      }
+    }
+
+    itemListElement.push({
+      '@type': 'ListItem',
+      position: itemListElement.length + 1,
+      name: pageName,
+      item: canonicalUrl,
+    });
+
+    breadcrumbData = {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement,
+    };
+  }
+
+  const serviceData = indexable && seo?.service
+    ? serviceSchemaFor({ canonicalUrl, ...seo.service })
+    : null;
 
   return (
     <Helmet>
@@ -149,7 +230,18 @@ export default function SeoRouteGuard() {
       <meta name="googlebot" content={robotsValue} />
       {indexable && <link rel="canonical" href={canonicalUrl} />}
       {indexable && <meta property="og:url" content={canonicalUrl} />}
+      {indexable && <meta property="og:type" content="website" />}
+      {seo?.title && <title>{seo.title}</title>}
+      {seo?.description && <meta name="description" content={seo.description} />}
+      {seo?.title && <meta property="og:title" content={seo.title} />}
+      {seo?.description && <meta property="og:description" content={seo.description} />}
+      {seo?.socialImage && <meta property="og:image" content={seo.socialImage} />}
+      {seo?.title && <meta name="twitter:title" content={seo.title} />}
+      {seo?.description && <meta name="twitter:description" content={seo.description} />}
+      {seo?.socialImage && <meta name="twitter:image" content={seo.socialImage} />}
+      {seo?.title && <meta name="twitter:card" content={seo.socialImage ? 'summary_large_image' : 'summary'} />}
       {webPageData && <script type="application/ld+json">{JSON.stringify(webPageData)}</script>}
+      {serviceData && <script type="application/ld+json">{JSON.stringify(serviceData)}</script>}
       {breadcrumbData && <script type="application/ld+json">{JSON.stringify(breadcrumbData)}</script>}
     </Helmet>
   );
