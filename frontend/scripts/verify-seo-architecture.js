@@ -68,8 +68,34 @@ const sitemapPaths = sitemapUrls.map((url) => new URL(url).pathname.replace(/\/+
   if (leaked) fail(`Transactional/result URL leaked into sitemap: ${urlPath}`);
 });
 
-mustContain(vercel, '"source": "/hotels/results"', 'Hotel results HTTP noindex rule');
-mustContain(vercel, '"value": "noindex, nofollow, noarchive"', 'X-Robots-Tag rule');
+// The repository-level vercel.json is authoritative and is validated again by
+// backend/tests/seo_indexing_contract.test.mjs in GitHub CI. Vercel's Services
+// builds can expose an isolated/generated service-level vercel.json instead of
+// the repository file, so only enforce the root HTTP-header policy here when the
+// loaded config actually contains the repository headers array.
+let vercelConfig;
+try {
+  vercelConfig = JSON.parse(vercel);
+} catch (error) {
+  fail(`vercel.json is not valid JSON: ${error.message}`);
+}
+
+if (Array.isArray(vercelConfig.headers) && vercelConfig.headers.length > 0) {
+  const hasNoindex = (source) => vercelConfig.headers.some((rule) =>
+    rule?.source === source &&
+    Array.isArray(rule.headers) &&
+    rule.headers.some((header) =>
+      header?.key === 'X-Robots-Tag' && header?.value === 'noindex, nofollow, noarchive'
+    )
+  );
+
+  if (!hasNoindex('/hotels/results')) fail('Hotel results HTTP noindex rule is missing.');
+  if (!hasNoindex('/car-rentals/results')) fail('Car rental results HTTP noindex rule is missing.');
+} else if (!process.env.VERCEL) {
+  fail('Repository-level Vercel header configuration is unavailable outside an isolated Vercel service build.');
+} else {
+  console.log('SEO architecture audit: repository-level Vercel headers are validated in GitHub CI; isolated Vercel service config detected.');
+}
 
 mustContain(seoGuard, "'/flights'", 'Flights indexability');
 mustContain(seoGuard, 'hotelDestinationSlugs', 'Hotel destination allowlist');
