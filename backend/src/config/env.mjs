@@ -86,10 +86,10 @@ export const env = {
   get ga4PrivateKey() { return process.env.GA4_PRIVATE_KEY || (process.env.GA4_CREDENTIALS_JSON ? JSON.parse(process.env.GA4_CREDENTIALS_JSON).private_key : '') },
 
   // Business Support Contact
-  get supportPhoneDisplay() { return process.env.BUSINESS_SUPPORT_PHONE_DISPLAY || '+1 (213) 965-9727'; },
-  get supportPhoneInternational() { return process.env.BUSINESS_SUPPORT_PHONE_INTL || '+1 (213) 965-9727'; },
-  get supportPhoneHref() { return process.env.BUSINESS_SUPPORT_PHONE_HREF || 'tel:+12139659727'; },
-  get supportPhoneSchema() { return process.env.BUSINESS_SUPPORT_PHONE_SCHEMA || '+1-213-965-9727'; },
+  get supportPhoneDisplay() { return process.env.BUSINESS_SUPPORT_PHONE_DISPLAY || '+1 (888) 780-8855'; },
+  get supportPhoneInternational() { return process.env.BUSINESS_SUPPORT_PHONE_INTL || '+1 (888) 780-8855'; },
+  get supportPhoneHref() { return process.env.BUSINESS_SUPPORT_PHONE_HREF || 'tel:+18887808855'; },
+  get supportPhoneSchema() { return process.env.BUSINESS_SUPPORT_PHONE_SCHEMA || '+1-888-780-8855'; },
 
   // Booking.com Demand API v3.1
   get bookingDemandApiBaseUrl() { 
