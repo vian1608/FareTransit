@@ -31,11 +31,13 @@ export default function SupportCallCTA({
   subtitle,
   className = '',
   compact = false,
+  primary = false,
 }) {
   const resolvedTheme = normalizeTheme(theme);
   const copy = COPY[resolvedTheme];
   const resolvedTitle = title || copy.title;
   const resolvedSubtitle = subtitle || copy.subtitle;
+  const isInlineSupport = mode !== 'sticky';
 
   const handleClick = () => {
     analytics.trackCallCtaClicked(`${resolvedTheme}_${mode}`);
@@ -47,6 +49,8 @@ export default function SupportCallCTA({
       className={`support-call-cta support-call-cta--${resolvedTheme} support-call-cta--${mode} ${compact ? 'support-call-cta--compact' : ''} ${className}`.trim()}
       onClick={handleClick}
       aria-label={`Call FareTransit at ${SUPPORT_PHONE_DISPLAY}. ${resolvedTitle}`}
+      data-support-call-inline={isInlineSupport ? 'true' : undefined}
+      data-support-call-primary={isInlineSupport && primary ? 'true' : undefined}
     >
       <span className="support-call-cta__icon" aria-hidden="true">
         <i className="fas fa-phone-alt" />

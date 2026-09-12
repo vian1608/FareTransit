@@ -6,6 +6,10 @@
   --psc-soft: #faf5f7;
   --psc-ink: #1e293b;
   width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 1rem;
+  row-gap: 0;
   background: #fff;
   border: 1px solid rgba(15, 23, 42, 0.09);
   border-radius: 18px;
@@ -39,15 +43,27 @@
 }
 
 .product-search-card__heading {
+  grid-column: 1;
+  grid-row: 1;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
   gap: 1rem;
+  min-width: 0;
   padding: 0.15rem 0.25rem 0.9rem;
 }
 
 .product-search-card__heading-copy {
   min-width: 0;
+}
+
+.product-search-card__support {
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 0 0 0.72rem;
 }
 
 .product-search-card__eyebrow {
@@ -82,6 +98,8 @@
 }
 
 .product-search-card__body {
+  grid-column: 1 / -1;
+  grid-row: 2;
   min-width: 0;
 }
 
@@ -143,6 +161,13 @@
 .product-search-card .car-search-submit-btn:hover:not(:disabled) {
   transform: translateY(-1px);
   box-shadow: 0 10px 26px rgba(var(--psc-accent-rgb), 0.3) !important;
+}
+
+/* The Flights page already has product navigation in the global header. Keep
+   the legacy utility tabs focused on Flights vs. Custom Inquiry and do not
+   duplicate the separate Car Rentals product inside the flight-search card. */
+#inquiry .search-tabs-header .tab-btn:nth-child(2) {
+  display: none !important;
 }
 
 /* Flight homepage uses a legacy form component. Give the active flight tab the
@@ -257,14 +282,34 @@
 
 @media (max-width: 760px) {
   .product-search-card {
+    grid-template-columns: minmax(0, 1fr);
     padding: 0.85rem;
     border-radius: 14px;
   }
 
   .product-search-card__heading {
+    grid-column: 1;
+    grid-row: 1;
     align-items: flex-start;
     flex-direction: column;
     padding-bottom: 0.75rem;
+  }
+
+  .product-search-card__body {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .product-search-card__support {
+    grid-column: 1;
+    grid-row: 3;
+    justify-content: stretch;
+    padding: 0.85rem 0 0;
+  }
+
+  .product-search-card__support .support-call-cta--card {
+    width: 100%;
+    max-width: none;
   }
 
   .product-search-card__trust-note {
