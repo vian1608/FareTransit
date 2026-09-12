@@ -1,0 +1,195 @@
+/*
+ * FareTransit — final sitewide interaction polish.
+ *
+ * This layer deliberately targets real interactive controls only. Static content
+ * cards are excluded so hover motion never implies that a non-clickable surface
+ * can be activated.
+ */
+
+:root {
+  --tfs-interaction-ease: cubic-bezier(.2, .8, .2, 1);
+  --tfs-focus-ring: rgba(30, 136, 229, .24);
+}
+
+/*
+ * A large part of the customer site uses anchors/React Links styled as buttons.
+ * The older global interaction layer covered native buttons but not these CTA
+ * anchors, leaving some pages visually flat on mouse hover.
+ */
+a[href][class*="btn"],
+a[href][class*="button"],
+a[href][class*="cta"],
+a[href][class*="action"] {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform .18s var(--tfs-interaction-ease),
+    box-shadow .20s ease,
+    filter .18s ease,
+    background-color .18s ease,
+    border-color .18s ease,
+    color .18s ease,
+    opacity .18s ease;
+  will-change: transform;
+}
+
+/* Keep genuine button labels/icons owned by the button color. This also guards
+ * against broad page-level descendant selectors accidentally recoloring them. */
+a[href][class*="btn"] > span,
+a[href][class*="button"] > span,
+a[href][class*="cta"] > span,
+a[href][class*="action"] > span,
+a[href][class*="btn"] > i,
+a[href][class*="button"] > i,
+a[href][class*="cta"] > i,
+a[href][class*="action"] > i {
+  color: inherit;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  a[href][class*="btn"]:hover,
+  a[href][class*="button"]:hover,
+  a[href][class*="cta"]:hover,
+  a[href][class*="action"]:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.035) saturate(1.035);
+    text-decoration: none;
+  }
+
+  /* Native buttons already move in ModernInteractionSystem. A small brightness
+   * response makes the state change visible even on flat/low-shadow controls. */
+  button:not(:disabled):not(.nav-toggle):not(.carousel-dot):not(.slider-dot):hover,
+  [role="button"]:not([aria-disabled="true"]):not(.accordion-section-header):hover,
+  input[type="button"]:not(:disabled):hover,
+  input[type="submit"]:not(:disabled):hover,
+  input[type="reset"]:not(:disabled):hover {
+    filter: brightness(1.035) saturate(1.025);
+  }
+}
+
+a[href][class*="btn"]:active,
+a[href][class*="button"]:active,
+a[href][class*="cta"]:active,
+a[href][class*="action"]:active {
+  transform: translateY(0) scale(.985);
+  filter: brightness(.98);
+}
+
+a[href][class*="btn"]:focus-visible,
+a[href][class*="button"]:focus-visible,
+a[href][class*="cta"]:focus-visible,
+a[href][class*="action"]:focus-visible {
+  outline: 3px solid var(--tfs-focus-ring);
+  outline-offset: 3px;
+}
+
+/* Car-rental PPC CTAs ------------------------------------------------------- */
+.car-rentals-home-page .car-ppc-button > span,
+.car-rentals-home-page .car-ppc-button > i {
+  color: inherit;
+}
+
+/* The explanatory copy is the only muted span in this callout. The CTA label
+ * must inherit the white foreground from the blue primary button. */
+.car-rentals-home-page .car-vehicle-callout > div > span {
+  color: var(--car-muted);
+  font-size: .86rem;
+}
+
+.car-rentals-home-page .car-ppc-button {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.car-rentals-home-page .car-ppc-button::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(110deg, transparent 10%, rgba(255, 255, 255, .16) 48%, transparent 80%);
+  transform: translateX(-125%);
+  transition: transform .42s var(--tfs-interaction-ease);
+  pointer-events: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .car-rentals-home-page .car-ppc-button:hover {
+    transform: translateY(-3px);
+  }
+
+  .car-rentals-home-page .car-ppc-button:hover::after {
+    transform: translateX(125%);
+  }
+
+  .car-rentals-home-page .car-ppc-button--primary:hover {
+    color: #fff;
+    background: linear-gradient(135deg, #167fd9, #075fac);
+    border-color: rgba(255, 255, 255, .12);
+    box-shadow: 0 18px 38px rgba(30, 136, 229, .38);
+  }
+
+  .car-rentals-home-page .car-ppc-button--secondary:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, .18);
+    border-color: rgba(255, 255, 255, .82);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, .18);
+  }
+
+  .car-rentals-home-page .car-ppc-button--outline:hover {
+    color: #075fac;
+    background: #f1f8ff;
+    border-color: rgba(30, 136, 229, .52);
+    box-shadow: 0 12px 28px rgba(13, 43, 69, .12);
+  }
+
+  .car-rentals-home-page .car-faq-item summary:hover {
+    color: var(--car-blue-dark);
+    background: #f3f9ff;
+  }
+}
+
+.car-rentals-home-page .car-ppc-button:active {
+  transform: translateY(0) scale(.98);
+}
+
+.car-rentals-home-page .car-ppc-button:focus-visible,
+.car-rentals-home-page .car-faq-item summary:focus-visible {
+  outline: 3px solid rgba(30, 136, 229, .25);
+  outline-offset: 3px;
+}
+
+.car-rentals-home-page .car-faq-item summary {
+  transition: color .18s ease, background-color .18s ease;
+}
+
+/* Shared support phone cards already had hover movement. Strengthen the visual
+ * response consistently without changing their service-specific colors. */
+@media (hover: hover) and (pointer: fine) {
+  .support-call-cta--card:hover,
+  .support-call-cta--inline:hover {
+    transform: translateY(-2px);
+  }
+
+  .support-call-sticky:hover {
+    transform: translateY(-3px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  a[href][class*="btn"],
+  a[href][class*="button"],
+  a[href][class*="cta"],
+  a[href][class*="action"],
+  .car-rentals-home-page .car-ppc-button::after {
+    transition: none !important;
+  }
+
+  a[href][class*="btn"]:hover,
+  a[href][class*="button"]:hover,
+  a[href][class*="cta"]:hover,
+  a[href][class*="action"]:hover,
+  .car-rentals-home-page .car-ppc-button:hover {
+    transform: none !important;
+  }
+}
