@@ -1,0 +1,26 @@
+/* Customer-facing redundancy guardrails.
+   The global header is the only product navigation. Inline phone support is the
+   primary conversion point; the shared sticky CTA takes over only after it has
+   been scrolled past. */
+
+.hero-slider .service-nav,
+.header-mobile-call,
+.car-mobile-cta {
+  display: none !important;
+}
+
+@media (max-width: 760px) {
+  /* The old car page reserved space for its own fixed mobile CTA. The shared
+     SupportCallLayer now owns bottom spacing only while its sticky bar exists. */
+  .car-rentals-home-page {
+    padding-bottom: 0 !important;
+  }
+
+  /* Keep mobile content clear of a visible shared bottom call bar without
+     permanently wasting vertical space when that bar is hidden. */
+  body:has(.support-call-sticky) .flights-page,
+  body:has(.support-call-sticky) .hotel-page,
+  body:has(.support-call-sticky) .car-rentals-home-page {
+    padding-bottom: calc(64px + env(safe-area-inset-bottom)) !important;
+  }
+}
