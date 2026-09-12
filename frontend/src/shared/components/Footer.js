@@ -59,6 +59,10 @@ function Footer() {
             <ul>
               <li><Link to="/flight-nyc-to-mia">New York to Miami Flights</Link></li>
               <li><Link to="/flight-lax-to-jfk">Los Angeles to New York Flights</Link></li>
+              <li><Link to="/routes/flight-nyc-to-lon">New York to London Flights</Link></li>
+              <li><Link to="/routes/flight-lax-to-tokyo">Los Angeles to Tokyo Flights</Link></li>
+              <li><Link to="/train-nyc-to-dc">New York to Washington Train</Link></li>
+              <li><Link to="/train-boston-to-nyc">Boston to New York Train</Link></li>
               <li><Link to="/hotels/miami">Hotels in Miami</Link></li>
               <li><Link to="/hotels/new-york">Hotels in New York City</Link></li>
               <li><Link to="/car-rentals/miami">Car Rentals in Miami</Link></li>
