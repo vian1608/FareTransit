@@ -2,6 +2,7 @@ import React from 'react';
 import { SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_HREF } from '../constants/supportContact';
 import { analytics } from '../utils/analytics';
 import './SupportCallCTA.css';
+import './SupportCallCTASafety.css';
 
 const COPY = {
   flights: {
