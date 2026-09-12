@@ -109,7 +109,7 @@ async function runSeoMetadataBrandingTests() {
   console.log('--- CASE 5: STRUCTURED DATA & MANIFEST VALIDATION ---');
   assert.ok(indexHtml.includes('"@type": "TravelAgency"'), 'JSON-LD schema type must be TravelAgency');
   assert.ok(indexHtml.includes('"description": "Independent flight-search and reservation assistance with real human support."'), 'JSON-LD description verified');
-  assert.ok(indexHtml.includes('"telephone": "+1-213-965-9727"'), 'JSON-LD telephone verified');
+  assert.ok(indexHtml.includes('"telephone": "+1-888-780-8855"'), 'JSON-LD telephone verified');
   assert.ok(manifestJson.includes('"description": "Flight search and reservation assistance with real human support."'), 'Manifest description verified');
   console.log('✔ CASE 5 PASSED: JSON-LD structured data and Web App Manifest verified.\n');
 
