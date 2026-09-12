@@ -20,6 +20,7 @@ const supportCss = read('frontend/src/shared/components/SupportCallCTA.css');
 const carPage = read('frontend/src/features/cars/pages/CarRentalsHomePage.js');
 const carCss = read('frontend/src/features/cars/pages/CarRentalsHomePage.css');
 const carCarousel = read('frontend/src/shared/mobile/installCarVehicleCarousel.js');
+const carCarouselDotsCss = read('frontend/src/shared/mobile/CarVehicleCarouselDots.css');
 const hotelPage = read('frontend/src/features/hotels/pages/HotelSearchPage.js');
 const guardrails = read('frontend/src/shared/styles/ResponsiveTravelRedundancy.css');
 const index = read('frontend/src/index.js');
@@ -75,8 +76,14 @@ if (!carCss.includes('height: 380px;') || !carCss.includes('margin: auto 0 0.2re
 if (!carCss.includes('scroll-snap-type: x mandatory') || !carCss.includes('overflow-x: auto') || !carCss.includes('flex: 0 0 min(78vw, 280px)')) {
   fail('Car Rentals mobile vehicle categories must remain a horizontal swipe slider.');
 }
-if (!carCarousel.includes("const MOBILE_QUERY = '(max-width: 700px)'") || !carCarousel.includes('window.setInterval(advance, AUTOPLAY_INTERVAL_MS)') || !carCarousel.includes("behavior: 'smooth'") || !carCarousel.includes('prefers-reduced-motion: reduce') || !carCarousel.includes('pauseAfterInteraction')) {
+if (!carCarousel.includes("const MOBILE_QUERY = '(max-width: 700px)'") || !carCarousel.includes('window.setInterval(advance, AUTOPLAY_INTERVAL_MS)') || !carCarousel.includes("behavior: reducedMotionQuery.matches ? 'auto' : 'smooth'") || !carCarousel.includes('prefers-reduced-motion: reduce') || !carCarousel.includes('pauseAfterInteraction')) {
   fail('Car Rentals mobile vehicle carousel must auto-advance, preserve manual interaction, and respect reduced-motion preferences.');
+}
+if (!carCarousel.includes("import './CarVehicleCarouselDots.css';") || !carCarousel.includes("className = 'car-vehicle-carousel-dot'") || !carCarousel.includes('setActiveDot') || !carCarousel.includes("grid.addEventListener('scroll', scheduleDotSync")) {
+  fail('Car Rentals mobile vehicle carousel must expose synced pagination dots for autoplay and manual swiping.');
+}
+if (!carCarouselDotsCss.includes('.car-vehicle-carousel-dots') || !carCarouselDotsCss.includes('.car-vehicle-carousel-dot.is-active') || !carCarouselDotsCss.includes('@media (max-width: 700px)')) {
+  fail('Car Rentals mobile carousel pagination-dot styling is missing or not mobile-scoped.');
 }
 if (!index.includes("import { installCarVehicleCarouselUX } from './shared/mobile/installCarVehicleCarousel';") || !index.includes('installCarVehicleCarouselUX();')) {
   fail('Car Rentals mobile vehicle carousel installer is not enabled globally.');
@@ -89,4 +96,4 @@ if (!index.includes("import './shared/styles/ResponsiveTravelRedundancy.css';"))
 }
 
 console.log('Responsive travel redundancy audit passed.');
-console.log('Verified desktop single navigation, mobile-only travel switching on Flights/Hotels/Car Rentals, viewport-aware call support, and auto-advancing mobile car vehicle categories.');
+console.log('Verified desktop single navigation, mobile-only travel switching on Flights/Hotels/Car Rentals, viewport-aware call support, and auto-advancing mobile car vehicle categories with synced pagination dots.');
