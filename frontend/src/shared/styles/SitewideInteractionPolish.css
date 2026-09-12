@@ -84,13 +84,19 @@ a[href][class*="action"]:focus-visible {
 }
 
 /* Car-rental PPC CTAs ------------------------------------------------------- */
-.car-rentals-home-page .car-ppc-button > span,
+.car-rentals-home-page .car-ppc-button > span {
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+}
+
 .car-rentals-home-page .car-ppc-button > i {
   color: inherit;
 }
 
 /* The explanatory copy is the only muted span in this callout. The CTA label
- * must inherit the white foreground from the blue primary button. */
+ * must inherit the white foreground and typography from the blue primary button. */
 .car-rentals-home-page .car-vehicle-callout > div > span {
   color: var(--car-muted);
   font-size: .86rem;
