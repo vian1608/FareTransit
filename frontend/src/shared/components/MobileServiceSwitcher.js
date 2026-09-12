@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import './MobileServiceSwitcher.css';
 
 const SERVICES = [
-  { key: 'flights', label: 'Flights', to: '/', icon: 'fas fa-plane' },
+  { key: 'flights', label: 'Flights', to: '/flights', icon: 'fas fa-plane' },
   { key: 'hotels', label: 'Hotels', to: '/hotels', icon: 'fas fa-hotel' },
   { key: 'cars', label: 'Car Rentals', to: '/car-rentals', icon: 'fas fa-car' },
 ];
