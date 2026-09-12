@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import ServiceNav from './ServiceNav';
 import './HeroSlider.css';
 import './HeroSliderMobileOverrides.css';
 
@@ -111,8 +110,6 @@ function HeroSlider({ slides, variant = 'flights', serviceNavActive, offerTag })
         </div>
 
         <div className="container hero-slider__ui">
-          <ServiceNav active={serviceNavActive} />
-
           <div className="hero-slider__main">
             <div className="hero-slider__content-wrapper">
               <div key={slide.id} className="hero-slider__content">

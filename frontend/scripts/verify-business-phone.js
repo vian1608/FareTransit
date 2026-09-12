@@ -112,8 +112,14 @@ if (!airlineRoute.includes('href={SUPPORT_PHONE_HREF}') || !airlineRoute.include
   throw new Error('Airline booking CTA must use the centralized FareTransit phone href/display constants.');
 }
 
+// The global header intentionally owns navigation only. Phone conversion lives in
+// contextual inline/sticky support surfaces so mobile users do not see duplicate calls.
+const header = readRepoFile('frontend/src/shared/components/Header.js');
+if (header.includes('SUPPORT_PHONE_HREF') || header.includes('header-mobile-call')) {
+  throw new Error('Header must not reintroduce a duplicate FareTransit Call Now control.');
+}
+
 const ctaFiles = [
-  'frontend/src/shared/components/Header.js',
   'frontend/src/shared/components/Footer.js',
   'frontend/src/shared/components/SupportCallCTA.js',
   'frontend/src/shared/pages/ContactInfoPage.js',

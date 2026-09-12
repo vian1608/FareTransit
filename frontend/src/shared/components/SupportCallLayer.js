@@ -71,6 +71,10 @@ function isTravelJourneyPath(pathname = '/') {
   ].some((prefix) => pathname.startsWith(prefix));
 }
 
+function isPrimaryLandingPath(pathname = '/') {
+  return pathname === '/' || pathname === '/hotels' || pathname === '/car-rentals';
+}
+
 function portalConfigForPath(pathname = '/') {
   if (pathname === '/') {
     return {
@@ -78,6 +82,7 @@ function portalConfigForPath(pathname = '/') {
       theme: 'flights',
       mode: 'card',
       className: 'support-call-cta--flight-search-portal',
+      primary: true,
     };
   }
 
@@ -200,16 +205,80 @@ function useSecurePaymentTheme(pathname) {
   return theme;
 }
 
+function useStickySupportVisibility(pathname, enabled, portalTarget) {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    if (!enabled || typeof document === 'undefined' || typeof window === 'undefined') {
+      setVisible(false);
+      return undefined;
+    }
+
+    let frame = null;
+    const landingPath = isPrimaryLandingPath(pathname);
+
+    const evaluate = () => {
+      frame = null;
+      const inlineNodes = Array.from(document.querySelectorAll('[data-support-call-inline="true"]'));
+      const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+      const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+
+      const anyInlineVisible = inlineNodes.some((node) => {
+        const rect = node.getBoundingClientRect();
+        return rect.bottom > 0 && rect.top < viewportHeight && rect.right > 0 && rect.left < viewportWidth;
+      });
+
+      if (landingPath) {
+        const primary = document.querySelector('[data-support-call-primary="true"]');
+        if (!primary) {
+          setVisible(false);
+          return;
+        }
+
+        const primaryRect = primary.getBoundingClientRect();
+        const headerAllowance = Math.min(88, Math.max(12, viewportHeight * 0.08));
+        const primaryHasBeenPassed = primaryRect.bottom <= headerAllowance;
+        setVisible(primaryHasBeenPassed && !anyInlineVisible);
+        return;
+      }
+
+      setVisible(!anyInlineVisible);
+    };
+
+    const scheduleEvaluate = () => {
+      if (frame !== null) return;
+      frame = window.requestAnimationFrame(evaluate);
+    };
+
+    scheduleEvaluate();
+    window.addEventListener('scroll', scheduleEvaluate, { passive: true });
+    window.addEventListener('resize', scheduleEvaluate, { passive: true });
+
+    const observer = new MutationObserver(scheduleEvaluate);
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style'] });
+
+    return () => {
+      if (frame !== null) window.cancelAnimationFrame(frame);
+      observer.disconnect();
+      window.removeEventListener('scroll', scheduleEvaluate);
+      window.removeEventListener('resize', scheduleEvaluate);
+    };
+  }, [enabled, pathname, portalTarget]);
+
+  return visible;
+}
+
 export default function SupportCallLayer() {
   const pathname = useBrowserPathname();
   const routeTheme = productThemeForPath(pathname);
   const securePaymentTheme = useSecurePaymentTheme(pathname);
   const theme = pathname.startsWith('/secure-payment') ? securePaymentTheme : routeTheme;
-  const showSticky = isTravelJourneyPath(pathname);
+  const stickyEligible = isTravelJourneyPath(pathname);
   const portalConfig = useMemo(() => portalConfigForPath(pathname), [pathname]);
   const portalTarget = usePortalTarget(portalConfig?.selector, pathname);
+  const showSticky = useStickySupportVisibility(pathname, stickyEligible, portalTarget);
 
-  if (!showSticky && !portalTarget) return null;
+  if (!stickyEligible && !portalTarget) return null;
 
   return (
     <>
@@ -220,6 +289,7 @@ export default function SupportCallLayer() {
           title={portalConfig.title}
           subtitle={portalConfig.subtitle}
           className={portalConfig.className}
+          primary={portalConfig.primary}
         />,
         portalTarget,
       )}

@@ -116,9 +116,14 @@ const FAQS = [
   }
 ];
 
-function CallButton({ className = '', children = 'Call Now' }) {
+function CallButton({ className = '', children = 'Call Now', primary = false }) {
   return (
-    <a className={className} href={SUPPORT_PHONE_HREF}>
+    <a
+      className={className}
+      href={SUPPORT_PHONE_HREF}
+      data-support-call-inline="true"
+      data-support-call-primary={primary ? 'true' : undefined}
+    >
       <i className="fas fa-phone-alt" aria-hidden="true" />
       <span>{children}</span>
     </a>
@@ -156,7 +161,7 @@ function CarRentalsHomePage() {
             </p>
 
             <div className="car-ppc-hero__actions" aria-label="Car rental assistance options">
-              <CallButton className="car-ppc-button car-ppc-button--primary">
+              <CallButton className="car-ppc-button car-ppc-button--primary" primary>
                 Call {SUPPORT_PHONE_DISPLAY}
               </CallButton>
               <Link className="car-ppc-button car-ppc-button--secondary" to="/contact">
@@ -305,17 +310,6 @@ function CarRentalsHomePage() {
           </div>
         </section>
       </main>
-
-      <div className="car-mobile-cta" aria-label="Car rental contact options">
-        <a href={SUPPORT_PHONE_HREF} className="car-mobile-cta__call">
-          <i className="fas fa-phone-alt" aria-hidden="true" />
-          <span>Call Now</span>
-        </a>
-        <Link to="/contact" className="car-mobile-cta__contact">
-          <i className="fas fa-envelope" aria-hidden="true" />
-          <span>Contact Us</span>
-        </Link>
-      </div>
     </div>
   );
 }
