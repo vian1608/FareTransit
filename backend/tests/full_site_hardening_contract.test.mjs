@@ -107,7 +107,8 @@ for (const brand of ['Hertz', 'Avis', 'Budget', 'Enterprise', 'Sixt']) {
   assert.ok(carHome.includes(brand), `Car landing page is missing ${brand}`);
 }
 assert.match(carHome, /to="\/contact"/);
-assert.match(carHome, /car-mobile-cta/);
+assert.match(carHome, /data-support-call-primary/);
+assert.doesNotMatch(carHome, /className="car-mobile-cta"/);
 assert.match(carHome, /not affiliated with or endorsed by/);
 assert.doesNotMatch(carHome, /CarSearchForm/);
 assert.doesNotMatch(carHome, /ProductSearchCard/);
