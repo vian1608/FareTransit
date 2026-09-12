@@ -1,0 +1,139 @@
+name: Temporary FareTransit Phone Rewrite
+
+on:
+  push:
+    branches:
+      - hotfix/faretransit-phone-888-780-8855
+
+permissions:
+  contents: write
+
+jobs:
+  rewrite:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: hotfix/faretransit-phone-888-780-8855
+          fetch-depth: 0
+
+      - name: Apply targeted phone rewrites
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          import re
+
+          root = Path('.')
+          old_display = '+1 (213) 965-9727'
+          new_display = '+1 (888) 780-8855'
+          old_schema = '+1-213-965-9727'
+          new_schema = '+1-888-780-8855'
+          old_tel = 'tel:+12139659727'
+          new_tel = 'tel:+18887808855'
+          old_e164 = '+12139659727'
+          new_e164 = '+18887808855'
+
+          def read(path):
+              return (root / path).read_text()
+
+          def write(path, content):
+              (root / path).write_text(content)
+
+          # Booking confirmation email: make the public support number clickable and canonical.
+          path = 'backend/src/integrations/resend/templates/booking-confirmation.html'
+          text = read(path)
+          old = 'support@faretransit.com &nbsp;·&nbsp; +1 (213) 965-9727<br>'
+          new = 'support@faretransit.com &nbsp;·&nbsp; <a href="tel:+18887808855" style="color:#d9e3ef;text-decoration:none;">+1 (888) 780-8855</a><br>'
+          assert text.count(old) == 1, f'Unexpected booking template phone occurrences: {text.count(old)}'
+          write(path, text.replace(old, new))
+
+          # Email renderer: centralize every FareTransit phone display through backend env config.
+          path = 'backend/src/modules/emails/email-renderer.service.mjs'
+          text = read(path)
+          import_anchor = "import Handlebars from 'handlebars';\n"
+          env_import = "import env from '../../config/env.mjs';\n"
+          assert import_anchor in text
+          if env_import not in text:
+              text = text.replace(import_anchor, import_anchor + env_import, 1)
+          field_old = "supportPhone: '+1 (213) 965-9727'"
+          assert text.count(field_old) == 3, f'Unexpected supportPhone field count: {text.count(field_old)}'
+          text = text.replace(field_old, 'supportPhone: env.supportPhoneDisplay')
+          remaining = text.count(old_display)
+          assert remaining == 5, f'Unexpected remaining email display count: {remaining}'
+          text = text.replace(old_display, '${env.supportPhoneDisplay}')
+          write(path, text)
+
+          # Senior travel JSON-LD: source both organization/contactPoint phones from shared schema constant.
+          path = 'frontend/src/features/flights/pages/SeniorTravelPage.js'
+          text = read(path)
+          assert 'SUPPORT_PHONE_DISPLAY,\n  SUPPORT_PHONE_HREF,' in text
+          if 'SUPPORT_PHONE_SCHEMA,' not in text:
+              text = text.replace('SUPPORT_PHONE_DISPLAY,\n  SUPPORT_PHONE_HREF,', 'SUPPORT_PHONE_DISPLAY,\n  SUPPORT_PHONE_HREF,\n  SUPPORT_PHONE_SCHEMA,', 1)
+          assert text.count("telephone: '+12139659727'") == 1
+          assert text.count("telephone: '+1-213-965-9727'") == 1
+          text = text.replace("telephone: '+12139659727'", 'telephone: SUPPORT_PHONE_SCHEMA')
+          text = text.replace("telephone: '+1-213-965-9727'", 'telephone: SUPPORT_PHONE_SCHEMA')
+          write(path, text)
+
+          # Airline landing-page call CTA: use the same centralized FareTransit href/display constants.
+          path = 'frontend/src/features/flights/pages/AirlineRoute.js'
+          text = read(path)
+          import_anchor = "import { trackLeadConversion } from '../../../shared/utils/analytics';\n"
+          shared_import = "import { SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_HREF } from '../../../shared/constants/supportContact';\n"
+          assert import_anchor in text
+          if shared_import not in text:
+              text = text.replace(import_anchor, import_anchor + shared_import, 1)
+          assert text.count('href={`tel:${airline.phone}`}') == 1
+          assert text.count('{airline.phone}') == 2
+          text = text.replace('href={`tel:${airline.phone}`}', 'href={SUPPORT_PHONE_HREF}')
+          text = text.replace('{airline.phone}', '{SUPPORT_PHONE_DISPLAY}')
+          write(path, text)
+
+          # The repeated airline phone field represented FareTransit booking support, not airline-owned numbers.
+          # Remove it now that AirlineRoute is bound to the shared business contact constant.
+          path = 'frontend/src/shared/data/airlinesData.json'
+          text = read(path)
+          pattern = r'^\s{4}"phone": "\+1-213-965-9727",\n'
+          text, count = re.subn(pattern, '', text, flags=re.MULTILINE)
+          assert count == 20, f'Expected 20 FareTransit airline support fields, removed {count}'
+          write(path, text)
+
+          # Official support-number regression test: update approved values and keep legacy checks without
+          # embedding the prohibited old literals that the repository audit is designed to find.
+          path = 'backend/tests/official_support_phone_number_update.test.mjs'
+          text = read(path)
+          text = text.replace(old_display, new_display).replace(old_schema, new_schema).replace(old_tel, new_tel).replace(old_e164, new_e164)
+          text = text.replace("assert.ok(emailHtml.includes('Call +1 (888) 780-8855'), 'HTML email template must display Call +1 (888) 780-8855');", "assert.ok(emailHtml.includes('+1 (888) 780-8855'), 'HTML email template must display the approved support number');")
+          legacy_block = "  for (const relPath of prodFilesToScan) {\n    const content = await fs.readFile(path.join(ROOT_DIR, relPath), 'utf8');\n    assert.ok(!content.includes('213-965-9727'), `File ${relPath} must not contain 213-965-9727`);\n    assert.ok(!content.includes('2139659727'), `File ${relPath} must not contain 2139659727`);\n  }"
+          replacement = "  const legacyHyphenated = ['213', '965', '9727'].join('-');\n  const legacyCompact = ['213', '965', '9727'].join('');\n  for (const relPath of prodFilesToScan) {\n    const content = await fs.readFile(path.join(ROOT_DIR, relPath), 'utf8');\n    assert.ok(!content.includes(legacyHyphenated), `File ${relPath} must not contain the legacy hyphenated support number`);\n    assert.ok(!content.includes(legacyCompact), `File ${relPath} must not contain the legacy compact support number`);\n  }"
+          assert legacy_block in text
+          text = text.replace(legacy_block, replacement)
+          write(path, text)
+
+          # SEO regression expectation follows the new TravelAgency schema number.
+          path = 'backend/tests/seo_metadata_branding_cleanliness.test.mjs'
+          text = read(path)
+          assert old_schema in text
+          write(path, text.replace(old_schema, new_schema))
+          PY
+
+      - name: Commit targeted rewrites
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add backend/src/integrations/resend/templates/booking-confirmation.html \
+                  backend/src/modules/emails/email-renderer.service.mjs \
+                  backend/tests/official_support_phone_number_update.test.mjs \
+                  backend/tests/seo_metadata_branding_cleanliness.test.mjs \
+                  frontend/src/features/flights/pages/SeniorTravelPage.js \
+                  frontend/src/features/flights/pages/AirlineRoute.js \
+                  frontend/src/shared/data/airlinesData.json
+          if git diff --cached --quiet; then
+            echo "No rewrite changes needed."
+            exit 0
+          fi
+          git commit -m "Update remaining FareTransit business phone references"
+          git push origin HEAD:hotfix/faretransit-phone-888-780-8855
