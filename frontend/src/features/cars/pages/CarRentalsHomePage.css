@@ -643,3 +643,103 @@
     min-height: 72px;
   }
 }
+
+
+/* Mobile polish: align the custom car hero with the shared travel hero rhythm. */
+@media (max-width: 700px) {
+  .car-rentals-home-page {
+    padding-bottom: 0;
+  }
+
+  .car-ppc-hero {
+    height: 380px;
+    min-height: 380px;
+    max-height: 380px;
+    align-items: stretch;
+  }
+
+  .car-ppc-hero__content {
+    width: 100%;
+    max-width: none;
+    margin: 0 auto;
+    padding: 0.55rem 1rem 0.9rem !important;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+
+  .car-ppc-hero__content > .mobile-service-switcher {
+    flex: 0 0 auto;
+    margin-bottom: 0.65rem;
+  }
+
+  .car-ppc-hero .car-ppc-eyebrow {
+    margin: auto 0 0.2rem;
+    font-size: 0.66rem;
+    line-height: 1.25;
+    letter-spacing: 0.1em;
+  }
+
+  .car-ppc-hero h1 {
+    max-width: 100%;
+    font-size: clamp(1.35rem, 6vw, 1.6rem);
+    line-height: 1.14;
+    letter-spacing: -0.02em;
+  }
+
+  .car-ppc-hero__content > p {
+    max-width: none;
+    margin: 0.35rem 0 0;
+    font-size: 0.82rem;
+    line-height: 1.35;
+  }
+
+  .car-ppc-hero__actions {
+    flex-direction: row;
+    gap: 0.5rem;
+    margin-top: 0.65rem;
+  }
+
+  .car-ppc-hero__actions .car-ppc-button {
+    width: auto;
+    flex: 1 1 0;
+    min-height: 44px;
+    padding: 0.62rem 0.7rem;
+    font-size: 0.78rem;
+  }
+
+  .car-ppc-hero__actions .car-ppc-button--secondary {
+    flex: 0 0 36%;
+  }
+
+  .car-ppc-hero__notes {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.65rem;
+    margin-top: 0.55rem;
+    font-size: 0.68rem;
+    line-height: 1.2;
+  }
+}
+
+@media (max-width: 380px) {
+  .car-ppc-hero__content {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+  }
+
+  .car-ppc-hero h1 {
+    font-size: 1.3rem;
+  }
+
+  .car-ppc-hero__content > p {
+    font-size: 0.78rem;
+  }
+
+  .car-ppc-hero__actions .car-ppc-button {
+    font-size: 0.72rem;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+}
