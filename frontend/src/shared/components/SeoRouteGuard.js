@@ -116,12 +116,6 @@ function getRouteSeo(pathname) {
     title: route.metaTitle,
     description: route.metaDescription,
     parent: isFlight ? '/flights' : null,
-    service: {
-      name: isFlight
-        ? `Flight assistance from ${route.originCity} to ${route.destinationCity}`
-        : `Train travel assistance from ${route.originCity} to ${route.destinationCity}`,
-      serviceType: isFlight ? 'Flight booking assistance' : 'Train travel assistance',
-    },
   };
 }
 
