@@ -5,6 +5,7 @@ const MOBILE_QUERY = '(max-width: 700px)';
 const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
 const AUTOPLAY_INTERVAL_MS = 3200;
 const INTERACTION_PAUSE_MS = 7000;
+const EDGE_SWIPE_THRESHOLD_PX = 42;
 
 function attachVehicleCarousel(grid) {
   if (!grid || grid.dataset.tfsVehicleCarousel === 'true') return;
@@ -20,6 +21,8 @@ function attachVehicleCarousel(grid) {
   let pausedUntil = 0;
   let intervalId;
   let scrollFrameId = 0;
+  let edgeSwipeStartX = null;
+  let edgeSwipeStartIndex = null;
 
   const getCards = () => Array.from(grid.querySelectorAll('.car-vehicle-card'));
   const initialCards = getCards();
@@ -110,6 +113,75 @@ function attachVehicleCarousel(grid) {
     button.addEventListener('click', () => scrollToCard(index, true));
   });
 
+  const resetEdgeSwipe = () => {
+    edgeSwipeStartX = null;
+    edgeSwipeStartIndex = null;
+  };
+
+  const beginEdgeSwipe = (clientX) => {
+    if (!mobileQuery.matches || typeof clientX !== 'number') return;
+
+    const cards = getCards();
+    if (cards.length < 2) return;
+
+    edgeSwipeStartX = clientX;
+    edgeSwipeStartIndex = getNearestCardIndex(cards);
+    pauseAfterInteraction();
+  };
+
+  const completeEdgeSwipe = (clientX) => {
+    if (
+      !mobileQuery.matches ||
+      typeof clientX !== 'number' ||
+      edgeSwipeStartX === null ||
+      edgeSwipeStartIndex === null
+    ) {
+      resetEdgeSwipe();
+      return;
+    }
+
+    const deltaX = clientX - edgeSwipeStartX;
+    const startIndex = edgeSwipeStartIndex;
+    resetEdgeSwipe();
+
+    if (Math.abs(deltaX) < EDGE_SWIPE_THRESHOLD_PX) return;
+
+    const cards = getCards();
+    if (cards.length < 2) return;
+
+    // Native horizontal scrolling has a hard edge. When the gesture starts on
+    // that edge and continues outward, wrap to the opposite end instead of
+    // leaving the carousel stuck on the first/last card.
+    if (startIndex === cards.length - 1 && deltaX < -EDGE_SWIPE_THRESHOLD_PX) {
+      scrollToCard(0, true);
+      return;
+    }
+
+    if (startIndex === 0 && deltaX > EDGE_SWIPE_THRESHOLD_PX) {
+      scrollToCard(cards.length - 1, true);
+    }
+  };
+
+  if ('PointerEvent' in window) {
+    grid.addEventListener('pointerdown', (event) => {
+      if (event.isPrimary === false) return;
+      beginEdgeSwipe(event.clientX);
+    }, { passive: true });
+    grid.addEventListener('pointerup', (event) => {
+      if (event.isPrimary === false) return;
+      completeEdgeSwipe(event.clientX);
+    }, { passive: true });
+    grid.addEventListener('pointercancel', resetEdgeSwipe, { passive: true });
+  } else {
+    grid.addEventListener('touchstart', (event) => {
+      beginEdgeSwipe(event.touches[0]?.clientX);
+    }, { passive: true });
+    grid.addEventListener('touchend', (event) => {
+      completeEdgeSwipe(event.changedTouches[0]?.clientX);
+    }, { passive: true });
+    grid.addEventListener('touchcancel', resetEdgeSwipe, { passive: true });
+  }
+
   const advance = () => {
     if (!grid.isConnected) {
       window.clearInterval(intervalId);
@@ -134,9 +206,7 @@ function attachVehicleCarousel(grid) {
     scrollToCard(nextIndex);
   };
 
-  ['pointerdown', 'touchstart', 'wheel'].forEach((eventName) => {
-    grid.addEventListener(eventName, pauseAfterInteraction, { passive: true });
-  });
+  grid.addEventListener('wheel', pauseAfterInteraction, { passive: true });
   grid.addEventListener('focusin', pauseAfterInteraction);
   grid.addEventListener('scroll', scheduleDotSync, { passive: true });
 
