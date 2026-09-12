@@ -14,12 +14,24 @@ function PageTransition({ children }) {
   const isRail = pathname.startsWith('/amtrak') || pathname.startsWith('/train-');
   const theme = isAdmin ? 'admin' : (isCars ? 'cars' : (isRail ? 'rail' : 'flights'));
 
-  // These routes already expose a more meaningful local navigation action.
-  // Showing the generic global Back button as well creates duplicate controls.
+  // These routes already expose a more meaningful local navigation action, or
+  // use the standard site header + breadcrumb pattern instead of a floating back control.
+  const isInformationPage = [
+    '/contact',
+    '/terms',
+    '/privacy-policy',
+    '/privacy',
+    '/privacypolicy',
+    '/refund-policy',
+    '/refund',
+    '/refundpolicy',
+  ].includes(pathname);
+
   const hasContextualBack =
     pathname.startsWith('/return-flight') ||
     pathname.startsWith('/booking-confirmed') ||
-    pathname.startsWith('/confirmation/');
+    pathname.startsWith('/confirmation/') ||
+    isInformationPage;
 
   useEffect(() => {
     document.body.classList.remove('theme-flights', 'theme-rail', 'theme-admin', 'theme-cars');
