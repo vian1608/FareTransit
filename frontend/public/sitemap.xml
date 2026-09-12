@@ -2,17 +2,31 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <!-- Core public pages -->
   <url><loc>https://www.faretransit.com/</loc></url>
+  <url><loc>https://www.faretransit.com/flights</loc></url>
+  <url><loc>https://www.faretransit.com/hotels</loc></url>
   <url><loc>https://www.faretransit.com/car-rentals</loc></url>
   <url><loc>https://www.faretransit.com/contact</loc></url>
   <url><loc>https://www.faretransit.com/terms</loc></url>
   <url><loc>https://www.faretransit.com/privacy-policy</loc></url>
   <url><loc>https://www.faretransit.com/refund-policy</loc></url>
 
-  <!-- Service / campaign landing pages -->
+  <!-- Flight assistance landing pages -->
   <url><loc>https://www.faretransit.com/travel-assistance</loc></url>
   <url><loc>https://www.faretransit.com/booking-for-parents</loc></url>
   <url><loc>https://www.faretransit.com/urgent-travel</loc></url>
   <url><loc>https://www.faretransit.com/senior-travel/flight-deals</loc></url>
+
+  <!-- Curated hotel destination pages -->
+  <url><loc>https://www.faretransit.com/hotels/miami</loc></url>
+  <url><loc>https://www.faretransit.com/hotels/new-york</loc></url>
+  <url><loc>https://www.faretransit.com/hotels/las-vegas</loc></url>
+  <url><loc>https://www.faretransit.com/hotels/orlando</loc></url>
+
+  <!-- Curated car rental location pages -->
+  <url><loc>https://www.faretransit.com/car-rentals/miami</loc></url>
+  <url><loc>https://www.faretransit.com/car-rentals/orlando</loc></url>
+  <url><loc>https://www.faretransit.com/car-rentals/lax</loc></url>
+  <url><loc>https://www.faretransit.com/car-rentals/jfk</loc></url>
 
   <!-- Canonical direct route pages -->
   <url><loc>https://www.faretransit.com/flight-nyc-to-mia</loc></url>
