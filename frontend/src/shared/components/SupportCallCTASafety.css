@@ -1,0 +1,78 @@
+/*
+ * Safety layer for the shared FareTransit phone CTA.
+ *
+ * SupportCallCTA is a composite anchor: the outer copy uses dark ink while the
+ * phone icon and the inner Call Now action intentionally use white foregrounds.
+ * Keep those ownership boundaries explicit so page-level or global CTA rules
+ * cannot make conversion-critical text/icons unreadable again.
+ */
+
+.support-call-cta:link,
+.support-call-cta:visited {
+  color: var(--call-ink);
+  text-decoration: none;
+}
+
+.support-call-cta > .support-call-cta__icon,
+.support-call-cta > .support-call-cta__icon > i,
+.support-call-cta > .support-call-cta__action,
+.support-call-cta > .support-call-cta__action > strong,
+.support-call-cta > .support-call-cta__action > span {
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  opacity: 1;
+}
+
+.support-call-cta > .support-call-cta__icon,
+.support-call-cta > .support-call-cta__action {
+  transition:
+    transform .18s ease,
+    box-shadow .18s ease,
+    filter .18s ease,
+    background-color .18s ease;
+}
+
+.support-call-cta > .support-call-cta__copy,
+.support-call-cta > .support-call-cta__copy > strong {
+  -webkit-text-fill-color: currentColor;
+}
+
+.support-call-cta > .support-call-cta__copy > strong {
+  color: var(--call-ink);
+}
+
+.support-call-cta > .support-call-cta__copy > small {
+  color: #64748b;
+  -webkit-text-fill-color: #64748b;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .support-call-cta:hover > .support-call-cta__icon {
+    transform: scale(1.06);
+    filter: brightness(1.04) saturate(1.04);
+    box-shadow: 0 8px 18px rgba(var(--call-accent-rgb), .30);
+  }
+
+  .support-call-cta:hover > .support-call-cta__action {
+    transform: translateY(-1px);
+    filter: brightness(1.06) saturate(1.03);
+    box-shadow: 0 8px 20px rgba(var(--call-accent-rgb), .25);
+  }
+}
+
+.support-call-cta:active > .support-call-cta__action {
+  transform: translateY(0) scale(.985);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .support-call-cta > .support-call-cta__icon,
+  .support-call-cta > .support-call-cta__action {
+    transition: none !important;
+  }
+
+  .support-call-cta:hover > .support-call-cta__icon,
+  .support-call-cta:hover > .support-call-cta__action,
+  .support-call-cta:active > .support-call-cta__action {
+    transform: none !important;
+  }
+}
