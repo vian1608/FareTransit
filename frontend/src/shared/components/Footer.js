@@ -33,12 +33,12 @@ function Footer() {
         <div className="footer-content">
           <div className="footer-section footer-brand">
             <h3>FareTransit LLC</h3>
-            <p>FareTransit provides travel-search and reservation assistance for travelers who value clear information and real human support.</p>
+            <p>FareTransit provides travel-search and reservation assistance for flights, hotels and car rentals with clear information and real human support.</p>
           </div>
 
           <FooterSection title="Company">
             <ul>
-              <li><Link to="/">Flight Search</Link></li>
+              <li><Link to="/flights">Flights</Link></li>
               <li><Link to="/hotels">Hotels</Link></li>
               <li><Link to="/car-rentals">Car Rentals</Link></li>
               <li><Link to="/my-bookings">My Bookings</Link></li>
@@ -55,7 +55,7 @@ function Footer() {
             </ul>
           </FooterSection>
 
-          <FooterSection title="Popular Routes">
+          <FooterSection title="Popular Travel">
             <ul>
               <li><Link to="/flight-nyc-to-mia">New York to Miami Flights</Link></li>
               <li><Link to="/flight-lax-to-jfk">Los Angeles to New York Flights</Link></li>
@@ -63,6 +63,10 @@ function Footer() {
               <li><Link to="/routes/flight-lax-to-tokyo">Los Angeles to Tokyo Flights</Link></li>
               <li><Link to="/train-nyc-to-dc">New York to Washington Train</Link></li>
               <li><Link to="/train-boston-to-nyc">Boston to New York Train</Link></li>
+              <li><Link to="/hotels/miami">Hotels in Miami</Link></li>
+              <li><Link to="/hotels/new-york">Hotels in New York City</Link></li>
+              <li><Link to="/car-rentals/miami">Car Rentals in Miami</Link></li>
+              <li><Link to="/car-rentals/jfk">Car Rentals at JFK</Link></li>
             </ul>
           </FooterSection>
 

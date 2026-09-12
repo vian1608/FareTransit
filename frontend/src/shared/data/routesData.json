@@ -8,7 +8,7 @@
     "destinationCode": "LHR",
     "title": "Flights from New York (JFK) to London (LHR)",
     "metaTitle": "Flights from New York to London | FareTransit",
-    "metaDescription": "Book premium routing and travel logistics for flights from New York JFK to London Heathrow."
+    "metaDescription": "Review flight options from New York JFK to London Heathrow and request FareTransit assistance with schedules, connections, cabin choices and reservation details."
   },
   {
     "slug": "flight-lax-to-tokyo",
@@ -19,7 +19,7 @@
     "destinationCode": "NRT/HND",
     "title": "Flights from Los Angeles (LAX) to Tokyo (NRT/HND)",
     "metaTitle": "Flights from LAX to Tokyo | FareTransit",
-    "metaDescription": "Seamless premium flight bookings from Los Angeles to Tokyo Narita or Haneda."
+    "metaDescription": "Review flight options from Los Angeles to Tokyo and request FareTransit assistance with schedules, airport choices, cabin options and reservation details."
   },
   {
     "slug": "flight-mia-to-paris",
@@ -30,7 +30,7 @@
     "destinationCode": "CDG",
     "title": "Flights from Miami (MIA) to Paris (CDG)",
     "metaTitle": "Flights from Miami to Paris | FareTransit",
-    "metaDescription": "Expert logistics and premium bookings for flights from Miami to Paris Charles de Gaulle."
+    "metaDescription": "Review flight options from Miami to Paris Charles de Gaulle and request FareTransit assistance with schedules, connections and reservation details."
   },
   {
     "slug": "flight-ord-to-fra",
@@ -41,7 +41,7 @@
     "destinationCode": "FRA",
     "title": "Flights from Chicago (ORD) to Frankfurt (FRA)",
     "metaTitle": "Flights from Chicago to Frankfurt | FareTransit",
-    "metaDescription": "Premium international flight logistics from Chicago O'Hare to Frankfurt."
+    "metaDescription": "Review flight options from Chicago O'Hare to Frankfurt and request FareTransit assistance with schedules, connections, cabin choices and reservation details."
   },
   {
     "slug": "flight-sfo-to-syd",
@@ -52,7 +52,7 @@
     "destinationCode": "SYD",
     "title": "Flights from San Francisco (SFO) to Sydney (SYD)",
     "metaTitle": "Flights from SFO to Sydney | FareTransit",
-    "metaDescription": "Expert booking support for transpacific flights from San Francisco to Sydney."
+    "metaDescription": "Review flight options from San Francisco to Sydney and request FareTransit assistance with schedules, cabin choices, connections and reservation details."
   },
   {
     "slug": "flight-jfk-to-dxb",
@@ -63,7 +63,7 @@
     "destinationCode": "DXB",
     "title": "Flights from New York (JFK) to Dubai (DXB)",
     "metaTitle": "Flights from JFK to Dubai | FareTransit",
-    "metaDescription": "Luxury flight arrangements and logistics from New York JFK to Dubai."
+    "metaDescription": "Review flight options from New York JFK to Dubai and request FareTransit assistance with schedules, cabin choices, baggage and reservation details."
   },
   {
     "slug": "flight-dfw-to-lhr",
@@ -74,7 +74,7 @@
     "destinationCode": "LHR",
     "title": "Flights from Dallas (DFW) to London (LHR)",
     "metaTitle": "Flights from Dallas to London | FareTransit",
-    "metaDescription": "Premium flight bookings from Dallas Fort Worth to London Heathrow."
+    "metaDescription": "Review flight options from Dallas Fort Worth to London Heathrow and request FareTransit assistance with schedules, cabins and reservation details."
   },
   {
     "slug": "flight-bos-to-dub",
@@ -85,7 +85,7 @@
     "destinationCode": "DUB",
     "title": "Flights from Boston (BOS) to Dublin (DUB)",
     "metaTitle": "Flights from Boston to Dublin | FareTransit",
-    "metaDescription": "Seamless premium flight bookings from Boston to Dublin, Ireland."
+    "metaDescription": "Review flight options from Boston to Dublin and request FareTransit assistance with schedules, cabin choices, baggage and reservation details."
   },
   {
     "slug": "train-nyc-to-dc",

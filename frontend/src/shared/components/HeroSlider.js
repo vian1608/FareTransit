@@ -30,15 +30,13 @@ function HeroSlider({ slides, variant = 'flights', serviceNavActive, offerTag })
   }, [count, isPaused]);
 
   useEffect(() => {
-    if (!slides) return;
-    slides.forEach((item) => {
-      const src = item.image || item.backgroundImage;
-      if (src) {
-        const img = new Image();
-        img.src = src;
-      }
-    });
-  }, [slides]);
+    if (!slides || count <= 1) return;
+    const nextSlide = slides[(current + 1) % count];
+    const src = nextSlide?.image || nextSlide?.backgroundImage;
+    if (!src) return;
+    const img = new Image();
+    img.src = src;
+  }, [count, current, slides]);
 
   if (!slides || count === 0) return null;
 
@@ -89,18 +87,20 @@ function HeroSlider({ slides, variant = 'flights', serviceNavActive, offerTag })
         <div className="hero-slider__slides" aria-live="polite">
           {slides.map((item, index) => {
             const bgSrc = item.image || item.backgroundImage;
+            const isCurrent = index === current;
             return (
               <div
                 key={item.id}
-                className={`hero-slider__slide${index === current ? ' hero-slider__slide--active' : ''}`}
-                aria-hidden={index !== current}
+                className={`hero-slider__slide${isCurrent ? ' hero-slider__slide--active' : ''}`}
+                aria-hidden={!isCurrent}
               >
                 {bgSrc && (
                   <img
                     src={bgSrc}
                     alt={item.alt || ''}
                     className="hero-slider__slide-img"
-                    loading="eager"
+                    loading={isCurrent ? 'eager' : 'lazy'}
+                    fetchPriority={isCurrent ? 'high' : 'auto'}
                     decoding="async"
                   />
                 )}

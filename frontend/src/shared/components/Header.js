@@ -41,15 +41,22 @@ function Header() {
 
   const closeMenu = () => setMenuOpen(false);
 
-  const isFlightsActive = location.pathname === '/';
+  const flightSupportPaths = new Set([
+    '/travel-assistance',
+    '/booking-for-parents',
+    '/urgent-travel',
+    '/senior-travel',
+    '/senior-travel/flight-deals',
+  ]);
+  const isFlightsActive = location.pathname === '/flights'
+    || location.pathname.startsWith('/flight-')
+    || location.pathname.startsWith('/routes/flight-')
+    || flightSupportPaths.has(location.pathname);
   const isHotelsActive = location.pathname.startsWith('/hotels');
   const isCarsActive = location.pathname.startsWith('/car-rentals');
   const isContactActive = location.pathname === '/contact';
   const isAdminRoute = location.pathname.startsWith('/admin');
 
-  // Keep each public travel section visually distinct. The key intentionally
-  // changes with the product so the existing icon-swap animation replays when
-  // a traveler moves between Flights, Hotels, and Car Rentals.
   const sectionTheme = isHotelsActive ? 'hotels' : isCarsActive ? 'cars' : 'flights';
   const logoIcon = isHotelsActive ? 'fa-hotel' : isCarsActive ? 'fa-car' : 'fa-plane-departure';
   const headerThemeClass = isHotelsActive ? 'header--hotels' : isCarsActive ? 'header--cars' : 'header--flights';
@@ -92,7 +99,7 @@ function Header() {
         >
           <div className="nav-main">
             <Link
-              to="/"
+              to="/flights"
               className={`header-nav-link ${isFlightsActive ? 'header-nav-link--active' : ''}`}
             >
               Flights
