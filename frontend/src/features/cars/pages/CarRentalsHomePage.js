@@ -139,7 +139,7 @@ function CarRentalsHomePage() {
             </div>
 
             <div className="car-ppc-hero__notes" aria-label="FareTransit service highlights">
-              <span><i className="fas fa-user-headset" aria-hidden="true" /> Human assistance</span>
+              <span><i className="fas fa-headset" aria-hidden="true" /> Human assistance</span>
               <span><i className="fas fa-map-marked-alt" aria-hidden="true" /> Airport &amp; city rentals</span>
               <span><i className="fas fa-car" aria-hidden="true" /> Multiple vehicle categories</span>
             </div>
