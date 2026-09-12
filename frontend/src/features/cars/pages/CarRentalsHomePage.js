@@ -1,6 +1,7 @@
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
+import MobileServiceSwitcher from '../../../shared/components/MobileServiceSwitcher';
 import { SUPPORT_PHONE_HREF, SUPPORT_PHONE_DISPLAY } from '../../../shared/constants/supportContact';
 import './CarRentalsHomePage.css';
 import './CarRentalBrandLogos.css';
@@ -153,6 +154,7 @@ function CarRentalsHomePage() {
         <section className="car-ppc-hero" aria-labelledby="car-rental-hero-title">
           <div className="car-ppc-hero__overlay" aria-hidden="true" />
           <div className="container car-ppc-hero__content">
+            <MobileServiceSwitcher active="cars" />
             <span className="car-ppc-eyebrow">Car rental booking assistance</span>
             <h1 id="car-rental-hero-title">Find the Right Rental Car for Your Trip</h1>
             <p>

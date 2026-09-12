@@ -9,6 +9,8 @@ const fail = (message) => {
 };
 
 const hero = read('frontend/src/shared/components/HeroSlider.js');
+const mobileSwitcher = read('frontend/src/shared/components/MobileServiceSwitcher.js');
+const mobileSwitcherCss = read('frontend/src/shared/components/MobileServiceSwitcher.css');
 const header = read('frontend/src/shared/components/Header.js');
 const productCard = read('frontend/src/shared/components/ProductSearchCard.js');
 const productCss = read('frontend/src/shared/components/ProductSearchCard.css');
@@ -20,7 +22,19 @@ const guardrails = read('frontend/src/shared/styles/ResponsiveTravelRedundancy.c
 const index = read('frontend/src/index.js');
 
 if (hero.includes('import ServiceNav') || hero.includes('<ServiceNav')) {
-  fail('HeroSlider still renders duplicate product navigation.');
+  fail('HeroSlider still renders the legacy desktop duplicate product navigation.');
+}
+if (!hero.includes('MobileServiceSwitcher') || !hero.includes('active={serviceNavActive}')) {
+  fail('HeroSlider is missing the approved mobile-only travel service switcher.');
+}
+if (!mobileSwitcher.includes("label: 'Flights'") || !mobileSwitcher.includes("label: 'Hotels'") || !mobileSwitcher.includes("label: 'Car Rentals'")) {
+  fail('Mobile travel switcher is missing Flights, Hotels, or Car Rentals.');
+}
+if (!mobileSwitcher.includes('aria-current') || !mobileSwitcher.includes('mobile-service-switcher__item--active')) {
+  fail('Mobile travel switcher does not expose an accessible active state.');
+}
+if (!mobileSwitcherCss.includes('.mobile-service-switcher {\n  display: none;') || !mobileSwitcherCss.includes('@media (max-width: 767px)')) {
+  fail('Mobile travel switcher must stay hidden on desktop and appear only on mobile.');
 }
 if (header.includes('header-mobile-call') || header.includes('SUPPORT_PHONE_HREF')) {
   fail('Header still contains the duplicate mobile Call Now control.');
@@ -43,6 +57,9 @@ if (!supportCss.includes('position: static;') || !supportCss.includes('.support-
 if (carPage.includes('className="car-mobile-cta"') || !carPage.includes('data-support-call-primary')) {
   fail('Car Rentals still has a second fixed mobile CTA or lacks a primary hero CTA marker.');
 }
+if (!carPage.includes("import MobileServiceSwitcher") || !carPage.includes('<MobileServiceSwitcher active="cars" />')) {
+  fail('Car Rentals is missing the shared mobile-only travel service switcher.');
+}
 if (!guardrails.includes('.hero-slider .service-nav') || !guardrails.includes('.header-mobile-call') || !guardrails.includes('.car-mobile-cta')) {
   fail('Legacy duplicate-surface guardrails are incomplete.');
 }
@@ -51,4 +68,4 @@ if (!index.includes("import './shared/styles/ResponsiveTravelRedundancy.css';"))
 }
 
 console.log('Responsive travel redundancy audit passed.');
-console.log('Verified one global product navigation, viewport-aware call support, and clean mobile CTA handoff.');
+console.log('Verified desktop single navigation, mobile-only travel switching on Flights/Hotels/Car Rentals, viewport-aware call support, and clean mobile CTA handoff.');
