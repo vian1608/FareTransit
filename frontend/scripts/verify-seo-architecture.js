@@ -80,10 +80,10 @@ mustContain(indexHtml, '<title>FareTransit | Flights, Hotels & Car Rental Assist
 mustContain(indexHtml, 'flights, hotels and car rentals', 'Broad default description/schema');
 
 ['miami', 'new-york', 'las-vegas', 'orlando'].forEach((slug) => {
-  mustContain(hotelDestinations, `${slug}:`, `Hotel destination ${slug}`);
+  mustContain(hotelDestinations, `slug: '${slug}'`, `Hotel destination ${slug}`);
 });
 ['miami', 'orlando', 'lax', 'jfk'].forEach((slug) => {
-  mustContain(carLocations, `${slug}:`, `Car rental location ${slug}`);
+  mustContain(carLocations, `slug: '${slug}'`, `Car rental location ${slug}`);
 });
 
 const promotionalFlightPattern = /\b(best flight deals?|premium (?:flight|booking)|luxury flight|seamless premium)\b/i;
