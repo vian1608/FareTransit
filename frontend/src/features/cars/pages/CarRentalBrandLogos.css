@@ -1,0 +1,61 @@
+.car-brand-card--logo {
+  min-height: 112px;
+  padding: 1.2rem 1.35rem;
+  overflow: hidden;
+}
+
+.car-brand-logo {
+  display: block;
+  width: auto;
+  max-width: 82%;
+  max-height: 54px;
+  object-fit: contain;
+}
+
+.car-brand-logo--hertz {
+  max-width: 118px;
+  max-height: 58px;
+}
+
+.car-brand-logo--avis {
+  max-width: 120px;
+  max-height: 48px;
+}
+
+.car-brand-logo--budget {
+  max-width: 142px;
+  max-height: 48px;
+}
+
+.car-brand-logo--enterprise {
+  max-width: 156px;
+  max-height: 48px;
+}
+
+.car-brand-logo--sixt {
+  max-width: 112px;
+  max-height: 52px;
+}
+
+@media (max-width: 900px) {
+  .car-brand-card--logo {
+    min-height: 104px;
+  }
+
+  .car-brand-logo {
+    max-width: 76%;
+    max-height: 48px;
+  }
+}
+
+@media (max-width: 600px) {
+  .car-brand-card--logo {
+    min-height: 94px;
+    padding: 1rem;
+  }
+
+  .car-brand-logo {
+    max-width: 78%;
+    max-height: 44px;
+  }
+}
