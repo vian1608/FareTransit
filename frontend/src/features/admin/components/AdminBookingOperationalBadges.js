@@ -50,6 +50,35 @@ function mountBadge(row, flags) {
   root.render(<BadgeGroup flags={flags} />);
 }
 
+function ensureMultiServiceLauncher() {
+  if (document.querySelector('[data-multiservice-operations]')) return;
+  const dashboard = document.querySelector('.adv2-dashboard') || document.querySelector('.adv2-container') || document.querySelector('.admin-dashboard-v2');
+  const firstCard = document.querySelector('.adv2-card');
+  const parent = firstCard?.parentElement || dashboard;
+  if (!parent) return;
+
+  const host = document.createElement('section');
+  host.dataset.multiserviceOperations = 'true';
+  host.setAttribute('aria-label', 'Multi-service reservations');
+  host.style.cssText = 'margin:0 0 18px;padding:18px 20px;border:1px solid #cbd5e1;border-radius:14px;background:linear-gradient(135deg,#f8fbff,#eef5ff);box-shadow:0 8px 24px rgba(15,45,82,.06)';
+  host.innerHTML = `
+    <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+      <div style="min-width:240px;flex:1">
+        <div style="font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#2563eb">FareTransit Operations</div>
+        <div style="font-size:20px;font-weight:850;color:#102d54;margin-top:2px">Multi-Service Reservations</div>
+        <div style="font-size:13px;color:#64748b;margin-top:3px">Manage flights, manual car-rental authorizations, and future hotel reservations from one workspace.</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <a href="/admin-car-reservations.html" style="text-decoration:none;background:#1466d9;color:#fff;font-weight:800;padding:10px 14px;border-radius:9px">Reservations & Authorizations</a>
+        <a href="/admin/bookings/new" style="text-decoration:none;background:#fff;color:#173b68;border:1px solid #cbd5e1;font-weight:800;padding:10px 14px;border-radius:9px">+ Flight Booking</a>
+        <a href="/admin-car-reservations.html#create-car" style="text-decoration:none;background:#fff;color:#173b68;border:1px solid #cbd5e1;font-weight:800;padding:10px 14px;border-radius:9px">+ Car Rental</a>
+        <span title="Hotel reservation management will be added later" style="background:#f8fafc;color:#94a3b8;border:1px dashed #cbd5e1;font-weight:800;padding:10px 14px;border-radius:9px">Hotel — Coming Soon</span>
+      </div>
+    </div>`;
+  if (firstCard && firstCard.parentElement === parent) parent.insertBefore(host, firstCard);
+  else parent.prepend(host);
+}
+
 export default function AdminBookingOperationalBadges() {
   useEffect(() => {
     let stopped = false;
@@ -59,6 +88,7 @@ export default function AdminBookingOperationalBadges() {
 
     const refresh = async () => {
       if (stopped || running) return;
+      ensureMultiServiceLauncher();
       const rows = findBookingRows();
       const references = [...new Set(rows.map(referenceForRow).filter(Boolean))];
       if (!references.length) return;
