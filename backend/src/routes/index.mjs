@@ -15,6 +15,7 @@ import { journeySessionRouter } from '../modules/journey-sessions/journey-sessio
 import { noStore, publicLookupCache } from '../middleware/cache-control.middleware.mjs';
 import { carRouter } from '../modules/cars/car.routes.mjs';
 import { hotelRouter } from '../modules/hotels/hotel.routes.mjs';
+import { reservationAdminRouter, reservationAuthorizationPublicRouter } from '../modules/reservations/reservation.routes.mjs';
 import addressAutocompleteController from '../modules/flights/address-autocomplete.controller.mjs';
 
 const router = express.Router();
@@ -29,8 +30,10 @@ router.use('/bookings', noStore, bookingRouter);
 router.use('/my-bookings', noStore, bookingRouter);
 router.use('/authorizations', noStore, authorizationRouter);
 router.use('/authorization', noStore, authorizationRouter);
+router.use('/reservation-authorizations', noStore, reservationAuthorizationPublicRouter);
 router.use('/secure-payments', noStore, securePaymentRateLimiter, securePaymentPublicRouter);
 router.use('/addons', noStore, addonRouter);
+router.use('/admin/reservations', noStore, reservationAdminRouter);
 router.use('/admin', noStore, adminRouter);
 router.use('/backoffice', noStore, backOfficeRouter);
 router.use('/vouchers', noStore, voucherRoutes);
