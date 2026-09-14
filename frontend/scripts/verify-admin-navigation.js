@@ -37,6 +37,7 @@ const routerFile = 'src/features/backoffice/BackOfficeRouter.js';
   '<Route path="/admin/payments"',
   '<Route path="/admin/settings"'
 ].forEach(route => requireText(routerFile, route, `missing primary route ${route}`));
+requireText(routerFile, "window.location.replace('/admin/login')", 'unauthenticated admin requests must perform a full login handoff instead of SPA-looping');
 requireText(routerFile, '<Route path="/admin/backoffice" element={<Navigate to="/admin" replace />} />', 'legacy backoffice URL must resolve to the new home');
 requireText(routerFile, '<Route path="/admin/dashboard" element={<Navigate to="/admin/bookings?type=flight" replace />} />', 'legacy flight dashboard URL must resolve into unified bookings');
 requireText(routerFile, '<Route path="/admin/bookings/hotels" element={<Navigate to="/admin/bookings?type=hotel" replace />} />', 'legacy hotel list must resolve into unified bookings');
@@ -60,4 +61,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('Admin architecture verification passed: five primary destinations, unified booking/payment/settings hubs, legacy redirects and FareTransit-only branding.');
+console.log('Admin architecture verification passed: five primary destinations, unified booking/payment/settings hubs, legacy redirects, safe login handoff and FareTransit-only branding.');
