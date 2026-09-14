@@ -21,7 +21,7 @@ const EMPTY_TRANSACTIONS = [
 ];
 
 function requestId() {
-  const random = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const random = window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   return `car:${random}`;
 }
 
