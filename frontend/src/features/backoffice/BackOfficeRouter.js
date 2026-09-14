@@ -8,7 +8,7 @@ import FlexAdminPage from '../admin/pages/FlexAdminPage';
 import { BackOfficeAuthProvider, useBackOfficeAuth } from './BackOfficeAuthContext';
 import BackOfficeShell from './BackOfficeShell';
 import {
-  AuditLogsPage, CarsPage, CommissionsPage, DisputesPage, FinancePage, HotelsPage,
+  AuditLogsPage, CommissionsPage, DisputesPage, FinancePage, HotelsPage,
   IntegrationsPage, LeadDetailPage, LeadsPage, PaymentsPage, PlaceholderPage,
   ProductBookingDetailPage, RefundsPage, ReportsPage, RolesPage, SecurityPage,
   SettingsPage, SupplierPaymentsPage, SuppliersPage, TasksPage, TeamPage, TeamsPage,
@@ -16,6 +16,7 @@ import {
 } from './BackOfficeDataPages';
 import { PaymentAuthorizationDetailPage, PaymentAuthorizationsPage } from './SecurePaymentAdminPages';
 import PaymentFlowTestPage from './PaymentFlowTestPage';
+import CarReservationWorkspace, { NewCarReservationPage } from './CarReservationWorkspace';
 import {
   AdminHomePage, CustomerDetailPage, CustomersHubPage, LegacyRedirect, NewBookingPage,
   PaymentsNav, SettingsBack, SettingsHomePage, UnifiedBookingsPage
@@ -61,10 +62,10 @@ export default function BackOfficeRouter() {
     {/* Booking creation and detail workspaces — not permanent navigation items */}
     <Route path="/admin/bookings/new/flight" element={<Page permission="bookings.flights.create"><AdminCreateBookingPage /></Page>} />
     <Route path="/admin/bookings/new/hotel" element={<Page permission="bookings.hotels.create"><HotelsPage /></Page>} />
-    <Route path="/admin/bookings/new/car" element={<Page permission="bookings.cars.create"><CarsPage /></Page>} />
+    <Route path="/admin/bookings/new/car" element={<Page permission="bookings.cars.create"><NewCarReservationPage /></Page>} />
     <Route path="/admin/bookings/flights/:code" element={<Page permission="bookings.flights.view"><AdminDashboard /></Page>} />
     <Route path="/admin/bookings/hotels/:id" element={<Page permission="bookings.hotels.view"><ProductBookingDetailPage type="hotel" /></Page>} />
-    <Route path="/admin/bookings/cars/:id" element={<Page permission="bookings.cars.view"><ProductBookingDetailPage type="car" /></Page>} />
+    <Route path="/admin/bookings/cars/:id" element={<Page permission="bookings.cars.view"><CarReservationWorkspace /></Page>} />
     <Route path="/admin/bookings/:code" element={<Page permission="bookings.flights.view"><AdminDashboard /></Page>} />
 
     {/* Payments — grouped beneath one primary area */}
