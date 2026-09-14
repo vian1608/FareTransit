@@ -101,7 +101,15 @@ router.post('/bookings/cars', requirePermission('bookings.cars.create'), async (
       if (keyError) {
         if (keyError.code === '23505') {
           const replay = await reservationForClientRequest(requestId);
-          if (replay) return res.status(200).json({ success: true, data: replay, idempotentReplay: true });
+          if (replay) {
+            const { error: cleanupError } = await supabase
+              .from('reservations')
+              .delete()
+              .eq('id', data.reservation.id)
+              .eq('service_type', 'CAR');
+            if (cleanupError) console.warn('[car-idempotency-cleanup]', cleanupError.message);
+            return res.status(200).json({ success: true, data: replay, idempotentReplay: true });
+          }
         }
         throw keyError;
       }
