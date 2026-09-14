@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { adminAPI } from '../../../shared/api/api';
 import { normalizeError } from '../../../shared/utils/normalizeError';
 import './AdminLoginPage.css';
@@ -12,7 +11,6 @@ function persistSession(response, fallbackEmail = '') {
 }
 
 function AdminLogin() {
-  const navigate = useNavigate();
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -20,25 +18,17 @@ function AdminLogin() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (loading) return;
-    if (demoLoading) return;
+    if (loading || demoLoading) return;
     setLoading(true);
     setError('');
 
     try {
       const response = await adminAPI.login(formData);
       if (response?.success === true && response?.token) {
-        const profile = persistSession(response, formData.email);
-
-        // BackOfficeRouter is selected by frontend/src/index.js only during a
-        // fresh page bootstrap. Staff therefore need a hard handoff instead of
-        // an in-App React navigation, while the legacy owner stays in App.js.
-        const isStaffProfile = profile?.legacyOwner !== true;
-        if (isStaffProfile) {
-          window.location.assign('/admin/backoffice');
-        } else {
-          navigate('/admin/dashboard');
-        }
+        persistSession(response, formData.email);
+        // The authenticated admin experience is selected at application bootstrap,
+        // so every role performs one clean handoff into the unified admin shell.
+        window.location.assign('/admin');
         return;
       }
       setError(normalizeError({ message: response?.error?.message || response?.message }, 'Invalid admin credentials.'));
@@ -50,8 +40,7 @@ function AdminLogin() {
   };
 
   const handleDemoLogin = async () => {
-    if (loading) return;
-    if (demoLoading) return;
+    if (loading || demoLoading) return;
     setDemoLoading(true);
     setError('');
     try {
@@ -64,7 +53,7 @@ function AdminLogin() {
         throw new Error(payload?.error?.message || 'Merchant demo is temporarily unavailable.');
       }
       persistSession(payload, 'merchant-test@faretransit.com');
-      window.location.assign('/admin/bookings/flights');
+      window.location.assign('/admin/bookings?type=flight');
     } catch (err) {
       setError(normalizeError(err, 'Merchant demo could not be opened. Please retry.'));
     } finally {
@@ -78,8 +67,8 @@ function AdminLogin() {
         <div className="admin-card">
           <div className="admin-header">
             <i className="fas fa-shield-alt" />
-            <h1>Admin Panel</h1>
-            <p>FareTransit Management System</p>
+            <h1>FareTransit Admin</h1>
+            <p>Operations &amp; Reservation Management</p>
           </div>
           <form onSubmit={handleSubmit}>
             {error && <div className="error-message" role="alert">{error}</div>}
