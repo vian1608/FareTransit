@@ -17,7 +17,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "prebuild": "node scripts/verify-business-phone.js && node scripts/verify-ui-interaction-safety.js && node scripts/verify-responsive-travel-redundancy.js && node scripts/verify-seo-architecture.js",
+    "prebuild": "node scripts/verify-admin-navigation.js && node scripts/verify-business-phone.js && node scripts/verify-ui-interaction-safety.js && node scripts/verify-responsive-travel-redundancy.js && node scripts/verify-seo-architecture.js",
     "build": "CI=false react-scripts build",
     "postbuild": "node scripts/prerender-seo-hubs.js",
     "test": "react-scripts test",
