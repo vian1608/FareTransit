@@ -25,7 +25,8 @@ requireText('src/shared/components/admin/AdminUniversalNav.js', "path === '/admi
 requireText('src/shared/components/admin/AdminUniversalNav.js', "'.adv2-brand'", 'legacy flight dashboard brand must be home-enabled');
 requireText('src/shared/components/admin/AdminUniversalNav.js', "'.backoffice-brand'", 'back office brand must be home-enabled');
 
-requireMatch('src/features/backoffice/BackOfficeShell.js', /<NavLink to="\/admin\/backoffice" className="backoffice-brand"[^>]*aria-label="Admin Home"/, 'back office brand must be a semantic Admin Home link');
+requireText('src/features/backoffice/BackOfficeShell.js', '<NavLink to="/admin/backoffice" className="backoffice-brand"', 'back office brand must point to Admin Home');
+requireText('src/features/backoffice/BackOfficeShell.js', 'aria-label="Admin Home">THE FINAL SEAT', 'back office brand must be a semantic Admin Home link');
 requireMatch('src/features/admin/pages/BaggageAdminPage.js', /href="\/admin\/backoffice">← Admin Home<\/a>/, 'baggage admin must link to Admin Home');
 requireMatch('src/features/admin/pages/FlexAdminPage.js', /href="\/admin\/backoffice">Admin Home<\/a>/, 'Flex admin must link to Admin Home');
 
