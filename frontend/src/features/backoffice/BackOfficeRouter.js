@@ -21,6 +21,7 @@ import {
   PaymentsNav, SettingsBack, SettingsHomePage, UnifiedBookingsPage
 } from './AdminOperationsPages';
 import './SecurePaymentAdmin.css';
+import './AdminCreateBookingPolish.css';
 
 function LoginHandoff() {
   React.useEffect(() => { window.location.replace('/admin/login'); }, []);
