@@ -22,10 +22,7 @@ import App from './app/App';
 import BackOfficeRouter from './features/backoffice/BackOfficeRouter';
 import SecurePaymentPage from './features/secure-payments/SecurePaymentPage';
 import BaggagePaymentPage from './features/bookings/addons/BaggagePaymentPage';
-import BaggageAdminPage from './features/admin/pages/BaggageAdminPage';
-import FlexAdminPage from './features/admin/pages/FlexAdminPage';
 import SupportCallLayer from './shared/components/SupportCallLayer';
-import AdminUniversalNav from './shared/components/admin/AdminUniversalNav';
 import { boPatch } from './features/backoffice/backofficeApi';
 import { adminAPI } from './shared/api/api';
 import { HelmetProvider } from 'react-helmet-async';
@@ -45,10 +42,11 @@ installCarVehicleCarouselUX();
 installPrimaryContactSyncUX();
 installTripAddonsUX();
 
-document.documentElement.dataset.faretransitBuild = 'trip-addons-flex-baggage-2026-08-24';
+document.documentElement.dataset.faretransitBuild = 'admin-operations-redesign-2026-09-14';
 
+const pathname = window.location.pathname;
 const query = new URLSearchParams(window.location.search);
-const crmLeadId = window.location.pathname === '/admin/bookings/new' ? query.get('leadId') : null;
+const crmLeadId = pathname === '/admin/bookings/new' ? query.get('leadId') : null;
 if (crmLeadId && !adminAPI.__tfsCrmFlightCreateBridge) {
   const originalCreateBooking = adminAPI.createBooking.bind(adminAPI);
   adminAPI.createBooking = async (...args) => {
@@ -68,29 +66,22 @@ if (crmLeadId && !adminAPI.__tfsCrmFlightCreateBridge) {
   Object.defineProperty(adminAPI, '__tfsCrmFlightCreateBridge', { value: true, configurable: false, enumerable: false, writable: false });
 }
 
-const isNewBackOfficePath = /^\/admin\/(backoffice|crm(?:\/|$)|trips(?:\/|$)|bookings\/(?:flights|hotels|cars)(?:\/|$)|payments(?:\/|$)|testing(?:\/|$)|finance(?:\/|$)|suppliers(?:\/|$)|reports(?:\/|$)|team(?:\/|$)|settings(?:\/|$))/.test(window.location.pathname);
-const isSecurePaymentPath = /^\/secure-payment\/[^/]+\/?$/.test(window.location.pathname);
-const isBaggagePaymentPath = /^\/addons\/pay\/[^/]+\/?$/.test(window.location.pathname);
-const isBaggageAdminPath = /^\/admin\/baggage\/?$/.test(window.location.pathname);
-const isFlexAdminPath = /^\/admin\/flex\/?$/.test(window.location.pathname);
+const isAdminPath = /^\/admin(?:\/|$)/.test(pathname) && !/^\/admin\/login\/?$/.test(pathname);
+const isSecurePaymentPath = /^\/secure-payment\/[^/]+\/?$/.test(pathname);
+const isBaggagePaymentPath = /^\/addons\/pay\/[^/]+\/?$/.test(pathname);
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
     <HelmetProvider>
-      <AdminUniversalNav />
-      {isNewBackOfficePath ? (
+      {isAdminPath ? (
         <BrowserRouter><BackOfficeRouter /></BrowserRouter>
       ) : isSecurePaymentPath ? (
         <BrowserRouter><Routes><Route path="/secure-payment/:token" element={<SecurePaymentPage />} /></Routes></BrowserRouter>
       ) : isBaggagePaymentPath ? (
         <BrowserRouter><Routes><Route path="/addons/pay/:token" element={<BaggagePaymentPage />} /></Routes></BrowserRouter>
-      ) : isBaggageAdminPath ? (
-        <BrowserRouter><Routes><Route path="/admin/baggage" element={<BaggageAdminPage />} /></Routes></BrowserRouter>
-      ) : isFlexAdminPath ? (
-        <BrowserRouter><Routes><Route path="/admin/flex" element={<FlexAdminPage />} /></Routes></BrowserRouter>
       ) : <App />}
-      {!isNewBackOfficePath && !isBaggageAdminPath && !isFlexAdminPath && <SupportCallLayer />}
+      {!isAdminPath && <SupportCallLayer />}
     </HelmetProvider>
   </React.StrictMode>
 );
