@@ -28,7 +28,7 @@ export default function BackOfficeShell({ children }) {
   const [open, setOpen] = useState(false);
   return <div className="backoffice-shell">
     <aside className={`backoffice-sidebar ${open ? 'is-open' : ''}`}>
-      <div className="backoffice-brand">THE FINAL SEAT <span>BACK OFFICE</span></div>
+      <NavLink to="/admin/backoffice" className="backoffice-brand" onClick={() => setOpen(false)} aria-label="Admin Home">THE FINAL SEAT <span>BACK OFFICE</span></NavLink>
       <nav>{items.filter(([, , permission]) => hasPermission(permission)).map(([label, href]) => <NavLink key={href} to={href} onClick={() => setOpen(false)} className={({isActive}) => isActive ? 'active' : ''}>{label}</NavLink>)}</nav>
     </aside>
     <section className="backoffice-main">
