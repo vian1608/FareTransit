@@ -22,10 +22,15 @@ import {
 } from './AdminOperationsPages';
 import './SecurePaymentAdmin.css';
 
+function LoginHandoff() {
+  React.useEffect(() => { window.location.replace('/admin/login'); }, []);
+  return <div className="bo-card">Opening admin login…</div>;
+}
+
 function Guard({ permission, permissions, children }) {
   const { loading, profile, hasPermission } = useBackOfficeAuth();
   if (loading) return <div className="bo-card">Loading FareTransit Admin…</div>;
-  if (!profile) return <Navigate to="/admin/login" replace />;
+  if (!profile) return <LoginHandoff />;
   const required = permissions || (permission ? [permission] : []);
   if (required.length && !required.some(hasPermission)) {
     return <div className="bo-card"><h2>Access denied</h2><p>You do not have permission to open this area.</p></div>;
