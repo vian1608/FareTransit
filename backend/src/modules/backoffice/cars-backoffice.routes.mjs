@@ -8,6 +8,29 @@ import { sendCarAuthorizationEmail } from '../reservations/car-authorization-ema
 const router = express.Router();
 const actor = req => req.staff?.email || req.user?.email || req.staff?.id || req.user?.id || 'admin';
 
+function clientRequestId(value) {
+  const id = String(value || '').trim();
+  if (!id) return null;
+  if (id.length > 120 || !/^[a-zA-Z0-9:_-]+$/.test(id)) {
+    const error = new Error('Invalid car reservation request id.');
+    error.statusCode = 400;
+    error.code = 'INVALID_CLIENT_REQUEST_ID';
+    throw error;
+  }
+  return id;
+}
+
+async function reservationForClientRequest(id) {
+  if (!id) return null;
+  const { data, error } = await supabase
+    .from('reservations')
+    .select('booking_reference')
+    .eq('client_request_id', id)
+    .maybeSingle();
+  if (error) throw error;
+  return data?.booking_reference ? reservationService.getReservation(data.booking_reference) : null;
+}
+
 async function resolveReference(idOrReference) {
   const value = String(idOrReference || '').trim();
   if (!value) return value;
@@ -62,8 +85,33 @@ router.post('/bookings/cars/assets', requirePermission('bookings.cars.edit'), as
 
 router.post('/bookings/cars', requirePermission('bookings.cars.create'), async (req, res, next) => {
   try {
-    const data = await reservationService.createCarReservation(req.body || {}, actor(req));
-    await auditBackOffice(req, 'car_reservation.created', 'reservation', data?.reservation?.id, { bookingReference: data?.reservation?.booking_reference });
+    const requestId = clientRequestId(req.body?.clientRequestId);
+    const existing = await reservationForClientRequest(requestId);
+    if (existing) return res.status(200).json({ success: true, data: existing, idempotentReplay: true });
+
+    const payload = { ...(req.body || {}) };
+    delete payload.clientRequestId;
+    const data = await reservationService.createCarReservation(payload, actor(req));
+
+    if (requestId && data?.reservation?.id) {
+      const { error: keyError } = await supabase
+        .from('reservations')
+        .update({ client_request_id: requestId })
+        .eq('id', data.reservation.id);
+      if (keyError) {
+        if (keyError.code === '23505') {
+          const replay = await reservationForClientRequest(requestId);
+          if (replay) return res.status(200).json({ success: true, data: replay, idempotentReplay: true });
+        }
+        throw keyError;
+      }
+      data.reservation.client_request_id = requestId;
+    }
+
+    await auditBackOffice(req, 'car_reservation.created', 'reservation', data?.reservation?.id, {
+      bookingReference: data?.reservation?.booking_reference,
+      clientRequestId: requestId
+    });
     res.status(201).json({ success: true, data });
   } catch (error) { next(error); }
 });
