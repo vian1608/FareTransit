@@ -1,11 +1,135 @@
 import express from 'express';
-import supabase from '../../integrations/supabase/supabase.client.mjs';
-import{applyScope,requirePermission}from'./backoffice.middleware.mjs';
-import backofficeStaffService from'./backoffice.service.mjs';
-import auditBackOffice from'./backoffice.audit.mjs';
-const router=express.Router();const scoped=(req,q)=>applyScope(q,req.staff,backofficeStaffService.scopeFor(req.staff,'bookings.cars.view'));
-router.get('/bookings/cars',requirePermission('bookings.cars.view'),async(req,res,next)=>{try{let q=supabase.from('car_bookings').select('*').order('created_at',{ascending:false});q=scoped(req,q);if(req.query.status)q=q.eq('status',req.query.status);const{data,error}=await q.limit(250);if(error)throw error;res.json({success:true,data:data||[]});}catch(e){next(e);}});
-router.post('/bookings/cars',requirePermission('bookings.cars.create'),async(req,res,next)=>{try{const b=req.body||{};if(!b.pickupLocation||!b.dropoffLocation||!b.pickupAt||!b.dropoffAt)return res.status(400).json({success:false,error:{code:'INVALID_CAR_BOOKING',message:'Pickup/dropoff locations and times are required'}});const payload={car_code:`CAR-${new Date().getFullYear()}-${Date.now().toString(36).toUpperCase()}`,trip_id:b.tripId||null,lead_id:b.leadId||null,customer_contact_id:b.customerContactId||null,assigned_agent_id:b.assignedAgentId||req.staff.id||null,team_id:req.staff.team?.id||null,supplier_name:b.supplierName||null,pickup_location:b.pickupLocation,dropoff_location:b.dropoffLocation,pickup_at:b.pickupAt,dropoff_at:b.dropoffAt,vehicle_class:b.vehicleClass||null,confirmation_number:b.confirmationNumber||null,supplier_cost:Number(b.supplierCost||0),customer_total:Number(b.customerTotal||0),markup_service_fee:Number(b.markupServiceFee||0),currency:b.currency||'USD',status:b.status||'REQUESTED',payment_status:b.paymentStatus||'pending',notes:b.notes||null};const{data,error}=await supabase.from('car_bookings').insert(payload).select('*').single();if(error)throw error;await auditBackOffice(req,'car.created','car_booking',data.id,{carCode:data.car_code});res.status(201).json({success:true,data});}catch(e){next(e);}});
-router.get('/bookings/cars/:id',requirePermission('bookings.cars.view'),async(req,res,next)=>{try{let q=supabase.from('car_bookings').select('*').eq('id',req.params.id);q=scoped(req,q);const{data,error}=await q.maybeSingle();if(error)throw error;if(!data)return res.status(404).json({success:false,error:{code:'NOT_FOUND',message:'Car booking not found in your scope'}});res.json({success:true,data});}catch(e){next(e);}});
-router.patch('/bookings/cars/:id',requirePermission('bookings.cars.edit'),async(req,res,next)=>{try{const b=req.body||{},update={updated_at:new Date().toISOString()};const map={tripId:'trip_id',leadId:'lead_id',supplierName:'supplier_name',pickupLocation:'pickup_location',dropoffLocation:'dropoff_location',pickupAt:'pickup_at',dropoffAt:'dropoff_at',vehicleClass:'vehicle_class',confirmationNumber:'confirmation_number',supplierCost:'supplier_cost',customerTotal:'customer_total',markupServiceFee:'markup_service_fee',currency:'currency',status:'status',paymentStatus:'payment_status',notes:'notes'};Object.entries(map).forEach(([a,k])=>{if(b[a]!==undefined)update[k]=b[a];});let q=supabase.from('car_bookings').update(update).eq('id',req.params.id);q=scoped(req,q);const{data,error}=await q.select('*').maybeSingle();if(error)throw error;if(!data)return res.status(404).json({success:false,error:{code:'NOT_FOUND',message:'Car booking not found in your scope'}});await auditBackOffice(req,'car.updated','car_booking',data.id,{fields:Object.keys(update)});res.json({success:true,data});}catch(e){next(e);}});
-export default router;export{router as carsBackofficeRouter};
+import supabase from '../../config/supabase.mjs';
+import { requirePermission } from './backoffice.middleware.mjs';
+import auditBackOffice from './backoffice.audit.mjs';
+import reservationService from '../reservations/reservation.service.mjs';
+import { sendCarAuthorizationEmail } from '../reservations/car-authorization-email.service.mjs';
+
+const router = express.Router();
+const actor = req => req.staff?.email || req.user?.email || req.staff?.id || req.user?.id || 'admin';
+
+async function resolveReference(idOrReference) {
+  const value = String(idOrReference || '').trim();
+  if (!value) return value;
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)) {
+    const { data, error } = await supabase.from('reservations').select('booking_reference').eq('id', value).maybeSingle();
+    if (error) throw error;
+    if (!data?.booking_reference) {
+      const err = new Error('Car reservation not found.');
+      err.statusCode = 404;
+      throw err;
+    }
+    return data.booking_reference;
+  }
+  return value.toUpperCase();
+}
+
+router.get('/bookings/cars', requirePermission('bookings.cars.view'), async (req, res, next) => {
+  try {
+    const result = await reservationService.listReservations({
+      serviceType: 'CAR',
+      q: req.query.q,
+      status: req.query.status,
+      authorizationStatus: req.query.authorizationStatus,
+      page: req.query.page || 1,
+      pageSize: Math.min(100, Number(req.query.pageSize || 100))
+    });
+    const reservations = result.reservations || [];
+    const ids = reservations.map(item => item.id).filter(Boolean);
+    let carByReservation = new Map();
+    if (ids.length) {
+      const { data, error } = await supabase
+        .from('car_reservations')
+        .select('reservation_id,rental_company_name,vehicle_name,vehicle_category,pickup_location,pickup_at,dropoff_location,dropoff_at,supplier_confirmation')
+        .in('reservation_id', ids);
+      if (error) throw error;
+      carByReservation = new Map((data || []).map(item => [item.reservation_id, item]));
+    }
+    const rows = reservations.map(item => ({ ...item, ...(carByReservation.get(item.id) || {}) }));
+    res.json({ success: true, data: rows, meta: { total: result.total || rows.length } });
+  } catch (error) { next(error); }
+});
+
+router.get('/bookings/cars/companies', requirePermission('bookings.cars.view'), async (req, res, next) => {
+  try { res.json({ success: true, data: await reservationService.listRentalCompanies() }); }
+  catch (error) { next(error); }
+});
+
+router.post('/bookings/cars/assets', requirePermission('bookings.cars.edit'), async (req, res, next) => {
+  try { res.status(201).json({ success: true, data: await reservationService.saveUploadedAsset(req.body || {}) }); }
+  catch (error) { next(error); }
+});
+
+router.post('/bookings/cars', requirePermission('bookings.cars.create'), async (req, res, next) => {
+  try {
+    const data = await reservationService.createCarReservation(req.body || {}, actor(req));
+    await auditBackOffice(req, 'car_reservation.created', 'reservation', data?.reservation?.id, { bookingReference: data?.reservation?.booking_reference });
+    res.status(201).json({ success: true, data });
+  } catch (error) { next(error); }
+});
+
+router.get('/bookings/cars/:id', requirePermission('bookings.cars.view'), async (req, res, next) => {
+  try {
+    const reference = await resolveReference(req.params.id);
+    res.json({ success: true, data: await reservationService.getReservation(reference) });
+  } catch (error) { next(error); }
+});
+
+router.patch('/bookings/cars/:id', requirePermission('bookings.cars.edit'), async (req, res, next) => {
+  try {
+    const reference = await resolveReference(req.params.id);
+    const data = await reservationService.updateCarReservation(reference, req.body || {}, actor(req));
+    await auditBackOffice(req, 'car_reservation.updated', 'reservation', data?.reservation?.id, { bookingReference: reference });
+    res.json({ success: true, data });
+  } catch (error) { next(error); }
+});
+
+router.post('/bookings/cars/:id/authorization/draft', requirePermission('bookings.cars.edit'), async (req, res, next) => {
+  try {
+    const reference = await resolveReference(req.params.id);
+    const authorization = await reservationService.saveAuthorizationDraft(reference, req.body || {}, actor(req));
+    await auditBackOffice(req, 'car_authorization.draft_saved', 'reservation', authorization?.reservation_id, { bookingReference: reference, version: authorization?.version });
+    res.json({ success: true, data: authorization });
+  } catch (error) { next(error); }
+});
+
+router.post('/bookings/cars/:id/authorization/revision', requirePermission('bookings.cars.edit'), async (req, res, next) => {
+  try {
+    const reference = await resolveReference(req.params.id);
+    const authorization = await reservationService.createAuthorizationRevision(reference, actor(req));
+    await auditBackOffice(req, 'car_authorization.revision_created', 'reservation', authorization?.reservation_id, { bookingReference: reference, version: authorization?.version });
+    res.status(201).json({ success: true, data: authorization });
+  } catch (error) { next(error); }
+});
+
+router.post('/bookings/cars/:id/authorization/send', requirePermission('bookings.cars.edit'), async (req, res, next) => {
+  let prepared;
+  try {
+    const reference = await resolveReference(req.params.id);
+    prepared = await reservationService.prepareAuthorizationForSend(reference, actor(req));
+    const email = await sendCarAuthorizationEmail({
+      recipient: prepared.recipient,
+      bookingReference: prepared.bundle.reservation.booking_reference,
+      authorization: prepared.authorization,
+      token: prepared.token
+    });
+    const authorization = await reservationService.markAuthorizationSent(reference, prepared.authorization.id, actor(req));
+    await auditBackOffice(req, 'car_authorization.sent', 'reservation', prepared.bundle?.reservation?.id, { bookingReference: reference, version: authorization?.version, recipient: prepared.recipient });
+    res.json({ success: true, data: { authorization, email } });
+  } catch (error) {
+    if (prepared?.authorization?.id) await reservationService.resetAuthorizationSendPreparation(prepared.authorization.id);
+    next(error);
+  }
+});
+
+router.post('/bookings/cars/:id/booked', requirePermission('bookings.cars.edit'), async (req, res, next) => {
+  try {
+    const reference = await resolveReference(req.params.id);
+    const data = await reservationService.markReservationBooked(reference, req.body || {}, actor(req));
+    await auditBackOffice(req, 'car_reservation.booked', 'reservation', data?.reservation?.id, { bookingReference: reference, supplierConfirmation: req.body?.supplierConfirmation || null });
+    res.json({ success: true, data });
+  } catch (error) { next(error); }
+});
+
+export default router;
+export { router as carsBackofficeRouter };
