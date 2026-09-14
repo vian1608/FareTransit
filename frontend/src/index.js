@@ -25,6 +25,7 @@ import BaggagePaymentPage from './features/bookings/addons/BaggagePaymentPage';
 import BaggageAdminPage from './features/admin/pages/BaggageAdminPage';
 import FlexAdminPage from './features/admin/pages/FlexAdminPage';
 import SupportCallLayer from './shared/components/SupportCallLayer';
+import AdminUniversalNav from './shared/components/admin/AdminUniversalNav';
 import { boPatch } from './features/backoffice/backofficeApi';
 import { adminAPI } from './shared/api/api';
 import { HelmetProvider } from 'react-helmet-async';
@@ -77,6 +78,7 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
     <HelmetProvider>
+      <AdminUniversalNav />
       {isNewBackOfficePath ? (
         <BrowserRouter><BackOfficeRouter /></BrowserRouter>
       ) : isSecurePaymentPath ? (
