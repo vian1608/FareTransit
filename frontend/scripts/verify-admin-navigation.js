@@ -2,51 +2,62 @@ const fs = require('fs');
 const path = require('path');
 
 const frontendRoot = path.resolve(__dirname, '..');
-const read = (relativePath) => fs.readFileSync(path.join(frontendRoot, relativePath), 'utf8');
+const read = relativePath => fs.readFileSync(path.join(frontendRoot, relativePath), 'utf8');
 const failures = [];
 
 function requireText(file, text, description) {
-  const content = read(file);
-  if (!content.includes(text)) failures.push(`${file}: ${description}`);
+  if (!read(file).includes(text)) failures.push(`${file}: ${description}`);
+}
+function forbidText(file, text, description) {
+  if (read(file).includes(text)) failures.push(`${file}: ${description}`);
 }
 
-function requireMatch(file, regex, description) {
-  const content = read(file);
-  if (!regex.test(content)) failures.push(`${file}: ${description}`);
-}
+requireText('src/index.js', "const isAdminPath = /^\\/admin(?:\\/|$)/", 'all authenticated /admin paths must enter the unified shell');
+forbidText('src/index.js', 'AdminUniversalNav', 'the retired duplicate global admin bar must not be mounted');
+requireText('src/features/admin/pages/AdminLoginPage.js', "window.location.assign('/admin');", 'successful login must hand off to the unified admin home');
 
-requireText('src/index.js', "import AdminUniversalNav from './shared/components/admin/AdminUniversalNav';", 'universal admin navigation must be imported at the root');
-requireText('src/index.js', '<AdminUniversalNav />', 'universal admin navigation must be mounted before admin route selection');
+const shell = read('src/features/backoffice/BackOfficeShell.js');
+[
+  ["label: 'Dashboard', href: '/admin'", 'Dashboard'],
+  ["label: 'Bookings', href: '/admin/bookings'", 'Bookings'],
+  ["label: 'Customers', href: '/admin/customers'", 'Customers'],
+  ["label: 'Payments', href: '/admin/payments'", 'Payments'],
+  ["label: 'Settings', href: '/admin/settings'", 'Settings']
+].forEach(([needle, label]) => { if (!shell.includes(needle)) failures.push(`BackOfficeShell.js: missing primary ${label} destination`); });
+if ((shell.match(/label:\s*'/g) || []).length !== 5) failures.push('BackOfficeShell.js: permanent sidebar must contain exactly five primary destinations');
+if (!shell.includes('<NavLink to="/admin" end className="backoffice-brand"')) failures.push('BackOfficeShell.js: FareTransit brand must link to /admin');
+if (shell.includes('THE FINAL SEAT')) failures.push('BackOfficeShell.js: legacy THE FINAL SEAT branding must not appear in FareTransit Admin');
+if (!shell.includes("navigate('/admin/bookings/new')")) failures.push('BackOfficeShell.js: New Booking must remain a top-level action');
 
-requireText('src/shared/components/admin/AdminUniversalNav.js', "const ADMIN_HOME = '/admin/backoffice';", 'Admin Home must resolve to /admin/backoffice');
-requireText('src/shared/components/admin/AdminUniversalNav.js', 'href="/admin/dashboard"', 'Flight Dashboard must remain a separate destination');
-requireText('src/shared/components/admin/AdminUniversalNav.js', 'href="/"', 'View Website must remain available');
-requireText('src/shared/components/admin/AdminUniversalNav.js', "path === '/admin/login'", 'login page must be excluded from authenticated admin navigation');
-requireText('src/shared/components/admin/AdminUniversalNav.js', "'.adv2-brand'", 'legacy flight dashboard brand must be home-enabled');
-requireText('src/shared/components/admin/AdminUniversalNav.js', "'.backoffice-brand'", 'back office brand must be home-enabled');
+const routerFile = 'src/features/backoffice/BackOfficeRouter.js';
+[
+  '<Route path="/admin"',
+  '<Route path="/admin/bookings"',
+  '<Route path="/admin/customers"',
+  '<Route path="/admin/payments"',
+  '<Route path="/admin/settings"'
+].forEach(route => requireText(routerFile, route, `missing primary route ${route}`));
+requireText(routerFile, '<Route path="/admin/backoffice" element={<Navigate to="/admin" replace />} />', 'legacy backoffice URL must resolve to the new home');
+requireText(routerFile, '<Route path="/admin/dashboard" element={<Navigate to="/admin/bookings?type=flight" replace />} />', 'legacy flight dashboard URL must resolve into unified bookings');
+requireText(routerFile, '<Route path="/admin/bookings/hotels" element={<Navigate to="/admin/bookings?type=hotel" replace />} />', 'legacy hotel list must resolve into unified bookings');
+requireText(routerFile, '<Route path="/admin/bookings/cars" element={<Navigate to="/admin/bookings?type=car" replace />} />', 'legacy car list must resolve into unified bookings');
 
-requireText('src/features/backoffice/BackOfficeShell.js', '<NavLink to="/admin/backoffice" className="backoffice-brand"', 'back office brand must point to Admin Home');
-requireText('src/features/backoffice/BackOfficeShell.js', 'aria-label="Admin Home">THE FINAL SEAT', 'back office brand must be a semantic Admin Home link');
-requireMatch('src/features/admin/pages/BaggageAdminPage.js', /href="\/admin\/backoffice">← Admin Home<\/a>/, 'baggage admin must link to Admin Home');
-requireMatch('src/features/admin/pages/FlexAdminPage.js', /href="\/admin\/backoffice">Admin Home<\/a>/, 'Flex admin must link to Admin Home');
+const pagesFile = 'src/features/backoffice/AdminOperationsPages.js';
+requireText(pagesFile, 'export function AdminHomePage()', 'new operational dashboard must exist');
+requireText(pagesFile, 'export function UnifiedBookingsPage()', 'unified bookings workspace must exist');
+requireText(pagesFile, 'export function CustomersHubPage()', 'customer workspace must exist');
+requireText(pagesFile, 'export function PaymentsNav', 'payments grouping must exist');
+requireText(pagesFile, 'export function SettingsHomePage()', 'settings hub must exist');
+['Transactions','Authorizations','Refunds'].forEach(label => requireText(pagesFile, `>${label}<`, `payments must include ${label}`));
+['Business','Users & Permissions','Email','Integrations','Security','Audit Log'].forEach(label => requireText(pagesFile, `'${label}'`, `settings must include ${label}`));
 
-requireText('public/admin-car-reservations.html', 'class="brand-link" href="/admin/backoffice" aria-label="Admin Home"', 'car reservations brand must be clickable to Admin Home');
-requireText('public/admin-car-reservations.html', 'href="/admin/backoffice">⌂ Admin Home</a>', 'car reservations must expose an explicit Admin Home control');
-requireText('public/admin-car-reservations.html', 'href="/admin/dashboard">← Flight Dashboard</a>', 'car reservations must keep the Flight Dashboard shortcut');
-requireText('public/admin-car-reservations.html', 'href="/">View Website ↗</a>', 'car reservations must expose View Website');
-
-const appRoutes = [...read('src/app/App.js').matchAll(/<Route\s+path="(\/admin[^"]*)"/g)].map((match) => match[1]);
-const backOfficeRoutes = [...read('src/features/backoffice/BackOfficeRouter.js').matchAll(/<Route\s+path="(\/admin[^"]*)"/g)].map((match) => match[1]);
-const coveredRoutes = [...new Set([...appRoutes, ...backOfficeRoutes, '/admin/baggage', '/admin/flex'])];
-
-if (coveredRoutes.length < 10) {
-  failures.push(`admin route inventory unexpectedly small (${coveredRoutes.length}); review navigation coverage`);
-}
+const css = read('src/features/backoffice/BackOfficeShell.css');
+['--admin-navy:#12345b','--admin-blue:#1769e0','--admin-bg:#f6f8fb'].forEach(token => { if (!css.includes(token)) failures.push(`BackOfficeShell.css: missing design token ${token}`); });
 
 if (failures.length) {
-  console.error('Admin navigation verification failed:');
-  failures.forEach((failure) => console.error(` - ${failure}`));
+  console.error('Admin architecture verification failed:');
+  failures.forEach(failure => console.error(` - ${failure}`));
   process.exit(1);
 }
 
-console.log(`Admin navigation verification passed for ${coveredRoutes.length} React admin route patterns plus the standalone car-reservations admin page.`);
+console.log('Admin architecture verification passed: five primary destinations, unified booking/payment/settings hubs, legacy redirects and FareTransit-only branding.');
