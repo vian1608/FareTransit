@@ -33,7 +33,7 @@ export default function BaggageAdminPage() {
   const totalMargin = useMemo(() => requests.reduce((sum,r) => { const q = latest(r.quotes || []); return sum + (q ? Number(q.customer_price || 0) - Number(q.supplier_cost || 0) : 0); },0),[requests]);
 
   return <main className="admin-baggage-page"><div className="admin-baggage-shell">
-    <header className="admin-baggage-header"><div><span>TRIP ADD-ONS</span><h1>Checked Baggage Requests</h1><p>Verify supplier availability, set the selling price, send the separate offer, record payment, and confirm fulfillment.</p></div><a href="/admin/dashboard">Back to Admin</a></header>
+    <header className="admin-baggage-header"><div><span>TRIP ADD-ONS</span><h1>Checked Baggage Requests</h1><p>Verify supplier availability, set the selling price, send the separate offer, record payment, and confirm fulfillment.</p></div><a href="/admin/backoffice">← Admin Home</a></header>
     <form className="admin-baggage-search" onSubmit={(e) => { e.preventDefault(); load(); }}><input value={reference} onChange={(e) => setReference(e.target.value)} placeholder="Booking confirmation code"/><button disabled={busy === 'search'}>{busy === 'search' ? 'Loading…' : 'Load Booking'}</button></form>
     {error && <div className="admin-baggage-alert error">{error}</div>}{notice && <div className="admin-baggage-alert">{notice}</div>}
     {booking && <section className="admin-baggage-summary"><div><span>Booking</span><strong>{booking.confirmation_code || booking.id}</strong></div><div><span>Customer</span><strong>{booking.passenger_name || booking.email || 'Customer'}</strong></div><div><span>Requests</span><strong>{requests.length}</strong></div><div><span>Quoted margin</span><strong>${totalMargin.toFixed(2)}</strong></div></section>}
