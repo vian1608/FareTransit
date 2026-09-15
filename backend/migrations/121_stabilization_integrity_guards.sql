@@ -2,6 +2,7 @@
 -- Existing historical rows are not rewritten unless the correction is unambiguous.
 
 -- This index duplicates reservations_customer_email_idx exactly (Supabase advisor).
+-- ALLOW_DESTRUCTIVE_MIGRATION: remove only the redundant duplicate index; no table data or canonical index is removed.
 DROP INDEX IF EXISTS public.idx_reservations_customer_email_ci;
 
 -- Normalize unambiguous legacy card-brand aliases.
