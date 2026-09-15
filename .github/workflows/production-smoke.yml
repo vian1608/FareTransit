@@ -75,7 +75,7 @@ jobs:
               --max-time 30 "$url" >/dev/null
           done
 
-      - name: Verify production identity and API health
+      - name: Verify production identity, integrations and API health
         shell: bash
         run: |
           set -euo pipefail
@@ -85,10 +85,42 @@ jobs:
             echo "The live homepage does not contain the expected FareTransit identity." >&2
             exit 1
           fi
-          if ! printf '%s' "$health" | grep -qi 'FareTransit API is running'; then
-            echo "The health endpoint did not return the expected FareTransit API identity." >&2
+          printf '%s' "$health" | jq -e '.success == true and .data.message == "FareTransit API is running"' >/dev/null
+          printf '%s' "$health" | jq -e '.data.integrations.customerEmailConfigured == true' >/dev/null || {
+            echo "Customer authorization email provider is not configured in production." >&2
             exit 1
-          fi
+          }
+
+      - name: Verify live Flight and Car public reservation parity
+        shell: bash
+        run: |
+          set -euo pipefail
+          check_service() {
+            local reference="$1"
+            local expected="$2"
+            local encoded
+            encoded="$(python3 -c 'import sys,urllib.parse; print(urllib.parse.quote(sys.argv[1]))' "$reference")"
+            local search detail
+            search="$(curl --fail --silent --show-error --location --max-time 30 "https://www.faretransit.com/api/bookings/search?query=${encoded}")"
+            printf '%s' "$search" | jq -e --arg expected "$expected" '.success == true and any(.data[]?; .service_type == $expected)' >/dev/null || {
+              echo "${expected} booking search parity failed for ${reference}." >&2
+              exit 1
+            }
+            detail="$(curl --fail --silent --show-error --location --max-time 30 "https://www.faretransit.com/api/bookings/reservation/${encoded}")"
+            printf '%s' "$detail" | jq -e --arg expected "$expected" '.success == true and .data.serviceType == $expected' >/dev/null || {
+              echo "${expected} reservation detail parity failed for ${reference}." >&2
+              exit 1
+            }
+          }
+          check_service "DEMO-FT-1003" "FLIGHT"
+          check_service "CSJW3D" "CAR"
+
+      - name: Verify canonical search remains healthy when a service has no live fixture
+        shell: bash
+        run: |
+          set -euo pipefail
+          response="$(curl --fail --silent --show-error --location --max-time 30 'https://www.faretransit.com/api/bookings/search?query=FARETRANSIT-NO-MATCH-SMOKE')"
+          printf '%s' "$response" | jq -e '.success == true and (.data | type == "array")' >/dev/null
 
       - name: Verify canonical domain redirect
         shell: bash
