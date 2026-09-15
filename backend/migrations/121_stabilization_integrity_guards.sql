@@ -7,7 +7,7 @@ DROP INDEX IF EXISTS public.idx_reservations_customer_email_ci;
 -- Normalize unambiguous legacy card-brand aliases.
 UPDATE public.reservation_billing_details
 SET card_brand = 'Mastercard', updated_at = NOW()
-WHERE lower(regexp_replace(coalesce(card_brand, ''), '[^a-z0-9]', '', 'g')) IN ('master', 'mastercard', 'mc');
+WHERE regexp_replace(lower(coalesce(card_brand, '')), '[^a-z0-9]', '', 'g') IN ('master', 'mastercard', 'mc');
 
 -- Enforce correct rental chronology for all future inserts/updates while leaving
 -- historical invalid rows available for manual review rather than guessing dates.
