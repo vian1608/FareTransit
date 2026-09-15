@@ -1,7 +1,22 @@
 import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
 import env from '../../config/env.mjs';
 
-const FROM = 'FareTransit <support@faretransit.com>';
+function fromAddress() {
+  return String(env.resendFrom || 'FareTransit <support@faretransit.com>').trim();
+}
+
+function smtpConfigured() {
+  return Boolean(String(process.env.EMAIL_USER || '').trim() && String(process.env.EMAIL_PASS || '').trim());
+}
+
+export function carAuthorizationEmailProviderStatus() {
+  return {
+    configured: Boolean(env.resendApiKey || smtpConfigured()),
+    resend: Boolean(env.resendApiKey),
+    smtp: smtpConfigured()
+  };
+}
 
 function esc(value) {
   return String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[ch]));
@@ -20,7 +35,7 @@ function messageHtml(value) {
 }
 
 export function buildCarAuthorizationEmail({ bookingReference, authorization, token, subject, message }) {
-  const base = String(env.frontendUrl || 'https://faretransit.com').replace(/\/$/, '');
+  const base = String(env.frontendUrl || 'https://www.faretransit.com').replace(/\/$/, '');
   const url = `${base}/car-authorization.html?token=${encodeURIComponent(token)}`;
   const total = money(authorization.total_amount, authorization.currency);
   const finalSubject = String(subject || `Action required: authorize car rental ${bookingReference}`).trim().slice(0, 180);
@@ -29,18 +44,48 @@ export function buildCarAuthorizationEmail({ bookingReference, authorization, to
   return { subject: finalSubject, html, url };
 }
 
-export async function sendCarAuthorizationEmail({ recipient, bookingReference, authorization, token, subject, message }) {
-  const email = buildCarAuthorizationEmail({ bookingReference, authorization, token, subject, message });
-
-  if (!env.resendApiKey) {
-    if (String(env.nodeEnv || '').toLowerCase() === 'production') throw new Error('RESEND_API_KEY is required to send car authorization email.');
-    return { id: `dev-${Date.now()}`, simulated: true, from: FROM, to: recipient, subject: email.subject, url: email.url };
-  }
-
-  const resend = new Resend(env.resendApiKey);
-  const { data, error } = await resend.emails.send({ from: FROM, to: [recipient], subject: email.subject, html: email.html });
-  if (error) throw new Error(error.message || 'Unable to send authorization email.');
-  return { ...(data || {}), from: FROM, to: recipient, subject: email.subject, url: email.url };
+async function sendViaSmtp({ recipient, subject, html }) {
+  const transporter = nodemailer.createTransport({
+    host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+    port: Number(process.env.EMAIL_PORT || 587),
+    secure: String(process.env.EMAIL_SECURE || '').toLowerCase() === 'true' || Number(process.env.EMAIL_PORT || 587) === 465,
+    auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
+  });
+  const info = await transporter.sendMail({
+    from: fromAddress(),
+    to: recipient,
+    subject,
+    html
+  });
+  return { id: info.messageId, provider: 'smtp' };
 }
 
-export default { buildCarAuthorizationEmail, sendCarAuthorizationEmail };
+export async function sendCarAuthorizationEmail({ recipient, bookingReference, authorization, token, subject, message }) {
+  const email = buildCarAuthorizationEmail({ bookingReference, authorization, token, subject, message });
+  const from = fromAddress();
+
+  if (env.resendApiKey) {
+    const resend = new Resend(env.resendApiKey);
+    const { data, error } = await resend.emails.send({ from, to: [recipient], subject: email.subject, html: email.html });
+    if (!error) return { ...(data || {}), provider: 'resend', from, to: recipient, subject: email.subject, url: email.url };
+    // Resend errors are not silently swallowed when it is explicitly configured.
+    // SMTP is still allowed as an operational fallback if it is also configured.
+    if (!smtpConfigured()) throw new Error(error.message || 'Unable to send authorization email.');
+  }
+
+  if (smtpConfigured()) {
+    const result = await sendViaSmtp({ recipient, subject: email.subject, html: email.html });
+    return { ...result, from, to: recipient, subject: email.subject, url: email.url };
+  }
+
+  if (String(env.nodeEnv || '').toLowerCase() !== 'production') {
+    return { id: `dev-${Date.now()}`, provider: 'simulation', simulated: true, from, to: recipient, subject: email.subject, url: email.url };
+  }
+
+  const error = new Error('Customer email delivery is not configured. Configure RESEND_API_KEY or EMAIL_USER/EMAIL_PASS before sending authorization emails.');
+  error.code = 'EMAIL_PROVIDER_NOT_CONFIGURED';
+  error.statusCode = 503;
+  throw error;
+}
+
+export default { buildCarAuthorizationEmail, sendCarAuthorizationEmail, carAuthorizationEmailProviderStatus };
