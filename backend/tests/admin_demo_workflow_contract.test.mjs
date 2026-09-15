@@ -14,6 +14,14 @@ const service = read('backend/src/modules/backoffice/backoffice.service.mjs');
 const permissionMap = read('backend/src/modules/backoffice/backoffice.legacy-admin-map.mjs');
 const loginPage = read('frontend/src/features/admin/pages/AdminLoginPage.js');
 const dashboard = read('frontend/src/features/admin/pages/AdminDashboardPage.js');
+const backofficeRoutes = read('backend/src/modules/backoffice/backoffice.routes.mjs');
+const composeRoutes = read('backend/src/modules/backoffice/car-authorization-compose.routes.mjs');
+const legacyCarRoutes = read('backend/src/modules/backoffice/cars-backoffice.routes.mjs');
+const composeService = read('backend/src/modules/reservations/car-authorization-compose.service.mjs');
+const emailService = read('backend/src/modules/reservations/car-authorization-email.service.mjs');
+const carWorkspaceEnhanced = read('frontend/src/features/backoffice/CarReservationWorkspaceEnhanced.js');
+const carComposerCss = read('frontend/src/features/backoffice/CarAuthorizationComposer.css');
+const carRouter = read('frontend/src/features/backoffice/BackOfficeRouter.js');
 
 // Keep the restricted passwordless merchant demo available for external review.
 assert.match(controller, /merchant-test@faretransit\.com/);
@@ -39,8 +47,30 @@ assert.doesNotMatch(dashboard, /AdminDemoWorkflowCard/);
 assert.doesNotMatch(dashboard, /Merchant Test Workflow/);
 assert.equal(exists('frontend/src/features/admin/components/AdminDemoWorkflowCard.js'), false);
 assert.equal(exists('frontend/src/features/admin/components/AdminDemoWorkflowCard.css'), false);
-
 assert.doesNotMatch(loginPage, /merchant-test@faretransit\.com[\s\S]{0,120}password\s*[:=]\s*['"][^'"]+['"]/i);
 assert.doesNotMatch(controller, /password\s*=\s*['"][^'"`]*[A-Za-z0-9]{12,}['"]/i);
 
-console.log('admin merchant demo login + hidden dashboard workflow contract: PASS');
+// Car authorization is one deliberate compose workflow instead of six competing
+// footer actions. Draft email text is editable/persisted before the canonical send.
+assert.match(backofficeRoutes, /carAuthorizationComposeRouter/);
+assert.match(composeRoutes, /authorization\/compose/);
+assert.match(composeRoutes, /authorization\/email-draft/);
+assert.match(composeRoutes, /authorization\/send/);
+assert.doesNotMatch(legacyCarRoutes, /router\.post\('\/bookings\/cars\/:id\/authorization\/send'/);
+assert.match(composeService, /service_snapshot/);
+assert.match(composeService, /emailDraft/);
+assert.match(composeService, /sendAuthorizationWithEmailDraft/);
+assert.match(composeService, /createAuthorizationRevision/);
+assert.match(composeService, /status !== 'DRAFT'/);
+assert.match(emailService, /buildCarAuthorizationEmail/);
+assert.match(emailService, /subject, message/);
+assert.match(carWorkspaceEnhanced, /Preview & Send Authorization/);
+assert.match(carWorkspaceEnhanced, /Save Email Draft/);
+assert.match(carWorkspaceEnhanced, /Send Authorization/);
+assert.match(carWorkspaceEnhanced, /Passenger authorization preview/);
+assert.match(carWorkspaceEnhanced, /Review & Authorize button/i);
+assert.match(carWorkspaceEnhanced, /secure link and expiry notice/i);
+assert.match(carComposerCss, /carws-sticky-actions \.bo-button:not\(:first-child\)/);
+assert.match(carRouter, /CarReservationWorkspaceEnhanced/);
+
+console.log('admin merchant demo + streamlined car authorization workflow contract: PASS');
