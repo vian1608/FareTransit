@@ -77,7 +77,9 @@ assert.match(app, /path="\/booking\/:checkoutToken" element={<TokenizedBookingPa
 assert.match(app, /path="\/payment" element={<PaymentBootstrap/);
 assert.match(app, /path="\/payment\/:paymentToken" element={<TokenizedPaymentPage/);
 assert.match(app, /path="\/authorize\/:token"/);
-assert.match(app, /path="\/booking-confirmed\/:confirmationCode" element={<BookingConfirmationRoute/);
+assert.match(app, /path="\/booking-confirmed\/:confirmationCode" element={<BookingConfirmationCompatibilityRoute/);
+assert.match(app, /code\.startsWith\('r_'\).*<BookingConfirmationRoute/s);
+assert.match(app, /path="\/reservation\/:reference" element={<ReservationDetailsPage/);
 
 assert.match(journeyApi, /journey-sessions\/quote/);
 assert.match(journeyApi, /journey-sessions\/checkout/);

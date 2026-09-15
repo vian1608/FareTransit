@@ -97,7 +97,13 @@ function MyBookings() {
     return <span className="status-badge status-badge--pending">Authorization {statusText(value)}</span>;
   };
 
-  const isCarBooking = (booking) => String(booking.service_type || booking.booking_type || '').toUpperCase() === 'CAR';
+  const isCarBooking = (booking) => {
+    const serviceType = String(booking.service_type || booking.serviceType || '').toUpperCase();
+    const bookingType = String(booking.booking_type || booking.bookingType || '').toUpperCase();
+    return serviceType === 'CAR'
+      || bookingType === 'CAR'
+      || Boolean(booking.rental_company_name || booking.pickup_location || booking.vehicle_name || booking.vehicle_category);
+  };
 
   const deriveRouteDisplay = (booking) => {
     const origin = booking.origin_code || booking.flights?.[0]?.departure_airport || booking.flight_details?.departure?.airport;
@@ -183,7 +189,7 @@ function MyBookings() {
                       const amount = Number(booking.customer_price ?? booking.amount ?? booking.total_amount);
 
                       return (
-                        <div key={`${booking.service_type || 'flight'}-${booking.id || code}`} className="booking-card-item">
+                        <div key={`${booking.service_type || booking.booking_type || 'flight'}-${booking.id || code}`} className="booking-card-item">
                           <div className="booking-card-top">
                             <div className="card-ref-block"><span className="ref-label">CONFIRMATION CODE</span><strong className="ref-value">{code || 'N/A'}</strong>{carBooking && <span className="ref-label" style={{ marginTop: '0.35rem' }}>CAR RENTAL</span>}</div>
                             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>{getBookingStatusBadge(booking.status)}{carBooking ? getAuthorizationBadge(booking.authorization_status) : getPaymentBadge(booking.payment_status)}</div>
@@ -203,9 +209,9 @@ function MyBookings() {
                           </div>
 
                           <div className="booking-card-actions" style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                            {!carBooking && code && (
-                              <Link to={`/booking-confirmed/${encodeURIComponent(code)}`} className="view-ticket-btn">
-                                <i className="fas fa-file-alt" /> View Reservation
+                            {code && (
+                              <Link to={`/reservation/${encodeURIComponent(code)}`} className="view-ticket-btn">
+                                <i className={`fas ${carBooking ? 'fa-car' : 'fa-file-alt'}`} /> View Reservation
                               </Link>
                             )}
                             <Link to={`/contact?booking=${encodeURIComponent(code || '')}`} className="view-ticket-btn" style={{ backgroundColor: '#475569', borderColor: '#334155' }}>

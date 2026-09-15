@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 const read = path => fs.readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
+const readFrontend = path => fs.readFileSync(new URL(`../../frontend/${path}`, import.meta.url), 'utf8');
 const admin = read('src/modules/admin/admin.service.mjs');
 const currentView = read('src/modules/bookings/booking-current-view.mjs');
 const passengerAdmin = read('src/modules/admin/admin.passenger.controller.mjs');
@@ -9,9 +10,14 @@ const itineraryReader = read('src/modules/admin/admin-current-itinerary.reposito
 const mutationService = read('src/modules/bookings/booking-mutation.service.mjs');
 const mutationController = read('src/modules/admin/admin.booking-mutation.controller.mjs');
 const adminRoutes = read('src/modules/admin/admin.routes.mjs');
+const bookingRoutes = read('src/modules/bookings/booking.routes.mjs');
+const publicReservation = read('src/modules/bookings/booking-public-reservation.controller.mjs');
 const journeySessions = read('src/modules/journey-sessions/journey-session.service.mjs');
 const resend = read('src/integrations/resend/resend.service.mjs');
 const migration47 = read('migrations/047_stable_primary_passenger_sequence.sql');
+const app = readFrontend('src/app/App.js');
+const myBookings = readFrontend('src/features/bookings/pages/MyBookingsPage.js');
+const reservationPage = readFrontend('src/features/bookings/pages/ReservationDetailsPage.js');
 
 // Canonical Admin read path.
 assert.equal(admin.includes('adminBookingReadRepository.getDetail(id)'), true);
@@ -53,6 +59,23 @@ assert.equal(mutationService.includes("supabase.from('contacts').insert({ bookin
 // payload. Opening r_... must resolve the booking again at request time.
 assert.equal(journeySessions.includes('bookingService.getDetailsByCodeOrId(session.booking_id)'), true);
 assert.equal(journeySessions.includes('buildPublicReservationDto(booking)'), true);
+
+// Public customer lookup must use one detail resolver for both the legacy flight
+// store and the newer reservations/car_reservations store. Search results and old
+// confirmation-code URLs converge on the same customer-facing reservation page.
+assert.equal(bookingRoutes.includes("router.get('/reservation/:reference', bookingReadRateLimiter, bookingPublicReservationController.get)"), true);
+assert.equal(publicReservation.includes("bookingService.getDetailsByCodeOrId(reference)"), true);
+assert.equal(publicReservation.includes('getReservation(reference)'), true);
+assert.equal(publicReservation.includes("serviceType: 'FLIGHT'"), true);
+assert.equal(publicReservation.includes("serviceType: 'CAR'"), true);
+assert.equal(app.includes('path="/reservation/:reference"'), true);
+assert.equal(app.includes('BookingConfirmationCompatibilityRoute'), true);
+assert.equal(myBookings.includes('to={`/reservation/${encodeURIComponent(code)}`}'), true);
+assert.equal(myBookings.includes('booking.rental_company_name || booking.pickup_location'), true);
+assert.equal(reservationPage.includes('/api/bookings/reservation/'), true);
+assert.equal(reservationPage.includes("serviceType === 'CAR'"), true);
+assert.equal(reservationPage.includes('CarReservation'), true);
+assert.equal(reservationPage.includes('FlightReservation'), true);
 
 // Customer confirmation emails also reload the current complete booking before
 // rendering, preventing Admin mutations from being followed by stale email data.
