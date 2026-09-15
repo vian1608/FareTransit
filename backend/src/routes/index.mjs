@@ -16,6 +16,7 @@ import { noStore, publicLookupCache } from '../middleware/cache-control.middlewa
 import { carRouter } from '../modules/cars/car.routes.mjs';
 import { hotelRouter } from '../modules/hotels/hotel.routes.mjs';
 import { reservationAdminRouter, reservationAuthorizationPublicRouter } from '../modules/reservations/reservation.routes.mjs';
+import { carAuthorizationEmailProviderStatus } from '../modules/reservations/car-authorization-email.service.mjs';
 import addressAutocompleteController from '../modules/flights/address-autocomplete.controller.mjs';
 
 const router = express.Router();
@@ -45,7 +46,21 @@ router.use('/airports', publicLookupCache(300, 86400, 3600), airportRouter);
 router.use('/cars', carRouter);
 router.use('/hotels', noStore, hotelRouter);
 router.get('/address-autocomplete', publicLookupCache(300, 86400, 3600), addressAutocompleteController.getAddressAutocomplete);
-router.get('/health', (req, res) => res.json({ success: true, data: { status: 'ok', message: 'FareTransit API is running', timestamp: new Date().toISOString() } }));
+router.get('/health', (req, res) => {
+  const email = carAuthorizationEmailProviderStatus();
+  res.json({
+    success: true,
+    data: {
+      status: email.configured ? 'ok' : 'degraded',
+      message: 'FareTransit API is running',
+      timestamp: new Date().toISOString(),
+      integrations: {
+        customerEmailConfigured: email.configured,
+        customerEmailProvider: email.resend ? 'resend' : email.smtp ? 'smtp' : 'none'
+      }
+    }
+  });
+});
 
 export default router;
 export { router as rootRouter };
