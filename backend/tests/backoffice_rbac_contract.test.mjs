@@ -31,10 +31,11 @@ const additiveMigrations = [
 ].map(read).join('\n');
 
 test('back-office expansion preserves the stable flight admin and enforces RBAC', async t => {
-  await t.test('legacy admin URLs remain in the original App route table', () => {
+  await t.test('legacy admin URLs remain declared while authenticated admin traffic uses the unified router', () => {
     ['/admin/login','/admin/dashboard','/admin/vouchers','/admin/bookings/new','/admin/bookings/:code'].forEach(route => assert.ok(app.includes(`path="${route}"`), `Missing preserved route: ${route}`));
-    assert.ok(index.includes("bookings\\/(?:flights|hotels|cars)"), 'Only product-specific new booking paths should be intercepted by the additive back-office router.');
-    assert.ok(!index.includes("bookings\\/(?:new)"), 'Existing create-booking route must stay in the stable App router.');
+    assert.match(index, /const isAdminPath = /, 'Admin path dispatch must remain explicit at application bootstrap.');
+    assert.match(index, /<BackOfficeRouter \/>/, 'Authenticated admin paths must use the permission-aware back-office router.');
+    assert.match(index, /admin\\\/login/, 'The login route must remain outside authenticated back-office dispatch.');
   });
 
   await t.test('new flight alias reuses the existing booking detail implementation', () => {
@@ -68,10 +69,10 @@ test('back-office expansion preserves the stable flight admin and enforces RBAC'
     assert.match(bridgeMigration, /ADD COLUMN IF NOT EXISTS trip_id UUID NULL/);
   });
 
-  await t.test('staff share the existing login and hard-handoff into the permission-aware back office', () => {
-    assert.match(adminLogin, /isStaffProfile/);
-    assert.match(adminLogin, /window\.location\.assign\('\/admin\/backoffice'\)/);
-    assert.match(boShell, /hasPermission\(permission\)/, 'Sidebar visibility must be permission-aware.');
+  await t.test('staff share the existing login and hand off into the permission-aware unified admin shell', () => {
+    assert.match(adminLogin, /window\.location\.assign\('\/admin'\)/);
+    assert.match(boRouter, /path="\/admin"/);
+    assert.match(boShell, /item\.permissions\.some\(hasPermission\)/, 'Sidebar visibility must be permission-aware.');
   });
 
   await t.test('backend independently protects sensitive settings and team administration', () => {
