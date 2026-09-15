@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import './CarReservationFormControls.css';
 
 export const CARD_BRANDS = [
@@ -70,9 +70,15 @@ export function normalizeHalfHourLocalDateTime(value) {
   return `${date}T${String(hour).padStart(2, '0')}:${String(snappedMinute).padStart(2, '0')}`;
 }
 
+export function isCompleteHalfHourLocalDateTime(value) {
+  if (!value) return true;
+  return /^\d{4}-\d{2}-\d{2}T(?:[01]\d|2[0-3]):(?:00|30)$/.test(String(value));
+}
+
 export function toIsoOrNull(value) {
   if (!value) return null;
   const normalized = normalizeHalfHourLocalDateTime(value);
+  if (!isCompleteHalfHourLocalDateTime(normalized)) return null;
   const date = new Date(normalized);
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
