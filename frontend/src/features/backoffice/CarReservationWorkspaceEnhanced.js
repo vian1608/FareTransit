@@ -22,6 +22,14 @@ function collectionLabel(value) {
   return String(value || '').toUpperCase() === 'PAY_AT_COUNTER' ? 'Pay at counter' : 'Pay now';
 }
 
+function RentalCompanyBrand({ preview, compact = false }) {
+  if (!preview?.rentalCompanyLogoUrl && !preview?.rentalCompany) return null;
+  return <div style={{ margin: compact ? '0 0 12px' : '14px 0 18px', padding: compact ? '8px 10px' : '12px', border: '1px solid #e5eaf2', borderRadius: '10px', background: '#fff', textAlign: 'center' }}>
+    {preview.rentalCompanyLogoUrl && <img src={preview.rentalCompanyLogoUrl} alt={preview.rentalCompany || 'Rental company'} style={{ display: 'block', width: 'auto', height: 'auto', maxWidth: compact ? '150px' : '210px', maxHeight: compact ? '48px' : '62px', margin: '0 auto' }} />}
+    {preview.rentalCompany && <small style={{ display: 'block', marginTop: preview.rentalCompanyLogoUrl ? '7px' : 0, color: '#64748b' }}>Rental provided by {preview.rentalCompany}</small>}
+  </div>;
+}
+
 function AuthorizationComposerModal({ reference, data, busy, error, onChange, onClose, onSave, onSend }) {
   const draft = data?.emailDraft || {};
   const preview = data?.preview || {};
@@ -43,13 +51,14 @@ function AuthorizationComposerModal({ reference, data, busy, error, onChange, on
           <label><span>To</span><input value={draft.to || ''} readOnly /></label>
           <label><span>Subject</span><input value={draft.subject || ''} maxLength="180" onChange={event => onChange('subject', event.target.value)} /></label>
           <label><span>Message</span><textarea value={draft.message || ''} maxLength="8000" onChange={event => onChange('message', event.target.value)} /></label>
-          <div className="carauth-security-note"><strong>Secure authorization is automatic.</strong><span>The Review & Authorize button, booking total, secure link and expiry notice are added below your message when the email is sent.</span></div>
+          <div className="carauth-security-note"><strong>Secure authorization is automatic.</strong><span>The rental-company logo, Review & Authorize button, booking total, secure link and expiry notice are added automatically when the email is sent.</span></div>
         </div>
 
         <aside className="carauth-preview">
           <div className="carauth-email-card">
             <div className="carauth-brand">Fare<span>Transit</span></div>
             <small>Car Rental Authorization</small>
+            <RentalCompanyBrand preview={preview} />
             <div className="carauth-email-subject">{draft.subject || 'Authorization email'}</div>
             <div className="carauth-email-message">{draft.message || 'Your message will appear here.'}</div>
             <div className="carauth-email-summary"><span>Booking ID</span><strong>{preview.bookingReference || reference}</strong><span>Total authorized</span><strong>{formatMoney(preview.totalAmount, preview.currency)}</strong></div>
@@ -59,6 +68,7 @@ function AuthorizationComposerModal({ reference, data, busy, error, onChange, on
 
           <div className="carauth-auth-summary">
             <h3>Passenger authorization preview</h3>
+            <RentalCompanyBrand preview={preview} compact />
             <dl>
               <div><dt>Renter</dt><dd>{preview.renterName || 'Not set'}</dd></div>
               <div><dt>Rental company</dt><dd>{preview.rentalCompany || 'Not set'}</dd></div>
