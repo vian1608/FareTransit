@@ -16,7 +16,7 @@ import {
 } from './BackOfficeDataPages';
 import { PaymentAuthorizationDetailPage, PaymentAuthorizationsPage } from './SecurePaymentAdminPages';
 import PaymentFlowTestPage from './PaymentFlowTestPage';
-import CarReservationWorkspace from './CarReservationWorkspace';
+import CarReservationWorkspaceEnhanced from './CarReservationWorkspaceEnhanced';
 import NewCarReservationDraftPage from './NewCarReservationDraftPage';
 import {
   AdminHomePage, CustomerDetailPage, CustomersHubPage, LegacyRedirect, NewBookingPage,
@@ -66,7 +66,7 @@ export default function BackOfficeRouter() {
     <Route path="/admin/bookings/new/car" element={<Page permission="bookings.cars.create"><NewCarReservationDraftPage /></Page>} />
     <Route path="/admin/bookings/flights/:code" element={<Page permission="bookings.flights.view"><AdminDashboard /></Page>} />
     <Route path="/admin/bookings/hotels/:id" element={<Page permission="bookings.hotels.view"><ProductBookingDetailPage type="hotel" /></Page>} />
-    <Route path="/admin/bookings/cars/:id" element={<Page permission="bookings.cars.view"><CarReservationWorkspace /></Page>} />
+    <Route path="/admin/bookings/cars/:id" element={<Page permission="bookings.cars.view"><CarReservationWorkspaceEnhanced /></Page>} />
     <Route path="/admin/bookings/:code" element={<Page permission="bookings.flights.view"><AdminDashboard /></Page>} />
 
     {/* Payments — grouped beneath one primary area */}
