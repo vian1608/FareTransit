@@ -18,12 +18,14 @@ END,
 updated_at = NOW()
 WHERE code IN ('ALAMO','AVIS','BUDGET','DOLLAR','ENTERPRISE','HERTZ','NATIONAL','SIXT','THRIFTY');
 
--- Existing reservations inherit the canonical logo too, so old bookings do not
--- need the admin to re-select the rental company before authorization preview.
+-- Backfill reservations only when touching the row will not trip chronology
+-- guards on pre-existing legacy data. Authorization composition also falls back
+-- to the canonical company row, so legacy invalid-date records still get logos.
 UPDATE public.car_reservations AS car
 SET rental_company_logo_url = company.logo_url,
     updated_at = NOW()
 FROM public.car_rental_companies AS company
 WHERE car.rental_company_id = company.id
   AND company.logo_url IS NOT NULL
-  AND car.rental_company_logo_url IS DISTINCT FROM company.logo_url;
+  AND car.rental_company_logo_url IS DISTINCT FROM company.logo_url
+  AND (car.pickup_at IS NULL OR car.dropoff_at IS NULL OR car.dropoff_at > car.pickup_at);
