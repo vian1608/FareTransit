@@ -5,7 +5,6 @@ import backofficeStaffService from './backoffice.service.mjs';
 import auditBackOffice from './backoffice.audit.mjs';
 import {
   listCanonicalReservations,
-  listCanonicalCustomers,
   resolveCanonicalEntity
 } from '../reservations/canonical-reservation.service.mjs';
 
@@ -34,6 +33,53 @@ function visibleReservations(staff, rows) {
     const permission = PERMISSION_BY_TYPE[row.serviceType];
     return permission && backofficeStaffService.hasPermission(staff, permission) && visibleByScope(staff, row, permission);
   });
+}
+
+function groupCustomers(rows) {
+  const customers = new Map();
+  for (const row of rows || []) {
+    const email = String(row.email || '').trim().toLowerCase();
+    const phone = String(row.phone || '').trim();
+    const name = String(row.customerName || '').trim();
+    if (!email && !phone && !name) continue;
+    const key = email || `${name.toLowerCase()}|${phone}`;
+    const current = customers.get(key) || {
+      id: key,
+      name: name || 'Customer',
+      email: email || null,
+      phone: phone || null,
+      bookingCount: 0,
+      serviceTypes: [],
+      totalValue: 0,
+      latestBooking: null,
+      bookings: []
+    };
+    const booking = {
+      id: row.id,
+      reference: row.reference,
+      serviceType: row.serviceType,
+      status: row.status,
+      paymentStatus: row.paymentStatus,
+      authorizationStatus: row.authorizationStatus,
+      total: row.total,
+      currency: row.currency,
+      travelDate: row.travelDate,
+      destination: row.destination || row.dropoffLocation || null,
+      createdAt: row.createdAt
+    };
+    current.bookingCount += 1;
+    current.totalValue += Number(row.total || 0);
+    if (!current.serviceTypes.includes(row.serviceType)) current.serviceTypes.push(row.serviceType);
+    current.bookings.push(booking);
+    if (!current.latestBooking || new Date(row.createdAt || 0) > new Date(current.latestBooking.createdAt || 0)) {
+      current.latestBooking = booking;
+      if (name) current.name = name;
+      if (email) current.email = email;
+      if (phone) current.phone = phone;
+    }
+    customers.set(key, current);
+  }
+  return [...customers.values()].sort((a, b) => new Date(b.latestBooking?.createdAt || 0) - new Date(a.latestBooking?.createdAt || 0));
 }
 
 function paymentRow(row) {
@@ -110,17 +156,10 @@ router.get('/dashboard/summary', requirePermission('dashboard.view'), async (req
 
 router.get('/crm/customers', requirePermission('crm.customers.view'), async (req, res, next) => {
   try {
-    const customers = await listCanonicalCustomers({ limit: 1000 });
-    const visible = customers.map(customer => {
-      const bookings = visibleReservations(req.staff, customer.bookings.map(item => ({
-        ...item,
-        customerName: customer.name,
-        email: customer.email,
-        phone: customer.phone,
-        assigned_agent_id: item.assigned_agent_id,
-        team_id: item.team_id
-      })));
-      if (!req.staff?.legacyOwner && !bookings.length) return null;
+    // Scope the booking rows first, then aggregate. This prevents a user with
+    // OWN/TEAM scope from learning about customers attached only to other agents.
+    const rows = visibleReservations(req.staff, await listCanonicalReservations({ limit: 1000 }));
+    const customers = groupCustomers(rows).map(customer => {
       const parts = String(customer.name || '').trim().split(/\s+/);
       return {
         ...customer,
@@ -129,11 +168,10 @@ router.get('/crm/customers', requirePermission('crm.customers.view'), async (req
         last_name: parts.slice(1).join(' '),
         status: customer.latestBooking?.status || 'CUSTOMER',
         destination: customer.latestBooking?.destination || null,
-        estimated_value: customer.totalValue,
-        bookings
+        estimated_value: customer.totalValue
       };
-    }).filter(Boolean);
-    res.json({ success: true, data: visible });
+    });
+    res.json({ success: true, data: customers });
   } catch (error) { next(error); }
 });
 
@@ -153,7 +191,16 @@ router.get('/payments/refunds', requirePermission('payments.view'), async (req, 
       .order('created_at', { ascending: false })
       .limit(250);
     if (result.error) throw result.error;
-    res.json({ success: true, data: result.data || [] });
+    if (req.staff?.legacyOwner) return res.json({ success: true, data: result.data || [] });
+
+    const visible = visibleReservations(req.staff, await listCanonicalReservations({ limit: 1000 }));
+    const allowed = new Set(visible.map(row => `${row.serviceType}:${row.id}`));
+    const rows = (result.data || []).filter(row => {
+      const type = String(row.entity_type || (row.booking_id ? 'FLIGHT' : '')).toUpperCase();
+      const id = row.entity_id || row.booking_id;
+      return type && id && allowed.has(`${type}:${id}`);
+    });
+    return res.json({ success: true, data: rows });
   } catch (error) { next(error); }
 });
 
