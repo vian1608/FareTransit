@@ -18,7 +18,8 @@ function AdminLogin() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (loading || demoLoading) return;
+    if (loading) return;
+    if (demoLoading) return;
     setLoading(true);
     setError('');
 
@@ -40,7 +41,8 @@ function AdminLogin() {
   };
 
   const handleDemoLogin = async () => {
-    if (loading || demoLoading) return;
+    if (loading) return;
+    if (demoLoading) return;
     setDemoLoading(true);
     setError('');
     try {
