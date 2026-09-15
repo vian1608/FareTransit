@@ -17,6 +17,7 @@ import AdminVouchersPage from '../features/admin/pages/AdminVouchersPage';
 import AdminVoucherShortcut from '../features/admin/components/AdminVoucherShortcut';
 import OneWayConfirmation from '../features/bookings/pages/OneWayConfirmationPage';
 import RoundTripConfirmation from '../features/bookings/pages/RoundTripConfirmationPage';
+import ReservationDetailsPage from '../features/bookings/pages/ReservationDetailsPage';
 import TermsAndConditions from '../shared/pages/TermsAndConditionsPage';
 import ContactInfo from '../shared/pages/ContactInfoPage';
 import NotFoundPage from '../shared/pages/NotFoundPage';
@@ -54,6 +55,21 @@ import HotelDestinationPage from '../features/hotels/pages/HotelDestinationPage'
 function LegacyAirlineRedirect() {
   const { airlineSlug } = useParams();
   return <Navigate to={`/book/${airlineSlug}`} replace />;
+}
+
+function BookingConfirmationCompatibilityRoute() {
+  const { confirmationCode } = useParams();
+  const code = String(confirmationCode || '');
+  if (code.startsWith('r_')) return <BookingConfirmationRoute />;
+
+  const readToken = typeof window !== 'undefined'
+    ? sessionStorage.getItem(`reservationReadToken:${code}`)
+    : null;
+  if (readToken?.startsWith('r_')) {
+    return <Navigate to={`/booking-confirmed/${encodeURIComponent(readToken)}`} replace />;
+  }
+
+  return <Navigate to={`/reservation/${encodeURIComponent(code)}`} replace />;
 }
 
 function AdminDashboardWithVoucherShortcut() {
@@ -199,10 +215,11 @@ function App() {
 
                 <Route path="/authorize/:token" element={<PassengerAuthorization />} />
                 <Route path="/confirmation/success" element={<LegacyPaymentSuccessRoute />} />
-                <Route path="/booking-confirmed/:confirmationCode" element={<BookingConfirmationRoute />} />
+                <Route path="/booking-confirmed/:confirmationCode" element={<BookingConfirmationCompatibilityRoute />} />
                 <Route path="/booking-confirmed" element={<LegacyPaymentSuccessRoute />} />
 
                 <Route path="/my-bookings" element={<MyBookings />} />
+                <Route path="/reservation/:reference" element={<ReservationDetailsPage />} />
                 <Route path="/signin" element={<SignIn />} />
                 <Route path="/signup" element={<SignUp />} />
                 <Route path="/confirmation/one-way" element={<OneWayConfirmation />} />
