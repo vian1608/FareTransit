@@ -19,26 +19,62 @@ function clientRequestId(value) {
   return id;
 }
 
-function validateHalfHourCarTimes(body) {
+function validationError(code, message) {
+  const error = new Error(message);
+  error.statusCode = 400;
+  error.code = code;
+  return error;
+}
+
+function normalizeCardBrand(value) {
+  const raw = String(value || '').trim();
+  const key = raw.toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (!key) return '';
+  const brands = {
+    visa: 'Visa',
+    mastercard: 'Mastercard', master: 'Mastercard', mc: 'Mastercard',
+    americanexpress: 'American Express', amex: 'American Express',
+    discover: 'Discover', dinersclub: 'Diners Club', diners: 'Diners Club',
+    jcb: 'JCB', unionpay: 'UnionPay'
+  };
+  return brands[key] || (raw.toLowerCase() === 'other' ? 'Other' : raw);
+}
+
+function normalizeCarPayload(body = {}) {
+  const payload = { ...body };
+  if (body.billing) payload.billing = { ...body.billing, cardBrand: normalizeCardBrand(body.billing.cardBrand) };
+  return payload;
+}
+
+function validateHalfHourCarTimes(body, { requireBoth = false } = {}) {
   const car = body?.car || {};
+  const parsed = {};
   for (const [field, label] of [['pickupAt', 'Pickup time'], ['dropoffAt', 'Drop-off time']]) {
     const value = car[field];
-    if (!value) continue;
+    if (!value) {
+      if (requireBoth) throw validationError('RENTAL_TIME_REQUIRED', `${label} is required.`);
+      continue;
+    }
     const date = new Date(value);
-    if (Number.isNaN(date.getTime())) {
-      const error = new Error(`${label} is invalid.`);
-      error.statusCode = 400;
-      error.code = 'INVALID_RENTAL_TIME';
-      throw error;
-    }
+    if (Number.isNaN(date.getTime())) throw validationError('INVALID_RENTAL_TIME', `${label} is invalid.`);
     const minutes = date.getUTCMinutes();
-    if (minutes !== 0 && minutes !== 30) {
-      const error = new Error(`${label} must be on the hour or half hour.`);
-      error.statusCode = 400;
-      error.code = 'INVALID_RENTAL_TIME';
-      throw error;
-    }
+    if (minutes !== 0 && minutes !== 30) throw validationError('INVALID_RENTAL_TIME', `${label} must be on the hour or half hour.`);
+    parsed[field] = date;
   }
+  if (parsed.pickupAt && parsed.dropoffAt && parsed.dropoffAt.getTime() <= parsed.pickupAt.getTime()) {
+    throw validationError('INVALID_RENTAL_CHRONOLOGY', 'Drop-off date and time must be after pickup date and time.');
+  }
+}
+
+function validateCreatePayload(body = {}) {
+  const customer = body.customer || {};
+  const car = body.car || {};
+  if (!String(customer.fullName || '').trim()) throw validationError('CUSTOMER_NAME_REQUIRED', 'Customer name is required before creating a car reservation.');
+  const email = String(customer.email || '').trim().toLowerCase();
+  if (!/^\S+@\S+\.\S+$/.test(email)) throw validationError('CUSTOMER_EMAIL_REQUIRED', 'A valid customer email is required before creating a car reservation.');
+  if (!String(car.pickupLocation || '').trim()) throw validationError('PICKUP_LOCATION_REQUIRED', 'Pickup location is required before creating a car reservation.');
+  if (!String(car.dropoffLocation || '').trim()) throw validationError('DROPOFF_LOCATION_REQUIRED', 'Drop-off location is required before creating a car reservation.');
+  validateHalfHourCarTimes(body, { requireBoth: true });
 }
 
 async function reservationForClientRequest(id) {
@@ -106,36 +142,43 @@ router.post('/bookings/cars/assets', requirePermission('bookings.cars.edit'), as
 
 router.post('/bookings/cars', requirePermission('bookings.cars.create'), async (req, res, next) => {
   try {
-    validateHalfHourCarTimes(req.body || {});
-    const requestId = clientRequestId(req.body?.clientRequestId);
+    const normalized = normalizeCarPayload(req.body || {});
+    validateCreatePayload(normalized);
+    const requestId = clientRequestId(normalized.clientRequestId);
     const existing = await reservationForClientRequest(requestId);
     if (existing) return res.status(200).json({ success: true, data: existing, idempotentReplay: true });
 
-    const payload = { ...(req.body || {}) };
+    const payload = { ...normalized };
     delete payload.clientRequestId;
     const data = await reservationService.createCarReservation(payload, actor(req));
 
-    if (requestId && data?.reservation?.id) {
-      const { error: keyError } = await supabase
+    if (data?.reservation?.id) {
+      const ownershipPatch = {
+        client_request_id: requestId,
+        assigned_agent_id: req.staff?.id || null,
+        team_id: req.staff?.team?.id || null,
+        trip_id: payload.tripId || null,
+        payment_status: String(payload.payment?.paymentStatus || 'PENDING').toUpperCase(),
+        updated_at: new Date().toISOString()
+      };
+      const { data: ownedReservation, error: keyError } = await supabase
         .from('reservations')
-        .update({ client_request_id: requestId })
-        .eq('id', data.reservation.id);
+        .update(ownershipPatch)
+        .eq('id', data.reservation.id)
+        .select('*')
+        .single();
       if (keyError) {
-        if (keyError.code === '23505') {
+        if (requestId && keyError.code === '23505') {
           const replay = await reservationForClientRequest(requestId);
           if (replay) {
-            const { error: cleanupError } = await supabase
-              .from('reservations')
-              .delete()
-              .eq('id', data.reservation.id)
-              .eq('service_type', 'CAR');
+            const { error: cleanupError } = await supabase.from('reservations').delete().eq('id', data.reservation.id).eq('service_type', 'CAR');
             if (cleanupError) console.warn('[car-idempotency-cleanup]', cleanupError.message);
             return res.status(200).json({ success: true, data: replay, idempotentReplay: true });
           }
         }
         throw keyError;
       }
-      data.reservation.client_request_id = requestId;
+      data.reservation = ownedReservation;
     }
 
     await auditBackOffice(req, 'car_reservation.created', 'reservation', data?.reservation?.id, {
@@ -155,9 +198,10 @@ router.get('/bookings/cars/:id', requirePermission('bookings.cars.view'), async 
 
 router.patch('/bookings/cars/:id', requirePermission('bookings.cars.edit'), async (req, res, next) => {
   try {
-    validateHalfHourCarTimes(req.body || {});
+    const normalized = normalizeCarPayload(req.body || {});
+    validateHalfHourCarTimes(normalized);
     const reference = await resolveReference(req.params.id);
-    const data = await reservationService.updateCarReservation(reference, req.body || {}, actor(req));
+    const data = await reservationService.updateCarReservation(reference, normalized, actor(req));
     await auditBackOffice(req, 'car_reservation.updated', 'reservation', data?.reservation?.id, { bookingReference: reference });
     res.json({ success: true, data });
   } catch (error) { next(error); }
@@ -180,9 +224,6 @@ router.post('/bookings/cars/:id/authorization/revision', requirePermission('book
     res.status(201).json({ success: true, data: authorization });
   } catch (error) { next(error); }
 });
-
-// Authorization send is owned by car-authorization-compose.routes.mjs. Keeping a
-// single canonical route prevents the editable email draft from being bypassed.
 
 router.post('/bookings/cars/:id/booked', requirePermission('bookings.cars.edit'), async (req, res, next) => {
   try {

@@ -12,6 +12,7 @@ const mutationController = read('src/modules/admin/admin.booking-mutation.contro
 const adminRoutes = read('src/modules/admin/admin.routes.mjs');
 const bookingRoutes = read('src/modules/bookings/booking.routes.mjs');
 const publicReservation = read('src/modules/bookings/booking-public-reservation.controller.mjs');
+const canonicalReservation = read('src/modules/reservations/canonical-reservation.service.mjs');
 const journeySessions = read('src/modules/journey-sessions/journey-session.service.mjs');
 const resend = read('src/integrations/resend/resend.service.mjs');
 const migration47 = read('migrations/047_stable_primary_passenger_sequence.sql');
@@ -60,21 +61,24 @@ assert.equal(mutationService.includes("supabase.from('contacts').insert({ bookin
 assert.equal(journeySessions.includes('bookingService.getDetailsByCodeOrId(session.booking_id)'), true);
 assert.equal(journeySessions.includes('buildPublicReservationDto(booking)'), true);
 
-// Public customer lookup must use one detail resolver for both the legacy flight
-// store and the newer reservations/car_reservations store. Search results and old
-// confirmation-code URLs converge on the same customer-facing reservation page.
+// Public customer lookup must use one canonical detail resolver across all
+// supported service stores. Search results and old confirmation-code URLs converge
+// on the same customer-facing reservation page.
 assert.equal(bookingRoutes.includes("router.get('/reservation/:reference', bookingReadRateLimiter, bookingPublicReservationController.get)"), true);
-assert.equal(publicReservation.includes("bookingService.getDetailsByCodeOrId(reference)"), true);
-assert.equal(publicReservation.includes('getReservation(reference)'), true);
-assert.equal(publicReservation.includes("serviceType: 'FLIGHT'"), true);
-assert.equal(publicReservation.includes("serviceType: 'CAR'"), true);
+assert.equal(publicReservation.includes('resolveCanonicalReservation(reference)'), true);
+assert.equal(canonicalReservation.includes("serviceType: 'FLIGHT'"), true);
+assert.equal(canonicalReservation.includes("serviceType: 'CAR'"), true);
+assert.equal(canonicalReservation.includes("serviceType: 'HOTEL'"), true);
 assert.equal(app.includes('path="/reservation/:reference"'), true);
 assert.equal(app.includes('BookingConfirmationCompatibilityRoute'), true);
 assert.equal(myBookings.includes('to={`/reservation/${encodeURIComponent(code)}`}'), true);
-assert.equal(myBookings.includes('booking.rental_company_name || booking.pickup_location'), true);
+assert.equal(myBookings.includes("serviceType === 'CAR'"), true);
+assert.equal(myBookings.includes("serviceType === 'HOTEL'"), true);
 assert.equal(reservationPage.includes('/api/bookings/reservation/'), true);
 assert.equal(reservationPage.includes("serviceType === 'CAR'"), true);
+assert.equal(reservationPage.includes("serviceType === 'HOTEL'"), true);
 assert.equal(reservationPage.includes('CarReservation'), true);
+assert.equal(reservationPage.includes('HotelReservation'), true);
 assert.equal(reservationPage.includes('FlightReservation'), true);
 
 // Customer confirmation emails also reload the current complete booking before

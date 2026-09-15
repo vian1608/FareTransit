@@ -96,6 +96,30 @@ function CarReservation({ data }) {
   );
 }
 
+function HotelReservation({ data }) {
+  const hotel = data.hotel || {};
+  return (
+    <section className="reservation-detail-card">
+      <div className="reservation-detail-section-heading">
+        <div><span className="reservation-detail-eyebrow">HOTEL</span><h2>Stay details</h2></div>
+      </div>
+      <div className="reservation-detail-grid">
+        <DetailItem label="Property" value={hotel.propertyName} />
+        <DetailItem label="Destination" value={hotel.destination} />
+        <DetailItem label="Check-in" value={formatDate(hotel.checkIn)} />
+        <DetailItem label="Check-out" value={formatDate(hotel.checkOut)} />
+        <DetailItem label="Rooms" value={hotel.rooms ? String(hotel.rooms) : null} />
+        <DetailItem label="Guests" value={hotel.adults != null ? `${hotel.adults} adult${Number(hotel.adults) === 1 ? '' : 's'}${Number(hotel.children || 0) ? `, ${hotel.children} child${Number(hotel.children) === 1 ? '' : 'ren'}` : ''}` : null} />
+        <DetailItem label="Room type" value={hotel.roomType} />
+        <DetailItem label="Supplier" value={hotel.supplierName} />
+        <DetailItem label="Supplier confirmation" value={hotel.supplierConfirmation} />
+        {hotel.cancellationDeadline && <DetailItem label="Cancellation deadline" value={formatDateTime(hotel.cancellationDeadline)} />}
+        {hotel.cancellationPolicy && <DetailItem wide label="Cancellation policy" value={hotel.cancellationPolicy} />}
+      </div>
+    </section>
+  );
+}
+
 function segmentLabel(segment = {}) {
   const origin = segment.departureAirport || segment.originCode || segment.departure_airport || segment.origin_airport;
   const destination = segment.arrivalAirport || segment.destinationCode || segment.arrival_airport || segment.destination_airport;
@@ -140,6 +164,12 @@ function FlightReservation({ data }) {
       </div>
     </section>
   );
+}
+
+function serviceDescription(serviceType) {
+  if (serviceType === 'CAR') return 'Car rental reservation';
+  if (serviceType === 'HOTEL') return 'Hotel reservation';
+  return 'Flight reservation';
 }
 
 function ReservationDetailsPage() {
@@ -203,6 +233,8 @@ function ReservationDetailsPage() {
     );
   }
 
+  const customerLabel = serviceType === 'FLIGHT' ? 'Passenger' : serviceType === 'HOTEL' ? 'Guest / Customer' : 'Renter / Customer';
+
   return (
     <div className="reservation-detail-page">
       <Helmet><title>{data.reference || reference} Reservation | FareTransit</title><meta name="robots" content="noindex,nofollow" /></Helmet>
@@ -213,26 +245,26 @@ function ReservationDetailsPage() {
           <div>
             <span className="reservation-detail-eyebrow">FARETRANSIT RESERVATION</span>
             <h1>{data.reference || reference}</h1>
-            <p>{serviceType === 'CAR' ? 'Car rental reservation' : 'Flight reservation'} · Created {formatDate(data.createdAt)}</p>
+            <p>{serviceDescription(serviceType)} · Created {formatDate(data.createdAt)}</p>
           </div>
           <div className="reservation-detail-pills">
             <StatusPill tone={statusTone}>{titleCase(status)}</StatusPill>
             {serviceType === 'CAR' && <StatusPill tone="neutral">Authorization {titleCase(data.authorizationStatus, 'Not Started')}</StatusPill>}
-            {serviceType === 'FLIGHT' && <StatusPill tone="neutral">Payment {titleCase(data.paymentStatus)}</StatusPill>}
+            {(serviceType === 'FLIGHT' || serviceType === 'HOTEL') && <StatusPill tone="neutral">Payment {titleCase(data.paymentStatus)}</StatusPill>}
           </div>
         </header>
 
         <section className="reservation-detail-card">
           <div className="reservation-detail-section-heading"><div><span className="reservation-detail-eyebrow">OVERVIEW</span><h2>Reservation summary</h2></div></div>
           <div className="reservation-detail-grid">
-            <DetailItem label={serviceType === 'CAR' ? 'Renter / Customer' : 'Passenger'} value={data.customer?.name} />
+            <DetailItem label={customerLabel} value={data.customer?.name} />
             <DetailItem label="Email" value={data.customer?.email} />
             <DetailItem label="Phone" value={data.customer?.phone} />
             <DetailItem label="Total" value={formatMoney(data.pricing?.total, data.pricing?.currency)} />
           </div>
         </section>
 
-        {serviceType === 'CAR' ? <CarReservation data={data} /> : <FlightReservation data={data} />}
+        {serviceType === 'CAR' ? <CarReservation data={data} /> : serviceType === 'HOTEL' ? <HotelReservation data={data} /> : <FlightReservation data={data} />}
 
         <section className="reservation-detail-help">
           <div><h3>Need help with this reservation?</h3><p>Have your reference <strong>{data.reference || reference}</strong> ready when contacting FareTransit.</p></div>

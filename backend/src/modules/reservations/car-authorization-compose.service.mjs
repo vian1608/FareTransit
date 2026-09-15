@@ -37,7 +37,21 @@ function normalizeEmailDraft(payload = {}, fallback = {}) {
   return { subject, message };
 }
 
-function previewFromBundle(bundle = {}) {
+async function resolveRentalCompanyLogo(bundle = {}) {
+  const car = bundle.car || {};
+  if (clean(car.rental_company_logo_url, 2000)) return clean(car.rental_company_logo_url, 2000);
+
+  let query = supabase.from('car_rental_companies').select('logo_url').eq('active', true);
+  if (car.rental_company_id) query = query.eq('id', car.rental_company_id);
+  else if (car.rental_company_name) query = query.eq('display_name', car.rental_company_name);
+  else return '';
+
+  const { data, error } = await query.maybeSingle();
+  if (error) return '';
+  return clean(data?.logo_url || '', 2000);
+}
+
+function previewFromBundle(bundle = {}, rentalCompanyLogoUrl = '') {
   const reservation = bundle.reservation || {};
   const car = bundle.car || {};
   const authorization = bundle.latestAuthorization || {};
@@ -46,6 +60,7 @@ function previewFromBundle(bundle = {}) {
     bookingReference: reservation.booking_reference || '',
     renterName: traveller.full_name || reservation.customer_name || '',
     rentalCompany: car.rental_company_name || '',
+    rentalCompanyLogoUrl: rentalCompanyLogoUrl || car.rental_company_logo_url || '',
     vehicle: car.vehicle_name || car.vehicle_category || '',
     pickupLocation: car.pickup_location || '',
     pickupAt: car.pickup_at || null,
@@ -94,12 +109,13 @@ export async function getEmailComposer(reference) {
   const bundle = await reservationService.getReservation(reference);
   const fallback = defaultEmailDraft(bundle);
   const saved = bundle.latestAuthorization?.service_snapshot?.emailDraft || {};
+  const rentalCompanyLogoUrl = await resolveRentalCompanyLogo(bundle);
   const emailDraft = {
     to: fallback.to,
     subject: clean(saved.subject || fallback.subject, 180),
     message: clean(saved.message || fallback.message, 8000)
   };
-  return { emailDraft, preview: previewFromBundle(bundle) };
+  return { emailDraft, preview: previewFromBundle(bundle, rentalCompanyLogoUrl) };
 }
 
 export async function composeAuthorization(reference, payload = {}, actorId = null) {
@@ -137,9 +153,10 @@ export async function saveEmailDraft(reference, payload = {}, actorId = null) {
     message: authorization.service_snapshot?.emailDraft?.message || fallback.message
   });
   await persistDraftOnAuthorization(authorization, draft);
+  const rentalCompanyLogoUrl = await resolveRentalCompanyLogo(bundle);
   return {
     emailDraft: { to: fallback.to, ...draft },
-    preview: previewFromBundle(bundle),
+    preview: previewFromBundle(bundle, rentalCompanyLogoUrl),
     actorId
   };
 }
@@ -155,7 +172,9 @@ export async function sendAuthorizationWithEmailDraft(reference, payload = {}, a
       authorization: prepared.authorization,
       token: prepared.token,
       subject: saved.emailDraft.subject,
-      message: saved.emailDraft.message
+      message: saved.emailDraft.message,
+      rentalCompanyName: saved.preview.rentalCompany,
+      rentalCompanyLogoUrl: saved.preview.rentalCompanyLogoUrl
     });
     const authorization = await reservationService.markAuthorizationSent(reference, prepared.authorization.id, actorId);
     return { authorization, email, emailDraft: saved.emailDraft };

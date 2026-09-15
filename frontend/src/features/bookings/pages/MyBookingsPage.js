@@ -17,7 +17,7 @@ function MyBookings() {
   const performSearch = useCallback(async (queryToSearch) => {
     const query = String(queryToSearch || '').trim();
     if (!query) {
-      setError('Please enter a confirmation code or email address.');
+      setError('Please enter a confirmation code, customer name, or email address.');
       return;
     }
 
@@ -97,12 +97,14 @@ function MyBookings() {
     return <span className="status-badge status-badge--pending">Authorization {statusText(value)}</span>;
   };
 
-  const isCarBooking = (booking) => {
+  const serviceTypeOf = (booking) => {
     const serviceType = String(booking.service_type || booking.serviceType || '').toUpperCase();
     const bookingType = String(booking.booking_type || booking.bookingType || '').toUpperCase();
-    return serviceType === 'CAR'
-      || bookingType === 'CAR'
-      || Boolean(booking.rental_company_name || booking.pickup_location || booking.vehicle_name || booking.vehicle_category);
+    if (['FLIGHT', 'CAR', 'HOTEL'].includes(serviceType)) return serviceType;
+    if (['FLIGHT', 'CAR', 'HOTEL'].includes(bookingType)) return bookingType;
+    if (booking.rental_company_name || booking.pickup_location || booking.vehicle_name || booking.vehicle_category) return 'CAR';
+    if (booking.property_name || booking.check_in || booking.check_out) return 'HOTEL';
+    return 'FLIGHT';
   };
 
   const deriveRouteDisplay = (booking) => {
@@ -143,6 +145,17 @@ function MyBookings() {
     </div>
   );
 
+  const renderHotelDetails = (booking, amount) => (
+    <div className="booking-info-grid">
+      <div className="info-column"><span className="info-label">Guest / Customer</span><strong className="info-value">{derivePassengerName(booking)}</strong></div>
+      <div className="info-column"><span className="info-label">Property</span><strong className="info-value"><i className="fas fa-hotel route-symbol" />{booking.property_name || 'Details unavailable'}</strong></div>
+      <div className="info-column"><span className="info-label">Destination</span><strong className="info-value">{booking.destination || 'Details unavailable'}</strong></div>
+      <div className="info-column"><span className="info-label">Check-in</span><strong className="info-value">{formatDate(booking.check_in || booking.departure_date)}</strong></div>
+      <div className="info-column"><span className="info-label">Check-out</span><strong className="info-value">{formatDate(booking.check_out)}</strong></div>
+      <div className="info-column"><span className="info-label">Total Amount</span><strong className="info-value">{Number.isFinite(amount) ? `$${amount.toFixed(2)}` : 'Not available'} {booking.currency || 'USD'}</strong></div>
+    </div>
+  );
+
   return (
     <div className="my-bookings-page">
       <Helmet><title>My Bookings | FareTransit</title></Helmet>
@@ -150,7 +163,7 @@ function MyBookings() {
       <div className="bookings-container">
         <header className="bookings-header">
           <h1>Track Your Bookings</h1>
-          <p>Retrieve and view reservation details using your confirmation code or email address.</p>
+          <p>Retrieve and view reservation details using your confirmation code, customer name, or email address.</p>
         </header>
 
         <div className="bookings-layout">
@@ -160,11 +173,11 @@ function MyBookings() {
                 <i className="fas fa-search search-icon" />
                 <input
                   type="text"
-                  placeholder="Enter confirmation code or email..."
+                  placeholder="Enter confirmation code, name, or email..."
                   value={searchQuery}
                   onChange={(event) => setSearchQuery(event.target.value)}
                   className="search-input-field"
-                  aria-label="Booking confirmation code or email"
+                  aria-label="Booking confirmation code, customer name, or email"
                 />
                 <button type="submit" className="search-submit-btn" disabled={loading}>
                   {loading ? <><i className="fas fa-circle-notch fa-spin" /> Searching...</> : 'Retrieve'}
@@ -183,20 +196,23 @@ function MyBookings() {
                   <div className="bookings-grid-list">
                     {bookings.map((booking) => {
                       const code = booking.confirmation_code || booking.confirmationCode || booking.booking_reference;
-                      const carBooking = isCarBooking(booking);
+                      const serviceType = serviceTypeOf(booking);
+                      const carBooking = serviceType === 'CAR';
+                      const hotelBooking = serviceType === 'HOTEL';
                       const carrier = deriveCarrier(booking);
-                      const isAmtrak = !carBooking && carrier.toLowerCase().includes('amtrak');
+                      const isAmtrak = serviceType === 'FLIGHT' && carrier.toLowerCase().includes('amtrak');
                       const amount = Number(booking.customer_price ?? booking.amount ?? booking.total_amount);
+                      const serviceLabel = carBooking ? 'CAR RENTAL' : hotelBooking ? 'HOTEL' : 'FLIGHT';
 
                       return (
-                        <div key={`${booking.service_type || booking.booking_type || 'flight'}-${booking.id || code}`} className="booking-card-item">
+                        <div key={`${serviceType}-${booking.id || code}`} className="booking-card-item">
                           <div className="booking-card-top">
-                            <div className="card-ref-block"><span className="ref-label">CONFIRMATION CODE</span><strong className="ref-value">{code || 'N/A'}</strong>{carBooking && <span className="ref-label" style={{ marginTop: '0.35rem' }}>CAR RENTAL</span>}</div>
+                            <div className="card-ref-block"><span className="ref-label">CONFIRMATION CODE</span><strong className="ref-value">{code || 'N/A'}</strong><span className="ref-label" style={{ marginTop: '0.35rem' }}>{serviceLabel}</span></div>
                             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>{getBookingStatusBadge(booking.status)}{carBooking ? getAuthorizationBadge(booking.authorization_status) : getPaymentBadge(booking.payment_status)}</div>
                           </div>
 
                           <div className="booking-card-body">
-                            {carBooking ? renderCarDetails(booking, amount) : (
+                            {carBooking ? renderCarDetails(booking, amount) : hotelBooking ? renderHotelDetails(booking, amount) : (
                               <div className="booking-info-grid">
                                 <div className="info-column"><span className="info-label">Passenger Name</span><strong className="info-value">{derivePassengerName(booking)}</strong></div>
                                 <div className="info-column"><span className="info-label">Route</span><strong className="info-value"><i className={`fas ${isAmtrak ? 'fa-train' : 'fa-plane'} route-symbol`} />{deriveRouteDisplay(booking)}</strong></div>
@@ -211,7 +227,7 @@ function MyBookings() {
                           <div className="booking-card-actions" style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                             {code && (
                               <Link to={`/reservation/${encodeURIComponent(code)}`} className="view-ticket-btn">
-                                <i className={`fas ${carBooking ? 'fa-car' : 'fa-file-alt'}`} /> View Reservation
+                                <i className={`fas ${carBooking ? 'fa-car' : hotelBooking ? 'fa-hotel' : 'fa-file-alt'}`} /> View Reservation
                               </Link>
                             )}
                             <Link to={`/contact?booking=${encodeURIComponent(code || '')}`} className="view-ticket-btn" style={{ backgroundColor: '#475569', borderColor: '#334155' }}>
@@ -224,9 +240,9 @@ function MyBookings() {
                   </div>
                 </div>
               ) : searched ? (
-                <div className="bookings-state-container"><div className="empty-icon-circle"><i className="fas fa-calendar-times" /></div><h3>No Bookings Found</h3><p>We couldn't find a reservation matching <strong>"{searchQuery}"</strong>. Verify the reference or email and try again.</p></div>
+                <div className="bookings-state-container"><div className="empty-icon-circle"><i className="fas fa-calendar-times" /></div><h3>No Bookings Found</h3><p>We couldn't find a reservation matching <strong>"{searchQuery}"</strong>. Verify the reference, name, or email and try again.</p></div>
               ) : (
-                <div className="bookings-state-container"><div className="search-prompt-icon"><i className="fas fa-passport" /></div><h3>Retrieve Booking Information</h3><p>Enter your confirmation code or associated email address.</p></div>
+                <div className="bookings-state-container"><div className="search-prompt-icon"><i className="fas fa-passport" /></div><h3>Retrieve Booking Information</h3><p>Enter your confirmation code, customer name, or associated email address.</p></div>
               )}
             </div>
           </div>

@@ -123,7 +123,7 @@ async function verifyExistingProductScope(req, body, entityType) {
   const map = {
     FLIGHT: { table: 'bookings', permission: 'bookings.flights.view', code: 'confirmation_code' },
     HOTEL: { table: 'hotel_bookings', permission: 'bookings.hotels.view', code: 'hotel_code' },
-    CAR: { table: 'car_bookings', permission: 'bookings.cars.view', code: 'car_code' },
+    CAR: { table: 'reservations', permission: 'bookings.cars.view', code: 'booking_reference', serviceType: 'CAR' },
   };
   const config = map[entityType];
   if (!config) {
@@ -140,6 +140,7 @@ async function verifyExistingProductScope(req, body, entityType) {
     throw error;
   }
   let query = supabase.from(config.table).select(`id,${config.code},assigned_agent_id,team_id`).limit(1);
+  if (config.serviceType) query = query.eq('service_type', config.serviceType);
   if (body.entityId) query = query.eq('id', body.entityId);
   else if (body.entityCode) query = query.eq(config.code, body.entityCode);
   else return null;
@@ -196,11 +197,12 @@ router.post('/payments/authorizations', requirePermission('payments.authorizatio
       return res.status(400).json({ success: false, error: { code: 'INVALID_PAYMENT_AUTHORIZATION', message: 'Valid product type, customer name/email, purpose and positive authorized amount are required.' } });
     }
     const existingProduct = await verifyExistingProductScope(req, body, entityType);
+    const existingCode = existingProduct && (existingProduct.confirmation_code || existingProduct.hotel_code || existingProduct.booking_reference || existingProduct.car_code);
     const contextPayload = {
       context_code: code('PAYCTX'),
       entity_type: entityType,
       entity_id: body.entityId || existingProduct?.id || null,
-      entity_code: safeText(body.entityCode || (existingProduct && (existingProduct.confirmation_code || existingProduct.hotel_code || existingProduct.car_code)), 100) || null,
+      entity_code: safeText(body.entityCode || existingCode, 100) || null,
       trip_id: body.tripId || null,
       lead_id: body.leadId || null,
       assigned_agent_id: body.assignedAgentId || existingProduct?.assigned_agent_id || req.staff?.id || null,
