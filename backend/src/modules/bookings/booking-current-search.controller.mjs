@@ -15,6 +15,16 @@ const FLIGHT_COLUMNS = [
   'booking_id','leg','airline_name','carrier_code','departure_airport','arrival_airport','departure_date'
 ].join(',');
 
+const RESERVATION_COLUMNS = [
+  'id','booking_reference','service_type','reservation_status','authorization_status',
+  'customer_name','customer_email','customer_phone','total_amount','currency','created_at','updated_at'
+].join(',');
+
+const CAR_COLUMNS = [
+  'reservation_id','rental_company_name','vehicle_name','vehicle_category',
+  'pickup_location','pickup_at','dropoff_location','dropoff_at','supplier_confirmation'
+].join(',');
+
 function directionOf(segment = {}) {
   const raw = String(segment.journey_direction || segment.direction || segment.leg || 'outbound').toLowerCase();
   return ['return', 'inbound'].includes(raw) ? 'return' : 'outbound';
@@ -43,10 +53,32 @@ async function findBookings(query) {
   return byName.data || [];
 }
 
-export async function searchCurrentBookings(query) {
-  const bookings = await findBookings(query);
-  if (!bookings.length) return [];
+async function findReservations(query) {
+  const clean = String(query || '').trim();
+  if (!clean) return [];
 
+  const exact = await supabase
+    .from('reservations')
+    .select(RESERVATION_COLUMNS)
+    .eq('service_type', 'CAR')
+    .eq('booking_reference', clean.toUpperCase())
+    .limit(20);
+  if (exact.error) throw new Error(exact.error.message);
+  if ((exact.data || []).length) return exact.data;
+
+  const byEmail = await supabase
+    .from('reservations')
+    .select(RESERVATION_COLUMNS)
+    .eq('service_type', 'CAR')
+    .ilike('customer_email', `%${clean}%`)
+    .order('created_at', { ascending: false })
+    .limit(20);
+  if (byEmail.error) throw new Error(byEmail.error.message);
+  return byEmail.data || [];
+}
+
+async function normalizeFlightBookings(bookings) {
+  if (!bookings.length) return [];
   const ids = bookings.map(row => row.id).filter(Boolean);
   const [segmentsResult, flightsResult] = await Promise.all([
     supabase.from('booking_itinerary_segments').select(SEGMENT_COLUMNS).in('booking_id', ids),
@@ -85,6 +117,8 @@ export async function searchCurrentBookings(query) {
 
     return {
       ...booking,
+      service_type: 'FLIGHT',
+      booking_type: 'flight',
       confirmationCode: booking.confirmation_code,
       customerName: booking.passenger_name,
       amount: Number(booking.customer_price ?? booking.total_amount ?? 0),
@@ -107,6 +141,72 @@ export async function searchCurrentBookings(query) {
         : legacy
     };
   });
+}
+
+async function normalizeCarReservations(reservations) {
+  if (!reservations.length) return [];
+  const ids = reservations.map(row => row.id).filter(Boolean);
+  const carResult = await supabase
+    .from('car_reservations')
+    .select(CAR_COLUMNS)
+    .in('reservation_id', ids);
+  if (carResult.error) throw new Error(carResult.error.message);
+  const carByReservation = new Map((carResult.data || []).map(row => [row.reservation_id, row]));
+
+  return reservations.map(reservation => {
+    const car = carByReservation.get(reservation.id) || {};
+    return {
+      id: reservation.id,
+      confirmation_code: reservation.booking_reference,
+      confirmationCode: reservation.booking_reference,
+      booking_reference: reservation.booking_reference,
+      service_type: 'CAR',
+      booking_type: 'car',
+      status: reservation.reservation_status || 'DRAFT',
+      reservation_status: reservation.reservation_status || 'DRAFT',
+      authorization_status: reservation.authorization_status || 'NONE',
+      payment_status: 'PENDING',
+      paymentStatus: 'PENDING',
+      passenger_name: reservation.customer_name || 'Customer',
+      customer_name: reservation.customer_name || null,
+      customerName: reservation.customer_name || null,
+      email: reservation.customer_email || null,
+      phone: reservation.customer_phone || null,
+      total_amount: Number(reservation.total_amount || 0),
+      amount: Number(reservation.total_amount || 0),
+      currency: reservation.currency || 'USD',
+      created_at: reservation.created_at,
+      updated_at: reservation.updated_at,
+      rental_company_name: car.rental_company_name || null,
+      vehicle_name: car.vehicle_name || null,
+      vehicle_category: car.vehicle_category || null,
+      pickup_location: car.pickup_location || null,
+      pickup_at: car.pickup_at || null,
+      dropoff_location: car.dropoff_location || null,
+      dropoff_at: car.dropoff_at || null,
+      supplier_confirmation: car.supplier_confirmation || null,
+      carrier: car.rental_company_name || 'Car Rental',
+      airline: car.rental_company_name || 'Car Rental',
+      origin_code: car.pickup_location || null,
+      destination_code: car.dropoff_location || null,
+      departure_date: car.pickup_at || null
+    };
+  });
+}
+
+export async function searchCurrentBookings(query) {
+  const [flightRows, reservationRows] = await Promise.all([
+    findBookings(query),
+    findReservations(query)
+  ]);
+  const [flights, cars] = await Promise.all([
+    normalizeFlightBookings(flightRows),
+    normalizeCarReservations(reservationRows)
+  ]);
+
+  return [...flights, ...cars]
+    .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
+    .slice(0, 40);
 }
 
 export const bookingCurrentSearchController = {
