@@ -72,7 +72,7 @@ test('back-office expansion preserves the stable flight admin and enforces RBAC'
   await t.test('staff share the existing login and hand off into the permission-aware unified admin shell', () => {
     assert.match(adminLogin, /window\.location\.assign\('\/admin'\)/);
     assert.match(boRouter, /path="\/admin"/);
-    assert.match(boShell, /hasPermission\(permission\)/, 'Sidebar visibility must be permission-aware.');
+    assert.match(boShell, /item\.permissions\.some\(hasPermission\)/, 'Sidebar visibility must be permission-aware.');
   });
 
   await t.test('backend independently protects sensitive settings and team administration', () => {
