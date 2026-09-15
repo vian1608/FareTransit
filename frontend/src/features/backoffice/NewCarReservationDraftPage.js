@@ -62,9 +62,24 @@ function readStoredDraft() {
 }
 
 function validateTimes(form) {
-  if (form.pickupAt && !isCompleteHalfHourLocalDateTime(form.pickupAt)) return 'Select a complete pickup date and a time ending in :00 or :30.';
-  if (form.dropoffAt && !isCompleteHalfHourLocalDateTime(form.dropoffAt)) return 'Select a complete drop-off date and a time ending in :00 or :30.';
+  if (!form.pickupAt) return 'Pickup date and time are required before creating a booking ID.';
+  if (!form.dropoffAt) return 'Drop-off date and time are required before creating a booking ID.';
+  if (!isCompleteHalfHourLocalDateTime(form.pickupAt)) return 'Select a complete pickup date and a time ending in :00 or :30.';
+  if (!isCompleteHalfHourLocalDateTime(form.dropoffAt)) return 'Select a complete drop-off date and a time ending in :00 or :30.';
+  const pickup = new Date(form.pickupAt);
+  const dropoff = new Date(form.dropoffAt);
+  if (Number.isNaN(pickup.getTime()) || Number.isNaN(dropoff.getTime())) return 'Pickup and drop-off date/time must be valid.';
+  if (dropoff.getTime() <= pickup.getTime()) return 'Drop-off date and time must be after pickup date and time.';
   return '';
+}
+
+function validateFirstSave(form) {
+  if (!String(form.customerName || '').trim()) return 'Customer full name is required before creating a booking ID.';
+  const email = String(form.customerEmail || '').trim();
+  if (!/^\S+@\S+\.\S+$/.test(email)) return 'A valid customer email is required before creating a booking ID.';
+  if (!String(form.pickupLocation || '').trim()) return 'Pickup location is required before creating a booking ID.';
+  if (!String(form.dropoffLocation || '').trim()) return 'Drop-off location is required before creating a booking ID.';
+  return validateTimes(form);
 }
 
 export default function NewCarReservationDraftPage() {
@@ -93,7 +108,7 @@ export default function NewCarReservationDraftPage() {
       return;
     }
     const timer = setTimeout(() => {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 2, clientRequestId, form, transactions, customSections, sameDropoff, savedAt: new Date().toISOString() }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 3, clientRequestId, form, transactions, customSections, sameDropoff, savedAt: new Date().toISOString() }));
     }, 250);
     return () => clearTimeout(timer);
   }, [ready, isMeaningful, clientRequestId, form, transactions, customSections, sameDropoff]);
@@ -203,7 +218,7 @@ export default function NewCarReservationDraftPage() {
 
   const saveDraft = async () => {
     if (busy) return;
-    const validationError = validateTimes(form);
+    const validationError = validateFirstSave(form);
     if (validationError) {
       setMessage(validationError);
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -250,7 +265,7 @@ export default function NewCarReservationDraftPage() {
       <div>
         <button className="carws-back carws-link-button" onClick={cancel}>← Cars</button>
         <div className="carws-title-row"><h1>New Car Reservation</h1><span className="carws-badge pending">NOT SAVED</span></div>
-        <p>No booking number or database record exists until you click <strong>Save Draft</strong>.</p>
+        <p>No booking number or database record exists until you click <strong>Save Draft</strong>. Name, email, pickup and drop-off are required for the first save.</p>
       </div>
       <div className="carws-header-actions">
         <button className="bo-button secondary" onClick={cancel} disabled={busy}>Cancel</button>
@@ -269,11 +284,11 @@ export default function NewCarReservationDraftPage() {
         <Field label="Vehicle"><input value={form.vehicleName} onChange={e => set('vehicleName', e.target.value)} placeholder="Toyota Corolla or Similar" /></Field>
         <Field label="Vehicle category"><input value={form.vehicleCategory} onChange={e => set('vehicleCategory', e.target.value)} /></Field>
         <Field label="Driver age"><input type="number" min="18" max="99" value={form.driverAge} onChange={e => set('driverAge', e.target.value)} /></Field>
-        <Field label="Pickup location"><input value={form.pickupLocation} onChange={e => setPickupLocation(e.target.value)} /></Field>
-        <Field label="Pickup date / time"><HalfHourDateTimeInput idPrefix="new-pickup" value={form.pickupAt} onChange={value => set('pickupAt', value)} /></Field>
+        <Field label="Pickup location *"><input value={form.pickupLocation} onChange={e => setPickupLocation(e.target.value)} /></Field>
+        <Field label="Pickup date / time *"><HalfHourDateTimeInput idPrefix="new-pickup" value={form.pickupAt} onChange={value => set('pickupAt', value)} /></Field>
         <label className="carws-same-location"><input type="checkbox" checked={sameDropoff} onChange={e => toggleSameDropoff(e.target.checked)} />Drop-off location is the same as pickup</label>
-        <Field label="Drop-off location"><input value={form.dropoffLocation} disabled={sameDropoff} onChange={e => setDropoffLocation(e.target.value)} /></Field>
-        <Field label="Drop-off date / time"><HalfHourDateTimeInput idPrefix="new-dropoff" value={form.dropoffAt} onChange={value => set('dropoffAt', value)} /></Field>
+        <Field label="Drop-off location *"><input value={form.dropoffLocation} disabled={sameDropoff} onChange={e => setDropoffLocation(e.target.value)} /></Field>
+        <Field label="Drop-off date / time *"><HalfHourDateTimeInput idPrefix="new-dropoff" value={form.dropoffAt} onChange={value => set('dropoffAt', value)} /></Field>
         <Field label="Mileage policy"><input value={form.mileagePolicy} onChange={e => set('mileagePolicy', e.target.value)} /></Field>
         <Field label="Fuel policy"><input value={form.fuelPolicy} onChange={e => set('fuelPolicy', e.target.value)} /></Field>
         <Field label="Deposit terms" wide><textarea value={form.depositTerms} onChange={e => set('depositTerms', e.target.value)} /></Field>
@@ -285,9 +300,9 @@ export default function NewCarReservationDraftPage() {
     <div className="carws-two-col">
       <Section title="Renter / Driver">
         <div className="carws-form-grid one">
-          <Field label="Full name"><input autoComplete="name" value={form.customerName} onChange={e => set('customerName', e.target.value)} /></Field>
+          <Field label="Full name *"><input autoComplete="name" value={form.customerName} onChange={e => set('customerName', e.target.value)} /></Field>
           <Field label="Date of birth"><input type="date" value={form.dateOfBirth} onChange={e => set('dateOfBirth', e.target.value)} /></Field>
-          <Field label="Email"><input type="email" autoComplete="email" value={form.customerEmail} onChange={e => set('customerEmail', e.target.value)} /></Field>
+          <Field label="Email *"><input type="email" autoComplete="email" value={form.customerEmail} onChange={e => set('customerEmail', e.target.value)} /></Field>
           <Field label="Phone"><input autoComplete="tel" value={form.customerPhone} onChange={e => set('customerPhone', e.target.value)} /></Field>
         </div>
       </Section>
@@ -305,13 +320,13 @@ export default function NewCarReservationDraftPage() {
 
     <Section title="Pricing & payment authorization" subtitle="You can prepare amounts now. Authorization is generated only after the reservation is saved.">
       <div className="carws-auth-top">
-        <Field label="Customer total"><input type="number" step="0.01" value={form.totalAmount} onChange={e => set('totalAmount', e.target.value)} /></Field>
+        <Field label="Customer total"><input type="number" step="0.01" min="0" value={form.totalAmount} onChange={e => set('totalAmount', e.target.value)} /></Field>
         <Field label="Currency"><select value={form.currency} onChange={e => set('currency', e.target.value)}><option>USD</option><option>CAD</option><option>EUR</option><option>GBP</option></select></Field>
-        <Field label="Supplier / corporate cost"><input type="number" step="0.01" value={form.supplierCost} onChange={e => set('supplierCost', e.target.value)} /></Field>
-        <Field label="Selling price"><input type="number" step="0.01" value={form.sellingPrice} onChange={e => set('sellingPrice', e.target.value)} /></Field>
+        <Field label="Supplier / corporate cost"><input type="number" step="0.01" min="0" value={form.supplierCost} onChange={e => set('supplierCost', e.target.value)} /></Field>
+        <Field label="Customer selling price"><input type="number" step="0.01" min="0" value={form.sellingPrice} onChange={e => set('sellingPrice', e.target.value)} /></Field>
       </div>
       <h3 className="carws-subtitle">Transactions</h3>
-      <div className="carws-transactions">{transactions.map((tx, index) => <div className="carws-transaction" key={index}><div className="carws-transaction-head"><strong>Transaction {index + 1}</strong><button type="button" onClick={() => setTransactions(prev => prev.filter((_, i) => i !== index))}>Remove</button></div><div className="carws-form-grid"><Field label="Amount"><input type="number" step="0.01" value={tx.amount} onChange={e => setTransactions(prev => prev.map((item,i) => i === index ? { ...item, amount: e.target.value } : item))} /></Field><Field label="Merchant name"><input value={tx.merchantName || ''} onChange={e => setTransactions(prev => prev.map((item,i) => i === index ? { ...item, merchantName: e.target.value } : item))} /></Field><Field label="Collection"><select value={tx.collectionMethod || 'PAY_NOW'} onChange={e => setTransactions(prev => prev.map((item,i) => i === index ? { ...item, collectionMethod: e.target.value } : item))}><option value="PAY_NOW">Pay Now</option><option value="PAY_AT_COUNTER">Pay at Counter</option></select></Field><Field label="Description"><input value={tx.description || ''} onChange={e => setTransactions(prev => prev.map((item,i) => i === index ? { ...item, description: e.target.value } : item))} /></Field></div></div>)}</div>
+      <div className="carws-transactions">{transactions.map((tx, index) => <div className="carws-transaction" key={index}><div className="carws-transaction-head"><strong>Transaction {index + 1}</strong><button type="button" onClick={() => setTransactions(prev => prev.filter((_, i) => i !== index))}>Remove</button></div><div className="carws-form-grid"><Field label="Amount"><input type="number" min="0" step="0.01" value={tx.amount} onChange={e => setTransactions(prev => prev.map((item,i) => i === index ? { ...item, amount: e.target.value } : item))} /></Field><Field label="Merchant name"><input value={tx.merchantName || ''} onChange={e => setTransactions(prev => prev.map((item,i) => i === index ? { ...item, merchantName: e.target.value } : item))} /></Field><Field label="Collection"><select value={tx.collectionMethod || 'PAY_NOW'} onChange={e => setTransactions(prev => prev.map((item,i) => i === index ? { ...item, collectionMethod: e.target.value } : item))}><option value="PAY_NOW">Pay Now</option><option value="PAY_AT_COUNTER">Pay at Counter</option></select></Field><Field label="Description"><input value={tx.description || ''} onChange={e => setTransactions(prev => prev.map((item,i) => i === index ? { ...item, description: e.target.value } : item))} /></Field></div></div>)}</div>
       <button className="bo-button secondary" type="button" onClick={() => setTransactions(prev => [...prev, { amount: '', merchantName: '', merchantLogoUrl: '', collectionMethod: 'PAY_NOW', description: '' }])}>+ Add Transaction</button>
       <Field label="Terms & Conditions" wide><textarea className="carws-terms" value={form.terms} onChange={e => set('terms', e.target.value)} placeholder="Leave blank to use FareTransit's default car-rental authorization terms." /></Field>
       <Field label="Internal notes" wide><textarea value={form.internalNotes} onChange={e => set('internalNotes', e.target.value)} /></Field>
