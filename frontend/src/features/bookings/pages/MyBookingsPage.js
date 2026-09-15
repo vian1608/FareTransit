@@ -68,11 +68,18 @@ function MyBookings() {
     performSearch(searchQuery);
   };
 
+  const statusText = (status) => String(status || 'PENDING')
+    .toUpperCase()
+    .replaceAll('_', ' ')
+    .toLowerCase()
+    .replace(/(^|\s)\S/g, (letter) => letter.toUpperCase());
+
   const getBookingStatusBadge = (status) => {
     const value = String(status || 'PENDING').toUpperCase();
-    if (['DONE', 'CONFIRMED', 'TICKETED', 'COMPLETED'].includes(value)) return <span className="status-badge status-badge--done">Confirmed</span>;
-    if (['FAILED', 'CANCELLED'].includes(value)) return <span className="status-badge status-badge--failed">Cancelled</span>;
-    return <span className="status-badge status-badge--pending">Pending</span>;
+    const text = statusText(value);
+    if (['DONE', 'CONFIRMED', 'TICKETED', 'COMPLETED', 'BOOKED'].includes(value)) return <span className="status-badge status-badge--done">{text}</span>;
+    if (['FAILED', 'CANCELLED', 'CANCELED', 'DECLINED'].includes(value)) return <span className="status-badge status-badge--failed">{text}</span>;
+    return <span className="status-badge status-badge--pending">{text}</span>;
   };
 
   const getPaymentBadge = (status) => {
@@ -81,6 +88,16 @@ function MyBookings() {
     if (value === 'FAILED') return <span className="status-badge status-badge--failed" style={{ backgroundColor: '#fee2e2', color: '#991b1b' }}><i className="fas fa-exclamation-triangle" /> Payment Failed</span>;
     return <span className="status-badge status-badge--pending" style={{ backgroundColor: '#fef3c7', color: '#92400e' }}><i className="fas fa-clock" /> Payment Pending</span>;
   };
+
+  const getAuthorizationBadge = (status) => {
+    const value = String(status || 'NONE').toUpperCase();
+    if (value === 'AUTHORIZED') return <span className="status-badge status-badge--done"><i className="fas fa-check-circle" /> Authorized</span>;
+    if (['DECLINED', 'EXPIRED'].includes(value)) return <span className="status-badge status-badge--failed">{statusText(value)}</span>;
+    if (value === 'NONE') return <span className="status-badge status-badge--pending">Authorization Not Started</span>;
+    return <span className="status-badge status-badge--pending">Authorization {statusText(value)}</span>;
+  };
+
+  const isCarBooking = (booking) => String(booking.service_type || booking.booking_type || '').toUpperCase() === 'CAR';
 
   const deriveRouteDisplay = (booking) => {
     const origin = booking.origin_code || booking.flights?.[0]?.departure_airport || booking.flight_details?.departure?.airport;
@@ -98,10 +115,27 @@ function MyBookings() {
   };
 
   const derivePassengerName = (booking) => {
-    if (booking.passenger_name && booking.passenger_name !== 'Valued Customer') return booking.passenger_name;
+    if (booking.passenger_name && !['Valued Customer', 'Customer'].includes(booking.passenger_name)) return booking.passenger_name;
     const traveller = booking.travellers?.[0];
-    return traveller?.first_name ? [traveller.first_name, traveller.middle_name, traveller.last_name].filter(Boolean).join(' ') : 'Details unavailable';
+    return traveller?.first_name ? [traveller.first_name, traveller.middle_name, traveller.last_name].filter(Boolean).join(' ') : (booking.customer_name || 'Details unavailable');
   };
+
+  const formatDate = (raw) => {
+    if (!raw) return 'Details unavailable';
+    const value = new Date(raw);
+    return Number.isNaN(value.getTime()) ? String(raw) : value.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
+  const renderCarDetails = (booking, amount) => (
+    <div className="booking-info-grid">
+      <div className="info-column"><span className="info-label">Renter / Customer</span><strong className="info-value">{derivePassengerName(booking)}</strong></div>
+      <div className="info-column"><span className="info-label">Rental Route</span><strong className="info-value"><i className="fas fa-car route-symbol" />{booking.pickup_location && booking.dropoff_location ? `${booking.pickup_location} to ${booking.dropoff_location}` : (booking.pickup_location || booking.dropoff_location || 'Details unavailable')}</strong></div>
+      <div className="info-column"><span className="info-label">Rental Company</span><strong className="info-value">{booking.rental_company_name || 'Details unavailable'}</strong></div>
+      <div className="info-column"><span className="info-label">Pickup Date</span><strong className="info-value">{formatDate(booking.pickup_at)}</strong></div>
+      <div className="info-column"><span className="info-label">Vehicle</span><strong className="info-value">{booking.vehicle_name || booking.vehicle_category || 'Details unavailable'}</strong></div>
+      <div className="info-column"><span className="info-label">Total Amount</span><strong className="info-value">{Number.isFinite(amount) ? `$${amount.toFixed(2)}` : 'Not available'} {booking.currency || 'USD'}</strong></div>
+    </div>
+  );
 
   return (
     <div className="my-bookings-page">
@@ -142,31 +176,34 @@ function MyBookings() {
                   <div className="bookings-list-title"><h3>Matches Found ({bookings.length})</h3></div>
                   <div className="bookings-grid-list">
                     {bookings.map((booking) => {
-                      const code = booking.confirmation_code || booking.confirmationCode;
+                      const code = booking.confirmation_code || booking.confirmationCode || booking.booking_reference;
+                      const carBooking = isCarBooking(booking);
                       const carrier = deriveCarrier(booking);
-                      const isAmtrak = carrier.toLowerCase().includes('amtrak');
+                      const isAmtrak = !carBooking && carrier.toLowerCase().includes('amtrak');
                       const amount = Number(booking.customer_price ?? booking.amount ?? booking.total_amount);
 
                       return (
-                        <div key={booking.id || code} className="booking-card-item">
+                        <div key={`${booking.service_type || 'flight'}-${booking.id || code}`} className="booking-card-item">
                           <div className="booking-card-top">
-                            <div className="card-ref-block"><span className="ref-label">CONFIRMATION CODE</span><strong className="ref-value">{code || 'N/A'}</strong></div>
-                            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>{getBookingStatusBadge(booking.status)}{getPaymentBadge(booking.payment_status)}</div>
+                            <div className="card-ref-block"><span className="ref-label">CONFIRMATION CODE</span><strong className="ref-value">{code || 'N/A'}</strong>{carBooking && <span className="ref-label" style={{ marginTop: '0.35rem' }}>CAR RENTAL</span>}</div>
+                            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>{getBookingStatusBadge(booking.status)}{carBooking ? getAuthorizationBadge(booking.authorization_status) : getPaymentBadge(booking.payment_status)}</div>
                           </div>
 
                           <div className="booking-card-body">
-                            <div className="booking-info-grid">
-                              <div className="info-column"><span className="info-label">Passenger Name</span><strong className="info-value">{derivePassengerName(booking)}</strong></div>
-                              <div className="info-column"><span className="info-label">Route</span><strong className="info-value"><i className={`fas ${isAmtrak ? 'fa-train' : 'fa-plane'} route-symbol`} />{deriveRouteDisplay(booking)}</strong></div>
-                              <div className="info-column"><span className="info-label">Airline / Transit</span><strong className="info-value">{carrier}</strong></div>
-                              <div className="info-column"><span className="info-label">Travel Date</span><strong className="info-value">{deriveDepartureDate(booking)}</strong></div>
-                              <div className="info-column"><span className="info-label">Total Amount</span><strong className="info-value">{Number.isFinite(amount) ? `$${amount.toFixed(2)}` : 'Not available'} {booking.currency || 'USD'}</strong></div>
-                              <div className="info-column"><span className="info-label">Booking Date</span><strong className="info-value">{booking.created_at ? new Date(booking.created_at).toLocaleDateString() : 'N/A'}</strong></div>
-                            </div>
+                            {carBooking ? renderCarDetails(booking, amount) : (
+                              <div className="booking-info-grid">
+                                <div className="info-column"><span className="info-label">Passenger Name</span><strong className="info-value">{derivePassengerName(booking)}</strong></div>
+                                <div className="info-column"><span className="info-label">Route</span><strong className="info-value"><i className={`fas ${isAmtrak ? 'fa-train' : 'fa-plane'} route-symbol`} />{deriveRouteDisplay(booking)}</strong></div>
+                                <div className="info-column"><span className="info-label">Airline / Transit</span><strong className="info-value">{carrier}</strong></div>
+                                <div className="info-column"><span className="info-label">Travel Date</span><strong className="info-value">{deriveDepartureDate(booking)}</strong></div>
+                                <div className="info-column"><span className="info-label">Total Amount</span><strong className="info-value">{Number.isFinite(amount) ? `$${amount.toFixed(2)}` : 'Not available'} {booking.currency || 'USD'}</strong></div>
+                                <div className="info-column"><span className="info-label">Booking Date</span><strong className="info-value">{booking.created_at ? new Date(booking.created_at).toLocaleDateString() : 'N/A'}</strong></div>
+                              </div>
+                            )}
                           </div>
 
                           <div className="booking-card-actions" style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                            {code && (
+                            {!carBooking && code && (
                               <Link to={`/booking-confirmed/${encodeURIComponent(code)}`} className="view-ticket-btn">
                                 <i className="fas fa-file-alt" /> View Reservation
                               </Link>
