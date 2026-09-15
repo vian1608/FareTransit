@@ -6,6 +6,7 @@ import backofficeStaffService from './backoffice.service.mjs';
 import { crmRouter } from './crm.routes.mjs';
 import { flightBridgeRouter } from './flight-bridge.routes.mjs';
 import { tripsHotelsRouter } from './trips-hotels.routes.mjs';
+import { carAuthorizationComposeRouter } from './car-authorization-compose.routes.mjs';
 import { carsBackofficeFastRouter } from './cars-backoffice-fast.routes.mjs';
 import { carsBackofficeRouter } from './cars-backoffice.routes.mjs';
 import { financeSuppliersRouter } from './finance-suppliers.routes.mjs';
@@ -20,6 +21,7 @@ router.get('/dashboard', requirePermission('dashboard.view'), (req,res)=>res.jso
 router.use('/crm', crmRouter);
 router.use('/', flightBridgeRouter);
 router.use('/', tripsHotelsRouter);
+router.use('/', carAuthorizationComposeRouter);
 router.use('/', carsBackofficeFastRouter);
 router.use('/', carsBackofficeRouter);
 router.use('/', financeSuppliersRouter);
