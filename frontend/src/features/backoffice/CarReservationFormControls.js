@@ -84,10 +84,10 @@ export function toIsoOrNull(value) {
 }
 
 export function HalfHourDateTimeInput({ value, onChange, idPrefix, disabled = false }) {
-  const normalized = normalizeHalfHourLocalDateTime(value || '');
-  const match = normalized.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})/);
-  const datePart = match?.[1] || '';
-  const timePart = match?.[2] || '';
+  const raw = String(value || '');
+  const complete = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(raw) ? normalizeHalfHourLocalDateTime(raw) : raw;
+  const datePart = complete.match(/^(\d{4}-\d{2}-\d{2})/)?.[1] || '';
+  const timePart = complete.match(/T(\d{2}:\d{2})/)?.[1] || '';
 
   const emit = (date, time) => {
     if (!date && !time) return onChange('');
@@ -128,9 +128,14 @@ export function BillingAddressAutocomplete({ value, onChange, onSelect }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const requestRef = useRef(0);
+  const skipNextSearchRef = useRef(false);
   const query = String(value || '').trim();
 
   useEffect(() => {
+    if (skipNextSearchRef.current) {
+      skipNextSearchRef.current = false;
+      return;
+    }
     if (query.length < 3) {
       setSuggestions([]);
       setOpen(false);
@@ -160,6 +165,7 @@ export function BillingAddressAutocomplete({ value, onChange, onSelect }) {
   }, [query]);
 
   const choose = suggestion => {
+    skipNextSearchRef.current = true;
     onChange(suggestion.addressLine1 || value || '');
     onSelect?.(suggestion);
     setSuggestions([]);
