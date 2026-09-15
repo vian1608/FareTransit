@@ -58,6 +58,8 @@ assert.match(composeRoutes, /authorization\/send/);
 assert.match(composeService, /service_snapshot/);
 assert.match(composeService, /emailDraft/);
 assert.match(composeService, /sendAuthorizationWithEmailDraft/);
+assert.match(composeService, /createAuthorizationRevision/);
+assert.match(composeService, /status !== 'DRAFT'/);
 assert.match(emailService, /buildCarAuthorizationEmail/);
 assert.match(emailService, /subject, message/);
 assert.match(carWorkspaceEnhanced, /Preview & Send Authorization/);
