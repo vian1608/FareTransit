@@ -1,6 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { boGet, boPost } from './backofficeApi';
+import {
+  BillingAddressAutocomplete,
+  CardBrandSelect,
+  HalfHourDateTimeInput,
+  isCompleteHalfHourLocalDateTime,
+  normalizeCardBrand,
+  toIsoOrNull
+} from './CarReservationFormControls';
 import './CarReservationWorkspace.css';
 
 const STORAGE_KEY = 'faretransit_car_draft_v1';
@@ -53,12 +61,19 @@ function readStoredDraft() {
   }
 }
 
+function validateTimes(form) {
+  if (form.pickupAt && !isCompleteHalfHourLocalDateTime(form.pickupAt)) return 'Select a complete pickup date and a time ending in :00 or :30.';
+  if (form.dropoffAt && !isCompleteHalfHourLocalDateTime(form.dropoffAt)) return 'Select a complete drop-off date and a time ending in :00 or :30.';
+  return '';
+}
+
 export default function NewCarReservationDraftPage() {
   const navigate = useNavigate();
   const [companies, setCompanies] = useState([]);
   const [form, setForm] = useState(EMPTY_FORM);
   const [transactions, setTransactions] = useState(EMPTY_TRANSACTIONS);
   const [customSections, setCustomSections] = useState([]);
+  const [sameDropoff, setSameDropoff] = useState(false);
   const [clientRequestId, setClientRequestId] = useState(requestId);
   const [recovery, setRecovery] = useState(() => readStoredDraft());
   const [ready, setReady] = useState(() => !readStoredDraft());
@@ -78,10 +93,10 @@ export default function NewCarReservationDraftPage() {
       return;
     }
     const timer = setTimeout(() => {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 1, clientRequestId, form, transactions, customSections, savedAt: new Date().toISOString() }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 2, clientRequestId, form, transactions, customSections, sameDropoff, savedAt: new Date().toISOString() }));
     }, 250);
     return () => clearTimeout(timer);
-  }, [ready, isMeaningful, clientRequestId, form, transactions, customSections]);
+  }, [ready, isMeaningful, clientRequestId, form, transactions, customSections, sameDropoff]);
 
   useEffect(() => {
     const warn = event => {
@@ -95,11 +110,41 @@ export default function NewCarReservationDraftPage() {
 
   const set = (key, value) => setForm(prev => ({ ...prev, [key]: value }));
 
+  const setPickupLocation = value => {
+    setForm(prev => ({
+      ...prev,
+      pickupLocation: value,
+      pickupAddress: value,
+      ...(sameDropoff ? { dropoffLocation: value, dropoffAddress: value } : {})
+    }));
+  };
+
+  const setDropoffLocation = value => setForm(prev => ({ ...prev, dropoffLocation: value, dropoffAddress: value }));
+
+  const toggleSameDropoff = checked => {
+    setSameDropoff(checked);
+    if (checked) setForm(prev => ({ ...prev, dropoffLocation: prev.pickupLocation, dropoffAddress: prev.pickupAddress || prev.pickupLocation }));
+  };
+
+  const applyBillingAddress = suggestion => {
+    setForm(prev => ({
+      ...prev,
+      addressLine1: suggestion.addressLine1 || prev.addressLine1,
+      addressLine2: suggestion.addressLine2 || '',
+      city: suggestion.city || prev.city,
+      stateProvince: suggestion.state || prev.stateProvince,
+      postalCode: suggestion.postalCode || prev.postalCode,
+      country: suggestion.country || prev.country
+    }));
+  };
+
   const continueDraft = () => {
     const draft = recovery || {};
-    setForm({ ...EMPTY_FORM, ...(draft.form || {}) });
+    const restored = { ...EMPTY_FORM, ...(draft.form || {}) };
+    setForm(restored);
     setTransactions(Array.isArray(draft.transactions) && draft.transactions.length ? draft.transactions : EMPTY_TRANSACTIONS);
     setCustomSections(Array.isArray(draft.customSections) ? draft.customSections : []);
+    setSameDropoff(typeof draft.sameDropoff === 'boolean' ? draft.sameDropoff : Boolean(restored.pickupLocation && restored.dropoffLocation && restored.pickupLocation === restored.dropoffLocation));
     setClientRequestId(draft.clientRequestId || requestId());
     setRecovery(null);
     setReady(true);
@@ -110,6 +155,7 @@ export default function NewCarReservationDraftPage() {
     setForm(EMPTY_FORM);
     setTransactions(EMPTY_TRANSACTIONS);
     setCustomSections([]);
+    setSameDropoff(false);
     setClientRequestId(requestId());
     setRecovery(null);
     setReady(true);
@@ -132,7 +178,7 @@ export default function NewCarReservationDraftPage() {
     clientRequestId,
     customer: { fullName: form.customerName, dateOfBirth: form.dateOfBirth, email: form.customerEmail, phone: form.customerPhone },
     billing: {
-      cardholderName: form.cardholderName, cardBrand: form.cardBrand, cardLast4: form.cardLast4,
+      cardholderName: form.cardholderName, cardBrand: normalizeCardBrand(form.cardBrand), cardLast4: form.cardLast4,
       addressLine1: form.addressLine1, addressLine2: form.addressLine2, city: form.city,
       stateProvince: form.stateProvince, postalCode: form.postalCode, country: form.country,
       email: form.customerEmail, phone: form.customerPhone
@@ -140,10 +186,10 @@ export default function NewCarReservationDraftPage() {
     car: {
       rentalCompanyId: form.rentalCompanyId || null, rentalCompanyName: form.rentalCompanyName,
       rentalCompanyLogoUrl: form.rentalCompanyLogoUrl, vehicleName: form.vehicleName, vehicleCategory: form.vehicleCategory,
-      pickupLocation: form.pickupLocation, pickupAddress: form.pickupAddress,
-      pickupAt: form.pickupAt ? new Date(form.pickupAt).toISOString() : null,
-      dropoffLocation: form.dropoffLocation, dropoffAddress: form.dropoffAddress,
-      dropoffAt: form.dropoffAt ? new Date(form.dropoffAt).toISOString() : null,
+      pickupLocation: form.pickupLocation, pickupAddress: form.pickupAddress || form.pickupLocation,
+      pickupAt: toIsoOrNull(form.pickupAt),
+      dropoffLocation: form.dropoffLocation, dropoffAddress: form.dropoffAddress || form.dropoffLocation,
+      dropoffAt: toIsoOrNull(form.dropoffAt),
       driverAge: form.driverAge ? Number(form.driverAge) : null, mileagePolicy: form.mileagePolicy,
       fuelPolicy: form.fuelPolicy, depositTerms: form.depositTerms, cancellationPolicy: form.cancellationPolicy,
       supplierNotes: form.supplierNotes
@@ -157,6 +203,12 @@ export default function NewCarReservationDraftPage() {
 
   const saveDraft = async () => {
     if (busy) return;
+    const validationError = validateTimes(form);
+    if (validationError) {
+      setMessage(validationError);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
     setBusy(true);
     setMessage('');
     try {
@@ -164,10 +216,12 @@ export default function NewCarReservationDraftPage() {
       const reference = bundle?.reservation?.booking_reference;
       if (!reference) throw new Error('Reservation was saved without a booking reference.');
       localStorage.removeItem(STORAGE_KEY);
-      navigate(`/admin/bookings/cars/${encodeURIComponent(reference)}`, { replace: true });
+      window.scrollTo({ top: 0, behavior: 'auto' });
+      navigate(`/admin/bookings/cars/${encodeURIComponent(reference)}`, { replace: true, state: { savedMessage: 'Booking details saved successfully.' } });
     } catch (error) {
       setMessage(error.message || 'Unable to save the car reservation.');
       setBusy(false);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -215,12 +269,11 @@ export default function NewCarReservationDraftPage() {
         <Field label="Vehicle"><input value={form.vehicleName} onChange={e => set('vehicleName', e.target.value)} placeholder="Toyota Corolla or Similar" /></Field>
         <Field label="Vehicle category"><input value={form.vehicleCategory} onChange={e => set('vehicleCategory', e.target.value)} /></Field>
         <Field label="Driver age"><input type="number" min="18" max="99" value={form.driverAge} onChange={e => set('driverAge', e.target.value)} /></Field>
-        <Field label="Pickup location"><input value={form.pickupLocation} onChange={e => set('pickupLocation', e.target.value)} /></Field>
-        <Field label="Pickup address"><input value={form.pickupAddress} onChange={e => set('pickupAddress', e.target.value)} /></Field>
-        <Field label="Pickup date / time"><input type="datetime-local" value={form.pickupAt} onChange={e => set('pickupAt', e.target.value)} /></Field>
-        <Field label="Drop-off location"><input value={form.dropoffLocation} onChange={e => set('dropoffLocation', e.target.value)} /></Field>
-        <Field label="Drop-off address"><input value={form.dropoffAddress} onChange={e => set('dropoffAddress', e.target.value)} /></Field>
-        <Field label="Drop-off date / time"><input type="datetime-local" value={form.dropoffAt} onChange={e => set('dropoffAt', e.target.value)} /></Field>
+        <Field label="Pickup location"><input value={form.pickupLocation} onChange={e => setPickupLocation(e.target.value)} /></Field>
+        <Field label="Pickup date / time"><HalfHourDateTimeInput idPrefix="new-pickup" value={form.pickupAt} onChange={value => set('pickupAt', value)} /></Field>
+        <label className="carws-same-location"><input type="checkbox" checked={sameDropoff} onChange={e => toggleSameDropoff(e.target.checked)} />Drop-off location is the same as pickup</label>
+        <Field label="Drop-off location"><input value={form.dropoffLocation} disabled={sameDropoff} onChange={e => setDropoffLocation(e.target.value)} /></Field>
+        <Field label="Drop-off date / time"><HalfHourDateTimeInput idPrefix="new-dropoff" value={form.dropoffAt} onChange={value => set('dropoffAt', value)} /></Field>
         <Field label="Mileage policy"><input value={form.mileagePolicy} onChange={e => set('mileagePolicy', e.target.value)} /></Field>
         <Field label="Fuel policy"><input value={form.fuelPolicy} onChange={e => set('fuelPolicy', e.target.value)} /></Field>
         <Field label="Deposit terms" wide><textarea value={form.depositTerms} onChange={e => set('depositTerms', e.target.value)} /></Field>
@@ -232,20 +285,20 @@ export default function NewCarReservationDraftPage() {
     <div className="carws-two-col">
       <Section title="Renter / Driver">
         <div className="carws-form-grid one">
-          <Field label="Full name"><input value={form.customerName} onChange={e => set('customerName', e.target.value)} /></Field>
+          <Field label="Full name"><input autoComplete="name" value={form.customerName} onChange={e => set('customerName', e.target.value)} /></Field>
           <Field label="Date of birth"><input type="date" value={form.dateOfBirth} onChange={e => set('dateOfBirth', e.target.value)} /></Field>
-          <Field label="Email"><input type="email" value={form.customerEmail} onChange={e => set('customerEmail', e.target.value)} /></Field>
-          <Field label="Phone"><input value={form.customerPhone} onChange={e => set('customerPhone', e.target.value)} /></Field>
+          <Field label="Email"><input type="email" autoComplete="email" value={form.customerEmail} onChange={e => set('customerEmail', e.target.value)} /></Field>
+          <Field label="Phone"><input autoComplete="tel" value={form.customerPhone} onChange={e => set('customerPhone', e.target.value)} /></Field>
         </div>
       </Section>
       <Section title="Billing" subtitle="Only masked card information is stored.">
         <div className="carws-form-grid one">
-          <Field label="Cardholder"><input value={form.cardholderName} onChange={e => set('cardholderName', e.target.value)} /></Field>
-          <div className="carws-split"><Field label="Card brand"><input value={form.cardBrand} onChange={e => set('cardBrand', e.target.value)} /></Field><Field label="Last 4"><input maxLength="4" inputMode="numeric" value={form.cardLast4} onChange={e => set('cardLast4', e.target.value.replace(/\D/g, '').slice(0,4))} /></Field></div>
-          <Field label="Address line 1"><input value={form.addressLine1} onChange={e => set('addressLine1', e.target.value)} /></Field>
-          <Field label="Address line 2"><input value={form.addressLine2} onChange={e => set('addressLine2', e.target.value)} /></Field>
-          <div className="carws-split three"><Field label="City"><input value={form.city} onChange={e => set('city', e.target.value)} /></Field><Field label="State"><input value={form.stateProvince} onChange={e => set('stateProvince', e.target.value)} /></Field><Field label="ZIP"><input value={form.postalCode} onChange={e => set('postalCode', e.target.value)} /></Field></div>
-          <Field label="Country"><input value={form.country} onChange={e => set('country', e.target.value)} /></Field>
+          <Field label="Cardholder"><input autoComplete="cc-name" value={form.cardholderName} onChange={e => set('cardholderName', e.target.value)} /></Field>
+          <div className="carws-split"><Field label="Card brand"><CardBrandSelect value={form.cardBrand} onChange={value => set('cardBrand', value)} /></Field><Field label="Last 4"><input maxLength="4" inputMode="numeric" autoComplete="cc-number" value={form.cardLast4} onChange={e => set('cardLast4', e.target.value.replace(/\D/g, '').slice(0,4))} /></Field></div>
+          <Field label="Address line 1"><BillingAddressAutocomplete value={form.addressLine1} onChange={value => set('addressLine1', value)} onSelect={applyBillingAddress} /></Field>
+          <Field label="Address line 2"><input autoComplete="billing address-line2" value={form.addressLine2} onChange={e => set('addressLine2', e.target.value)} /></Field>
+          <div className="carws-split three"><Field label="City"><input autoComplete="billing address-level2" value={form.city} onChange={e => set('city', e.target.value)} /></Field><Field label="State"><input autoComplete="billing address-level1" value={form.stateProvince} onChange={e => set('stateProvince', e.target.value)} /></Field><Field label="ZIP"><input autoComplete="billing postal-code" value={form.postalCode} onChange={e => set('postalCode', e.target.value)} /></Field></div>
+          <Field label="Country"><input autoComplete="billing country-name" value={form.country} onChange={e => set('country', e.target.value)} /></Field>
         </div>
       </Section>
     </div>
