@@ -1,0 +1,108 @@
+.car-form-datetime {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 170px;
+  gap: 10px;
+  width: 100%;
+}
+
+.car-address-autocomplete {
+  position: relative;
+  width: 100%;
+}
+
+.car-address-loading {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #667085;
+  font-size: 12px;
+  pointer-events: none;
+}
+
+.car-address-suggestions {
+  position: absolute;
+  z-index: 80;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  overflow: hidden;
+  max-height: 280px;
+  overflow-y: auto;
+  border: 1px solid #d7deea;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 16px 35px rgba(15, 35, 64, 0.15);
+}
+
+.car-address-suggestions button {
+  width: 100%;
+  padding: 11px 14px;
+  border: 0;
+  border-bottom: 1px solid #edf0f5;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+}
+
+.car-address-suggestions button:last-child {
+  border-bottom: 0;
+}
+
+.car-address-suggestions button:hover,
+.car-address-suggestions button:focus {
+  outline: none;
+  background: #f4f8ff;
+}
+
+.car-address-suggestions strong,
+.car-address-suggestions span {
+  display: block;
+}
+
+.car-address-suggestions strong {
+  color: #172033;
+  font-size: 13px;
+}
+
+.car-address-suggestions span {
+  margin-top: 2px;
+  color: #667085;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.carws-same-location {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1px solid #dce4ef;
+  border-radius: 12px;
+  background: #f8faff;
+  color: #243b5a;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.carws-same-location input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: #1769e0;
+}
+
+.carws-unsaved-indicator {
+  color: #b45309;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+@media (max-width: 700px) {
+  .car-form-datetime {
+    grid-template-columns: 1fr;
+  }
+}
