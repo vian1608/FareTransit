@@ -3,7 +3,6 @@ import supabase from '../../config/supabase.mjs';
 import { requirePermission } from './backoffice.middleware.mjs';
 import auditBackOffice from './backoffice.audit.mjs';
 import reservationService from '../reservations/reservation.service.mjs';
-import { sendCarAuthorizationEmail } from '../reservations/car-authorization-email.service.mjs';
 
 const router = express.Router();
 const actor = req => req.staff?.email || req.user?.email || req.staff?.id || req.user?.id || 'admin';
@@ -182,25 +181,8 @@ router.post('/bookings/cars/:id/authorization/revision', requirePermission('book
   } catch (error) { next(error); }
 });
 
-router.post('/bookings/cars/:id/authorization/send', requirePermission('bookings.cars.edit'), async (req, res, next) => {
-  let prepared;
-  try {
-    const reference = await resolveReference(req.params.id);
-    prepared = await reservationService.prepareAuthorizationForSend(reference, actor(req));
-    const email = await sendCarAuthorizationEmail({
-      recipient: prepared.recipient,
-      bookingReference: prepared.bundle.reservation.booking_reference,
-      authorization: prepared.authorization,
-      token: prepared.token
-    });
-    const authorization = await reservationService.markAuthorizationSent(reference, prepared.authorization.id, actor(req));
-    await auditBackOffice(req, 'car_authorization.sent', 'reservation', prepared.bundle?.reservation?.id, { bookingReference: reference, version: authorization?.version, recipient: prepared.recipient });
-    res.json({ success: true, data: { authorization, email } });
-  } catch (error) {
-    if (prepared?.authorization?.id) await reservationService.resetAuthorizationSendPreparation(prepared.authorization.id);
-    next(error);
-  }
-});
+// Authorization send is owned by car-authorization-compose.routes.mjs. Keeping a
+// single canonical route prevents the editable email draft from being bypassed.
 
 router.post('/bookings/cars/:id/booked', requirePermission('bookings.cars.edit'), async (req, res, next) => {
   try {
