@@ -64,7 +64,8 @@ assert.match(carWorkspaceEnhanced, /Preview & Send Authorization/);
 assert.match(carWorkspaceEnhanced, /Save Email Draft/);
 assert.match(carWorkspaceEnhanced, /Send Authorization/);
 assert.match(carWorkspaceEnhanced, /Passenger authorization preview/);
-assert.match(carWorkspaceEnhanced, /secure Review & Authorize button/i);
+assert.match(carWorkspaceEnhanced, /Review & Authorize button/i);
+assert.match(carWorkspaceEnhanced, /secure link and expiry notice/i);
 assert.match(carComposerCss, /carws-sticky-actions \.bo-button:not\(:first-child\)/);
 assert.match(carRouter, /CarReservationWorkspaceEnhanced/);
 
