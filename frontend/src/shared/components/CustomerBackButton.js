@@ -96,6 +96,7 @@ export default function CustomerBackButton() {
   }, [isBookingPage]);
 
   const isPrimaryLandingPage = pathname === '/'
+    || pathname === '/flights'
     || pathname === '/hotels'
     || pathname === '/car-rentals'
     || pathname.startsWith('/senior-travel');
