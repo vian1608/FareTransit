@@ -1,6 +1,15 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import { boGet, boPatch, boPost } from './backofficeApi';
+import {
+  BillingAddressAutocomplete,
+  CardBrandSelect,
+  HalfHourDateTimeInput,
+  isCompleteHalfHourLocalDateTime,
+  normalizeCardBrand,
+  normalizeHalfHourLocalDateTime,
+  toIsoOrNull
+} from './CarReservationFormControls';
 import './CarReservationWorkspace.css';
 
 const money = (value, currency = 'USD') => {
@@ -13,8 +22,8 @@ const localDateTime = value => {
   if (Number.isNaN(date.getTime())) return '';
   return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 };
-const iso = value => value ? new Date(value).toISOString() : null;
 const label = value => String(value || 'NONE').replaceAll('_', ' ');
+const fingerprint = (form, transactions, customSections, snapshots) => JSON.stringify({ form, transactions, customSections, snapshots });
 
 function Badge({ value }) {
   const status = String(value || 'NONE').toUpperCase();
@@ -35,42 +44,38 @@ function blankTransaction(company = '') {
   return { amount: '', merchantName: company, merchantLogoUrl: '', collectionMethod: 'PAY_AT_COUNTER', description: 'Rental Booking Amount' };
 }
 
+function validateTimes(form) {
+  if (form.pickupAt && !isCompleteHalfHourLocalDateTime(form.pickupAt)) return 'Select a complete pickup date and a time ending in :00 or :30.';
+  if (form.dropoffAt && !isCompleteHalfHourLocalDateTime(form.dropoffAt)) return 'Select a complete drop-off date and a time ending in :00 or :30.';
+  return '';
+}
+
 export function NewCarReservationPage() {
-  const navigate = useNavigate();
-  const started = useRef(false);
-  const [error, setError] = useState('');
-  useEffect(() => {
-    if (started.current) return;
-    started.current = true;
-    boPost('/bookings/cars', {}).then(bundle => {
-      const ref = bundle?.reservation?.booking_reference;
-      if (!ref) throw new Error('Reservation was created without a booking reference.');
-      navigate(`/admin/bookings/cars/${encodeURIComponent(ref)}`, { replace: true });
-    }).catch(err => setError(err.message));
-  }, [navigate]);
-  return <div className="carws-loading"><h2>Creating car reservation…</h2><p>{error || 'Generating a FareTransit booking reference and opening the reservation workspace.'}</p>{error && <Link className="bo-button secondary" to="/admin/bookings?type=car">Back to Cars</Link>}</div>;
+  return <div className="carws-loading">
+    <h2>Create a car reservation</h2>
+    <p>A booking number is created only after you explicitly save the local draft.</p>
+    <Link className="bo-button" to="/admin/bookings/new/car">Open New Car Reservation</Link>
+  </div>;
 }
 
 export default function CarReservationWorkspace() {
   const { id } = useParams();
-  const navigate = useNavigate();
+  const location = useLocation();
+  const baselineRef = useRef('');
   const [bundle, setBundle] = useState(null);
   const [companies, setCompanies] = useState([]);
   const [tab, setTab] = useState('overview');
   const [busy, setBusy] = useState('');
-  const [message, setMessage] = useState(null);
+  const [message, setMessage] = useState(location.state?.savedMessage ? { type: 'success', text: location.state.savedMessage } : null);
   const [form, setForm] = useState({});
   const [transactions, setTransactions] = useState([]);
   const [customSections, setCustomSections] = useState([]);
   const [snapshots, setSnapshots] = useState([]);
+  const [sameDropoff, setSameDropoff] = useState(false);
 
   const reference = bundle?.reservation?.booking_reference || id;
   const reservation = bundle?.reservation || {};
-  const car = bundle?.car || {};
   const authorization = bundle?.latestAuthorization || null;
-  const traveller = bundle?.travellers?.[0] || {};
-  const billing = bundle?.billing || {};
-  const financials = bundle?.internalFinancials || {};
 
   const hydrate = data => {
     setBundle(data);
@@ -80,18 +85,18 @@ export default function CarReservationWorkspace() {
     const b = data?.billing || {};
     const a = data?.latestAuthorization || {};
     const fin = data?.internalFinancials || {};
-    setForm({
+    const nextForm = {
       rentalCompanyId: c.rental_company_id || '',
       rentalCompanyName: c.rental_company_name || '',
       rentalCompanyLogoUrl: c.rental_company_logo_url || '',
       vehicleName: c.vehicle_name || '',
       vehicleCategory: c.vehicle_category || '',
       pickupLocation: c.pickup_location || '',
-      pickupAddress: c.pickup_address || '',
-      pickupAt: localDateTime(c.pickup_at),
+      pickupAddress: c.pickup_address || c.pickup_location || '',
+      pickupAt: normalizeHalfHourLocalDateTime(localDateTime(c.pickup_at)),
       dropoffLocation: c.dropoff_location || '',
-      dropoffAddress: c.dropoff_address || '',
-      dropoffAt: localDateTime(c.dropoff_at),
+      dropoffAddress: c.dropoff_address || c.dropoff_location || '',
+      dropoffAt: normalizeHalfHourLocalDateTime(localDateTime(c.dropoff_at)),
       driverAge: c.driver_age || '',
       supplierConfirmation: c.supplier_confirmation || '',
       supplierNotes: c.supplier_notes || '',
@@ -104,7 +109,7 @@ export default function CarReservationWorkspace() {
       customerEmail: t.email || r.customer_email || '',
       customerPhone: t.phone || r.customer_phone || '',
       cardholderName: b.cardholder_name || '',
-      cardBrand: b.card_brand || '',
+      cardBrand: normalizeCardBrand(b.card_brand || ''),
       cardLast4: b.card_last4 || '',
       addressLine1: b.address_line_1 || '',
       addressLine2: b.address_line_2 || '',
@@ -118,13 +123,19 @@ export default function CarReservationWorkspace() {
       sellingPrice: fin.selling_price ?? r.total_amount ?? '',
       terms: a.terms_snapshot?.text || c.draft_terms || '',
       internalNotes: c.internal_notes || fin.admin_notes || ''
-    });
-    const tx = a.transactions?.length
+    };
+    const txSource = a.transactions?.length
       ? a.transactions.map(x => ({ amount: x.amount, merchantName: x.merchant_name || '', merchantLogoUrl: x.merchant_logo_url || '', collectionMethod: x.collection_method || 'PAY_NOW', description: x.description || '' }))
       : (c.draft_payment_data?.transactions || []);
-    setTransactions(tx.length ? tx : [blankTransaction(c.rental_company_name || ''), { amount: '', merchantName: 'FareTransit LLC', merchantLogoUrl: '', collectionMethod: 'PAY_NOW', description: 'Booking Amount' }]);
-    setCustomSections(a.custom_sections?.length ? a.custom_sections : (c.draft_custom_sections || []));
-    setSnapshots((data?.snapshots || []).map(x => ({ imageUrl: x.image_url, storagePath: x.storage_path, caption: x.caption || '' })));
+    const nextTransactions = txSource.length ? txSource : [blankTransaction(c.rental_company_name || ''), { amount: '', merchantName: 'FareTransit LLC', merchantLogoUrl: '', collectionMethod: 'PAY_NOW', description: 'Booking Amount' }];
+    const nextCustomSections = a.custom_sections?.length ? a.custom_sections : (c.draft_custom_sections || []);
+    const nextSnapshots = (data?.snapshots || []).map(x => ({ imageUrl: x.image_url, storagePath: x.storage_path, caption: x.caption || '' }));
+    setForm(nextForm);
+    setTransactions(nextTransactions);
+    setCustomSections(nextCustomSections);
+    setSnapshots(nextSnapshots);
+    setSameDropoff(Boolean(nextForm.pickupLocation && nextForm.dropoffLocation && nextForm.pickupLocation.trim() === nextForm.dropoffLocation.trim()));
+    baselineRef.current = fingerprint(nextForm, nextTransactions, nextCustomSections, nextSnapshots);
   };
 
   const load = async () => {
@@ -140,12 +151,55 @@ export default function CarReservationWorkspace() {
     return () => { mounted = false; };
   }, [id]);
 
+  const currentFingerprint = useMemo(() => fingerprint(form, transactions, customSections, snapshots), [form, transactions, customSections, snapshots]);
+  const isDirty = Boolean(bundle && baselineRef.current && currentFingerprint !== baselineRef.current);
+
+  useEffect(() => {
+    const warn = event => {
+      if (!isDirty || busy) return;
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [isDirty, busy]);
+
   const set = (key, value) => setForm(prev => ({ ...prev, [key]: value }));
+
+  const setPickupLocation = value => {
+    setForm(prev => ({
+      ...prev,
+      pickupLocation: value,
+      pickupAddress: value,
+      ...(sameDropoff ? { dropoffLocation: value, dropoffAddress: value } : {})
+    }));
+  };
+
+  const setDropoffLocation = value => setForm(prev => ({ ...prev, dropoffLocation: value, dropoffAddress: value }));
+
+  const toggleSameDropoff = checked => {
+    setSameDropoff(checked);
+    if (checked) {
+      setForm(prev => ({ ...prev, dropoffLocation: prev.pickupLocation, dropoffAddress: prev.pickupAddress || prev.pickupLocation }));
+    }
+  };
+
+  const applyBillingAddress = suggestion => {
+    setForm(prev => ({
+      ...prev,
+      addressLine1: suggestion.addressLine1 || prev.addressLine1,
+      addressLine2: suggestion.addressLine2 || '',
+      city: suggestion.city || prev.city,
+      stateProvince: suggestion.state || prev.stateProvince,
+      postalCode: suggestion.postalCode || prev.postalCode,
+      country: suggestion.country || prev.country
+    }));
+  };
 
   const payload = useMemo(() => ({
     customer: { fullName: form.customerName, dateOfBirth: form.dateOfBirth, email: form.customerEmail, phone: form.customerPhone },
     billing: {
-      cardholderName: form.cardholderName, cardBrand: form.cardBrand, cardLast4: form.cardLast4,
+      cardholderName: form.cardholderName, cardBrand: normalizeCardBrand(form.cardBrand), cardLast4: form.cardLast4,
       addressLine1: form.addressLine1, addressLine2: form.addressLine2, city: form.city,
       stateProvince: form.stateProvince, postalCode: form.postalCode, country: form.country,
       email: form.customerEmail, phone: form.customerPhone
@@ -154,8 +208,8 @@ export default function CarReservationWorkspace() {
       rentalCompanyId: form.rentalCompanyId || null, rentalCompanyName: form.rentalCompanyName,
       rentalCompanyLogoUrl: form.rentalCompanyLogoUrl, vehicleName: form.vehicleName,
       vehicleCategory: form.vehicleCategory, pickupLocation: form.pickupLocation,
-      pickupAddress: form.pickupAddress, pickupAt: iso(form.pickupAt), dropoffLocation: form.dropoffLocation,
-      dropoffAddress: form.dropoffAddress, dropoffAt: iso(form.dropoffAt), driverAge: form.driverAge ? Number(form.driverAge) : null,
+      pickupAddress: form.pickupAddress || form.pickupLocation, pickupAt: toIsoOrNull(form.pickupAt), dropoffLocation: form.dropoffLocation,
+      dropoffAddress: form.dropoffAddress || form.dropoffLocation, dropoffAt: toIsoOrNull(form.dropoffAt), driverAge: form.driverAge ? Number(form.driverAge) : null,
       supplierConfirmation: form.supplierConfirmation, supplierNotes: form.supplierNotes,
       mileagePolicy: form.mileagePolicy, fuelPolicy: form.fuelPolicy, depositTerms: form.depositTerms,
       cancellationPolicy: form.cancellationPolicy
@@ -175,15 +229,29 @@ export default function CarReservationWorkspace() {
     finally { setBusy(''); }
   };
 
-  const save = async (announce = true) => run('save', async () => {
-    const data = await boPatch(`/bookings/cars/${encodeURIComponent(reference)}`, payload);
-    hydrate(data);
-    return data;
-  }, announce ? 'Reservation saved.' : '');
+  const save = async (announce = true) => {
+    const validationError = validateTimes(form);
+    if (validationError) {
+      setMessage({ type: 'error', text: validationError });
+      return null;
+    }
+    try {
+      const data = await run('save', () => boPatch(`/bookings/cars/${encodeURIComponent(reference)}`, payload), '');
+      hydrate(data);
+      if (announce) {
+        setMessage({ type: 'success', text: 'Booking details saved successfully.' });
+        requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
+      }
+      return data;
+    } catch {
+      return null;
+    }
+  };
 
   const draft = async () => {
+    const saved = await save(false);
+    if (!saved) return;
     try {
-      await save(false);
       await run('draft', () => boPost(`/bookings/cars/${encodeURIComponent(reference)}/authorization/draft`, { payment: payload.payment, terms: form.terms, customSections }), 'Authorization draft saved.');
       await load(); setTab('authorization');
     } catch {}
@@ -236,18 +304,23 @@ export default function CarReservationWorkspace() {
     if (company) setTransactions(prev => prev.map((tx, index) => index === 0 && !tx.merchantName ? { ...tx, merchantName: company.merchant_descriptor || company.display_name } : tx));
   };
 
+  const guardBack = event => {
+    if (!isDirty) return;
+    if (!window.confirm('You have unsaved changes. Leave this booking without saving?')) event.preventDefault();
+  };
+
   if (!bundle) return <div className="carws-loading"><h2>Loading car reservation…</h2>{message && <p>{message.text}</p>}</div>;
 
   const tabs = ['overview','rental','customer','authorization','activity'];
   return <div className="carws">
     <div className="carws-header">
       <div>
-        <Link to="/admin/bookings?type=car" className="carws-back">← Cars</Link>
-        <div className="carws-title-row"><h1>{reference}</h1><Badge value={reservation.reservation_status} /></div>
+        <Link to="/admin/bookings?type=car" className="carws-back" onClick={guardBack}>← Cars</Link>
+        <div className="carws-title-row"><h1>{reference}</h1><Badge value={reservation.reservation_status} />{isDirty && <span className="carws-unsaved-indicator">Unsaved changes</span>}</div>
         <p>{form.rentalCompanyName || 'Car rental'}{form.vehicleName ? ` · ${form.vehicleName}` : ''}</p>
       </div>
       <div className="carws-header-actions">
-        <button className="bo-button secondary" onClick={() => save()} disabled={!!busy}>Save</button>
+        <button className="bo-button secondary" onClick={() => save()} disabled={!!busy}>{busy === 'save' ? 'Saving…' : 'Save'}</button>
         <button className="bo-button secondary" onClick={preview}>Preview</button>
         <button className="bo-button" onClick={sendAuthorization} disabled={!!busy || !authorization}>Send Authorization</button>
       </div>
@@ -290,12 +363,11 @@ export default function CarReservationWorkspace() {
         <Field label="Vehicle"><input value={form.vehicleName} onChange={e => set('vehicleName', e.target.value)} placeholder="Toyota Corolla or Similar" /></Field>
         <Field label="Vehicle category"><input value={form.vehicleCategory} onChange={e => set('vehicleCategory', e.target.value)} /></Field>
         <Field label="Driver age"><input type="number" min="18" max="99" value={form.driverAge} onChange={e => set('driverAge', e.target.value)} /></Field>
-        <Field label="Pickup location"><input value={form.pickupLocation} onChange={e => set('pickupLocation', e.target.value)} /></Field>
-        <Field label="Pickup address"><input value={form.pickupAddress} onChange={e => set('pickupAddress', e.target.value)} /></Field>
-        <Field label="Pickup date / time"><input type="datetime-local" value={form.pickupAt} onChange={e => set('pickupAt', e.target.value)} /></Field>
-        <Field label="Drop-off location"><input value={form.dropoffLocation} onChange={e => set('dropoffLocation', e.target.value)} /></Field>
-        <Field label="Drop-off address"><input value={form.dropoffAddress} onChange={e => set('dropoffAddress', e.target.value)} /></Field>
-        <Field label="Drop-off date / time"><input type="datetime-local" value={form.dropoffAt} onChange={e => set('dropoffAt', e.target.value)} /></Field>
+        <Field label="Pickup location"><input value={form.pickupLocation} onChange={e => setPickupLocation(e.target.value)} /></Field>
+        <Field label="Pickup date / time"><HalfHourDateTimeInput idPrefix="pickup" value={form.pickupAt} onChange={value => set('pickupAt', value)} /></Field>
+        <label className="carws-same-location"><input type="checkbox" checked={sameDropoff} onChange={e => toggleSameDropoff(e.target.checked)} />Drop-off location is the same as pickup</label>
+        <Field label="Drop-off location"><input value={form.dropoffLocation} disabled={sameDropoff} onChange={e => setDropoffLocation(e.target.value)} /></Field>
+        <Field label="Drop-off date / time"><HalfHourDateTimeInput idPrefix="dropoff" value={form.dropoffAt} onChange={value => set('dropoffAt', value)} /></Field>
         <Field label="Mileage policy"><input value={form.mileagePolicy} onChange={e => set('mileagePolicy', e.target.value)} /></Field>
         <Field label="Fuel policy"><input value={form.fuelPolicy} onChange={e => set('fuelPolicy', e.target.value)} /></Field>
         <Field label="Supplier confirmation"><input value={form.supplierConfirmation} onChange={e => set('supplierConfirmation', e.target.value)} /></Field>
@@ -303,29 +375,29 @@ export default function CarReservationWorkspace() {
         <Field label="Cancellation policy" wide><textarea value={form.cancellationPolicy} onChange={e => set('cancellationPolicy', e.target.value)} /></Field>
         <Field label="Supplier notes" wide><textarea value={form.supplierNotes} onChange={e => set('supplierNotes', e.target.value)} /></Field>
       </div>
-      <div className="carws-action-strip"><button className="bo-button" onClick={() => save()} disabled={!!busy}>Save Rental Details</button></div>
+      <div className="carws-action-strip"><button className="bo-button" onClick={() => save()} disabled={!!busy}>{busy === 'save' ? 'Saving…' : 'Save Rental Details'}</button></div>
     </Section>}
 
     {tab === 'customer' && <div className="carws-two-col">
       <Section title="Renter / Driver">
         <div className="carws-form-grid one">
-          <Field label="Full name"><input value={form.customerName} onChange={e => set('customerName', e.target.value)} /></Field>
+          <Field label="Full name"><input autoComplete="name" value={form.customerName} onChange={e => set('customerName', e.target.value)} /></Field>
           <Field label="Date of birth"><input type="date" value={form.dateOfBirth} onChange={e => set('dateOfBirth', e.target.value)} /></Field>
-          <Field label="Email — authorization is sent here"><input type="email" value={form.customerEmail} onChange={e => set('customerEmail', e.target.value)} /></Field>
-          <Field label="Phone"><input value={form.customerPhone} onChange={e => set('customerPhone', e.target.value)} /></Field>
+          <Field label="Email — authorization is sent here"><input type="email" autoComplete="email" value={form.customerEmail} onChange={e => set('customerEmail', e.target.value)} /></Field>
+          <Field label="Phone"><input autoComplete="tel" value={form.customerPhone} onChange={e => set('customerPhone', e.target.value)} /></Field>
         </div>
       </Section>
       <Section title="Billing" subtitle="Only masked card details are stored here.">
         <div className="carws-form-grid one">
-          <Field label="Cardholder"><input value={form.cardholderName} onChange={e => set('cardholderName', e.target.value)} /></Field>
-          <div className="carws-split"><Field label="Card brand"><input value={form.cardBrand} onChange={e => set('cardBrand', e.target.value)} /></Field><Field label="Last 4"><input maxLength="4" inputMode="numeric" value={form.cardLast4} onChange={e => set('cardLast4', e.target.value.replace(/\D/g, '').slice(0,4))} /></Field></div>
-          <Field label="Address line 1"><input value={form.addressLine1} onChange={e => set('addressLine1', e.target.value)} /></Field>
-          <Field label="Address line 2"><input value={form.addressLine2} onChange={e => set('addressLine2', e.target.value)} /></Field>
-          <div className="carws-split three"><Field label="City"><input value={form.city} onChange={e => set('city', e.target.value)} /></Field><Field label="State"><input value={form.stateProvince} onChange={e => set('stateProvince', e.target.value)} /></Field><Field label="ZIP"><input value={form.postalCode} onChange={e => set('postalCode', e.target.value)} /></Field></div>
-          <Field label="Country"><input value={form.country} onChange={e => set('country', e.target.value)} /></Field>
+          <Field label="Cardholder"><input autoComplete="cc-name" value={form.cardholderName} onChange={e => set('cardholderName', e.target.value)} /></Field>
+          <div className="carws-split"><Field label="Card brand"><CardBrandSelect value={form.cardBrand} onChange={value => set('cardBrand', value)} /></Field><Field label="Last 4"><input maxLength="4" inputMode="numeric" autoComplete="cc-number" value={form.cardLast4} onChange={e => set('cardLast4', e.target.value.replace(/\D/g, '').slice(0,4))} /></Field></div>
+          <Field label="Address line 1"><BillingAddressAutocomplete value={form.addressLine1} onChange={value => set('addressLine1', value)} onSelect={applyBillingAddress} /></Field>
+          <Field label="Address line 2"><input autoComplete="billing address-line2" value={form.addressLine2} onChange={e => set('addressLine2', e.target.value)} /></Field>
+          <div className="carws-split three"><Field label="City"><input autoComplete="billing address-level2" value={form.city} onChange={e => set('city', e.target.value)} /></Field><Field label="State"><input autoComplete="billing address-level1" value={form.stateProvince} onChange={e => set('stateProvince', e.target.value)} /></Field><Field label="ZIP"><input autoComplete="billing postal-code" value={form.postalCode} onChange={e => set('postalCode', e.target.value)} /></Field></div>
+          <Field label="Country"><input autoComplete="billing country-name" value={form.country} onChange={e => set('country', e.target.value)} /></Field>
         </div>
       </Section>
-      <div className="carws-action-strip full"><button className="bo-button" onClick={() => save()} disabled={!!busy}>Save Customer & Billing</button></div>
+      <div className="carws-action-strip full"><button className="bo-button" onClick={() => save()} disabled={!!busy}>{busy === 'save' ? 'Saving…' : 'Save Customer & Billing'}</button></div>
     </div>}
 
     {tab === 'authorization' && <>
@@ -336,28 +408,28 @@ export default function CarReservationWorkspace() {
           <div><span className="carws-mini-label">Current authorization</span><div><Badge value={authorization?.status || reservation.authorization_status} />{authorization?.version && <small className="carws-version">v{authorization.version}</small>}</div></div>
         </div>
         <h3 className="carws-subtitle">Transactions</h3>
-        <div className="carws-transactions">{transactions.map((tx, index) => <div className="carws-transaction" key={index}><div className="carws-transaction-head"><strong>Transaction {index + 1}</strong><button onClick={() => setTransactions(prev => prev.filter((_, i) => i !== index))}>Remove</button></div><div className="carws-form-grid"><Field label="Amount"><input type="number" step="0.01" value={tx.amount} onChange={e => setTransactions(prev => prev.map((item,i) => i === index ? { ...item, amount: e.target.value } : item))} /></Field><Field label="Merchant name"><input value={tx.merchantName || ''} onChange={e => setTransactions(prev => prev.map((item,i) => i === index ? { ...item, merchantName: e.target.value } : item))} /></Field><Field label="Collection"><select value={tx.collectionMethod || 'PAY_NOW'} onChange={e => setTransactions(prev => prev.map((item,i) => i === index ? { ...item, collectionMethod: e.target.value } : item))}><option value="PAY_NOW">Pay Now</option><option value="PAY_AT_COUNTER">Pay at Counter</option></select></Field><Field label="Description"><input value={tx.description || ''} onChange={e => setTransactions(prev => prev.map((item,i) => i === index ? { ...item, description: e.target.value } : item))} /></Field></div></div>)}</div>
-        <button className="bo-button secondary" onClick={() => setTransactions(prev => [...prev, blankTransaction()])}>+ Add Transaction</button>
+        <div className="carws-transactions">{transactions.map((tx, index) => <div className="carws-transaction" key={index}><div className="carws-transaction-head"><strong>Transaction {index + 1}</strong><button type="button" onClick={() => setTransactions(prev => prev.filter((_, i) => i !== index))}>Remove</button></div><div className="carws-form-grid"><Field label="Amount"><input type="number" step="0.01" value={tx.amount} onChange={e => setTransactions(prev => prev.map((item,i) => i === index ? { ...item, amount: e.target.value } : item))} /></Field><Field label="Merchant name"><input value={tx.merchantName || ''} onChange={e => setTransactions(prev => prev.map((item,i) => i === index ? { ...item, merchantName: e.target.value } : item))} /></Field><Field label="Collection"><select value={tx.collectionMethod || 'PAY_NOW'} onChange={e => setTransactions(prev => prev.map((item,i) => i === index ? { ...item, collectionMethod: e.target.value } : item))}><option value="PAY_NOW">Pay Now</option><option value="PAY_AT_COUNTER">Pay at Counter</option></select></Field><Field label="Description"><input value={tx.description || ''} onChange={e => setTransactions(prev => prev.map((item,i) => i === index ? { ...item, description: e.target.value } : item))} /></Field></div></div>)}</div>
+        <button className="bo-button secondary" type="button" onClick={() => setTransactions(prev => [...prev, blankTransaction()])}>+ Add Transaction</button>
         <div className="carws-note">Internal supplier cost and margin are never shown in the customer-facing authorization.</div>
       </Section>
 
       <Section title="Terms & Conditions"><textarea className="carws-terms" value={form.terms} onChange={e => set('terms', e.target.value)} /></Section>
 
       <Section title="Custom sections" subtitle="Optional content can be included in the customer authorization or kept admin-only.">
-        {customSections.map((section,index) => <div className="carws-custom" key={index}><Field label="Title"><input value={section.title || ''} onChange={e => setCustomSections(prev => prev.map((x,i) => i === index ? { ...x, title: e.target.value } : x))} /></Field><Field label="Content" wide><textarea value={section.content || ''} onChange={e => setCustomSections(prev => prev.map((x,i) => i === index ? { ...x, content: e.target.value } : x))} /></Field><Field label="Visibility"><select value={section.visibility || 'CUSTOMER_VISIBLE'} onChange={e => setCustomSections(prev => prev.map((x,i) => i === index ? { ...x, visibility: e.target.value } : x))}><option value="CUSTOMER_VISIBLE">Customer Visible</option><option value="ADMIN_ONLY">Admin Only</option></select></Field><button className="carws-remove" onClick={() => setCustomSections(prev => prev.filter((_,i) => i !== index))}>Remove section</button></div>)}
-        <button className="bo-button secondary" onClick={() => setCustomSections(prev => [...prev, { title: '', content: '', visibility: 'CUSTOMER_VISIBLE' }])}>+ Add Custom Section</button>
+        {customSections.map((section,index) => <div className="carws-custom" key={index}><Field label="Title"><input value={section.title || ''} onChange={e => setCustomSections(prev => prev.map((x,i) => i === index ? { ...x, title: e.target.value } : x))} /></Field><Field label="Content" wide><textarea value={section.content || ''} onChange={e => setCustomSections(prev => prev.map((x,i) => i === index ? { ...x, content: e.target.value } : x))} /></Field><Field label="Visibility"><select value={section.visibility || 'CUSTOMER_VISIBLE'} onChange={e => setCustomSections(prev => prev.map((x,i) => i === index ? { ...x, visibility: e.target.value } : x))}><option value="CUSTOMER_VISIBLE">Customer Visible</option><option value="ADMIN_ONLY">Admin Only</option></select></Field><button className="carws-remove" type="button" onClick={() => setCustomSections(prev => prev.filter((_,i) => i !== index))}>Remove section</button></div>)}
+        <button className="bo-button secondary" type="button" onClick={() => setCustomSections(prev => [...prev, { title: '', content: '', visibility: 'CUSTOMER_VISIBLE' }])}>+ Add Custom Section</button>
       </Section>
 
       <Section title="Vehicle snapshots" subtitle="Optional images can be attached to the authorization evidence.">
         <label className="carws-upload">+ Upload Snapshot<input type="file" accept="image/*" onChange={uploadSnapshot} /></label>
-        <div className="carws-snapshots">{snapshots.map((snap,index) => <div className="carws-snapshot" key={`${snap.imageUrl}-${index}`}><img src={snap.imageUrl} alt={snap.caption || `Vehicle snapshot ${index + 1}`} /><input value={snap.caption || ''} placeholder="Caption" onChange={e => setSnapshots(prev => prev.map((x,i) => i === index ? { ...x, caption: e.target.value } : x))} /><button onClick={() => setSnapshots(prev => prev.filter((_,i) => i !== index))}>Remove</button></div>)}</div>
+        <div className="carws-snapshots">{snapshots.map((snap,index) => <div className="carws-snapshot" key={`${snap.imageUrl}-${index}`}><img src={snap.imageUrl} alt={snap.caption || `Vehicle snapshot ${index + 1}`} /><input value={snap.caption || ''} placeholder="Caption" onChange={e => setSnapshots(prev => prev.map((x,i) => i === index ? { ...x, caption: e.target.value } : x))} /><button type="button" onClick={() => setSnapshots(prev => prev.filter((_,i) => i !== index))}>Remove</button></div>)}</div>
       </Section>
 
       <Section title="Internal financials" subtitle="Admin-only. Never exposed to the customer.">
         <div className="carws-form-grid"><Field label="Supplier / corporate cost"><input type="number" step="0.01" value={form.supplierCost} onChange={e => set('supplierCost', e.target.value)} /></Field><Field label="Selling price"><input type="number" step="0.01" value={form.sellingPrice} onChange={e => set('sellingPrice', e.target.value)} /></Field><Field label="Internal notes" wide><textarea value={form.internalNotes} onChange={e => set('internalNotes', e.target.value)} /></Field></div>
       </Section>
 
-      <div className="carws-sticky-actions"><button className="bo-button secondary" onClick={() => save()} disabled={!!busy}>Save Reservation</button><button className="bo-button" onClick={draft} disabled={!!busy}>Generate / Save Draft</button><button className="bo-button secondary" onClick={preview}>Preview Customer View</button><button className="bo-button" onClick={sendAuthorization} disabled={!!busy || !authorization}>Send Authorization</button><button className="bo-button secondary" onClick={createRevision} disabled={!!busy || !authorization}>Create Revision</button><button className="bo-button secondary" onClick={markBooked} disabled={!!busy}>Mark Booked</button></div>
+      <div className="carws-sticky-actions"><button className="bo-button secondary" onClick={() => save()} disabled={!!busy}>{busy === 'save' ? 'Saving…' : 'Save Reservation'}</button><button className="bo-button" onClick={draft} disabled={!!busy}>Generate / Save Draft</button><button className="bo-button secondary" onClick={preview}>Preview Customer View</button><button className="bo-button" onClick={sendAuthorization} disabled={!!busy || !authorization}>Send Authorization</button><button className="bo-button secondary" onClick={createRevision} disabled={!!busy || !authorization}>Create Revision</button><button className="bo-button secondary" onClick={markBooked} disabled={!!busy}>Mark Booked</button></div>
     </>}
 
     {tab === 'activity' && <>
