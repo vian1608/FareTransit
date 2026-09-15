@@ -62,7 +62,8 @@ test('FareTransit admin stabilization contracts', async t => {
     assert.match(canonicalAdmin, /router\.get\('\/payments'/);
     assert.match(canonicalAdmin, /router\.post\('\/payments\/refunds'/);
     assert.match(canonicalAdmin, /listCanonicalReservations/);
-    assert.match(canonicalAdmin, /listCanonicalCustomers/);
+    assert.match(canonicalAdmin, /function groupCustomers\(rows\)/);
+    assert.match(canonicalAdmin, /const rows = visibleReservations\(req\.staff, await listCanonicalReservations/);
     assert.ok(backofficeRoutes.indexOf('canonicalOperationsRouter') < backofficeRoutes.indexOf('adminReportingRouter'), 'Canonical routes must be mounted before legacy reporting routes.');
   });
 
@@ -118,7 +119,10 @@ test('FareTransit admin stabilization contracts', async t => {
 
   await t.test('car authorization delivery supports provider fallback without false success', () => {
     assert.match(carEmail, /RESEND_API_KEY/);
-    assert.match(carEmail, /SMTP_HOST|SMTP_USER|SMTP_PASS/);
+    assert.match(carEmail, /EMAIL_HOST/);
+    assert.match(carEmail, /EMAIL_USER/);
+    assert.match(carEmail, /EMAIL_PASS/);
+    assert.match(carEmail, /EMAIL_PROVIDER_NOT_CONFIGURED/);
     assert.match(carEmail, /throw/);
   });
 });
