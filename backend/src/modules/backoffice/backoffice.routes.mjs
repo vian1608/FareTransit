@@ -3,6 +3,7 @@ import authenticate from '../../middleware/authenticate.mjs';
 import { loadBackOfficeProfile, requirePermission } from './backoffice.middleware.mjs';
 import backofficeRepository from './backoffice.repository.mjs';
 import backofficeStaffService from './backoffice.service.mjs';
+import { canonicalOperationsRouter } from './canonical-operations.routes.mjs';
 import { crmRouter } from './crm.routes.mjs';
 import { flightBridgeRouter } from './flight-bridge.routes.mjs';
 import { tripsHotelsRouter } from './trips-hotels.routes.mjs';
@@ -16,6 +17,12 @@ import { securePaymentAdminRouter } from './secure-payment-admin.routes.mjs';
 const router = express.Router();
 router.use(authenticate, loadBackOfficeProfile);
 router.get('/me', (req,res)=>res.json({success:true,data:req.staff}));
+
+// Canonical multi-service operations must be registered before the historical
+// flight-centric reporting/CRM/payment handlers. Express uses the first matching
+// route, so this guarantees Dashboard, Customers, Payments, Refunds and the
+// unified booking feed all share the Flight/Car/Hotel reservation abstraction.
+router.use('/', canonicalOperationsRouter);
 router.use('/', adminReportingRouter);
 router.get('/dashboard', requirePermission('dashboard.view'), (req,res)=>res.json({success:true,data:{profile:req.staff,scope:req.staff.role,modules:['crm','trips','bookings','payments','finance','suppliers','reports','team','settings']}}));
 router.use('/crm', crmRouter);
