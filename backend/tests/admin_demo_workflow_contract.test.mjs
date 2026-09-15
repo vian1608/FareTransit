@@ -30,7 +30,7 @@ assert.match(permissionMap, /email-preview/);
 assert.match(permissionMap, /return 'bookings\.flights\.view'/);
 assert.match(loginPage, /Open Merchant Test Demo/);
 assert.match(loginPage, /fetch\('\/api\/admin\/demo-login'/);
-assert.match(loginPage, /window\.location\.assign\('\/admin\/bookings\/flights'\)/);
+assert.match(loginPage, /window\.location\.assign\('\/admin\/bookings\?type=flight'\)/);
 assert.match(loginPage, /No password required/);
 
 // The owner dashboard must not expose the old Merchant Test Workflow panel,
