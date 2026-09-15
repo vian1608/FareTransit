@@ -1,5 +1,6 @@
 import express from 'express';
 import bookingController from './booking.controller.mjs';
+import bookingCurrentSearchController from './booking-current-search.controller.mjs';
 import rateLimit from '../../middleware/rate-limit.mjs';
 import { abandonedBookingRouter } from '../abandoned-bookings/abandoned-booking.routes.mjs';
 import { normalizeBookingCreateRequest } from './booking-create-normalization.mjs';
@@ -42,7 +43,7 @@ router.post(
   completeJourneySessionAfterBooking,
   bookingController.create
 );
-router.get('/search', searchRateLimiter, bookingController.search);
+router.get('/search', searchRateLimiter, bookingCurrentSearchController.search);
 router.get('/user/:email', bookingReadRateLimiter, bookingController.getByUserEmail);
 router.use('/abandoned', abandonedBookingRouter);
 router.post('/:id/resend-confirmation', bookingRateLimiter, bookingController.resendConfirmation);
