@@ -20,6 +20,28 @@ function clientRequestId(value) {
   return id;
 }
 
+function validateHalfHourCarTimes(body) {
+  const car = body?.car || {};
+  for (const [field, label] of [['pickupAt', 'Pickup time'], ['dropoffAt', 'Drop-off time']]) {
+    const value = car[field];
+    if (!value) continue;
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      const error = new Error(`${label} is invalid.`);
+      error.statusCode = 400;
+      error.code = 'INVALID_RENTAL_TIME';
+      throw error;
+    }
+    const minutes = date.getUTCMinutes();
+    if (minutes !== 0 && minutes !== 30) {
+      const error = new Error(`${label} must be on the hour or half hour.`);
+      error.statusCode = 400;
+      error.code = 'INVALID_RENTAL_TIME';
+      throw error;
+    }
+  }
+}
+
 async function reservationForClientRequest(id) {
   if (!id) return null;
   const { data, error } = await supabase
@@ -85,6 +107,7 @@ router.post('/bookings/cars/assets', requirePermission('bookings.cars.edit'), as
 
 router.post('/bookings/cars', requirePermission('bookings.cars.create'), async (req, res, next) => {
   try {
+    validateHalfHourCarTimes(req.body || {});
     const requestId = clientRequestId(req.body?.clientRequestId);
     const existing = await reservationForClientRequest(requestId);
     if (existing) return res.status(200).json({ success: true, data: existing, idempotentReplay: true });
@@ -133,6 +156,7 @@ router.get('/bookings/cars/:id', requirePermission('bookings.cars.view'), async 
 
 router.patch('/bookings/cars/:id', requirePermission('bookings.cars.edit'), async (req, res, next) => {
   try {
+    validateHalfHourCarTimes(req.body || {});
     const reference = await resolveReference(req.params.id);
     const data = await reservationService.updateCarReservation(reference, req.body || {}, actor(req));
     await auditBackOffice(req, 'car_reservation.updated', 'reservation', data?.reservation?.id, { bookingReference: reference });
