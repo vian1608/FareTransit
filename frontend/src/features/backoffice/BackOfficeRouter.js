@@ -12,12 +12,14 @@ import {
   IntegrationsPage, LeadDetailPage, LeadsPage, PaymentsPage, PlaceholderPage,
   ProductBookingDetailPage, RefundsPage, ReportsPage, RolesPage, SecurityPage,
   SettingsPage, SupplierPaymentsPage, SuppliersPage, TasksPage, TeamPage, TeamsPage,
-  TripDetailPage, TripsPage
+  TripsPage
 } from './BackOfficeDataPages';
 import { PaymentAuthorizationDetailPage, PaymentAuthorizationsPage } from './SecurePaymentAdminPages';
 import PaymentFlowTestPage from './PaymentFlowTestPage';
 import CarReservationWorkspaceEnhanced from './CarReservationWorkspaceEnhanced';
 import NewCarReservationDraftPage from './NewCarReservationDraftPage';
+import HotelBookingCreatePage from './HotelBookingCreatePage';
+import TripDetailPageEnhanced from './TripDetailPageEnhanced';
 import {
   AdminHomePage, CustomerDetailPage, CustomersHubPage, LegacyRedirect, NewBookingPage,
   PaymentsNav, SettingsBack, SettingsHomePage, UnifiedBookingsPage
@@ -62,7 +64,7 @@ export default function BackOfficeRouter() {
 
     {/* Booking creation and detail workspaces — not permanent navigation items */}
     <Route path="/admin/bookings/new/flight" element={<Page permission="bookings.flights.create"><AdminCreateBookingPage /></Page>} />
-    <Route path="/admin/bookings/new/hotel" element={<Page permission="bookings.hotels.create"><HotelsPage /></Page>} />
+    <Route path="/admin/bookings/new/hotel" element={<Page permission="bookings.hotels.create"><HotelBookingCreatePage /></Page>} />
     <Route path="/admin/bookings/new/car" element={<Page permission="bookings.cars.create"><NewCarReservationDraftPage /></Page>} />
     <Route path="/admin/bookings/flights/:code" element={<Page permission="bookings.flights.view"><AdminDashboard /></Page>} />
     <Route path="/admin/bookings/hotels/:id" element={<Page permission="bookings.hotels.view"><ProductBookingDetailPage type="hotel" /></Page>} />
@@ -88,7 +90,7 @@ export default function BackOfficeRouter() {
     <Route path="/admin/crm/leads/:id" element={<Page permission="crm.leads.view"><LeadDetailPage /></Page>} />
     <Route path="/admin/crm/tasks" element={<Page permission="crm.tasks.view"><TasksPage /></Page>} />
     <Route path="/admin/trips" element={<Page permission="trips.view"><TripsPage /></Page>} />
-    <Route path="/admin/trips/:id" element={<Page permission="trips.view"><TripDetailPage /></Page>} />
+    <Route path="/admin/trips/:id" element={<Page permission="trips.view"><TripDetailPageEnhanced /></Page>} />
     <Route path="/admin/finance" element={<Page permission="finance.view"><FinancePage /></Page>} />
     <Route path="/admin/finance/commissions" element={<Page permission="finance.commissions"><CommissionsPage /></Page>} />
     <Route path="/admin/finance/supplier-payments" element={<Page permission="finance.view"><SupplierPaymentsPage /></Page>} />
