@@ -104,9 +104,14 @@ export async function getEmailComposer(reference) {
 
 export async function composeAuthorization(reference, payload = {}, actorId = null) {
   const before = await reservationService.getReservation(reference);
-  const previousEmailDraft = before.latestAuthorization?.status === 'DRAFT'
-    ? before.latestAuthorization?.service_snapshot?.emailDraft
-    : null;
+  const previousEmailDraft = before.latestAuthorization?.service_snapshot?.emailDraft || null;
+
+  // Editing a SENT / VIEWED / AUTHORIZED authorization must never mutate or
+  // silently coexist with the historical version. Revisioning is automatic here
+  // so the admin does not need a separate "Create Revision" button.
+  if (before.latestAuthorization && before.latestAuthorization.status !== 'DRAFT') {
+    await reservationService.createAuthorizationRevision(reference, actorId);
+  }
 
   const authorization = await reservationService.saveAuthorizationDraft(reference, payload, actorId);
   if (previousEmailDraft?.subject || previousEmailDraft?.message) {
