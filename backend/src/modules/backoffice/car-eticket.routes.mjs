@@ -85,7 +85,12 @@ router.post('/bookings/cars/:id/ticket/send', requirePermission('bookings.cars.e
     const currentBundle = await reservationService.getReservation(reference);
     validateTicketEligibility(currentBundle);
 
-    bookedBundle = await reservationService.markReservationBooked(reference, { supplierConfirmation }, actorId);
+    const alreadyBookedWithSameConfirmation = String(currentBundle?.reservation?.reservation_status || '').toUpperCase() === 'BOOKED'
+      && clean(currentBundle?.car?.supplier_confirmation) === supplierConfirmation;
+    bookedBundle = alreadyBookedWithSameConfirmation
+      ? currentBundle
+      : await reservationService.markReservationBooked(reference, { supplierConfirmation }, actorId);
+
     const email = await sendCarEticketEmail({ bundle: bookedBundle, supplierConfirmation });
 
     await recordActivity(bookedBundle, 'CAR_ETICKET_SENT', actorId, {
@@ -93,14 +98,16 @@ router.post('/bookings/cars/:id/ticket/send', requirePermission('bookings.cars.e
       recipient: email.to,
       provider: email.provider || null,
       providerMessageId: email.id || null,
-      filename: email.filename || null
+      filename: email.filename || null,
+      resend: alreadyBookedWithSameConfirmation
     });
     await auditBackOffice(req, 'car_eticket.sent', 'reservation', bookedBundle.reservation.id, {
       bookingReference: reference,
       supplierConfirmation,
       recipient: email.to,
       provider: email.provider || null,
-      providerMessageId: email.id || null
+      providerMessageId: email.id || null,
+      resend: alreadyBookedWithSameConfirmation
     });
 
     res.json({
@@ -112,7 +119,8 @@ router.post('/bookings/cars/:id/ticket/send', requirePermission('bookings.cars.e
         recipient: email.to,
         provider: email.provider || null,
         providerMessageId: email.id || null,
-        attachmentFilename: email.filename || null
+        attachmentFilename: email.filename || null,
+        resend: alreadyBookedWithSameConfirmation
       }
     });
   } catch (error) {
