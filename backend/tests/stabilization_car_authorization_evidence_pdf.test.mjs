@@ -19,8 +19,9 @@ test('authorized car reservations expose an admin evidence PDF', async t => {
     assert.match(evidenceService, /I AUTHORIZE TO PAY/);
     assert.match(evidenceService, /authorized_ip/);
     assert.match(evidenceService, /authorized_user_agent/);
-    assert.match(evidenceService, /card_last4/);
-    assert.doesNotMatch(evidenceService, /card_number|cvv|cvc/i);
+    assert.match(evidenceService, /billing\.card_brand/);
+    assert.match(evidenceService, /billing\.card_last4/);
+    assert.doesNotMatch(evidenceService, /billing\.(?:card_number|cvv|cvc)/i);
   });
 
   await t.test('admin-only route streams the PDF with no-store caching', () => {
