@@ -57,7 +57,11 @@ router.get('/bookings/cars/:id/ticket/compose', requirePermission('bookings.cars
     const bundle = await reservationService.getReservation(reference);
     validateTicketEligibility(bundle);
     const supplierConfirmation = clean(bundle?.car?.supplier_confirmation);
-    const email = await buildCarEticketEmail({ bundle, supplierConfirmation: supplierConfirmation || 'ENTER CONFIRMATION NUMBER' });
+    const email = await buildCarEticketEmail({
+      bundle,
+      supplierConfirmation: supplierConfirmation || 'ENTER CONFIRMATION NUMBER',
+      includeAttachment: false
+    });
     await auditBackOffice(req, 'car_eticket.composer_opened', 'reservation', bundle.reservation.id, { bookingReference: reference });
     res.json({
       success: true,
