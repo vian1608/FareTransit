@@ -3,6 +3,7 @@ import supabase from '../../config/supabase.mjs';
 import { requirePermission } from './backoffice.middleware.mjs';
 import auditBackOffice from './backoffice.audit.mjs';
 import carAuthorizationComposeService from '../reservations/car-authorization-compose.service.mjs';
+import carAuthorizationEvidenceService from '../reservations/car-authorization-evidence.service.mjs';
 
 const router = express.Router();
 const actor = req => req.staff?.email || req.user?.email || req.staff?.id || req.user?.id || 'admin';
@@ -37,6 +38,23 @@ router.get('/bookings/cars/:id/authorization/email-draft', requirePermission('bo
   try {
     const reference = await resolveReference(req.params.id);
     res.json({ success: true, data: await carAuthorizationComposeService.getEmailComposer(reference) });
+  } catch (error) { next(error); }
+});
+
+router.get('/bookings/cars/:id/authorization/evidence.pdf', requirePermission('bookings.cars.view'), async (req, res, next) => {
+  try {
+    const reference = await resolveReference(req.params.id);
+    const evidence = await carAuthorizationEvidenceService.buildCarAuthorizationEvidencePdf(reference);
+    await auditBackOffice(req, 'car_authorization.evidence_viewed', 'reservation', null, {
+      bookingReference: reference,
+      authorizationId: evidence.authorizationId,
+      authorizationVersion: evidence.version,
+      evidenceSha256: evidence.evidenceHash
+    });
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="${evidence.filename}"`);
+    res.setHeader('Cache-Control', 'private, no-store, max-age=0');
+    res.send(evidence.buffer);
   } catch (error) { next(error); }
 });
 

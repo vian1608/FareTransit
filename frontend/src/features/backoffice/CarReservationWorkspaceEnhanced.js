@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import CarReservationWorkspace from './CarReservationWorkspace';
-import { boPatch, boPost } from './backofficeApi';
+import { backofficeBlobFetch, boPatch, boPost } from './backofficeApi';
 import './CarAuthorizationComposer.css';
 
 function formatMoney(value, currency = 'USD') {
@@ -119,6 +119,27 @@ export default function CarReservationWorkspaceEnhanced() {
     }
   };
 
+  const viewAuthorizationEvidence = async () => {
+    setBusy('evidence');
+    setLaunchMessage('');
+    try {
+      const blob = await backofficeBlobFetch(`/bookings/cars/${encodeURIComponent(id)}/authorization/evidence.pdf`);
+      const url = URL.createObjectURL(blob);
+      const opened = window.open(url, '_blank', 'noopener,noreferrer');
+      if (!opened) {
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'FareTransit-Authorization-Evidence.pdf';
+        link.click();
+      }
+      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch (requestError) {
+      setLaunchMessage(requestError.message || 'Authorization evidence is not available yet.');
+    } finally {
+      setBusy('');
+    }
+  };
+
   const updateDraft = (field, value) => setComposer(current => ({ ...current, emailDraft: { ...(current?.emailDraft || {}), [field]: value } }));
 
   const saveEmailDraft = async () => {
@@ -159,6 +180,7 @@ export default function CarReservationWorkspaceEnhanced() {
     <CarReservationWorkspace />
     <div className="carauth-launchbar">
       {launchMessage && <span className={launchMessage.startsWith('Authorization sent') ? 'success' : 'warning'}>{launchMessage}</span>}
+      <button type="button" className="bo-button secondary carauth-launch" onClick={viewAuthorizationEvidence} disabled={!!busy}>{busy === 'evidence' ? 'Opening Evidence…' : 'View Authorization'}</button>
       <button type="button" className="bo-button carauth-launch" onClick={openComposer} disabled={!!busy}>{busy === 'compose' ? 'Preparing Preview…' : 'Preview & Send Authorization'}</button>
     </div>
     {composer && <AuthorizationComposerModal
