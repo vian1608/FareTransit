@@ -134,7 +134,7 @@ export async function buildCarEticketPdf({ bundle, supplierConfirmation, company
   return completed;
 }
 
-export async function buildCarEticketEmail({ bundle, supplierConfirmation }) {
+export async function buildCarEticketEmail({ bundle, supplierConfirmation, includeAttachment = true }) {
   const reservation = bundle?.reservation || {};
   const car = bundle?.car || {};
   const traveller = primaryTraveller(bundle);
@@ -150,15 +150,15 @@ export async function buildCarEticketEmail({ bundle, supplierConfirmation }) {
     : `<p style="margin:0 0 22px;text-align:center;color:#667085">Reservation with <strong>${esc(companyName)}</strong></p>`;
 
   const html = `<!doctype html><html><body style="margin:0;background:#f5f7fb;font-family:Arial,sans-serif;color:#172033"><table width="100%" cellpadding="0" cellspacing="0" role="presentation"><tr><td align="center" style="padding:32px 12px"><table width="640" style="max-width:100%;background:#fff;border-radius:16px;overflow:hidden;border:1px solid #dce3ef" cellpadding="0" cellspacing="0"><tr><td style="padding:28px 32px;background:#0f2a4f;color:#fff"><div style="font-size:26px;font-weight:800">Fare<span style="color:#55a7ff">Transit</span></div><div style="margin-top:6px;opacity:.9">Car Rental E-Ticket / Reservation Confirmation</div></td></tr><tr><td style="padding:30px 32px">${companyBranding}<h2 style="margin:0 0 10px;font-size:22px;color:#102d54">Your rental is confirmed</h2><p style="margin:0 0 22px;font-size:15px;line-height:1.65">Hi ${esc(renterName)}, your car rental reservation has been confirmed. Keep the supplier confirmation number below available for pickup.</p><table width="100%" cellpadding="10" cellspacing="0" style="background:#f7f9fc;border-radius:12px"><tr><td style="color:#667085">Supplier confirmation</td><td align="right"><strong style="font-size:18px;color:#102d54">${esc(supplierConfirmation)}</strong></td></tr><tr><td style="color:#667085">FareTransit booking ID</td><td align="right"><strong>${esc(bookingReference)}</strong></td></tr><tr><td style="color:#667085">Rental company</td><td align="right"><strong>${esc(companyName)}</strong></td></tr><tr><td style="color:#667085">Vehicle</td><td align="right"><strong>${esc(car.vehicle_name || car.vehicle_category || 'As reserved / similar')}</strong></td></tr><tr><td style="color:#667085">Pickup</td><td align="right"><strong>${esc(car.pickup_location || 'Not set')}</strong><br><span style="font-size:12px;color:#667085">${esc(formatDateTime(car.pickup_at))}</span></td></tr><tr><td style="color:#667085">Drop-off</td><td align="right"><strong>${esc(car.dropoff_location || 'Not set')}</strong><br><span style="font-size:12px;color:#667085">${esc(formatDateTime(car.dropoff_at))}</span></td></tr><tr><td style="color:#667085">Reservation total</td><td align="right"><strong>${esc(money(reservation.total_amount, reservation.currency))}</strong></td></tr></table><p style="margin:22px 0 8px;font-size:14px;line-height:1.6">Your PDF e-ticket is attached to this email. The renter must still satisfy the rental company’s identification, driver-license, payment-card, age, deposit and eligibility requirements at pickup.</p><p style="margin:0;font-size:13px;line-height:1.55;color:#667085">If any reservation detail looks incorrect, contact FareTransit support before pickup.</p></td></tr></table></td></tr></table></body></html>`;
-  const pdfBuffer = await buildCarEticketPdf({ bundle, supplierConfirmation, companyBrand });
+  const attachment = includeAttachment ? {
+    filename: `FareTransit-Car-E-Ticket-${bookingReference}.pdf`,
+    content: await buildCarEticketPdf({ bundle, supplierConfirmation, companyBrand })
+  } : null;
   return {
     recipient,
     subject,
     html,
-    attachment: {
-      filename: `FareTransit-Car-E-Ticket-${bookingReference}.pdf`,
-      content: pdfBuffer
-    },
+    attachment,
     preview: {
       to: recipient,
       subject,
@@ -179,7 +179,7 @@ export async function buildCarEticketEmail({ bundle, supplierConfirmation }) {
 }
 
 export async function sendCarEticketEmail({ bundle, supplierConfirmation }) {
-  const email = await buildCarEticketEmail({ bundle, supplierConfirmation });
+  const email = await buildCarEticketEmail({ bundle, supplierConfirmation, includeAttachment: true });
   if (!email.recipient) {
     const error = new Error('Customer email is required before sending the e-ticket.');
     error.code = 'CUSTOMER_EMAIL_REQUIRED';
@@ -190,9 +190,9 @@ export async function sendCarEticketEmail({ bundle, supplierConfirmation }) {
     recipient: email.recipient,
     subject: email.subject,
     html: email.html,
-    attachments: [email.attachment]
+    attachments: email.attachment ? [email.attachment] : []
   });
-  return { ...result, to: email.recipient, subject: email.subject, filename: email.attachment.filename, preview: email.preview };
+  return { ...result, to: email.recipient, subject: email.subject, filename: email.attachment?.filename || null, preview: email.preview };
 }
 
 export default { buildCarEticketPdf, buildCarEticketEmail, sendCarEticketEmail };
