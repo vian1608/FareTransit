@@ -5,6 +5,7 @@
   <url><loc>https://www.faretransit.com/flights</loc></url>
   <url><loc>https://www.faretransit.com/hotels</loc></url>
   <url><loc>https://www.faretransit.com/car-rentals</loc></url>
+  <url><loc>https://www.faretransit.com/car-rental/airport</loc></url>
   <url><loc>https://www.faretransit.com/contact</loc></url>
   <url><loc>https://www.faretransit.com/terms</loc></url>
   <url><loc>https://www.faretransit.com/privacy-policy</loc></url>
@@ -22,11 +23,26 @@
   <url><loc>https://www.faretransit.com/hotels/las-vegas</loc></url>
   <url><loc>https://www.faretransit.com/hotels/orlando</loc></url>
 
-  <!-- Curated car rental location pages -->
+  <!-- Curated city car rental pages -->
   <url><loc>https://www.faretransit.com/car-rentals/miami</loc></url>
   <url><loc>https://www.faretransit.com/car-rentals/orlando</loc></url>
-  <url><loc>https://www.faretransit.com/car-rentals/lax</loc></url>
-  <url><loc>https://www.faretransit.com/car-rentals/jfk</loc></url>
+
+  <!-- First-wave airport car rental pages -->
+  <url><loc>https://www.faretransit.com/car-rental/airport/mco</loc></url>
+  <url><loc>https://www.faretransit.com/car-rental/airport/mia</loc></url>
+  <url><loc>https://www.faretransit.com/car-rental/airport/fll</loc></url>
+  <url><loc>https://www.faretransit.com/car-rental/airport/dfw</loc></url>
+  <url><loc>https://www.faretransit.com/car-rental/airport/lax</loc></url>
+  <url><loc>https://www.faretransit.com/car-rental/airport/las</loc></url>
+  <url><loc>https://www.faretransit.com/car-rental/airport/jfk</loc></url>
+  <url><loc>https://www.faretransit.com/car-rental/airport/ewr</loc></url>
+  <url><loc>https://www.faretransit.com/car-rental/airport/ord</loc></url>
+  <url><loc>https://www.faretransit.com/car-rental/airport/atl</loc></url>
+  <url><loc>https://www.faretransit.com/car-rental/airport/den</loc></url>
+  <url><loc>https://www.faretransit.com/car-rental/airport/sfo</loc></url>
+  <url><loc>https://www.faretransit.com/car-rental/airport/bos</loc></url>
+  <url><loc>https://www.faretransit.com/car-rental/airport/sea</loc></url>
+  <url><loc>https://www.faretransit.com/car-rental/airport/iah</loc></url>
 
   <!-- Canonical direct route pages -->
   <url><loc>https://www.faretransit.com/flight-nyc-to-mia</loc></url>
