@@ -48,6 +48,7 @@ import { PaymentBootstrap, TokenizedPaymentPage } from '../features/journey/Toke
 
 import CarRentalsHomePage from '../features/cars/pages/CarRentalsHomePage';
 import CarRentalLocationPage from '../features/cars/pages/CarRentalLocationPage';
+import CarRentalAirportPage, { CarRentalAirportHubPage } from '../features/cars/pages/CarRentalAirportPage';
 import CarSearchUrlGuard from '../features/cars/pages/CarSearchUrlGuard';
 import HotelSearchPage from '../features/hotels/pages/HotelSearchPage';
 import HotelDestinationPage from '../features/hotels/pages/HotelDestinationPage';
@@ -102,6 +103,8 @@ function App() {
 
                 {/* Car Rentals: results are URL-authoritative and copy/paste safe. */}
                 <Route path="/car-rentals" element={<CarRentalsHomePage />} />
+                <Route path="/car-rental/airport" element={<CarRentalAirportHubPage />} />
+                <Route path="/car-rental/airport/:airportCode" element={<CarRentalAirportPage />} />
                 <Route path="/car-rentals/search" element={<CarSearchUrlGuard />} />
                 <Route path="/car-rentals/results" element={<CarSearchUrlGuard />} />
                 <Route path="/car-rentals/:locationSlug" element={<CarRentalLocationPage />} />
