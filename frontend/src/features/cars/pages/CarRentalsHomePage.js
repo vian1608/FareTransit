@@ -34,6 +34,15 @@ const RENTAL_BRANDS = [
   }
 ];
 
+const AIRPORT_GUIDES = [
+  { code: 'DFW', city: 'Dallas–Fort Worth', slug: 'dfw' },
+  { code: 'MCO', city: 'Orlando', slug: 'mco' },
+  { code: 'MIA', city: 'Miami', slug: 'mia' },
+  { code: 'FLL', city: 'Fort Lauderdale', slug: 'fll' },
+  { code: 'LAX', city: 'Los Angeles', slug: 'lax' },
+  { code: 'JFK', city: 'New York', slug: 'jfk' }
+];
+
 const HOW_IT_WORKS = [
   {
     icon: 'fas fa-phone-alt',
@@ -176,6 +185,30 @@ function CarRentalsHomePage() {
               <span><i className="fas fa-headset" aria-hidden="true" /> Human assistance</span>
               <span><i className="fas fa-map-marked-alt" aria-hidden="true" /> Airport &amp; city rentals</span>
               <span><i className="fas fa-car" aria-hidden="true" /> Multiple vehicle categories</span>
+            </div>
+          </div>
+        </section>
+
+        <section className="car-how-section" aria-labelledby="airport-rental-guides-title">
+          <div className="container">
+            <span className="car-ppc-section-eyebrow">Airport car rental guides</span>
+            <h2 id="airport-rental-guides-title">Start With Your Arrival Airport</h2>
+            <p className="car-ppc-section-lead">
+              Planning an airport pickup? Review location-specific guidance for vehicle categories, one-way rentals,
+              weekly rentals, nearby trip areas and practical driving considerations before you book.
+            </p>
+            <div className="car-how-grid">
+              {AIRPORT_GUIDES.map((airport) => (
+                <Link className="car-how-card car-airport-guide-card" to={`/car-rental/airport/${airport.slug}`} key={airport.code}>
+                  <div className="car-how-card__icon"><i className="fas fa-plane-arrival" aria-hidden="true" /></div>
+                  <h3>{airport.code} Car Rental</h3>
+                  <p>{airport.city} airport rental planning and booking assistance.</p>
+                  <span className="car-airport-guide-link">View airport guide →</span>
+                </Link>
+              ))}
+            </div>
+            <div style={{ marginTop: '22px', textAlign: 'center' }}>
+              <Link className="car-ppc-button car-ppc-button--outline" to="/car-rental/airport">Browse All Airport Car Rental Guides</Link>
             </div>
           </div>
         </section>

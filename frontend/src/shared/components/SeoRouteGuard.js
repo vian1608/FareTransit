@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useLocation, useNavigate } from 'react-router-dom';
 import routesData from '../data/routesData.json';
+import airportRows from '../data/carRentalAirports.json';
 import { hotelDestinationSlugs, hotelDestinations } from '../data/hotelDestinations';
 import { carRentalLocationSlugs, carRentalLocations } from '../data/carRentalLocations';
 import { CANONICAL_ORIGIN, getCoreSeo, serviceSchemaFor } from '../seo/seoConfig';
@@ -11,6 +12,7 @@ const INDEXABLE_EXACT = new Set([
   '/flights',
   '/hotels',
   '/car-rentals',
+  '/car-rental/airport',
   '/contact',
   '/terms',
   '/privacy-policy',
@@ -46,6 +48,10 @@ const ROUTE_BY_PATH = new Map(
 
 const VALID_HOTEL_PATHS = new Set(hotelDestinationSlugs.map((slug) => `/hotels/${slug}`));
 const VALID_CAR_PATHS = new Set(carRentalLocationSlugs.map((slug) => `/car-rentals/${slug}`));
+const AIRPORT_BY_PATH = new Map(
+  airportRows.map((airport) => [`/car-rental/airport/${airport.code}`, airport])
+);
+const VALID_AIRPORT_PATHS = new Set(AIRPORT_BY_PATH.keys());
 
 const CANONICAL_ALIASES = {
   '/senior-travel': '/senior-travel/flight-deals',
@@ -55,6 +61,8 @@ const CANONICAL_ALIASES = {
   '/refundpolicy': '/refund-policy',
   '/amtrak': '/car-rentals',
   '/amtrak-assistance': '/car-rentals',
+  '/car-rentals/lax': '/car-rental/airport/lax',
+  '/car-rentals/jfk': '/car-rental/airport/jfk',
   '/routes/train-nyc-to-dc': '/train-nyc-to-dc',
   '/routes/train-dc-to-nyc': '/train-dc-to-nyc',
   '/routes/train-philly-to-nyc': '/train-philly-to-nyc',
@@ -70,10 +78,41 @@ function isIndexablePath(pathname) {
   return INDEXABLE_EXACT.has(pathname)
     || VALID_ROUTE_PATHS.has(pathname)
     || VALID_HOTEL_PATHS.has(pathname)
-    || VALID_CAR_PATHS.has(pathname);
+    || VALID_CAR_PATHS.has(pathname)
+    || VALID_AIRPORT_PATHS.has(pathname);
 }
 
 function getDestinationSeo(pathname) {
+  if (pathname === '/car-rental/airport') {
+    return {
+      pageName: 'Airport Car Rentals',
+      title: 'Airport Car Rental Options Across the U.S. | FareTransit',
+      description: 'Compare airport car rental planning guides for major U.S. airports, including vehicle categories, one-way rentals, weekly rentals and booking assistance.',
+      parents: [{ path: '/car-rentals', label: 'Car Rentals' }],
+      service: {
+        name: 'Airport car rental comparison and reservation assistance',
+        serviceType: 'Car rental booking assistance',
+      },
+    };
+  }
+
+  if (VALID_AIRPORT_PATHS.has(pathname)) {
+    const airport = AIRPORT_BY_PATH.get(pathname);
+    return {
+      pageName: `Car Rental at ${airport.airportCode}`,
+      title: airport.title,
+      description: airport.description,
+      parents: [
+        { path: '/car-rentals', label: 'Car Rentals' },
+        { path: '/car-rental/airport', label: 'Airport Car Rentals' },
+      ],
+      service: {
+        name: `Car rental comparison and reservation assistance at ${airport.airportName}`,
+        serviceType: 'Airport car rental booking assistance',
+      },
+    };
+  }
+
   if (VALID_HOTEL_PATHS.has(pathname)) {
     const slug = pathname.split('/').pop();
     const destination = hotelDestinations[slug];
@@ -134,7 +173,15 @@ function parentLabel(parentPath) {
   if (parentPath === '/flights') return 'Flights';
   if (parentPath === '/hotels') return 'Hotels';
   if (parentPath === '/car-rentals') return 'Car Rentals';
+  if (parentPath === '/car-rental/airport') return 'Airport Car Rentals';
   return null;
+}
+
+function breadcrumbParents(seo) {
+  if (Array.isArray(seo?.parents)) return seo.parents;
+  if (!seo?.parent) return [];
+  const label = parentLabel(seo.parent);
+  return label ? [{ path: seo.parent, label }] : [];
 }
 
 export default function SeoRouteGuard() {
@@ -194,17 +241,14 @@ export default function SeoRouteGuard() {
       },
     ];
 
-    if (seo?.parent) {
-      const label = parentLabel(seo.parent);
-      if (label) {
-        itemListElement.push({
-          '@type': 'ListItem',
-          position: itemListElement.length + 1,
-          name: label,
-          item: `${CANONICAL_ORIGIN}${seo.parent}`,
-        });
-      }
-    }
+    breadcrumbParents(seo).forEach((parent) => {
+      itemListElement.push({
+        '@type': 'ListItem',
+        position: itemListElement.length + 1,
+        name: parent.label,
+        item: `${CANONICAL_ORIGIN}${parent.path}`,
+      });
+    });
 
     itemListElement.push({
       '@type': 'ListItem',

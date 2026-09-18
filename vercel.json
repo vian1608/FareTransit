@@ -16,6 +16,16 @@
   },
   "redirects": [
     {
+      "source": "/car-rentals/lax",
+      "destination": "https://www.faretransit.com/car-rental/airport/lax",
+      "permanent": true
+    },
+    {
+      "source": "/car-rentals/jfk",
+      "destination": "https://www.faretransit.com/car-rental/airport/jfk",
+      "permanent": true
+    },
+    {
       "source": "/:path*",
       "has": [
         {
@@ -30,6 +40,10 @@
   "headers": [
     {
       "source": "/admin/:path*",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }]
+    },
+    {
+      "source": "/admin-car-reservations.html",
       "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }]
     },
     {
@@ -49,6 +63,10 @@
       "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }]
     },
     {
+      "source": "/car-authorization.html",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }]
+    },
+    {
       "source": "/confirmation/:path*",
       "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }]
     },
@@ -58,6 +76,10 @@
     },
     {
       "source": "/my-bookings/:path*",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }]
+    },
+    {
+      "source": "/reservation/:path*",
       "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }]
     },
     {

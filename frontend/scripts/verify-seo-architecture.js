@@ -31,9 +31,12 @@ mustContain(app, '<Route path="/" element={<TravelHomePage />} />', 'Brand homep
 mustContain(app, '<Route path="/flights" element={<Home />} />', 'Flights hub route');
 mustContain(app, '<Route path="/hotels/:destinationSlug" element={<HotelDestinationPage />} />', 'Hotel destination route');
 mustContain(app, '<Route path="/car-rentals/:locationSlug" element={<CarRentalLocationPage />} />', 'Car rental location route');
+mustContain(app, '<Route path="/car-rental/airport" element={<CarRentalAirportHubPage />} />', 'Airport rental hub route');
+mustContain(app, '<Route path="/car-rental/airport/:airportCode" element={<CarRentalAirportPage />} />', 'Airport rental detail route');
 
 mustContain(header, 'to="/flights"', 'Desktop flight navigation');
 mustContain(footer, '<Link to="/flights">Flights</Link>', 'Footer flight navigation');
+mustContain(footer, '<Link to="/car-rental/airport">Airport Car Rentals</Link>', 'Footer airport rental navigation');
 mustContain(mobileSwitcher, "to: '/flights'", 'Mobile flight navigation');
 mustContain(homepage, 'Travel Booking Assistance for Flights, Hotels &amp; Car Rentals', 'Brand homepage H1');
 
@@ -44,14 +47,17 @@ const sitemapPaths = sitemapUrls.map((url) => new URL(url).pathname.replace(/\/+
   '/flights',
   '/hotels',
   '/car-rentals',
+  '/car-rental/airport',
   '/hotels/miami',
   '/hotels/new-york',
   '/hotels/las-vegas',
   '/hotels/orlando',
   '/car-rentals/miami',
   '/car-rentals/orlando',
-  '/car-rentals/lax',
-  '/car-rentals/jfk',
+  '/car-rental/airport/lax',
+  '/car-rental/airport/jfk',
+  '/car-rental/airport/dfw',
+  '/car-rental/airport/mco',
 ].forEach((urlPath) => {
   if (!sitemapPaths.includes(urlPath)) fail(`Sitemap ${urlPath} is missing.`);
 });
@@ -63,6 +69,7 @@ const sitemapPaths = sitemapUrls.map((url) => new URL(url).pathname.replace(/\/+
   '/booking',
   '/payment',
   '/my-bookings',
+  '/reservation',
 ].forEach((urlPath) => {
   const leaked = sitemapPaths.some((pathname) => pathname === urlPath || pathname.startsWith(`${urlPath}/`));
   if (leaked) fail(`Transactional/result URL leaked into sitemap: ${urlPath}`);
@@ -91,6 +98,8 @@ if (Array.isArray(vercelConfig.headers) && vercelConfig.headers.length > 0) {
 
   if (!hasNoindex('/hotels/results')) fail('Hotel results HTTP noindex rule is missing.');
   if (!hasNoindex('/car-rentals/results')) fail('Car rental results HTTP noindex rule is missing.');
+  if (!hasNoindex('/reservation/:path*')) fail('Reservation detail HTTP noindex rule is missing.');
+  if (!hasNoindex('/car-authorization.html')) fail('Car authorization HTTP noindex rule is missing.');
 } else if (!process.env.VERCEL) {
   fail('Repository-level Vercel header configuration is unavailable outside an isolated Vercel service build.');
 } else {
@@ -100,10 +109,12 @@ if (Array.isArray(vercelConfig.headers) && vercelConfig.headers.length > 0) {
 mustContain(seoGuard, "'/flights'", 'Flights indexability');
 mustContain(seoGuard, 'hotelDestinationSlugs', 'Hotel destination allowlist');
 mustContain(seoGuard, 'carRentalLocationSlugs', 'Car location allowlist');
+mustContain(seoGuard, 'VALID_AIRPORT_PATHS', 'Airport destination allowlist');
 mustContain(seoGuard, "'@type': 'BreadcrumbList'", 'Breadcrumb structured data');
 mustContain(seoGuard, 'serviceSchemaFor', 'Service structured data');
 mustContain(seoGuard, "parent: '/hotels'", 'Hotel breadcrumb parent');
 mustContain(seoGuard, "parent: '/car-rentals'", 'Car breadcrumb parent');
+mustContain(seoGuard, "{ path: '/car-rental/airport', label: 'Airport Car Rentals' }", 'Airport nested breadcrumb parent');
 mustContain(seoConfig, "parent: '/flights'", 'Flight breadcrumb parent');
 
 mustContain(indexHtml, '<title>FareTransit | Flights, Hotels & Car Rental Assistance</title>', 'Broad default title');
@@ -124,11 +135,12 @@ routesData.filter((route) => route.type === 'flight').forEach((route) => {
   }
 });
 
-['/', '/flights', '/hotels', '/car-rentals'].forEach((urlPath) => {
+['/', '/flights', '/hotels', '/car-rentals', '/car-rental/airport'].forEach((urlPath) => {
   const marker = `path: '${urlPath}'`;
   mustContain(prerender, marker, `SEO prerender route ${urlPath}`);
 });
+mustContain(prerender, '...airportPages', 'Airport SEO prerender pages');
 mustContain(prerender, 'data-seo-prerender="true"', 'Semantic prerender shell');
 
 console.log('SEO architecture audit passed.');
-console.log('Verified brand/service hubs, curated hotel and car pages, sitemap hygiene, HTTP noindex protection, structured data hierarchy, factual flight metadata and core-hub prerendering.');
+console.log('Verified brand/service hubs, curated hotel and car pages, high-intent airport pages, sitemap hygiene, HTTP noindex protection, structured data hierarchy, factual flight metadata and prerendering.');

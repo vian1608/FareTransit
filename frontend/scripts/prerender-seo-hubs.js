@@ -1,9 +1,19 @@
 const fs = require('fs');
 const path = require('path');
+const airportRows = require('../src/shared/data/carRentalAirports.json');
 
 const BUILD_DIR = path.resolve(__dirname, '..', 'build');
 const INDEX_FILE = path.join(BUILD_DIR, 'index.html');
 const ORIGIN = 'https://www.faretransit.com';
+
+const airportPages = airportRows.map((airport) => ({
+  path: `/car-rental/airport/${airport.code}`,
+  title: airport.title,
+  description: airport.description,
+  h1: `Car Rental at ${airport.airportName} (${airport.airportCode})`,
+  lead: airport.intro,
+  airportCode: airport.airportCode,
+}));
 
 const pages = [
   {
@@ -34,6 +44,14 @@ const pages = [
     h1: 'Find the Right Rental Car for Your Trip',
     lead: 'Review pickup options, vehicle categories and trip needs, then contact FareTransit for rental booking assistance.',
   },
+  {
+    path: '/car-rental/airport',
+    title: 'Airport Car Rental Options Across the U.S. | FareTransit',
+    description: 'Compare airport car rental planning guides for major U.S. airports, including vehicle categories, one-way rentals, weekly rentals and booking assistance.',
+    h1: 'Airport Car Rental Options Across Major U.S. Airports',
+    lead: 'Start with your arrival airport and compare practical pickup, vehicle, one-way and weekly rental considerations before you book.',
+  },
+  ...airportPages,
 ];
 
 function escapeHtml(value) {
@@ -58,7 +76,10 @@ function setCanonical(html, canonicalUrl) {
 }
 
 function setRootShell(html, page) {
-  const shell = `<div id="root"><main data-seo-prerender="true" style="min-height:60vh;padding:5rem 8%;background:#f8fafc;color:#0f172a;font-family:Inter,Arial,sans-serif"><p style="font-weight:800;text-transform:uppercase;letter-spacing:.12em;color:#8b1538">FareTransit</p><h1 style="max-width:900px;font-size:clamp(2.2rem,5vw,4.2rem);line-height:1.05;margin:.5rem 0 1rem">${escapeHtml(page.h1)}</h1><p style="max-width:760px;font-size:1.1rem;line-height:1.7;color:#475569">${escapeHtml(page.lead)}</p><nav aria-label="Travel services" style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:1.5rem"><a href="/flights">Flights</a><a href="/hotels">Hotels</a><a href="/car-rentals">Car Rentals</a></nav></main></div>`;
+  const airportNav = page.airportCode
+    ? `<a href="/car-rental/airport">Airport Car Rentals</a>`
+    : '';
+  const shell = `<div id="root"><main data-seo-prerender="true" style="min-height:60vh;padding:5rem 8%;background:#f8fafc;color:#0f172a;font-family:Inter,Arial,sans-serif"><p style="font-weight:800;text-transform:uppercase;letter-spacing:.12em;color:#8b1538">FareTransit</p><h1 style="max-width:900px;font-size:clamp(2.2rem,5vw,4.2rem);line-height:1.05;margin:.5rem 0 1rem">${escapeHtml(page.h1)}</h1><p style="max-width:860px;font-size:1.1rem;line-height:1.7;color:#475569">${escapeHtml(page.lead)}</p><nav aria-label="Travel services" style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:1.5rem"><a href="/flights">Flights</a><a href="/hotels">Hotels</a><a href="/car-rentals">Car Rentals</a>${airportNav}</nav></main></div>`;
   const rootRe = /<div id=["']root["']><\/div>/i;
   if (!rootRe.test(html)) {
     throw new Error('Could not find the CRA root element while generating SEO prerender output.');
@@ -75,6 +96,7 @@ function renderPage(template, page) {
   html = replaceOrInsertMeta(html, 'property', 'og:url', canonicalUrl);
   html = replaceOrInsertMeta(html, 'name', 'twitter:title', page.title);
   html = replaceOrInsertMeta(html, 'name', 'twitter:description', page.description);
+  html = replaceOrInsertMeta(html, 'name', 'robots', 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1');
   html = setCanonical(html, canonicalUrl);
   html = setRootShell(html, page);
   return html;
@@ -99,4 +121,4 @@ for (const page of pages) {
   fs.writeFileSync(path.join(outputDir, 'index.html'), html);
 }
 
-console.log('SEO prerender complete for /, /flights, /hotels and /car-rentals.');
+console.log(`SEO prerender complete for ${pages.length} indexable hub and airport pages.`);

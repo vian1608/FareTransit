@@ -25,7 +25,7 @@ function Footer() {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith('/admin');
   const isHotelRoute = location.pathname.startsWith('/hotels');
-  const isCarRoute = location.pathname.startsWith('/car-rentals');
+  const isCarRoute = location.pathname.startsWith('/car-rentals') || location.pathname.startsWith('/car-rental');
 
   return (
     <footer className={`footer${isAdminRoute ? ' footer--admin' : ''}${isHotelRoute ? ' footer--hotels' : ''}${isCarRoute ? ' footer--cars' : ''}`}>
@@ -41,6 +41,7 @@ function Footer() {
               <li><Link to="/flights">Flights</Link></li>
               <li><Link to="/hotels">Hotels</Link></li>
               <li><Link to="/car-rentals">Car Rentals</Link></li>
+              <li><Link to="/car-rental/airport">Airport Car Rentals</Link></li>
               <li><Link to="/my-bookings">My Bookings</Link></li>
               <li><Link to="/contact">Contact Information</Link></li>
             </ul>
@@ -66,7 +67,9 @@ function Footer() {
               <li><Link to="/hotels/miami">Hotels in Miami</Link></li>
               <li><Link to="/hotels/new-york">Hotels in New York City</Link></li>
               <li><Link to="/car-rentals/miami">Car Rentals in Miami</Link></li>
-              <li><Link to="/car-rentals/jfk">Car Rentals at JFK</Link></li>
+              <li><Link to="/car-rental/airport/dfw">Car Rentals at DFW</Link></li>
+              <li><Link to="/car-rental/airport/jfk">Car Rentals at JFK</Link></li>
+              <li><Link to="/car-rental/airport/mco">Car Rentals at MCO</Link></li>
             </ul>
           </FooterSection>
 
