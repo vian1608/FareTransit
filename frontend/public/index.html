@@ -82,12 +82,51 @@
     window.dataLayer = window.dataLayer || [];
     window.gtag = function () { window.dataLayer.push(arguments); };
     window.gtag = window.gtag || gtag;
+
+    window.__fareTransitOriginalPhoneDisplay = '+1 (888) 780-8855';
+    window.__fareTransitOriginalPhoneDigits = '18887808855';
+
+    window.fareTransitApplyGoogleForwardingNumber = function () {
+      var formatted = window.__fareTransitGoogleForwardingDisplay;
+      var mobile = window.__fareTransitGoogleForwardingMobile;
+      if (!formatted || !mobile || !document.body) return;
+
+      var mobileHref = String(mobile).replace(/^tel:/i, '');
+      document.querySelectorAll('a[href^="tel:"]').forEach(function (link) {
+        var hrefDigits = (link.getAttribute('href') || '').replace(/\D/g, '');
+        if (hrefDigits !== window.__fareTransitOriginalPhoneDigits && hrefDigits !== '8887808855') return;
+
+        link.setAttribute('href', 'tel:' + mobileHref);
+        var text = link.textContent || '';
+        if (text.indexOf(window.__fareTransitOriginalPhoneDisplay) !== -1) {
+          link.textContent = text.replace(window.__fareTransitOriginalPhoneDisplay, formatted);
+        } else if (/\+?1?\s*\(?888\)?[\s-]*780[\s-]*8855/.test(text)) {
+          link.textContent = text.replace(/\+?1?\s*\(?888\)?[\s-]*780[\s-]*8855/, formatted);
+        }
+      });
+    };
+
+    window.fareTransitPhoneConversionCallback = function (formatted_number, mobile_number) {
+      window.__fareTransitGoogleForwardingDisplay = formatted_number;
+      window.__fareTransitGoogleForwardingMobile = mobile_number;
+      window.fareTransitApplyGoogleForwardingNumber();
+    };
+
+    document.addEventListener('DOMContentLoaded', function () {
+      window.fareTransitApplyGoogleForwardingNumber();
+      var observer = new MutationObserver(function () {
+        window.fareTransitApplyGoogleForwardingNumber();
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+    });
+
     window.gtag('js', new Date());
     window.gtag('config', 'AW-18414311623');
     window.gtag('config', 'AW-18364862445');
     window.gtag('config', 'AW-18445776391');
     window.gtag('config', 'AW-18445776391/npW0CKTQwfwcEIfs0NtE', {
-      'phone_conversion_number': '8887808855'
+      'phone_conversion_number': '+1 (888) 780-8855',
+      'phone_conversion_callback': window.fareTransitPhoneConversionCallback
     });
     window.gtag('config', 'G-TBWQGCGY6B');
   </script>
