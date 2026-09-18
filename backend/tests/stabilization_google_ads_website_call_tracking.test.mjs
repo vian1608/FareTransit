@@ -13,6 +13,6 @@ const phoneNumber = '8887808855';
 const destinationMatches = indexHtml.match(new RegExp(destination.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')) || [];
 assert.equal(destinationMatches.length, 1, 'Google Ads website-call destination must be configured exactly once.');
 assert.match(indexHtml, /['"]phone_conversion_number['"]\s*:\s*['"]8887808855['"]/, 'Google Ads website-call tracking must use the approved FareTransit number.');
-assert.match(indexHtml, /gtag\.js\?id=AW-18445776391/, 'The Google tag loader for the conversion account must remain installed.');
+assert.ok(indexHtml.includes('https://www.googletagmanager.com/gtag/js?id=AW-18445776391'), 'The Google tag loader for the conversion account must remain installed.');
 
 console.log(`Google Ads website call tracking contract passed for ${destination} → ${phoneNumber}.`);
