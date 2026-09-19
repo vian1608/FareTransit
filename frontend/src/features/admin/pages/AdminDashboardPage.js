@@ -146,6 +146,24 @@ export default function AdminDashboardPage() {
     };
   }, [isBookingDetailRoute]);
 
+  // Keep admin failures noticeable but temporary: move the page to the top so
+  // the alert is in context, then clear it automatically to keep the workspace clean.
+  useEffect(() => {
+    if (!globalFailure) return undefined;
+
+    const frame = window.requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+    const autoDismiss = window.setTimeout(() => {
+      setGlobalFailure(null);
+    }, 6500);
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.clearTimeout(autoDismiss);
+    };
+  }, [globalFailure]);
+
   useEffect(() => {
     if (isBookingDetailRoute) return undefined;
     let frame = 0;

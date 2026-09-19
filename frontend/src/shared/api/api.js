@@ -272,7 +272,7 @@ const ADMIN_TIMEOUTS = Object.freeze({
   read: 15000,
   save: 20000,
   parse: 15000,
-  preview: 15000,
+  preview: 30000,
   email: 35000,
   export: 30000,
   import: 45000,

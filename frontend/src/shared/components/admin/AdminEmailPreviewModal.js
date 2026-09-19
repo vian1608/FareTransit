@@ -20,7 +20,7 @@ export default function AdminEmailPreviewModal({
     setLoading(true);
     setErrorMsg('');
     const controller = new AbortController();
-    const timeoutId = window.setTimeout(() => controller.abort(), 15000);
+    const timeoutId = window.setTimeout(() => controller.abort(), 30000);
 
     try {
       const res = await adminAPI.getEmailPreview(bookingId, emailType, { signal: controller.signal });
@@ -247,6 +247,14 @@ export default function AdminEmailPreviewModal({
                   </button>
                 </div>
               </div>
+
+              {/* Authorization preview is intentionally read-only until Send creates the secure token. */}
+              {emailType === 'authorization' && previewData.previewOnly && !previewData.authorizationUrl && (
+                <div style={{ backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '12px 16px', marginBottom: '16px', fontSize: '13px', color: '#1e40af' }}>
+                  <div style={{ fontWeight: 800, marginBottom: '4px' }}>🔐 Secure link generated on send</div>
+                  <div>This preview does not create or persist a passenger authorization token. The one-time secure authorization link is generated when you click Send.</div>
+                </div>
+              )}
 
               {/* Authorization Special Links */}
               {emailType === 'authorization' && previewData.authorizationUrl && (

@@ -177,25 +177,39 @@ www.faretransit.com
     const currency = (booking.currency || 'USD').toUpperCase();
     const authorizedAmount = parseFloat(booking.authorized_amount || booking.customer_price || booking.total_amount || 0).toFixed(2);
 
-    let splits = authContext.splits || [];
-    if (!splits || splits.length === 0) {
+    // Previewing an authorization email must be read-only. Creating a real
+    // passenger authorization token writes several DB records and can make the
+    // admin preview endpoint slow enough to hit the browser timeout.
+    const previewOnly = authContext.previewOnly === true;
+    let splits = authContext.splits || booking.payment_splits || booking.paymentSplits || [];
+    if ((!splits || splits.length === 0) && !previewOnly) {
       splits = await bookingRepository.getPaymentSplits(booking.id).catch(() => []);
     }
     if (!splits || splits.length === 0) {
       splits = [{ merchant_name: 'FareTransit', amount: authorizedAmount, currency }];
     }
 
-    let token = authContext.token;
-    let expiresAt = authContext.expiresAt;
-    if (!token && booking.id) {
+    let token = authContext.token || booking.authorization_token || booking.authorizationToken || null;
+    let expiresAt = authContext.expiresAt || booking.authorization_expires_at || booking.authorizationExpiresAt || null;
+    if (token && expiresAt) {
+      const expiryMs = new Date(expiresAt).getTime();
+      if (!Number.isFinite(expiryMs) || expiryMs <= Date.now()) {
+        token = null;
+        expiresAt = null;
+      }
+    }
+    if (!token && booking.id && !previewOnly) {
       const authResult = await passengerAuthorizationService.createAuthorizationToken(booking).catch(() => null);
       if (authResult?.token) {
         token = authResult.token;
-        expiresAt = authResult.expiresAt || new Date(Date.now() + 24 * 3600 * 1000).toISOString();
+        expiresAt = authResult.expiresAt || authResult.expires_at || new Date(Date.now() + 24 * 3600 * 1000).toISOString();
       }
     }
-    const authUrl = token ? `https://www.faretransit.com/authorize/${token}` : 'https://www.faretransit.com/authorize/pending';
-
+    const authUrl = token
+      ? `https://www.faretransit.com/authorize/${token}`
+      : (previewOnly
+          ? 'https://www.faretransit.com/authorize/SECURE-LINK-GENERATED-ON-SEND'
+          : 'https://www.faretransit.com/authorize/pending');
     const splitsHtml = `
       <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; padding: 14px; margin: 16px 0;">
         <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #8b1236; letter-spacing: 0.8px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">
@@ -290,8 +304,9 @@ Support: support@faretransit.com | ${env.supportPhoneDisplay} | www.faretransit.
       html,
       text,
       missingFields,
-      authorizationExpiresAt: expiresAt || new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
-      authorizationUrl: authUrl
+      authorizationExpiresAt: token ? (expiresAt || new Date(Date.now() + 24 * 3600 * 1000).toISOString()) : null,
+      authorizationUrl: token ? authUrl : null,
+      previewOnly
     };
   },
 

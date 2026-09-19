@@ -59,7 +59,7 @@ export const adminController = {
         if (type === 'booking_request') {
           rendered = await emailRendererService.renderBookingRequestEmail(booking);
         } else if (type === 'authorization') {
-          rendered = await emailRendererService.renderAuthorizationEmail(booking);
+          rendered = await emailRendererService.renderAuthorizationEmail(booking, { previewOnly: true });
         } else if (type === 'final_ticket') {
           rendered = await emailRendererService.renderFinalTicketEmail(booking);
         } else {
