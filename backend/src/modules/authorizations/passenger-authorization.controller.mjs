@@ -42,10 +42,13 @@ export const passengerAuthorizationController = {
         });
       }
       if (error.message === 'AUTHORIZATION_INVALIDATED_PRICE_CHANGE' || error.message === 'AUTHORIZATION_SUPERSEDED') {
-        return res.status(409).json({
-          success: false,
-          error: { code: 'INVALIDATED', message: 'The booking details or fare changed. A new authorization is required.' }
-        });
+        return res.status(409).json({ success: false, error: { code: 'AUTHORIZATION_SUPERSEDED', message: 'The reservation changed after this authorization was issued. Please use the latest authorization email.' } });
+      }
+      if (error.message === 'AUTHORIZATION_REVOKED') {
+        return res.status(410).json({ success: false, error: { code: 'AUTHORIZATION_REVOKED', message: 'This authorization request was revoked. Contact FareTransit for a new request.' } });
+      }
+      if (error.message === 'AUTHORIZATION_DECLINED') {
+        return res.status(409).json({ success: false, error: { code: 'AUTHORIZATION_DECLINED', message: 'This authorization request has already been declined.' } });
       }
       logger.error(`Error in getAuthorization controller: ${error.message}`);
       return next(error);

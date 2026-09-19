@@ -1,5 +1,6 @@
 import PDFDocument from 'pdfkit';
 import crypto from 'crypto';
+import { resolveAirlineName } from '../../shared/utils/airline-lookup.mjs';
 
 export function abbreviateUserAgent(ua) {
   if (!ua || typeof ua !== 'string') return 'Unknown Device';
@@ -147,7 +148,7 @@ export async function generateAuthorizationPdfBuffer(evidence) {
       doc.scale(0.6);
       doc.path('M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z').fill('#e2b84d');
       doc.restore();
-      doc.fill('#ffffff').fontSize(13).font('Helvetica-Bold').text('THE FINAL SEAT', 65, 31);
+      doc.fill('#ffffff').fontSize(13).font('Helvetica-Bold').text('FareTransit', 65, 31);
       doc.fill('#f8dfe8').fontSize(7.5).font('Helvetica-Bold').text('PASSENGER ITINERARY AUTHORIZATION EVIDENCE EXPORT', 65, 47);
 
       let y = 73;
@@ -246,7 +247,7 @@ export async function generateAuthorizationPdfBuffer(evidence) {
         
         segs.forEach((seg) => {
           const cc  = (seg.carrier_code || seg.carrierCode || '').trim().toUpperCase();
-          const ca  = seg.carrier_name || seg.airline || seg.airlineName || (cc ? cc + ' Airlines' : 'Airline');
+          const ca  = resolveAirlineName(cc, seg.carrier_name || seg.airline || seg.airlineName || '') || cc || 'Airline';
           const fn  = seg.flight_number || seg.flightNumber || '';
           const or  = seg.origin_airport || seg.originCode || '';
           const de  = seg.destination_airport || seg.destinationCode || '';

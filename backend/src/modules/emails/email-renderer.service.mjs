@@ -116,7 +116,7 @@ export const emailRendererService = {
     const html = template(templateData);
     const subject = `Booking Request Received — ${confirmationCode}`;
     const text = `
-THE FINAL SEAT — BOOKING REQUEST RECEIVED
+FareTransit — BOOKING REQUEST RECEIVED
 
 Dear ${passengerFirstName},
 
@@ -279,7 +279,7 @@ www.faretransit.com
 
     const subject = `Action Required — Authorize Booking ${confirmationCode}`;
     const text = `
-THE FINAL SEAT — ACTION REQUIRED: AUTHORIZE FLIGHT RESERVATION
+FareTransit — ACTION REQUIRED: AUTHORIZE FLIGHT RESERVATION
 
 Dear ${passengerFirstName},
 
@@ -381,7 +381,7 @@ Support: support@faretransit.com | ${env.supportPhoneDisplay} | www.faretransit.
 
     const subject = `Official E-Ticket Confirmation — PNR ${pnr || confirmationCode}`;
     const text = `
-THE FINAL SEAT — OFFICIAL E-TICKET CONFIRMATION
+FareTransit — OFFICIAL E-TICKET CONFIRMATION
 
 Dear ${passengerFirstName},
 

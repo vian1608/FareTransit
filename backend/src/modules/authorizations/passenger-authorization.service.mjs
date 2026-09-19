@@ -4,6 +4,7 @@ import env from '../../config/env.mjs';
 import logger from '../../config/logger.mjs';
 import bookingRepository from '../bookings/booking.repository.mjs';
 import { resolveAirlineName, buildCanonicalItinerary } from '../../shared/utils/airline-lookup.mjs';
+import authorizationSnapshotService, { authorizationSnapshotHash, authorizationSnapshotToLegacyItinerary } from './authorization-snapshot.service.mjs';
 
 // In-memory fallback map for offline / stub testing when remote DB table schema is updating
 const memoryAuthStore = new Map();
@@ -39,177 +40,124 @@ export const passengerAuthorizationService = {
    * Create single-use 24-hour authorization token and snapshot
    */
   createAuthorizationToken: async (bookingInput, vaultData = {}) => {
-    const isObj = typeof bookingInput === 'object' && bookingInput !== null;
-    const rawId = isObj ? (bookingInput.id || bookingInput.booking_id || bookingInput.confirmation_code) : bookingInput;
+    const snapshot = await authorizationSnapshotService.build(bookingInput);
+    const bookingId = snapshot.bookingId;
+    const revision = Number(snapshot.bookingRevision || 1);
+    const snapshotHash = authorizationSnapshotHash(snapshot);
+    const now = new Date();
 
-    const completeBooking = (isObj && bookingInput.id && (bookingInput.itinerary_segments || bookingInput.outbound_segments || bookingInput.flights || bookingInput.passengers || bookingInput.travellers))
-      ? bookingInput
-      : ((await bookingRepository.getCompleteBookingById(rawId).catch(() => null)) || (isObj ? bookingInput : null));
+    const { data: existingRows } = await supabase
+      .from('passenger_authorizations')
+      .select('*')
+      .eq('booking_id', bookingId)
+      .order('created_at', { ascending: false });
 
-    if (!completeBooking) throw new Error('Booking not found');
-
-    // Reuse unexpired token if available to avoid DB write churn on preview
-    if (completeBooking.authorization_token && completeBooking.authorization_expires_at) {
-      const existingExpMs = new Date(completeBooking.authorization_expires_at).getTime();
-      if (!isNaN(existingExpMs) && existingExpMs > Date.now() + 5 * 60 * 1000) {
-        return {
-          token: completeBooking.authorization_token,
-          bookingId: completeBooking.id,
-          expiresAt: completeBooking.authorization_expires_at,
-          authorizationUrl: `https://www.faretransit.com/authorize/${completeBooking.authorization_token}`
-        };
-      }
+    const rows = Array.isArray(existingRows) ? existingRows : [];
+    const reusable = rows.find(row =>
+      String(row.status || '').toLowerCase() === 'pending' &&
+      Number(row.authorization_revision || 1) === revision &&
+      row.request_snapshot_hash === snapshotHash &&
+      new Date(row.expires_at || row.authorization_expires_at || 0).getTime() > Date.now() + 60000
+    );
+    if (reusable) {
+      await bookingRepository.updateStatus(bookingId, {
+        authorization_token: reusable.token,
+        authorization_expires_at: reusable.expires_at || reusable.authorization_expires_at,
+        authorization_status: 'AWAITING_PASSENGER'
+      });
+      return {
+        ...reusable,
+        token: reusable.token,
+        snapshot: reusable.request_snapshot || snapshot,
+        request_snapshot: reusable.request_snapshot || snapshot,
+        expiresAt: reusable.expires_at || reusable.authorization_expires_at,
+        authorizationUrl: `https://www.faretransit.com/authorize/${reusable.token}`
+      };
     }
 
-    const bookingId = completeBooking.id;
-    const expiresAtMs = Date.now() + 24 * 60 * 60 * 1000;
-    const token = generateStatelessToken(bookingId, expiresAtMs);
-    const expiresAt = new Date(expiresAtMs).toISOString();
-
-
-    const canonicalItinerary = buildCanonicalItinerary(completeBooking);
-    const outboundSegs = canonicalItinerary.outbound || [];
-    const returnSegs = canonicalItinerary.return || [];
-
-    const rawPassengers = completeBooking.passengers || completeBooking.traveller_details || completeBooking.travellers || [];
-    const passengers = Array.isArray(rawPassengers)
-      ? rawPassengers
-      : (typeof rawPassengers === 'string' ? JSON.parse(rawPassengers || '[]') : []);
-
-    let splits = completeBooking.payment_splits && completeBooking.payment_splits.length > 0
-      ? completeBooking.payment_splits
-      : await bookingRepository.getPaymentSplits(completeBooking.id);
-
-    if ((!splits || splits.length === 0) && bookingInput && bookingInput.payment_splits) {
-      splits = bookingInput.payment_splits;
+    const stalePending = rows.filter(row => String(row.status || '').toLowerCase() === 'pending');
+    if (stalePending.length) {
+      await supabase.from('passenger_authorizations').update({
+        status: 'superseded',
+        authorization_status: 'SUPERSEDED',
+        superseded_at: now.toISOString(),
+        status_reason: 'A newer authorization request was issued.',
+        updated_at: now.toISOString()
+      }).in('id', stalePending.map(row => row.id));
     }
 
-    const customerPrice = parseFloat(completeBooking.customer_price || completeBooking.displayedWebsitePrice || completeBooking.total_amount || completeBooking.amount || 0);
-    const splitTotal = splits.reduce((sum, s) => sum + parseFloat(s.amount || 0), 0);
-    const authorizedAmountNum = splitTotal > 0 ? splitTotal : customerPrice;
-
+    const token = `fta_${crypto.randomBytes(24).toString('base64url')}`;
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    const legacyItinerary = authorizationSnapshotToLegacyItinerary(snapshot);
+    const splits = snapshot.paymentAuthorization.splits || [];
     const quoteSnapshot = {
-      amount: authorizedAmountNum.toFixed(2),
-      currency: (completeBooking.currency || 'USD').toUpperCase(),
-      originalPrice: (completeBooking.supplier_price || completeBooking.original_api_price || customerPrice).toString(),
-      discountAmount: (completeBooking.discount_amount || 0).toString(),
-      passengersCount: passengers.length || 1,
-      splits: splits.map(s => ({
-        merchant_name: s.merchant_name || s.merchantName || 'Merchant',
-        amount: parseFloat(s.amount || 0).toFixed(2),
-        currency: (s.currency || completeBooking.currency || 'USD').toUpperCase()
+      amount: Number(snapshot.paymentAuthorization.authorizedAmount || 0).toFixed(2),
+      currency: snapshot.paymentAuthorization.currency,
+      splits: splits.map(split => ({
+        merchant_name: split.merchantName,
+        merchant_type: split.merchantType,
+        merchant_code: split.merchantCode,
+        amount: Number(split.amount || 0).toFixed(2),
+        currency: split.currency
       })),
-      createdAt: new Date().toISOString()
+      createdAt: snapshot.createdAt
     };
 
-    const mapSegSnap = (s) => ({
-      id: s.id,
-      sequence: s.sequence,
-      carrier_code: s.carrierCode,
-      carrier_name: s.airlineName,
-      airline: s.airlineName,
-      airlineLogoUrl: s.airlineLogoUrl,
-      flight_number: s.flightNumber,
-      flightNumber: s.flightNumber,
-      origin_airport: s.originCode,
-      originCode: s.originCode,
-      origin_city: s.originName,
-      originCity: s.originName,
-      destination_airport: s.destinationCode,
-      destinationCode: s.destinationCode,
-      destination_city: s.destinationName,
-      destinationCity: s.destinationName,
-      departure_date: s.departureDate || s.departureAt,
-      departureDate: s.departureDate || s.departureAt,
-      departure_time: s.departureTime,
-      departureTime: s.departureTime,
-      arrival_date: s.arrivalDate || s.arrivalAt,
-      arrivalDate: s.arrivalDate || s.arrivalAt,
-      arrival_time: s.arrivalTime,
-      arrivalTime: s.arrivalTime,
-      cabin: s.cabinClass,
-      cabinClass: s.cabinClass,
-      stops: s.stops
-    });
-
-    const itinerarySnapshot = {
-      outboundSegments: outboundSegs.map(mapSegSnap),
-      returnSegments: returnSegs.map(mapSegSnap),
-      outbound: outboundSegs.length > 0 ? mapSegSnap(outboundSegs[0]) : null,
-      return: returnSegs.length > 0 ? mapSegSnap(returnSegs[0]) : null,
-      canonical: canonicalItinerary
-    };
-
-
-
-    const policiesSnapshot = {
-      cancellation: 'Non-refundable after ticketing. Changes subject to airline fee structure.',
-      priceGuarantee: 'Quote guaranteed for 24 hours until authorization expires.',
-      fulfillment: 'Final airline PNR and e-ticket issued within 2 hours of passenger authorization.'
-    };
+    const cardBrand = vaultData.cardBrand || vaultData.brand || snapshot.paymentMethod?.brand || null;
+    const rawLast4 = String(vaultData.cardLast4 || vaultData.last4 || snapshot.paymentMethod?.last4 || '').replace(/\D/g, '');
+    const cardLast4 = /^\d{4}$/.test(rawLast4) ? rawLast4 : null;
 
     const authRecord = {
       booking_id: bookingId,
+      confirmation_code: snapshot.confirmationCode,
       token,
       authorization_token: token,
       status: 'pending',
       authorization_status: 'AWAITING_AUTHORIZATION',
-      authorized_amount: authorizedAmountNum,
-      booking_amount: authorizedAmountNum,
-      currency: (completeBooking.currency || 'USD').toUpperCase(),
-
-      payment_method_token: vaultData.paymentMethodToken || vaultData.token || completeBooking.paymentMethod?.provider_payment_method_id || null,
-      card_brand: vaultData.cardBrand || vaultData.brand || completeBooking.paymentMethod?.card_brand || null,
-      payment_card_brand: vaultData.cardBrand || vaultData.brand || completeBooking.paymentMethod?.card_brand || null,
-      card_last4: (() => {
-        const raw = String(vaultData.cardLast4 || vaultData.last4 || completeBooking.paymentMethod?.card_last4 || '').replace(/\D/g, '');
-        return /^\d{4}$/.test(raw) ? raw : null;
-      })(),
-      payment_card_last4: (() => {
-        const raw = String(vaultData.cardLast4 || vaultData.last4 || completeBooking.paymentMethod?.card_last4 || '').replace(/\D/g, '');
-        return /^\d{4}$/.test(raw) ? raw : null;
-      })(),
+      authorization_revision: revision,
+      request_snapshot: snapshot,
+      request_snapshot_hash: snapshotHash,
+      authorized_amount: Number(snapshot.paymentAuthorization.authorizedAmount || 0),
+      booking_amount: Number(snapshot.pricing.customerTotal || snapshot.paymentAuthorization.authorizedAmount || 0),
+      currency: snapshot.paymentAuthorization.currency,
+      card_brand: cardBrand,
+      payment_card_brand: cardBrand,
+      card_last4: cardLast4,
+      payment_card_last4: cardLast4,
+      payment_method_label: snapshot.paymentMethod?.label || null,
       quote_snapshot: quoteSnapshot,
-      itinerary_snapshot: itinerarySnapshot,
-      policies_snapshot: policiesSnapshot,
-      authorization_text_version: 'v1.0',
+      itinerary_snapshot: legacyItinerary,
+      policies_snapshot: snapshot.policies,
+      authorization_text_version: 'v2.0',
       expires_at: expiresAt,
       authorization_expires_at: expiresAt,
-      created_at: new Date().toISOString()
+      created_at: now.toISOString(),
+      updated_at: now.toISOString()
     };
 
-    // Store in Supabase
-    try {
-      const { data, error } = await supabase
-        .from('passenger_authorizations')
-        .insert(authRecord)
-        .select()
-        .single();
-
-      if (error) {
-        if (process.env.NODE_ENV === 'test') {
-          logger.warn(`[Auth] Supabase table insert warning in test mode: ${error.message}.`);
-          memoryAuthStore.set(token, authRecord);
-        } else {
-          throw new Error(`AUTHORIZATION_PERSISTENCE_FAILED: ${error.message}`);
-        }
-      } else {
-        memoryAuthStore.set(token, data);
-      }
-    } catch (e) {
+    const { data, error } = await supabase.from('passenger_authorizations').insert(authRecord).select().single();
+    if (error) {
       if (process.env.NODE_ENV === 'test') memoryAuthStore.set(token, authRecord);
-      else throw e;
+      else throw new Error(`AUTHORIZATION_PERSISTENCE_FAILED: ${error.message}`);
+    } else {
+      memoryAuthStore.set(token, data);
     }
 
-    // Only persist the authorization token & expiry on the booking record.
-    // Do NOT change bookings.status — it must stay as PENDING/DONE/CANCELLED/FAILED.
-    // The authorization state lives exclusively in passenger_authorizations.authorization_status.
     await bookingRepository.updateStatus(bookingId, {
       authorization_token: token,
-      authorization_expires_at: expiresAt
+      authorization_expires_at: expiresAt,
+      authorization_status: 'AWAITING_PASSENGER'
     });
 
-    return { ...authRecord, token };
+    return {
+      ...(data || authRecord),
+      token,
+      snapshot,
+      request_snapshot: snapshot,
+      expiresAt,
+      expires_at: expiresAt,
+      authorizationUrl: `https://www.faretransit.com/authorize/${token}`
+    };
   },
 
   /**
@@ -252,7 +200,7 @@ export const passengerAuthorizationService = {
     }
 
     const textBody = `
-THE FINAL SEAT — PASSENGER RESERVATION AUTHORIZATION REQUIRED
+FareTransit — PASSENGER RESERVATION AUTHORIZATION REQUIRED
 
 Dear ${booking.passenger_name || 'Valued Customer'},
 
@@ -421,150 +369,72 @@ Email: support@faretransit.com | Call: ${env.supportPhoneDisplay}
    * Fetch sanitized authorization payload for passenger authorization page (/authorize/:token)
    */
   getAuthorizationByToken: async (token) => {
-    logger.info(`[Auth Lookup] Token lookup received: ${String(token).substring(0, 16)}...`);
-
-    let authRecord = memoryAuthStore.get(token);
-
+    logger.info(`[Auth Lookup] Immutable token lookup: ${String(token || '').substring(0, 16)}...`);
+    let authRecord = memoryAuthStore.get(token) || null;
     if (!authRecord) {
-      const { data } = await supabase
-        .from('passenger_authorizations')
-        .select('*')
-        .eq('token', token)
-        .maybeSingle();
-
-      if (data) authRecord = data;
+      const { data, error } = await supabase.from('passenger_authorizations').select('*').eq('token', token).maybeSingle();
+      if (error) logger.warn(`[Auth Lookup] DB lookup warning: ${error.message}`);
+      authRecord = data || null;
     }
+    if (!authRecord) throw new Error('AUTHORIZATION_NOT_FOUND');
 
-    if (!authRecord) {
-      // Fallback 1: Check if token is stored directly on bookings record
-      const { data: bkData } = await supabase
-        .from('bookings')
-        .select('*')
-        .eq('authorization_token', token)
-        .maybeSingle();
+    const status = String(authRecord.status || authRecord.authorization_status || '').toLowerCase();
+    if (status === 'superseded' || status === 'reauthorization_required') throw new Error('AUTHORIZATION_SUPERSEDED');
+    if (status === 'revoked') throw new Error('AUTHORIZATION_REVOKED');
+    if (status === 'declined') throw new Error('AUTHORIZATION_DECLINED');
 
-      if (bkData) {
-        authRecord = {
-          booking_id: bkData.id,
-          token: token,
-          status: ['AUTHORIZED', 'READY_FOR_TICKETING', 'TICKETED', 'DONE'].includes(bkData.status) ? 'accepted' : 'pending',
-          authorized_amount: parseFloat(bkData.customer_price || bkData.total_amount || 0),
-          currency: (bkData.currency || 'USD').toUpperCase(),
-          card_brand: bkData.card_brand || null,
-          card_last4: (() => {
-            const raw = String(bkData.card_last4 || '').replace(/\D/g, '');
-            return /^\d{4}$/.test(raw) ? raw : null;
-          })(),
-          expires_at: bkData.authorization_expires_at || new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
-          quote_snapshot: { amount: (bkData.customer_price || bkData.total_amount || 0).toString() }
-        };
-      }
-    }
-
-    if (!authRecord) {
-      // Fallback 2: Stateless Token Resolution
-      const parsed = parseStatelessToken(token);
-      if (parsed) {
-        const liveBooking = await bookingRepository.getById(parsed.bookingId);
-        if (liveBooking) {
-          authRecord = {
-            booking_id: liveBooking.id,
-            token: token,
-            status: ['AUTHORIZED', 'READY_FOR_TICKETING', 'TICKETED', 'DONE'].includes(liveBooking.status) ? 'accepted' : 'pending',
-            authorized_amount: parseFloat(liveBooking.customer_price || liveBooking.total_amount || 0),
-            currency: (liveBooking.currency || 'USD').toUpperCase(),
-            card_brand: liveBooking.card_brand || null,
-            card_last4: (() => {
-              const raw = String(liveBooking.card_last4 || '').replace(/\D/g, '');
-              return /^\d{4}$/.test(raw) ? raw : null;
-            })(),
-            expires_at: liveBooking.authorization_expires_at || new Date(parsed.expiresAtMs).toISOString(),
-            quote_snapshot: { amount: (liveBooking.customer_price || liveBooking.total_amount || 0).toString() }
-          };
-        }
-      }
-    }
-
-    if (!authRecord) {
-      logger.warn(`[Auth Lookup] Token not found in database, memory store, or stateless decoder: ${token}`);
-      throw new Error('AUTHORIZATION_NOT_FOUND');
-    }
-
-    logger.info(`[Auth Lookup] Successfully resolved authorization record for booking ${authRecord.booking_id}`);
-
-    // Check expiration
-    if (new Date(authRecord.expires_at).getTime() < Date.now()) {
-      if (authRecord.status === 'pending') {
-        authRecord.status = 'expired';
-      }
+    const expiry = new Date(authRecord.expires_at || authRecord.authorization_expires_at || 0).getTime();
+    if (Number.isFinite(expiry) && expiry > 0 && expiry < Date.now() && !['accepted', 'authorized'].includes(status)) {
+      await supabase.from('passenger_authorizations').update({ status: 'expired', authorization_status: 'EXPIRED', updated_at: new Date().toISOString() }).eq('id', authRecord.id).catch(() => null);
       throw new Error('AUTHORIZATION_EXPIRED');
     }
 
-    if (authRecord.status === 'consumed' || authRecord.consumed_at) {
-      authRecord.status = 'accepted';
+    const booking = await bookingRepository.getById(authRecord.booking_id);
+    if (!booking) throw new Error('BOOKING_NOT_FOUND');
+    const authRevision = Number(authRecord.authorization_revision || 1);
+    const bookingRevision = Number(booking.booking_revision || 1);
+    if (authRevision !== bookingRevision) {
+      if (!['accepted', 'authorized'].includes(status)) {
+        await supabase.from('passenger_authorizations').update({
+          status: 'superseded', authorization_status: 'SUPERSEDED', superseded_at: new Date().toISOString(),
+          status_reason: `Booking revision advanced from ${authRevision} to ${bookingRevision}.`, updated_at: new Date().toISOString()
+        }).eq('id', authRecord.id).catch(() => null);
+      }
+      throw new Error('AUTHORIZATION_SUPERSEDED');
     }
 
-    // Retrieve complete booking to verify quote immutability & build full details
-    const completeBooking = await bookingRepository.getCompleteBookingById(authRecord.booking_id);
-    if (!completeBooking) {
-      throw new Error('BOOKING_NOT_FOUND');
-    }
-
-    // Check if booking total was modified OUTSIDE of an admin split update.
-    // After admin updates splits, both bookings.customer_price AND
-    // passenger_authorizations.authorized_amount are updated together, so they
-    // should always agree. Only invalidate if the booking's canonical price
-    // diverges from what the auth record was issued for AND both differ from the
-    // live authorized_amount (i.e., an unsanctioned external mutation).
-    const currentPrice = parseFloat(completeBooking.customer_price || completeBooking.total_amount || 0);
-    const snapPrice = parseFloat(authRecord.authorized_amount || authRecord.quote_snapshot?.amount || 0);
-    // If authorized_amount was updated (by admin split update) it will match customer_price.
-    // Only invalidate if they don't match AND neither matches the live booking price.
-    if (Math.abs(currentPrice - snapPrice) > 0.01) {
-      // Do NOT throw — the authorized_amount may have been intentionally updated by admin.
-      // Log for audit only; do not invalidate the token.
-      logger.info(`[Auth Lookup] Note: booking ${authRecord.booking_id} customer_price=$${currentPrice} vs auth authorized_amount=$${snapPrice}. This is expected after an admin split update.`);
-    }
-
-    const relations = await bookingRepository.getRelations(completeBooking.id);
-    const rawPassengers = relations.travellers || completeBooking.passengers || [];
-
-    const canonicalItinerary = buildCanonicalItinerary(completeBooking);
-    const itinerarySnapshot = authRecord.itinerary_snapshot || {
-      outboundSegments: canonicalItinerary.outbound,
-      returnSegments: canonicalItinerary.return,
-      outbound: canonicalItinerary.outbound?.[0] || null,
-      return: canonicalItinerary.return?.[0] || null,
-      canonical: canonicalItinerary
-    };
-
-    const splitsRaw = authRecord.quote_snapshot?.splits || completeBooking.paymentSplits || completeBooking.payment_splits || (relations.paymentSplits) || [];
-    const splits = splitsRaw.map(s => ({
-      merchant_name: s.merchant_name || s.merchantName || 'Merchant',
-      amount: parseFloat(s.amount || 0).toFixed(2),
-      currency: (s.currency || completeBooking.currency || 'USD').toUpperCase()
-    }));
+    const snapshot = authRecord.request_snapshot || null;
+    const legacyItinerary = snapshot ? authorizationSnapshotToLegacyItinerary(snapshot) : (authRecord.itinerary_snapshot || {});
+    const quote = authRecord.quote_snapshot || {};
+    const paymentSplits = snapshot?.paymentAuthorization?.splits || quote.splits || [];
+    const rawLast4 = String(snapshot?.paymentMethod?.last4 || authRecord.card_last4 || authRecord.payment_card_last4 || '').replace(/\D/g, '');
+    const last4 = /^\d{4}$/.test(rawLast4) ? rawLast4 : null;
 
     return {
-      token: authRecord.token,
-      status: authRecord.status,
-      bookingId: completeBooking.id,
-      confirmationCode: completeBooking.confirmation_code,
-      passengerName: completeBooking.passenger_name,
-      customerEmail: completeBooking.email,
-      authorizedAmount: snapPrice.toFixed(2),
-      currency: authRecord.currency || 'USD',
-      cardBrand: authRecord.card_brand || null,
-      cardLast4: (() => {
-        const raw = String(authRecord.card_last4 || '').replace(/\D/g, '');
-        return /^\d{4}$/.test(raw) ? raw : null;
-      })(),
-      quoteSnapshot: authRecord.quote_snapshot,
-      itinerarySnapshot,
-      policiesSnapshot: authRecord.policies_snapshot,
-      expiresAt: authRecord.expires_at,
-      passengers: rawPassengers,
-      splits
+      bookingId: authRecord.booking_id,
+      confirmationCode: snapshot?.confirmationCode || booking.confirmation_code,
+      passengerName: snapshot?.passenger?.name || booking.passenger_name || 'Valued Passenger',
+      customerEmail: snapshot?.passenger?.email || booking.email || null,
+      authorizedAmount: Number(snapshot?.paymentAuthorization?.authorizedAmount ?? authRecord.authorized_amount ?? quote.amount ?? 0).toFixed(2),
+      currency: snapshot?.paymentAuthorization?.currency || authRecord.currency || booking.currency || 'USD',
+      cardBrand: snapshot?.paymentMethod?.brand || authRecord.card_brand || authRecord.payment_card_brand || null,
+      cardLast4: last4,
+      status: ['accepted', 'authorized'].includes(status) ? 'ACCEPTED' : 'PENDING',
+      authorizationStatus: authRecord.authorization_status || (status === 'accepted' ? 'AUTHORIZED' : 'AWAITING_AUTHORIZATION'),
+      expiresAt: authRecord.expires_at || authRecord.authorization_expires_at,
+      bookingRevision,
+      authorizationRevision: authRevision,
+      canAuthorize: !['accepted', 'authorized'].includes(status),
+      snapshot,
+      itinerarySnapshot: legacyItinerary,
+      paymentSplits: paymentSplits.map(split => ({
+        merchant_name: split.merchant_name || split.merchantName || 'Merchant',
+        merchantName: split.merchantName || split.merchant_name || 'Merchant',
+        merchant_code: split.merchant_code || split.merchantCode || null,
+        merchant_type: split.merchant_type || split.merchantType || null,
+        amount: Number(split.amount || 0).toFixed(2),
+        currency: split.currency || authRecord.currency || 'USD'
+      }))
     };
   },
 
@@ -573,166 +443,106 @@ Email: support@faretransit.com | Call: ${env.supportPhoneDisplay}
    */
   acceptAuthorization: async (params = {}) => {
     const token = typeof params === 'string' ? params : params.token;
-    const acceptedCheckboxText = typeof params === 'object' ? (params.acceptedCheckboxText || params.consentText || 'I confirm that the passenger names, itinerary, dates, fare, fees and contact information shown above are correct.') : 'I confirm that the passenger names, itinerary, dates, fare, fees and contact information shown above are correct.';
-    const clientIp = typeof params === 'object' ? (params.clientIp || params.ipAddress || '198.51.100.1') : '198.51.100.1';
-    const userAgent = typeof params === 'object' ? (params.userAgent || 'Mozilla/5.0') : 'Mozilla/5.0';
+    const acceptedCheckboxText = typeof params === 'object'
+      ? (params.acceptedCheckboxText || params.consentText || 'I confirm the reservation details shown above and authorize the listed payment amount.')
+      : 'I confirm the reservation details shown above and authorize the listed payment amount.';
+    const clientIp = typeof params === 'object' ? (params.clientIp || params.ipAddress || null) : null;
+    const userAgent = typeof params === 'object' ? (params.userAgent || 'Browser Client') : 'Browser Client';
 
-    let authRecord = memoryAuthStore.get(token);
-
+    let authRecord = memoryAuthStore.get(token) || null;
     if (!authRecord) {
-      const { data } = await supabase
-        .from('passenger_authorizations')
-        .select('*')
-        .eq('token', token)
-        .maybeSingle();
+      const { data } = await supabase.from('passenger_authorizations').select('*').eq('token', token).maybeSingle();
+      authRecord = data || null;
+    }
+    if (!authRecord) throw new Error('AUTHORIZATION_NOT_FOUND');
 
-      if (data) authRecord = data;
+    const state = String(authRecord.status || authRecord.authorization_status || '').toLowerCase();
+    if (['accepted', 'authorized'].includes(state) || authRecord.consumed_at) throw new Error('AUTHORIZATION_ALREADY_ACCEPTED');
+    if (state === 'superseded' || state === 'reauthorization_required') throw new Error('AUTHORIZATION_SUPERSEDED');
+    if (state === 'revoked') throw new Error('AUTHORIZATION_REVOKED');
+    if (state === 'declined') throw new Error('AUTHORIZATION_DECLINED');
+    if (state !== 'pending' && state !== 'awaiting_authorization') throw new Error(`AUTHORIZATION_ALREADY_${state.toUpperCase()}`);
+    if (new Date(authRecord.expires_at || authRecord.authorization_expires_at || 0).getTime() < Date.now()) throw new Error('AUTHORIZATION_EXPIRED');
+
+    const booking = await bookingRepository.getById(authRecord.booking_id);
+    if (!booking) throw new Error('BOOKING_NOT_FOUND');
+    const authRevision = Number(authRecord.authorization_revision || 1);
+    const bookingRevision = Number(booking.booking_revision || 1);
+    if (authRevision !== bookingRevision) {
+      await supabase.from('passenger_authorizations').update({
+        status: 'superseded', authorization_status: 'SUPERSEDED', superseded_at: new Date().toISOString(),
+        status_reason: `Booking revision advanced from ${authRevision} to ${bookingRevision}.`, updated_at: new Date().toISOString()
+      }).eq('id', authRecord.id).catch(() => null);
+      throw new Error('AUTHORIZATION_SUPERSEDED');
     }
 
-    if (!authRecord) {
-      // Fallback: Check if token is stored directly on bookings record
-      const { data: bkData } = await supabase
-        .from('bookings')
-        .select('*')
-        .eq('authorization_token', token)
-        .maybeSingle();
-
-      if (bkData) {
-        authRecord = {
-          booking_id: bkData.id,
-          token: token,
-          status: ['AUTHORIZED', 'READY_FOR_TICKETING', 'TICKETED', 'DONE'].includes(bkData.status) ? 'accepted' : 'pending',
-          authorized_amount: parseFloat(bkData.customer_price || bkData.total_amount || 0),
-          currency: (bkData.currency || 'USD').toUpperCase(),
-          card_brand: bkData.card_brand || null,
-          card_last4: (() => {
-            const raw = String(bkData.card_last4 || '').replace(/\D/g, '');
-            return /^\d{4}$/.test(raw) ? raw : null;
-          })(),
-          expires_at: bkData.authorization_expires_at || new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
-          quote_snapshot: { amount: (bkData.customer_price || bkData.total_amount || 0).toString() }
-        };
-      }
-    }
-
-    if (!authRecord) {
-      // Fallback 2: Stateless Token Resolution
-      const parsed = parseStatelessToken(token);
-      if (parsed) {
-        const liveBooking = await bookingRepository.getById(parsed.bookingId);
-        if (liveBooking) {
-          authRecord = {
-            booking_id: liveBooking.id,
-            token: token,
-            status: ['AUTHORIZED', 'READY_FOR_TICKETING', 'TICKETED', 'DONE'].includes(liveBooking.status) ? 'accepted' : 'pending',
-            authorized_amount: parseFloat(liveBooking.customer_price || liveBooking.total_amount || 0),
-            currency: (liveBooking.currency || 'USD').toUpperCase(),
-            card_brand: liveBooking.card_brand || null,
-            card_last4: (() => {
-              const raw = String(liveBooking.card_last4 || '').replace(/\D/g, '');
-              return /^\d{4}$/.test(raw) ? raw : null;
-            })(),
-            expires_at: liveBooking.authorization_expires_at || new Date(parsed.expiresAtMs).toISOString(),
-            quote_snapshot: { amount: (liveBooking.customer_price || liveBooking.total_amount || 0).toString() }
-          };
-        }
-      }
-    }
-
-    if (!authRecord) {
-      throw new Error('AUTHORIZATION_NOT_FOUND');
-    }
-
-    if (authRecord.status === 'accepted' || authRecord.status === 'ACCEPTED' || authRecord.consumed_at) {
-      throw new Error('AUTHORIZATION_ALREADY_ACCEPTED');
-    }
-
-    if (authRecord.status !== 'pending') {
-      throw new Error(`AUTHORIZATION_ALREADY_${(authRecord.status || 'CONSUMED').toUpperCase()}`);
-    }
-
-
-    if (new Date(authRecord.expires_at).getTime() < Date.now()) {
-      throw new Error('AUTHORIZATION_EXPIRED');
-    }
+    // New authorizations MUST carry the immutable request snapshot. Legacy rows
+    // may use only their already-frozen quote/itinerary data; live itinerary data
+    // is intentionally never substituted here.
+    const requestSnapshot = authRecord.request_snapshot || {
+      schemaVersion: 'AUTHORIZATION_SNAPSHOT_LEGACY',
+      bookingId: authRecord.booking_id,
+      confirmationCode: authRecord.confirmation_code || booking.confirmation_code,
+      bookingRevision: authRevision,
+      passenger: { name: booking.passenger_name || 'Valued Passenger', email: booking.email || null, travellers: [] },
+      itinerary: authRecord.itinerary_snapshot?.canonical || { tripType: booking.itinerary_type || 'ONE_WAY', journeys: [] },
+      pricing: { customerTotal: Number(authRecord.booking_amount || authRecord.authorized_amount || 0), currency: authRecord.currency || booking.currency || 'USD' },
+      paymentAuthorization: { authorizedAmount: Number(authRecord.authorized_amount || 0), currency: authRecord.currency || booking.currency || 'USD', splits: authRecord.quote_snapshot?.splits || [] },
+      paymentMethod: { brand: authRecord.card_brand || 'Card', last4: authRecord.card_last4 || null },
+      policies: authRecord.policies_snapshot || {}
+    };
 
     const textHash = hashText(acceptedCheckboxText);
     const consumedAt = new Date().toISOString();
-
-    const booking = await bookingRepository.getById(authRecord.booking_id);
-    const relations = await bookingRepository.getRelations(authRecord.booking_id);
-
-    const paymentSplits = (relations.paymentSplits || booking.payment_splits || []).map(s => ({
-      merchant_name: s.merchant_name || s.merchantName || 'Merchant',
-      amount: parseFloat(s.amount || 0).toFixed(2),
-      currency: (s.currency || authRecord.currency || booking.currency || 'USD').toUpperCase()
+    const legacyItinerary = authorizationSnapshotToLegacyItinerary(requestSnapshot);
+    const paymentSplits = (requestSnapshot.paymentAuthorization?.splits || authRecord.quote_snapshot?.splits || []).map(split => ({
+      merchant_name: split.merchant_name || split.merchantName || 'Merchant',
+      merchant_type: split.merchant_type || split.merchantType || null,
+      merchant_code: split.merchant_code || split.merchantCode || null,
+      amount: Number(split.amount || 0).toFixed(2),
+      currency: split.currency || requestSnapshot.paymentAuthorization?.currency || 'USD'
     }));
 
-    const flightSegs = relations.itinerarySegments || booking?.itinerary_segments || [];
-    const flightNums = flightSegs.map(s => s.flight_number || s.flightNumber).filter(Boolean);
-    const firstSeg = flightSegs[0] || {};
-    const airlineName = booking?.airline_name || firstSeg.carrier_name || firstSeg.airline || 'Commercial Airline';
-    const departureDate = firstSeg.departure_date || firstSeg.departureDate || null;
-    const lastSeg = flightSegs[flightSegs.length - 1] || firstSeg;
-    const arrivalDate = lastSeg.arrival_date || lastSeg.arrivalDate || null;
-
     const authorizationSnapshot = {
-      booking_id: authRecord.booking_id,
-      confirmation_code: booking?.confirmation_code || authRecord.booking_id,
-      passenger_name: booking?.passenger_name || 'Valued Passenger',
-      customer_email: booking?.email || null,
-      passengers: relations.travellers || booking?.passengers || [],
-      itinerary_snapshot: flightSegs,
-      airline_info: { name: airlineName, code: booking?.airline_code || firstSeg.carrier_code || null },
-      flight_numbers: flightNums,
-      dates: { departure: departureDate, arrival: arrivalDate },
-      fare: {
-        total_amount: parseFloat(authRecord.authorized_amount || booking?.total_amount || 0),
-        currency: (authRecord.currency || booking?.currency || 'USD').toUpperCase()
-      },
+      ...requestSnapshot,
+      booking_id: requestSnapshot.bookingId,
+      confirmation_code: requestSnapshot.confirmationCode,
+      booking_revision: authRevision,
+      request_snapshot_hash: authRecord.request_snapshot_hash || authorizationSnapshotHash(requestSnapshot),
+      passenger_name: requestSnapshot.passenger?.name || 'Valued Passenger',
+      customer_email: requestSnapshot.passenger?.email || null,
+      passengers: requestSnapshot.passenger?.travellers || [],
+      itinerary_snapshot: legacyItinerary,
       payment_splits: paymentSplits,
-      authorized_amount: parseFloat(authRecord.authorized_amount || booking?.total_amount || 0),
-      currency: (authRecord.currency || booking?.currency || 'USD').toUpperCase(),
+      authorized_amount: Number(requestSnapshot.paymentAuthorization?.authorizedAmount || authRecord.authorized_amount || 0),
+      currency: requestSnapshot.paymentAuthorization?.currency || authRecord.currency || 'USD',
       consent_text: acceptedCheckboxText,
-      consent_version: 'v1.0',
+      consent_version: 'v2.0',
       consent_hash: textHash,
-      timestamp: consumedAt,
+      authorization_status: 'AUTHORIZED',
       accepted_at: consumedAt,
+      timestamp: consumedAt,
       client_ip: clientIp || null,
       user_agent: userAgent || null
     };
 
-    const updateFields = {
+    const paUpdateFields = {
       status: 'accepted',
+      authorization_status: 'AUTHORIZED',
       consumed_at: consumedAt,
+      authorized_at: consumedAt,
       ip_address: clientIp || null,
+      authorized_ip: clientIp || null,
       user_agent: userAgent || null,
-      authorization_text_version: 'v1.0',
+      authorized_user_agent: userAgent || null,
+      authorization_text_version: 'v2.0',
       authorization_text_hash: textHash,
       authorization_snapshot: authorizationSnapshot,
       updated_at: consumedAt
     };
+    const { error: paError } = await supabase.from('passenger_authorizations').update(paUpdateFields).eq('id', authRecord.id);
+    if (paError && process.env.NODE_ENV !== 'test') throw new Error(`AUTHORIZATION_ACCEPT_PERSISTENCE_FAILED: ${paError.message}`);
 
-    // Update passenger_authorizations: set authorization_status = AUTHORIZED
-    const paUpdateFields = {
-      ...updateFields,
-      authorization_status: 'AUTHORIZED'
-    };
-
-    const { error: paError } = await supabase
-      .from('passenger_authorizations')
-      .update(paUpdateFields)
-      .eq('token', token);
-
-    if (paError) {
-      if (process.env.NODE_ENV === 'test') {
-        logger.warn(`[Auth] passenger_authorizations update notice in test mode: ${paError.message}`);
-      } else {
-        throw new Error(`AUTHORIZATION_ACCEPT_PERSISTENCE_FAILED: ${paError.message}`);
-      }
-    }
-
-    // Persist into authorization_snapshots table & memory store
     await bookingRepository.saveAuthorizationSnapshot({
       booking_id: authRecord.booking_id,
       confirmation_code: authorizationSnapshot.confirmation_code,
@@ -740,49 +550,42 @@ Email: support@faretransit.com | Call: ${env.supportPhoneDisplay}
       customer_email: authorizationSnapshot.customer_email,
       token,
       snapshot_data: authorizationSnapshot,
-      itinerary_snapshot: authorizationSnapshot.itinerary_snapshot,
-      airline_info: authorizationSnapshot.airline_info,
-      flight_numbers: authorizationSnapshot.flight_numbers,
+      itinerary_snapshot: legacyItinerary,
       authorized_amount: authorizationSnapshot.authorized_amount,
       currency: authorizationSnapshot.currency,
-      payment_splits: authorizationSnapshot.payment_splits,
+      payment_splits: paymentSplits,
       consent_text: acceptedCheckboxText,
-      consent_version: 'v1.0',
+      consent_version: 'v2.0',
       consent_hash: textHash,
       client_ip: clientIp || null,
       user_agent: userAgent || null,
       accepted_at: consumedAt,
+      booking_revision: authRevision,
+      request_snapshot_hash: authorizationSnapshot.request_snapshot_hash,
       created_at: consumedAt
     });
 
-    // Always update memory store immediately so in-process reads are consistent
-    const updatedRecord = { ...authRecord, ...paUpdateFields };
-    memoryAuthStore.set(token, updatedRecord);
-
-    // Also update the booking's status & authorization_status to AUTHORIZED
+    memoryAuthStore.set(token, { ...authRecord, ...paUpdateFields });
     await bookingRepository.updateStatus(authRecord.booking_id, {
       status: 'AUTHORIZED',
       authorization_status: 'AUTHORIZED',
       authorized_at: consumedAt
     });
-
     await bookingRepository.recordAuditLog({
       bookingId: authRecord.booking_id,
       action: 'AUTHORIZATION_COMPLETED',
-      oldValue: { authorization_status: authRecord.status || 'PENDING' },
-      newValue: { authorization_status: 'AUTHORIZED', snapshot: authorizationSnapshot },
+      oldValue: { authorization_status: authRecord.status || 'PENDING', bookingRevision: authRevision },
+      newValue: { authorization_status: 'AUTHORIZED', bookingRevision: authRevision, requestSnapshotHash: authorizationSnapshot.request_snapshot_hash },
       actor: 'customer',
       ipAddress: clientIp || null
     });
-
-    logger.info(`[Auth] Authorization accepted for booking ${authRecord.booking_id} from IP ${clientIp} — saved immutable authorization_snapshot.`);
 
     return {
       success: true,
       bookingId: authRecord.booking_id,
       status: 'AUTHORIZED',
-      authorizedAmount: authRecord.authorized_amount,
-      currency: authRecord.currency,
+      authorizedAmount: authorizationSnapshot.authorized_amount,
+      currency: authorizationSnapshot.currency,
       acceptedAt: consumedAt,
       authorizationSnapshot
     };

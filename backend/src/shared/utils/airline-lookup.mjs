@@ -150,10 +150,13 @@ export function getAirlineName(carrierCode) {
 
 export function resolveAirlineName(carrierCode, providedName) {
   const code = String(carrierCode || '').trim().toUpperCase();
-  if (!genericAirlineName(providedName)) return String(providedName).trim();
+  const supplied = String(providedName || '').trim();
+  const codePlaceholder = code && new RegExp(`^${code}\\s+Airlines?$`, 'i').test(supplied);
   const found = getAirlineName(code);
+  if (found && (genericAirlineName(supplied) || codePlaceholder)) return found;
+  if (!genericAirlineName(supplied) && !codePlaceholder) return supplied;
   if (found) return found;
-  return code ? `${code} Airlines` : '';
+  return code || '';
 }
 
 export function getCarrierLogoUrl(carrierCode) {

@@ -99,7 +99,10 @@ const bookingMutationService = {
 
   updateContact: (reference, contact = {}, context = {}) => execute(reference, {
     expectedVersion: context.expectedVersion,
-    mutate: (booking) => persistPrimaryContact(booking.id, contact, booking),
+    mutate: async (booking) => {
+      await persistPrimaryContact(booking.id, contact, booking);
+      await bookingRepository.bumpAuthorizationRevision(booking.id, { reason: context.reason || 'Passenger contact details changed', actor: context.adminId || 'admin' });
+    },
   }),
 
   updateStatusAndNotes: (reference, payload = {}, context = {}) => execute(reference, {
@@ -145,6 +148,7 @@ const bookingMutationService = {
         throw mutationError('No authorization settings were supplied.', 'NO_AUTHORIZATION_CHANGES');
       }
       await bookingRepository.updateBookingStatus(booking.id, update);
+      await bookingRepository.bumpAuthorizationRevision(booking.id, { reason: context.reason || 'Passenger authorization amount or currency changed', actor: context.adminId || 'admin' });
     },
   }),
 

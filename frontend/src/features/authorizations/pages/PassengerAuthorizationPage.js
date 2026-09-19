@@ -9,6 +9,7 @@ function PassengerAuthorizationPage() {
   const [loading, setLoading] = useState(true);
   const [authData, setAuthData] = useState(null);
   const [error, setError] = useState(null);
+  const [errorCode, setErrorCode] = useState(null);
 
   const [checkboxAccepted, setCheckboxAccepted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -22,11 +23,15 @@ function PassengerAuthorizationPage() {
         const data = await res.json();
 
         if (!res.ok || !data.success) {
-          throw new Error(data.error?.message || 'Failed to load authorization request.');
+          const requestError = new Error(data.error?.message || 'Failed to load authorization request.');
+          requestError.code = data.error?.code || 'AUTHORIZATION_LOAD_FAILED';
+          throw requestError;
         }
 
+        setErrorCode(null);
         setAuthData(data.authorization);
       } catch (err) {
+        setErrorCode(err.code || 'AUTHORIZATION_LOAD_FAILED');
         setError(err.message);
       } finally {
         setLoading(false);
@@ -89,22 +94,39 @@ function PassengerAuthorizationPage() {
   }
 
   if (error || !authData) {
+    const lifecycle = {
+      AUTHORIZATION_SUPERSEDED: { title: 'Authorization Updated', message: 'This reservation changed after this authorization request was issued. Please use the newest authorization email from FareTransit.' },
+      INVALIDATED: { title: 'Authorization Updated', message: 'This reservation changed after this authorization request was issued. Please use the newest authorization email from FareTransit.' },
+      EXPIRED: { title: 'Authorization Link Expired', message: 'This secure authorization link has expired. Contact FareTransit to receive a new authorization request.' },
+      NOT_FOUND: { title: 'Authorization Link Invalid', message: 'This authorization link is invalid or is no longer available. Contact FareTransit if you need a new request.' },
+      AUTHORIZATION_REVOKED: { title: 'Authorization Revoked', message: 'This authorization request was revoked and can no longer be used. Contact FareTransit for assistance.' },
+      AUTHORIZATION_DECLINED: { title: 'Authorization Already Declined', message: 'This authorization request has already been declined.' }
+    }[errorCode] || { title: 'Authorization Request Issue', message: error || 'We could not load this authorization request.' };
     return (
       <div className="auth-page-container">
-        <Helmet><title>Authorization Request Error | FareTransit</title></Helmet>
+        <Helmet><title>{lifecycle.title} | FareTransit</title></Helmet>
         <div className="auth-card-shell">
           <div className="auth-error-banner">
             <i className="fas fa-exclamation-triangle fa-2x" style={{ color: '#991b1b', marginBottom: '0.75rem' }}></i>
-            <h2 style={{ color: '#991b1b', margin: '0 0 0.5rem', fontSize: '1.4rem' }}>Authorization Request Issue</h2>
-            <p style={{ color: '#7f1d1d', margin: 0, fontSize: '0.98rem', lineHeight: '1.5' }}>
-              {error || 'The requested authorization link is invalid or expired.'}
-            </p>
+            <h2 style={{ color: '#991b1b', margin: '0 0 0.5rem', fontSize: '1.4rem' }}>{lifecycle.title}</h2>
+            <p style={{ color: '#7f1d1d', margin: 0, fontSize: '0.98rem', lineHeight: '1.5' }}>{lifecycle.message}</p>
           </div>
-          <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
-            <Link to="/contact" className="auth-btn-secondary">
-              Contact 24/7 Support Desk
-            </Link>
-          </div>
+          <div style={{ textAlign: 'center', marginTop: '1.5rem' }}><Link to="/contact" className="auth-btn-secondary">Contact 24/7 Support Desk</Link></div>
+        </div>
+      </div>
+    );
+  }
+
+  const alreadyAccepted = ['ACCEPTED', 'AUTHORIZED'].includes(String(authData?.status || authData?.authorizationStatus || '').toUpperCase()) && authData?.canAuthorize === false;
+  if (alreadyAccepted) {
+    return (
+      <div className="auth-page-container">
+        <Helmet><title>Reservation Already Authorized | FareTransit</title></Helmet>
+        <div className="auth-card-shell" style={{ textAlign: 'center', padding: '2.5rem 2rem' }}>
+          <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: '#dcfce7', color: '#166534', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.25rem', fontSize: '2rem' }}>✓</div>
+          <h2 style={{ color: '#7f0d2f', fontSize: '1.65rem', margin: '0 0 0.65rem' }}>Reservation Already Authorized</h2>
+          <p style={{ color: '#5f4a53', lineHeight: '1.6' }}>This exact reservation revision has already been authorized. No further action is required.</p>
+          <Link to={`/my-bookings?code=${authData.confirmationCode}`} className="auth-primary-btn" style={{ display: 'inline-block', width: 'auto', padding: '0.85rem 2rem', marginTop: '1rem' }}>View My Booking →</Link>
         </div>
       </div>
     );
@@ -204,6 +226,25 @@ function PassengerAuthorizationPage() {
             
             {/* Outbound & Return Journey */}
             {(() => {
+              const snapshotJourneys = authData.snapshot?.itinerary?.journeys || authData.itinerarySnapshot?.canonical?.journeys || [];
+              if (snapshotJourneys.length > 0) {
+                return <>{snapshotJourneys.map((journey, journeyIdx) => {
+                  const segs = journey.segments || [];
+                  const connectionCount = Math.max(0, segs.length - 1);
+                  const label = authData.snapshot?.itinerary?.tripType === 'MULTI_CITY'
+                    ? `Trip ${journey.journeyIndex || journeyIdx + 1}`
+                    : (journey.role === 'RETURN' ? 'Return Journey' : (authData.snapshot?.itinerary?.tripType === 'ONE_WAY' ? 'One Way Journey' : 'Outbound Journey'));
+                  return <div className="auth-flight-card" style={{ marginTop: journeyIdx ? '0.85rem' : 0 }} key={`journey-${journeyIdx}`}>
+                    <div className="auth-flight-tag">{label} ({connectionCount ? `${connectionCount} Connection Stop${connectionCount > 1 ? 's' : ''}` : 'Nonstop'})</div>
+                    {segs.map((seg, idx) => <div key={`seg-${journeyIdx}-${idx}`} style={{ marginTop: idx > 0 ? '0.75rem' : 0, paddingTop: idx > 0 ? '0.75rem' : 0, borderTop: idx > 0 ? '1px dashed #cbd5e1' : 'none' }}>
+                      <div className="auth-flight-airline">Flight #{idx + 1}: {seg.airlineName || seg.carrierCode || 'Airline'} {seg.carrierCode || ''} {seg.flightNumber || ''}</div>
+                      <div className="auth-flight-route">{seg.originName || seg.originCode} ({seg.originCode}) → {seg.destinationName || seg.destinationCode} ({seg.destinationCode})</div>
+                      <div className="auth-flight-details"><span><strong>Departure:</strong> {seg.departureDate} {seg.departureTime}</span><span><strong>Cabin:</strong> {seg.cabinClass || 'Economy'}</span></div>
+                    </div>)}
+                  </div>;
+                })}</>;
+              }
+
               const outboundList = authData.itinerarySnapshot?.outboundSegments || authData.itinerarySnapshot?.canonical?.outbound || (outbound?.carrier_name || outbound?.airline || outbound?.airlineName || outbound?.carrierCode ? [outbound] : []);
               const returnList = authData.itinerarySnapshot?.returnSegments || authData.itinerarySnapshot?.canonical?.return || (returnFlight?.carrier_name || returnFlight?.airline || returnFlight?.airlineName || returnFlight?.carrierCode ? [returnFlight] : []);
 

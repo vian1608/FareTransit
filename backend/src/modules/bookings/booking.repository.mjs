@@ -1,7 +1,7 @@
 import supabase from '../../integrations/supabase/supabase.client.mjs';
 import env from '../../config/env.mjs';
 import logger from '../../config/logger.mjs';
-import { buildCanonicalItinerary, calculateTripSummary } from '../../shared/utils/airline-lookup.mjs';
+import { buildCanonicalItinerary, calculateTripSummary, resolveAirlineName } from '../../shared/utils/airline-lookup.mjs';
 import bookingMapper from './booking.mapper.mjs';
 import { BOOKING_STATUSES } from './booking.constants.mjs';
 
@@ -681,7 +681,7 @@ export const bookingRepository = {
         ...enriched.authorization,
         status: authStatus,
         authorizedAt: enriched.authorized_at || canonical.authorization?.authorizedAt || null,
-        revision: enriched.authorization_revision || 1
+        revision: enriched.booking_revision || enriched.authorization_revision || 1
       },
       authorization_status: authStatus,
       authorization_email_status: authActivity.status,
@@ -1173,6 +1173,7 @@ export const bookingRepository = {
     if (finalRecord.cardholder_name) finalRecord.cardholderName = finalRecord.cardholder_name;
     if (finalRecord.cardholderName) finalRecord.cardholder_name = finalRecord.cardholderName;
     paymentMethodsMemoryStore.set(bookingId, finalRecord);
+    await bookingRepository.bumpAuthorizationRevision(bookingId, { reason: 'Saved payment method or billing reference changed', actor: 'admin' });
     logger.info(`[BillingUpdate] Updated billing details for booking ${bookingId}`);
     return finalRecord;
   },
@@ -1582,6 +1583,65 @@ export const bookingRepository = {
   },
 
 
+  bumpAuthorizationRevision: async (bookingIdInput, { reason = 'Authorization-sensitive booking details changed', actor = 'system' } = {}) => {
+    const booking = await bookingRepository.findBaseBookingRecord(bookingIdInput);
+    if (!booking?.id) return { bookingRevision: 1, reauthorizationRequired: false };
+    const realId = booking.id;
+    const now = new Date().toISOString();
+    const currentRevision = Math.max(1, Number(booking.booking_revision || 1));
+    const nextRevision = currentRevision + 1;
+
+    const { data: authRows } = await supabase
+      .from('passenger_authorizations')
+      .select('id,status,authorization_status,authorization_revision,token')
+      .eq('booking_id', realId);
+    const rows = Array.isArray(authRows) ? authRows : [];
+    const hasPriorAuthorization = rows.length > 0 || Boolean(booking.authorization_token);
+    const pendingIds = rows
+      .filter(row => ['pending', 'awaiting_authorization', 'awaiting_passenger'].includes(String(row.status || row.authorization_status || '').toLowerCase()))
+      .map(row => row.id);
+
+    if (pendingIds.length > 0) {
+      const { error: supersedeError } = await supabase
+        .from('passenger_authorizations')
+        .update({
+          status: 'superseded',
+          authorization_status: 'SUPERSEDED',
+          superseded_at: now,
+          reauthorization_requested_at: now,
+          reauthorization_reason: reason,
+          status_reason: reason,
+          updated_at: now
+        })
+        .in('id', pendingIds);
+      if (supersedeError) throw new Error(`AUTHORIZATION_SUPERSEDE_FAILED: ${supersedeError.message}`);
+    }
+
+    const bookingFields = {
+      booking_revision: nextRevision,
+      authorization_token: null,
+      authorization_expires_at: null,
+      authorization_status: hasPriorAuthorization ? 'REAUTHORIZATION_REQUIRED' : (booking.authorization_status || 'NOT_CREATED'),
+      updated_at: now
+    };
+    const { data, error } = await supabase.from('bookings').update(bookingFields).eq('id', realId).select().maybeSingle();
+    if (error) throw new Error(`AUTHORIZATION_REVISION_UPDATE_FAILED: ${error.message}`);
+
+    const merged = { ...booking, ...bookingFields, ...(data || {}) };
+    bookingsMemoryStore.set(realId, merged);
+    if (merged.confirmation_code) bookingsMemoryStore.set(merged.confirmation_code, merged);
+
+    await bookingRepository.recordAuditLog({
+      bookingId: realId,
+      action: 'AUTHORIZATION_REVISION_BUMPED',
+      oldValue: { bookingRevision: currentRevision, authorizationStatus: booking.authorization_status || null },
+      newValue: { bookingRevision: nextRevision, authorizationStatus: bookingFields.authorization_status, reason },
+      actor
+    }).catch(() => null);
+
+    return { bookingRevision: nextRevision, reauthorizationRequired: hasPriorAuthorization, supersededCount: pendingIds.length };
+  },
+
   updateStatus: async (id, updateFields) => {
     const cleanFields = { ...updateFields };
     delete cleanFields.crm_status;
@@ -1902,7 +1962,7 @@ export const bookingRepository = {
         }, 0);
         const splitTotal = centsSum / 100;
 
-        await bookingRepository.savePaymentSplits(realId, payload.paymentSplits);
+        await bookingRepository.savePaymentSplits(realId, payload.paymentSplits, { skipAuthorizationRevision: true });
         if (splitTotal > 0 && (payload.customerTotal === undefined || payload.customerTotal === null)) {
           bookingUpdateFields.customer_price = splitTotal;
           bookingUpdateFields.total_amount = splitTotal;
@@ -1916,8 +1976,19 @@ export const bookingRepository = {
       if (Array.isArray(payload.itinerarySegments) && payload.itinerarySegments.length > 0) {
         const validSegs = payload.itinerarySegments.filter(s => (s.origin_airport || s.originCode || s.origin_code) && (s.destination_airport || s.destinationCode || s.destination_code));
         if (validSegs.length > 0) {
-          await bookingRepository.saveItinerarySegments(realId, validSegs);
+          await bookingRepository.saveItinerarySegments(realId, validSegs, { skipAuthorizationRevision: true });
         }
+      }
+
+      const authorizationSensitiveChange =
+        (Array.isArray(payload.paymentSplits) && payload.paymentSplits.length > 0) ||
+        (Array.isArray(payload.itinerarySegments) && payload.itinerarySegments.length > 0) ||
+        payload.customerTotal !== undefined || payload.authorizedAmount !== undefined || payload.currency !== undefined;
+      if (authorizationSensitiveChange) {
+        await bookingRepository.bumpAuthorizationRevision(realId, {
+          reason: payload.auditReason || 'Authorization-sensitive booking details changed in Admin Dashboard',
+          actor: adminId
+        });
       }
 
       // Record Audit Event with detailed changes list
@@ -1992,7 +2063,7 @@ export const bookingRepository = {
     return data;
   },
 
-  saveItinerarySegments: async (bookingId, segments = []) => {
+  saveItinerarySegments: async (bookingId, segments = [], options = {}) => {
     try {
       let outboundSeq = 1;
       let returnSeq = 1;
@@ -2012,7 +2083,7 @@ export const bookingRepository = {
           journey_index: Number(seg.journey_index || seg.journeyIndex || (dir === 'return' ? 2 : 1)),
           journey_role: String(seg.journey_role || seg.journeyRole || (dir === 'return' ? 'RETURN' : (dir === 'multi_city' ? 'TRIP' : 'OUTBOUND'))).toUpperCase(),
           segment_sequence: seq,
-          carrier_name: seg.carrier_name || seg.airline_name || seg.airline || (code ? `${code} Airlines` : ''),
+          carrier_name: resolveAirlineName(code, seg.carrier_name || seg.airline_name || seg.airline || '') || code,
           carrier_code: code,
           marketing_carrier_code: code,
           operating_carrier: seg.operating_carrier || seg.operatingCarrier || null,
@@ -2064,6 +2135,9 @@ export const bookingRepository = {
           logger.info(`[saveItinerarySegments] Saved ${validRows.length} segments to booking_itinerary_segments for ${bookingId}.`);
           // Also persist to flights table for maximum redundancy
           await bookingRepository._persistToFlightsTable(bookingId, validRows);
+          if (!options.skipAuthorizationRevision) {
+            await bookingRepository.bumpAuthorizationRevision(bookingId, { reason: options.reason || 'Flight itinerary changed', actor: options.actor || 'admin' });
+          }
           return;
         }
         logger.warn(`[saveItinerarySegments] booking_itinerary_segments insert failed: ${insertErr.message}. Falling back to flights table.`);
@@ -2073,6 +2147,9 @@ export const bookingRepository = {
 
       // Attempt 2: Persist to the production flights table (always exists in production)
       await bookingRepository._persistToFlightsTable(bookingId, rows);
+      if (!options.skipAuthorizationRevision) {
+        await bookingRepository.bumpAuthorizationRevision(bookingId, { reason: options.reason || 'Flight itinerary changed', actor: options.actor || 'admin' });
+      }
     } catch (e) {
       logger.warn(`saveItinerarySegments error: ${e.message}`);
     }
@@ -2118,19 +2195,27 @@ export const bookingRepository = {
     }
   },
 
-  savePaymentSplits: async (bookingIdInput, splits = []) => {
+  savePaymentSplits: async (bookingIdInput, splits = [], options = {}) => {
     try {
       const booking = await bookingRepository.getById(bookingIdInput);
       const realId = booking ? booking.id : bookingIdInput;
       const refCode = booking ? (booking.confirmation_code || booking.bookingReference || realId) : bookingIdInput;
 
-      const formatted = (splits || []).map((s, index) => ({
-        booking_id: realId,
-        merchant_name: s.merchant_name || s.merchantName || 'Merchant',
-        amount: parseFloat(s.amount || 0),
-        currency: (s.currency || booking?.currency || 'USD').toUpperCase(),
-        display_order: index + 1
-      }));
+      const formatted = (splits || []).map((s, index) => {
+        const merchantCode = String(s.merchant_code || s.merchantCode || '').trim().toUpperCase() || null;
+        const rawName = String(s.merchant_name || s.merchantName || 'Merchant').trim();
+        const merchantType = String(s.merchant_type || s.merchantType || (rawName.toLowerCase() === 'faretransit llc' ? 'FARETRANSIT' : (merchantCode ? 'AIRLINE' : 'OTHER'))).toUpperCase();
+        const merchantName = merchantType === 'AIRLINE' ? (resolveAirlineName(merchantCode, rawName) || rawName) : (merchantType === 'FARETRANSIT' ? 'FareTransit LLC' : rawName);
+        return {
+          booking_id: realId,
+          merchant_name: merchantName,
+          merchant_type: merchantType,
+          merchant_code: merchantCode,
+          amount: parseFloat(s.amount || 0),
+          currency: (s.currency || booking?.currency || 'USD').toUpperCase(),
+          display_order: index + 1
+        };
+      });
 
       // Cache in memory store under BOTH keys (UUID and Confirmation Code)
       splitsMemoryStore.set(realId, formatted);
@@ -2158,7 +2243,10 @@ export const bookingRepository = {
         });
       }
 
-      await mirrorBookingPaymentSplits(realId, splits, booking?.currency || 'USD');
+      await mirrorBookingPaymentSplits(realId, formatted, booking?.currency || 'USD');
+      if (!options.skipAuthorizationRevision) {
+        await bookingRepository.bumpAuthorizationRevision(realId, { reason: options.reason || 'Payment authorization split changed', actor: options.actor || 'admin' });
+      }
       return formatted;
     } catch (e) {
       logger.warn(`savePaymentSplits notice: ${e.message}`);
@@ -2438,9 +2526,14 @@ export const bookingRepository = {
         const curr = (s.currency || booking.currency || 'USD').toUpperCase().trim();
         currencies.add(curr);
 
+        const merchantCode = String(s.merchantCode || s.merchant_code || '').trim().toUpperCase() || null;
+        const merchantType = String(s.merchantType || s.merchant_type || (mName.toLowerCase() === 'faretransit llc' ? 'FARETRANSIT' : (merchantCode ? 'AIRLINE' : 'OTHER'))).toUpperCase();
+        const merchantName = merchantType === 'AIRLINE' ? (resolveAirlineName(merchantCode, mName) || mName) : (merchantType === 'FARETRANSIT' ? 'FareTransit LLC' : mName);
         return {
           booking_id: realId,
-          merchant_name: mName,
+          merchant_name: merchantName,
+          merchant_type: merchantType,
+          merchant_code: merchantCode,
           amount: Math.round(rawAmt * 100) / 100,
           currency: curr
         };
@@ -2542,76 +2635,11 @@ export const bookingRepository = {
       // 6. Log Rows affected (payments update)
       logger.info(`[Transaction] 6. Rows affected (payments update): ${pData?.length || 0}`);
 
-      let newStatus = booking.status;
-      let newAuthStatus = booking.authorization_status || 'PENDING';
-      const amountChanged = Math.abs(oldTotal - calculatedTotal) > 0.001;
-      const isAccepted = (originalAuthRecord?.status === 'accepted' || originalAuthRecord?.status === 'ACCEPTED' || booking.authorization_status === 'ACCEPTED' || booking.authorization_status === 'AUTHORIZED');
-
-      if (amountChanged) {
-        if (isAccepted) {
-          newStatus = 'REAUTHORIZATION_REQUIRED';
-          newAuthStatus = 'REAUTHORIZATION_REQUIRED';
-
-          try {
-            const { passengerAuthorizationService } = await import('../authorizations/passenger-authorization.service.mjs');
-            const newAuth = await passengerAuthorizationService.createAuthorizationToken(realId, {
-              authorizedAmount: calculatedTotal,
-              currency: (booking.currency || 'USD').toUpperCase()
-            });
-
-            if (newAuth?.token) {
-              const bAuthFields = {
-                authorization_token: newAuth.token,
-                authorization_expires_at: newAuth.expires_at
-              };
-              // 5. Log SQL update query executed (bookings auth token update)
-              logger.info(`[Transaction] 5. Executing: UPDATE bookings SET authorization_token = '${newAuth.token}', authorization_expires_at = '${newAuth.expires_at}' WHERE id = '${realId}'`);
-              const { data: bAuthData, error: bAuthErr } = await supabase
-                .from('bookings')
-                .update(bAuthFields)
-                .eq('id', realId)
-                .select();
-              if (bAuthErr) {
-                throw new Error(`DATABASE_ERROR [bookings auth update]: ${bAuthErr.message}`);
-              }
-              // 6. Log Rows affected
-              logger.info(`[Transaction] 6. Rows affected (bookings auth update): ${bAuthData?.length || 0}`);
-
-              // Sync memory
-              const existingMem = bookingsMemoryStore.get(realId) || {};
-              const updatedMemAuth = { ...existingMem, ...bAuthFields, ...(bAuthData?.[0] || {}) };
-              bookingsMemoryStore.set(realId, updatedMemAuth);
-              if (updatedMemAuth.confirmation_code) {
-                bookingsMemoryStore.set(updatedMemAuth.confirmation_code, updatedMemAuth);
-              }
-            }
-          } catch (authCreateErr) {
-            // Re-throw if it was a DB error during auth create to ensure rollback
-            if (authCreateErr.message?.includes('DATABASE_ERROR')) {
-              throw authCreateErr;
-            }
-            logger.warn(`[Transaction] Could not create reauthorization request: ${authCreateErr.message}`);
-          }
-        } else {
-          if (originalAuthRecord) {
-            // 5. Log SQL update query executed (passenger_authorizations update)
-            logger.info(`[Transaction] 5. Executing: UPDATE passenger_authorizations SET authorized_amount = ${calculatedTotal} WHERE id = '${originalAuthRecord.id}'`);
-            const { data: pAuthData, error: pAuthErr } = await supabase
-              .from('passenger_authorizations')
-              .update({
-                authorized_amount: calculatedTotal,
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', originalAuthRecord.id)
-              .select();
-            if (pAuthErr) {
-              throw new Error(`DATABASE_ERROR [passenger_authorizations update]: ${pAuthErr.message}`);
-            }
-            // 6. Log Rows affected
-            logger.info(`[Transaction] 6. Rows affected (passenger_authorizations update): ${pAuthData?.length || 0}`);
-          }
-        }
-      }
+      // Authorization requests are immutable. Payment/split changes never patch an
+      // existing passenger authorization. The successful mutation is followed by
+      // a revision bump which supersedes any pending request.
+      const newStatus = booking.status;
+      const newAuthStatus = booking.authorization_status || 'PENDING';
 
       const updatePayload = {
         total_amount: calculatedTotal,
@@ -2676,86 +2704,6 @@ export const bookingRepository = {
       bookingsMemoryStore.set(realId, updatedMemB);
       if (updatedMemB.confirmation_code) {
         bookingsMemoryStore.set(updatedMemB.confirmation_code, updatedMemB);
-      }
-
-      // ── Patch pending passenger_authorizations record ────────────────────
-      try {
-        const { passengerAuthorizationService } = await import('../authorizations/passenger-authorization.service.mjs');
-        const splitCurrency = formattedSplits[0]?.currency || booking.currency || 'USD';
-        const updatedAuth = await passengerAuthorizationService.updateAuthorizationAmountAndSplits(
-          realId,
-          calculatedTotal,
-          formattedSplits,
-          splitCurrency
-        );
-        if (updatedAuth?.token) {
-          const authFields = {
-            authorization_token: updatedAuth.token,
-            authorization_expires_at: updatedAuth.expires_at
-          };
-          // 5. Log SQL update query executed
-          logger.info(`[Transaction] 5. Executing: UPDATE bookings SET authorization_token = '${updatedAuth.token}', authorization_expires_at = '${updatedAuth.expires_at}' WHERE id = '${realId}'`);
-          const { data: bAuthData2, error: bAuthErr2 } = await supabase
-            .from('bookings')
-            .update(authFields)
-            .eq('id', realId)
-            .select();
-          if (bAuthErr2) {
-            throw new Error(`DATABASE_ERROR [bookings auth patch update]: ${bAuthErr2.message}`);
-          }
-          // 6. Log Rows affected
-          logger.info(`[Transaction] 6. Rows affected (bookings auth patch update): ${bAuthData2?.length || 0}`);
-
-          // Sync memory
-          const existingMem2 = bookingsMemoryStore.get(realId) || {};
-          const updatedMemAuth2 = { ...existingMem2, ...authFields, ...(bAuthData2?.[0] || {}) };
-          bookingsMemoryStore.set(realId, updatedMemAuth2);
-          if (updatedMemAuth2.confirmation_code) {
-            bookingsMemoryStore.set(updatedMemAuth2.confirmation_code, updatedMemAuth2);
-          }
-
-          // Send a new authorization email to the passenger if pending
-          if (!isAccepted) {
-            try {
-              const freshBooking = await bookingRepository.getById(realId);
-              await passengerAuthorizationService.sendAuthorizationEmail(updatedAuth, freshBooking);
-              
-              const emailFields = {
-                authorization_email_sent_at: new Date().toISOString()
-              };
-              // 5. Log SQL update query executed
-              logger.info(`[Transaction] 5. Executing: UPDATE bookings SET authorization_email_sent_at = '${emailFields.authorization_email_sent_at}' WHERE id = '${realId}'`);
-              const { data: bEmailData, error: bEmailErr } = await supabase
-                .from('bookings')
-                .update(emailFields)
-                .eq('id', realId)
-                .select();
-              if (bEmailErr) {
-                throw new Error(`DATABASE_ERROR [bookings email update]: ${bEmailErr.message}`);
-              }
-              // 6. Log Rows affected
-              logger.info(`[Transaction] 6. Rows affected (bookings email update): ${bEmailData?.length || 0}`);
-
-              // Sync memory
-              const existingMem3 = bookingsMemoryStore.get(realId) || {};
-              const updatedMemEmail = { ...existingMem3, ...emailFields, ...(bEmailData?.[0] || {}) };
-              bookingsMemoryStore.set(realId, updatedMemEmail);
-              if (updatedMemEmail.confirmation_code) {
-                bookingsMemoryStore.set(updatedMemEmail.confirmation_code, updatedMemEmail);
-              }
-            } catch (emailErr) {
-              if (emailErr.message?.includes('DATABASE_ERROR')) {
-                throw emailErr;
-              }
-              logger.warn(`[Transaction] Could not send re-authorization email: ${emailErr.message}`);
-            }
-          }
-        }
-      } catch (authPatchErr) {
-        if (authPatchErr.message?.includes('DATABASE_ERROR')) {
-          throw authPatchErr;
-        }
-        logger.warn(`[Transaction] Non-fatal: could not patch pending auth: ${authPatchErr.message}`);
       }
 
       // Record audit logs
@@ -2831,7 +2779,11 @@ export const bookingRepository = {
       }
 
       logger.info(`[Transaction] Commit successful for booking ${realId}. Splits total: $${calculatedTotal.toFixed(2)}`);
-      await mirrorBookingPaymentSplits(realId, splitsInput, booking.currency || 'USD');
+      await mirrorBookingPaymentSplits(realId, formattedSplits, booking.currency || 'USD');
+      await bookingRepository.bumpAuthorizationRevision(realId, {
+        reason: reason || 'Payment authorization amount or merchant split changed',
+        actor: adminId
+      });
       logger.info(`[Transaction] --- updatePaymentSplitsAndTotal END ---`);
 
       // Return refreshed full booking representation
@@ -2932,6 +2884,12 @@ export const bookingRepository = {
       });
     } catch (audErr) {
       logger.warn(`[updatePricingAtomic] Audit insert warning for ${base.id}:`, audErr.message);
+    }
+
+    const totalChanged = Math.abs(Number(base.customer_price || base.total_amount || 0) - Number(customerTotal || 0)) > 0.001;
+    const currencyChanged = String(base.currency || 'USD').toUpperCase() !== String(currency || 'USD').toUpperCase();
+    if (totalChanged || currencyChanged) {
+      await bookingRepository.bumpAuthorizationRevision(base.id, { reason: reason || 'Customer price or authorization currency changed', actor: adminId });
     }
 
     const updated = await bookingRepository.getById(base.id);

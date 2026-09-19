@@ -7,6 +7,7 @@ import env from '../../config/env.mjs';
 import logger from '../../config/logger.mjs';
 import bookingRepository from '../../modules/bookings/booking.repository.mjs';
 import passengerAuthorizationService from '../../modules/authorizations/passenger-authorization.service.mjs';
+import authorizationSnapshotService from '../../modules/authorizations/authorization-snapshot.service.mjs';
 import { resolveAirlineName, getCarrierLogoUrl, buildCanonicalItinerary, getArrivalDayShiftLabel, calculateLayoverDuration } from '../../shared/utils/airline-lookup.mjs';
 
 export function validateHtmlOutput(html, templateName, bookingRef) {
@@ -538,7 +539,7 @@ export const sendBookingConfirmation = async (bookingInput, options = {}) => {
     const hasReturnFlightTxt = returnSegs && returnSegs.length > 0;
 
     const customerTextBody = `
-THE FINAL SEAT — RESERVATION RECEIVED
+FareTransit — RESERVATION RECEIVED
 
 Thank you, ${passengerFirstName}!
 
@@ -768,7 +769,7 @@ export const sendBookingRequestReceivedEmail = async (bookingIdInput, { force = 
 
 
     const textBody = `
-THE FINAL SEAT — BOOKING REQUEST RECEIVED
+FareTransit — BOOKING REQUEST RECEIVED
 
 Thank you, ${passengerFirstName}!
 
@@ -833,234 +834,73 @@ Support: ${env.supportPhoneDisplay} | support@faretransit.com
 
 export const sendPassengerAuthorizationEmail = async (bookingIdInput) => {
   let bookingId = bookingIdInput;
+  let customerEmail = null;
   try {
     const booking = await bookingRepository.getCompleteBookingById(bookingIdInput);
     if (!booking) return { success: false, error: 'Booking not found' };
     bookingId = booking.id;
 
-
-    if (!booking.itinerary || !booking.itinerary.outbound || booking.itinerary.outbound.length === 0) {
-      const errMsg = 'EMAIL_PROTECTION_BLOCKED: Cannot dispatch authorization request email because flight itinerary segments snapshot is missing.';
-      logger.error(`[Email Protection] ${errMsg} (bookingId=${bookingId})`);
-      await bookingRepository.updateBookingStatus(bookingId, {
-        authorization_email_status: 'FAILED',
-        authorization_email_error: errMsg
-      });
-      return { success: false, error: errMsg };
-    }
-
-    const customerEmail = booking.email || booking.contacts?.[0]?.email || booking.travellers?.[0]?.email;
-    if (!customerEmail || !customerEmail.includes('@')) {
-      const errMsg = 'This booking does not have a valid passenger email address.';
-      await bookingRepository.updateBookingStatus(bookingId, {
-        authorization_email_status: 'FAILED',
-        authorization_email_error: errMsg
-      });
-      return { success: false, error: errMsg };
-    }
-
-    // Always fetch fresh payment splits directly from backend repository
-    const splits = await bookingRepository.getPaymentSplits(booking.id);
-
-    if (!splits || splits.length === 0) {
-      const errMsg = 'EMAIL_PROTECTION_BLOCKED: No saved payment split breakdown exists for this booking.';
-      logger.error(`[Email Protection] ${errMsg} (bookingId=${bookingId})`);
-      await bookingRepository.updateBookingStatus(bookingId, {
-        authorization_email_status: 'FAILED',
-        authorization_email_error: errMsg
-      });
-      return { success: false, error: errMsg };
-    }
-
-    // Validate split merchant names & amounts
-    for (const s of splits) {
-      const amt = parseFloat(s.amount || 0);
-      const name = String(s.merchant_name || s.merchantName || '').trim();
-      if (!name || isNaN(amt) || amt <= 0) {
-        const errMsg = `EMAIL_PROTECTION_BLOCKED: Saved payment split for "${name || 'Merchant'}" contains invalid amount ($${amt}).`;
-        await bookingRepository.updateBookingStatus(bookingId, {
-          authorization_email_status: 'FAILED',
-          authorization_email_error: errMsg
-        });
-        return { success: false, error: errMsg };
-      }
-    }
-
-    const splitTotal = splits.reduce((sum, s) => sum + parseFloat(s.amount || 0), 0);
-    const authorizedAmount = parseFloat(booking.authorized_amount || booking.customer_price || booking.total_amount || 0);
-
-    // Decimal-safe validation: compare splitTotal vs authorizedAmount
-    if (authorizedAmount > 0 && Math.abs(splitTotal - authorizedAmount) > 0.01) {
-      const errMsg = `EMAIL_PROTECTION_BLOCKED: Saved payment split total ($${splitTotal.toFixed(2)}) does not match the authorized amount ($${authorizedAmount.toFixed(2)}).`;
-      logger.error(`[Email Protection] ${errMsg} (bookingId=${bookingId})`);
-      await bookingRepository.updateBookingStatus(bookingId, {
-        authorization_email_status: 'FAILED',
-        authorization_email_error: errMsg
-      });
-      return { success: false, error: errMsg };
-    }
-
-    const amount = splitTotal.toFixed(2);
-    const currency = (booking.currency || 'USD').toUpperCase();
-
     const authResult = await passengerAuthorizationService.createAuthorizationToken(booking);
-    const token = authResult.token;
-    const authUrl = `https://www.faretransit.com/authorize/${token}`;
+    const snapshot = authResult.snapshot || authResult.request_snapshot;
+    if (!snapshot) throw new Error('AUTHORIZATION_SNAPSHOT_MISSING');
 
-    const confirmationCode = booking.confirmation_code || 'TFS-PENDING';
-    const passengerName = booking.passenger_name || 'Valued Passenger';
+    customerEmail = snapshot.passenger?.email || booking.email || booking.contacts?.[0]?.email;
+    if (!customerEmail || !customerEmail.includes('@')) return { success: false, error: 'This booking does not have a valid passenger email address.' };
+
+    const splits = snapshot.paymentAuthorization?.splits || [];
+    if (!splits.length) return { success: false, error: 'EMAIL_PROTECTION_BLOCKED: No saved payment split breakdown exists for this booking.' };
+    const amount = Number(snapshot.paymentAuthorization.authorizedAmount || 0).toFixed(2);
+    const currency = String(snapshot.paymentAuthorization.currency || 'USD').toUpperCase();
+    const confirmationCode = snapshot.confirmationCode;
+    const passengerName = snapshot.passenger?.name || 'Valued Passenger';
     const passengerFirstName = passengerName.split(' ')[0] || 'Passenger';
+    const authUrl = `https://www.faretransit.com/authorize/${authResult.token}`;
+    const itineraryHtml = renderFlightItineraryHtml(authorizationSnapshotService.toBookingLike ? authorizationSnapshotService.toBookingLike(snapshot) : snapshot);
 
-
-    let splitsHtml = '';
-    if (splits && splits.length > 0) {
-      splitsHtml = `
-        <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; padding: 14px; margin: 16px 0;">
-          <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #8b1236; letter-spacing: 0.8px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">
-            Payment Authorization Breakdown
-          </div>
-          <table role="presentation" width="100%" style="width: 100%; border-collapse: collapse; margin-bottom: 8px;">
-            ${splits.map((s) => `
-              <tr>
-                <td style="font-size: 13px; color: #475569; padding: 6px 0; font-family: Arial, sans-serif;">
-                  ${s.merchant_name || s.merchantName || 'Merchant'}
-                </td>
-                <td style="font-size: 13px; font-weight: 700; color: #1e293b; text-align: right; padding: 6px 0; font-family: Arial, sans-serif;">
-                  $${parseFloat(s.amount || 0).toFixed(2)} ${(s.currency || currency).toUpperCase()}
-                </td>
-              </tr>
-            `).join('')}
-          </table>
-          <table role="presentation" width="100%" style="width: 100%; border-collapse: collapse; border-top: 2px solid #8b1236; margin-top: 4px; padding-top: 8px;">
-            <tr>
-              <td style="font-size: 12px; font-weight: 800; color: #1e293b; text-transform: uppercase; padding: 8px 0; font-family: Arial, sans-serif;">
-                Total Authorized Amount:
-              </td>
-              <td style="font-size: 15px; font-weight: 900; color: #8b1236; text-align: right; padding: 8px 0; font-family: Arial, sans-serif;">
-                $${amount} ${currency}
-              </td>
-            </tr>
-          </table>
-        </div>
-      `;
-    }
+    const splitsHtml = `
+      <div style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:10px;padding:14px;margin:16px 0;">
+        <div style="font-size:11px;font-weight:800;text-transform:uppercase;color:#8b1236;letter-spacing:.8px;margin-bottom:8px;border-bottom:1px solid #e2e8f0;padding-bottom:6px;">Payment Authorization Breakdown</div>
+        <table role="presentation" width="100%" style="border-collapse:collapse;margin-bottom:8px;">
+          ${splits.map(s => `<tr><td style="font-size:13px;color:#475569;padding:6px 0;">${s.merchantName || s.merchant_name || 'Merchant'}</td><td style="font-size:13px;font-weight:700;color:#1e293b;text-align:right;padding:6px 0;">$${Number(s.amount || 0).toFixed(2)} ${(s.currency || currency).toUpperCase()}</td></tr>`).join('')}
+        </table>
+        <table role="presentation" width="100%" style="border-collapse:collapse;border-top:2px solid #8b1236;margin-top:4px;"><tr><td style="font-size:12px;font-weight:800;color:#1e293b;text-transform:uppercase;padding:8px 0;">Total Authorized Amount:</td><td style="font-size:15px;font-weight:900;color:#8b1236;text-align:right;padding:8px 0;">$${amount} ${currency}</td></tr></table>
+      </div>`;
 
     const subject = `Action Required — Authorize Booking ${confirmationCode}`;
-    const textBody = `
-THE FINAL SEAT — ACTION REQUIRED: AUTHORIZE FLIGHT RESERVATION
+    const textBody = `FareTransit — ACTION REQUIRED: AUTHORIZE FLIGHT RESERVATION\n\nDear ${passengerFirstName},\n\nPlease review and authorize reservation ${confirmationCode} for $${amount} ${currency}.\n\n${splits.map(s => `${s.merchantName || s.merchant_name}: $${Number(s.amount || 0).toFixed(2)} ${(s.currency || currency).toUpperCase()}`).join('\n')}\n\nSecure authorization link:\n${authUrl}\n\nThis link expires in 24 hours. If the itinerary, passenger details or total changes, this request is automatically superseded and a new authorization is required.\n\nSupport: ${env.supportPhoneDisplay} | support@faretransit.com`;
 
-Dear ${passengerFirstName},
+    const htmlBody = `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;background:#fff;box-shadow:0 8px 24px rgba(79,16,43,.12);">
+      <div style="background:#8b1236;padding:24px 18px;text-align:center;color:#fff;"><div style="font-size:24px;font-weight:900;">✈ FareTransit</div><div style="color:#f8dfe8;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-top:4px;">Passenger Reservation Authorization Request</div></div>
+      <div style="padding:24px;color:#334155;"><h2 style="color:#8b1236;margin-top:0;font-size:18px;">Action Required: Authorize Reservation</h2><p>Dear <strong>${passengerFirstName}</strong>,</p><p>Please review and confirm the reservation details below for <strong>${confirmationCode}</strong>. Total authorized charge: <strong>$${amount} ${currency}</strong>.</p><div style="margin:20px 0;">${itineraryHtml}</div>${splitsHtml}<div style="text-align:center;margin:28px 0;"><a href="${authUrl}" style="background:#8b1236;color:#fff;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:800;font-size:15px;display:inline-block;">Review &amp; Authorize Booking →</a></div><p style="font-size:12px;color:#64748b;line-height:1.4;text-align:center;">This secure link is tied to booking revision ${snapshot.bookingRevision}. Any material booking change automatically invalidates it.</p></div>
+      <div style="background:#fbf8f9;padding:16px;text-align:center;font-size:11px;color:#64748b;border-top:1px solid #e2e8f0;">FareTransit LLC • support@faretransit.com • ${env.supportPhoneDisplay}</div></div>`;
 
-Please review and authorize your flight reservation ${confirmationCode} for a total charge of $${amount} ${currency}.
-${splits.map(s => `\nMerchant: ${s.merchant_name || s.merchantName}\nAmount: $${parseFloat(s.amount || 0).toFixed(2)} ${(s.currency || currency).toUpperCase()}`).join('\n')}
-
-Total Authorized Amount: $${amount} ${currency}
-
-Click the secure authorization link below to confirm your itinerary:
-${authUrl}
-
-This single-use link expires in 24 hours.
-
-Support 24/7: ${env.supportPhoneDisplay} | support@faretransit.com
-    `.trim();
-
-    const itineraryHtml = renderFlightItineraryHtml(booking);
-
-    const htmlBody = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background: #ffffff; box-shadow: 0 8px 24px rgba(79,16,43,0.12);">
-        <div style="background: #8b1236; padding: 24px 18px; text-align: center;">
-          <div style="display: inline-block; margin-bottom: 6px;">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" fill="#e2b84d"/>
-            </svg>
-          </div>
-          <div style="color: #ffffff; font-size: 22px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase;">THE FINAL SEAT</div>
-          <div style="color: #f8dfe8; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; margin-top: 4px;">PASSENGER RESERVATION AUTHORIZATION REQUEST</div>
-        </div>
-        <div style="padding: 24px; color: #334155;">
-          <h2 style="color: #8b1236; margin-top: 0; font-size: 18px;">Action Required: Authorize Reservation</h2>
-          <p>Dear <strong>${passengerFirstName}</strong>,</p>
-          <p>Please review and confirm your flight details for temporary confirmation <strong>${confirmationCode}</strong>. Total authorized charge: <strong>$${amount} ${currency}</strong>.</p>
-          
-          <div style="margin: 20px 0;">
-            ${itineraryHtml}
-          </div>
-
-          ${splitsHtml}
-
-          <div style="text-align: center; margin: 28px 0;">
-            <a href="${authUrl}" style="background-color: #8b1236; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 800; font-size: 15px; display: inline-block; letter-spacing: 0.5px;">Review &amp; Authorize Booking &rarr;</a>
-          </div>
-          <p style="font-size: 12px; color: #64748b; line-height: 1.4; text-align: center;">This secure, single-use authorization link expires in 24 hours. Your saved card will only be processed after you review and authorize.</p>
-        </div>
-        <div style="background: #fbf8f9; padding: 16px; text-align: center; font-size: 11px; color: #64748b; border-top: 1px solid #e2e8f0;">
-          FareTransit LLC &bull; 24/7 Customer Desk: support@faretransit.com &bull; ${env.supportPhoneDisplay}
-        </div>
-      </div>
-    `.trim();
-
-
-    const result = await sendViaResend({
-      recipients: [customerEmail],
-      subject,
-      textBody,
-      htmlBody,
-      replyTo: 'support@faretransit.com'
-    });
-
+    const result = await sendViaResend({ recipients: [customerEmail], subject, textBody, htmlBody, replyTo: 'support@faretransit.com' });
     const emailId = result?.messageId || result?.id || null;
-    if (!emailId) {
-      const errMsg = env.resendApiKey ? 'EMAIL_PROVIDER_ID_MISSING: Resend did not return a message ID' : 'EMAIL_PROVIDER_NOT_CONFIGURED: Resend API Key is missing';
-      await bookingRepository.updateBookingStatus(bookingId, {
-        authorization_email_status: 'FAILED',
-        authorization_email_error: errMsg
-      });
-      return { success: false, error: errMsg };
-    }
+    if (!emailId) throw new Error(env.resendApiKey ? 'EMAIL_PROVIDER_ID_MISSING' : 'EMAIL_PROVIDER_NOT_CONFIGURED');
 
     const sentAt = new Date().toISOString();
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-
+    const expiresAt = authResult.expiresAt || authResult.expires_at;
     await bookingRepository.saveEmailActivity(bookingId, {
-      template_type: 'AUTHORIZATION_EMAIL',
-      status: 'SENT',
-      provider_message_id: emailId,
-      recipient: customerEmail,
-      sent_at: sentAt,
-      expires_at: expiresAt
+      template_type: 'AUTHORIZATION_EMAIL', status: 'SENT', provider_message_id: emailId,
+      recipient: customerEmail, sent_at: sentAt, expires_at: expiresAt
     });
-
     await bookingRepository.updateBookingStatus(bookingId, {
       status: 'AWAITING_AUTHORIZATION',
-      authorization_email_status: 'SENT',
-      authorization_email_id: emailId,
-      authorization_email_sent_at: sentAt,
-      authorization_email_recipient: customerEmail,
-      authorization_email_error: null,
-      authorization_expires_at: expiresAt
+      authorization_status: 'AWAITING_PASSENGER',
+      authorization_email_status: 'SENT', authorization_email_id: emailId,
+      authorization_email_sent_at: sentAt, authorization_email_recipient: customerEmail,
+      authorization_email_error: null, authorization_expires_at: expiresAt,
+      authorization_token: authResult.token
     });
-
-    logger.info(`[Email Log] bookingId=${bookingId} confirmationCode=${confirmationCode} emailType=authorization recipient=${customerEmail} providerMessageId=${emailId} result=success`);
-
-    return { success: true, emailId, providerMessageId: emailId, authUrl };
+    return { success: true, emailId, providerMessageId: emailId, authUrl, bookingRevision: snapshot.bookingRevision };
   } catch (err) {
     const errorMsg = err.message || 'Authorization email dispatch failed';
     logger.error(`[Email Log] bookingId=${bookingId} emailType=authorization result=failed error=${errorMsg}`);
-    await bookingRepository.saveEmailActivity(bookingId, {
-      template_type: 'AUTHORIZATION_EMAIL',
-      status: 'FAILED',
-      recipient: customerEmail,
-      error: errorMsg
-    });
-    await bookingRepository.updateBookingStatus(bookingId, {
-      authorization_email_status: 'FAILED',
-      authorization_email_error: errorMsg
-    });
+    await bookingRepository.saveEmailActivity(bookingId, { template_type: 'AUTHORIZATION_EMAIL', status: 'FAILED', recipient: customerEmail, error: errorMsg }).catch(() => null);
+    await bookingRepository.updateBookingStatus(bookingId, { authorization_email_status: 'FAILED', authorization_email_error: errorMsg }).catch(() => null);
     return { success: false, error: errorMsg };
   }
 };
-
-
 
 export const sendPaymentFailedEmail = async (booking, reason = 'Payment processing failed') => {
   try {
@@ -1378,7 +1218,7 @@ export const sendFinalTicketEmail = async (bookingInput) => {
     const subject = `Official Flight E-Ticket & Confirmation — Booking ID ${bookingReference} | FareTransit`;
 
     const textBody = `
-THE FINAL SEAT — OFFICIAL FLIGHT E-TICKET CONFIRMATION
+FareTransit — OFFICIAL FLIGHT E-TICKET CONFIRMATION
 
 Dear ${passengerFirstName},
 
@@ -1413,7 +1253,7 @@ Thank you for choosing FareTransit! Have a wonderful trip.
           <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" fill="#e2b84d"/>
         </svg>
       </div>
-      <div style="font-size: 22px; line-height: 26px; font-weight: 900; color: #ffffff; letter-spacing: 2px; text-transform: uppercase;">THE FINAL SEAT</div>
+      <div style="font-size: 22px; line-height: 26px; font-weight: 900; color: #ffffff; letter-spacing: 2px; text-transform: uppercase;">FareTransit</div>
       <div style="font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #f8dfe8; margin-top: 4px;">OFFICIAL FLIGHT E-TICKET &amp; CONFIRMATION</div>
     </div>
 

@@ -188,17 +188,18 @@ const adminPassengerController = {
         updated_at: new Date().toISOString()
       };
 
-      let reauthorizationRequired = false;
-      if (identityChanged && AUTHORIZED_STATES.has(currentState)) {
-        updateFields.status = 'REAUTHORIZATION_REQUIRED';
-        updateFields.authorization_status = 'REAUTHORIZATION_REQUIRED';
-        updateFields.authorization_token = null;
-        updateFields.authorization_expires_at = null;
-        reauthorizationRequired = true;
-      }
-
       const { error: bookingUpdateError } = await supabase.from('bookings').update(updateFields).eq('id', booking.id);
       if (bookingUpdateError) throw new Error(`Unable to synchronize booking passenger summary: ${bookingUpdateError.message}`);
+
+      const contactChanged = String(contact.email || '') !== String(booking.email || '') || String(contact.phone || '') !== String(booking.phone || '');
+      let reauthorizationRequired = false;
+      if (identityChanged || contactChanged) {
+        const revisionResult = await bookingRepository.bumpAuthorizationRevision(booking.id, {
+          reason: identityChanged ? 'Passenger identity details changed' : 'Passenger contact details changed',
+          actor: req.user?.email || req.user?.id || 'admin'
+        });
+        reauthorizationRequired = revisionResult.reauthorizationRequired;
+      }
 
       await bookingRepository.recordAuditLog?.({
         bookingId: booking.id,
