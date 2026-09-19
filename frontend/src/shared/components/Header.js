@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_HREF } from '../constants/supportContact';
 import './Header.css';
 import './HeaderLayoutOverrides.css';
 
@@ -40,6 +41,32 @@ function Header() {
   }, [location.pathname]);
 
   const closeMenu = () => setMenuOpen(false);
+  const isPaidCarCallLanding = location.pathname === '/car-rental/call-now';
+
+  if (isPaidCarCallLanding) {
+    return (
+      <header className={`header header--car-call-landing ${scrolled ? 'header--scrolled' : ''}`}>
+        <div className="container header-inner">
+          <div className="logo" aria-label="FareTransit">
+            <i className="fas logo-icon fa-car" aria-hidden="true" />
+            <span className="logo-link"><h1>FareTransit</h1></span>
+          </div>
+          <a
+            href={SUPPORT_PHONE_HREF}
+            className="car-call-paid-header__call"
+            aria-label={`Call FareTransit at ${SUPPORT_PHONE_DISPLAY}`}
+            data-paid-car-call="true"
+            data-call-location="header"
+            data-faretransit-phone="true"
+          >
+            <i className="fas fa-phone" aria-hidden="true" />
+            <span className="car-call-paid-header__number-prefix">Call </span>
+            <span data-phone-display="true">{SUPPORT_PHONE_DISPLAY}</span>
+          </a>
+        </div>
+      </header>
+    );
+  }
 
   const flightSupportPaths = new Set([
     '/travel-assistance',
@@ -53,7 +80,7 @@ function Header() {
     || location.pathname.startsWith('/routes/flight-')
     || flightSupportPaths.has(location.pathname);
   const isHotelsActive = location.pathname.startsWith('/hotels');
-  const isCarsActive = location.pathname.startsWith('/car-rentals');
+  const isCarsActive = location.pathname.startsWith('/car-rentals') || location.pathname.startsWith('/car-rental');
   const isContactActive = location.pathname === '/contact';
   const isAdminRoute = location.pathname.startsWith('/admin');
 
