@@ -1,12 +1,6 @@
 import React, { useRef, useState } from 'react';
 import AdminItineraryImportModal from '../../../shared/components/admin/AdminItineraryImportModal';
-
-const normalizeTripType = value => {
-  const raw = String(value || '').trim().toLowerCase();
-  if (raw === 'round-trip' || raw === 'round_trip') return 'round_trip';
-  if (raw === 'multi-city' || raw === 'multi_city') return 'multi_city';
-  return 'one_way';
-};
+import { normalizeItineraryType } from '../../../shared/utils/itineraryArchitecture';
 
 const collectImportedSegments = importData => {
   if (!importData) return [];
@@ -18,17 +12,23 @@ const collectImportedSegments = importData => {
     ...(importData.outboundSegments || []).map(segment => ({
       ...segment,
       journey_direction: 'outbound',
-      direction: 'outbound'
+      direction: 'outbound',
+      journey_index: 1,
+      journey_role: 'OUTBOUND'
     })),
     ...(importData.returnSegments || []).map(segment => ({
       ...segment,
       journey_direction: 'return',
-      direction: 'return'
+      direction: 'return',
+      journey_index: 2,
+      journey_role: 'RETURN'
     })),
     ...(importData.multiCityJourneys || []).map(segment => ({
       ...segment,
-      journey_direction: segment.journey_direction || 'multi_city',
-      direction: segment.direction || segment.journey_direction || 'multi_city'
+      journey_direction: 'multi_city',
+      direction: 'multi_city',
+      journey_index: Number(segment.journey_index || segment.journeyIndex || 1),
+      journey_role: 'TRIP'
     }))
   ];
 };
@@ -49,12 +49,15 @@ export default function AdminEditBookingGdsImporter({ isOpen, onClose, onApply }
       return;
     }
 
+    const itineraryType = normalizeItineraryType(importData?.itineraryType || importData?.tripType);
+
     savingRef.current = true;
     setApplyError('');
     try {
       await Promise.resolve(onApply?.({
         segments,
-        tripType: normalizeTripType(importData?.tripType),
+        tripType: itineraryType,
+        itineraryType,
         sourceText: null
       }));
       savingRef.current = false;
