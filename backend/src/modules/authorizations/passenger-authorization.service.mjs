@@ -58,6 +58,11 @@ export const passengerAuthorizationService = {
     const snapshot = await authorizationSnapshotService.build(bookingInput);
     const bookingId = snapshot.bookingId;
     const revision = Number(snapshot.bookingRevision || 1);
+    const liveStateAtIssue = await getAuthoritativeBookingAuthorizationState(bookingId);
+    const liveRevisionAtIssue = Number(liveStateAtIssue?.booking_revision || 1);
+    if (revision !== liveRevisionAtIssue) {
+      throw new Error(`AUTHORIZATION_SNAPSHOT_REVISION_STALE: Snapshot revision ${revision} does not match live revision ${liveRevisionAtIssue}.`);
+    }
     const snapshotHash = authorizationSnapshotHash(snapshot);
     const now = new Date();
 
@@ -410,7 +415,9 @@ Email: support@faretransit.com | Call: ${env.supportPhoneDisplay}
     const authRevision = Number(authRecord.authorization_revision || 1);
     const bookingRevision = Number(liveState?.booking_revision || 1);
     const liveAuthorizationStatus = String(liveState?.authorization_status || '').toUpperCase();
-    if (authRevision !== bookingRevision || liveAuthorizationStatus === 'REAUTHORIZATION_REQUIRED') {
+    const liveToken = String(liveState?.authorization_token || '').trim();
+    const tokenMismatch = Boolean(liveToken && liveToken !== token);
+    if (authRevision !== bookingRevision || liveAuthorizationStatus === 'REAUTHORIZATION_REQUIRED' || tokenMismatch) {
       // Preserve already-accepted evidence exactly as historical evidence. Only
       // pending rows are transitioned; every stale public token is rejected.
       if (!['accepted', 'authorized'].includes(status)) {
@@ -483,10 +490,12 @@ Email: support@faretransit.com | Call: ${env.supportPhoneDisplay}
     const authRevision = Number(authRecord.authorization_revision || 1);
     const bookingRevision = Number(liveState?.booking_revision || 1);
     const liveAuthorizationStatus = String(liveState?.authorization_status || '').toUpperCase();
+    const liveToken = String(liveState?.authorization_token || '').trim();
+    const tokenMismatch = Boolean(liveToken && liveToken !== token);
 
-    // Revision/lifecycle invalidation wins over idempotency: an accepted historical
-    // token from an older revision is evidence, not a reusable public authorization.
-    if (authRevision !== bookingRevision || liveAuthorizationStatus === 'REAUTHORIZATION_REQUIRED') {
+    // Revision/lifecycle/token-lineage invalidation wins over idempotency: an
+    // accepted historical token is evidence, not a reusable public authorization.
+    if (authRevision !== bookingRevision || liveAuthorizationStatus === 'REAUTHORIZATION_REQUIRED' || tokenMismatch) {
       if (!['accepted', 'authorized'].includes(state) && !authRecord.consumed_at) {
         await supabase.from('passenger_authorizations').update({
           status: 'superseded', authorization_status: 'SUPERSEDED', superseded_at: new Date().toISOString(),
