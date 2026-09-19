@@ -131,8 +131,8 @@ test('booking confirmation renders every passenger, contact email and complete i
   assert.match(html, /EWR/);
   assert.match(html, /IAH/);
   assert.match(html, /MDE/);
-  assert.match(html, /Outbound Journey/);
-  assert.match(html, /Return Journey/);
+  assert.match(html, />Outbound</);
+  assert.match(html, />Return</);
   assert.doesNotMatch(html, /Commercial Airline/i);
 });
 
