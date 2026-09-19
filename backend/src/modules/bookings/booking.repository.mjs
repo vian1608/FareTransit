@@ -379,7 +379,12 @@ export const bookingRepository = {
     }
 
     if (!data && !memOverridden) return null;
-    const base = { ...(data || {}), ...(memOverridden || {}) };
+    // The database is authoritative whenever a row was fetched. Memory is only a
+    // fallback/cache and must never overwrite a newer booking_revision, token
+    // lifecycle status, price, itinerary metadata, or other persisted state.
+    const base = data
+      ? { ...(memOverridden || {}), ...data }
+      : { ...(memOverridden || {}) };
     if (!base.id) return null;
     return base;
   },
