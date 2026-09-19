@@ -1,0 +1,797 @@
+.car-call-page {
+  --car-call-ink: #16233a;
+  --car-call-muted: #5d6a7f;
+  --car-call-border: #dbe3ed;
+  --car-call-soft: #f7f9fc;
+  --car-call-accent: #8b1538;
+  --car-call-accent-dark: #68102a;
+  --car-call-gold: #f2c15b;
+  --car-call-success: #166534;
+  background: #ffffff;
+  color: var(--car-call-ink);
+  min-height: 100vh;
+  padding-bottom: 0;
+}
+
+.car-call-shell {
+  width: min(1120px, calc(100% - 32px));
+  margin: 0 auto;
+}
+
+.car-call-main {
+  overflow: hidden;
+}
+
+.car-call-hero {
+  position: relative;
+  padding: clamp(48px, 8vw, 92px) 0 clamp(42px, 7vw, 76px);
+  background:
+    radial-gradient(circle at 88% 18%, rgba(242, 193, 91, 0.18), transparent 31%),
+    radial-gradient(circle at 12% 88%, rgba(139, 21, 56, 0.08), transparent 34%),
+    #ffffff;
+}
+
+.car-call-hero__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 390px);
+  align-items: center;
+  gap: clamp(34px, 7vw, 80px);
+}
+
+.car-call-eyebrow,
+.car-call-section-kicker {
+  display: inline-block;
+  margin-bottom: 12px;
+  color: var(--car-call-accent);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.car-call-hero h1,
+.car-call-section h2,
+.car-call-final h2 {
+  margin: 0;
+  color: var(--car-call-ink);
+  letter-spacing: -0.035em;
+}
+
+.car-call-hero h1 {
+  max-width: 720px;
+  font-size: clamp(2.35rem, 5vw, 4.5rem);
+  line-height: 1.02;
+}
+
+.car-call-hero__lead {
+  max-width: 720px;
+  margin: 22px 0 0;
+  color: #344258;
+  font-size: clamp(1.05rem, 2vw, 1.25rem);
+  line-height: 1.65;
+}
+
+.car-call-hero__persuasion {
+  max-width: 690px;
+  margin: 12px 0 22px;
+  color: var(--car-call-muted);
+  line-height: 1.55;
+}
+
+.car-call-primary-cta,
+.car-call-card__button,
+.car-call-mobile-sticky__link,
+.car-call-paid-header__call {
+  min-height: 52px;
+  border-radius: 12px;
+  text-decoration: none;
+  font-weight: 800;
+  transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+}
+
+.car-call-primary-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-width: min(100%, 330px);
+  padding: 15px 22px;
+  background: var(--car-call-accent);
+  color: #ffffff;
+  box-shadow: 0 12px 26px rgba(139, 21, 56, 0.22);
+}
+
+.car-call-primary-cta:hover,
+.car-call-primary-cta:focus-visible,
+.car-call-card__button:hover,
+.car-call-card__button:focus-visible,
+.car-call-paid-header__call:hover,
+.car-call-paid-header__call:focus-visible {
+  background: var(--car-call-accent-dark);
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 14px 30px rgba(104, 16, 42, 0.25);
+}
+
+.car-call-primary-cta:focus-visible,
+.car-call-card__button:focus-visible,
+.car-call-mobile-sticky__link:focus-visible,
+.car-call-paid-header__call:focus-visible,
+.car-call-airport-links a:focus-visible,
+.car-call-contact-link:focus-visible {
+  outline: 3px solid rgba(242, 193, 91, 0.95);
+  outline-offset: 3px;
+}
+
+.car-call-cta-helper {
+  margin-top: 8px;
+  color: var(--car-call-muted);
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+.car-call-urgency {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: fit-content;
+  max-width: 100%;
+  margin-top: 22px;
+  padding: 11px 14px;
+  border: 1px solid #f0d59b;
+  border-radius: 10px;
+  background: #fffaf0;
+  color: #6e5110;
+  font-size: 0.91rem;
+}
+
+.car-call-benefit-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 18px;
+  margin-top: 24px;
+  max-width: 720px;
+}
+
+.car-call-benefit-row span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #3e4c61;
+  font-size: 0.91rem;
+  font-weight: 650;
+}
+
+.car-call-benefit-row i {
+  width: 18px;
+  color: var(--car-call-success);
+  text-align: center;
+}
+
+.car-call-disclosure,
+.car-call-trust-disclosure {
+  color: #6a7280;
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.car-call-disclosure {
+  max-width: 720px;
+  margin: 20px 0 0;
+}
+
+.car-call-hero__call-card {
+  border: 1px solid var(--car-call-border);
+  border-radius: 20px;
+  padding: 30px;
+  background: #ffffff;
+  box-shadow: 0 24px 70px rgba(23, 35, 58, 0.12);
+  text-align: center;
+}
+
+.car-call-card__icon {
+  display: grid;
+  place-items: center;
+  width: 62px;
+  height: 62px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  background: #fff1f5;
+  color: var(--car-call-accent);
+  font-size: 1.35rem;
+}
+
+.car-call-card__label {
+  display: block;
+  color: var(--car-call-muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.car-call-card__number {
+  display: block;
+  margin-top: 10px;
+  color: var(--car-call-ink);
+  font-size: clamp(1.55rem, 3vw, 2.05rem);
+}
+
+.car-call-hero__call-card p {
+  margin: 14px 0 20px;
+  color: var(--car-call-muted);
+  line-height: 1.55;
+}
+
+.car-call-card__button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 14px 18px;
+  background: var(--car-call-accent);
+  color: #ffffff;
+}
+
+.car-call-hero__call-card small {
+  display: block;
+  margin-top: 14px;
+  color: #7d8491;
+  line-height: 1.45;
+}
+
+.car-call-section {
+  padding: clamp(54px, 8vw, 88px) 0;
+}
+
+.car-call-section--soft {
+  background: var(--car-call-soft);
+  border-top: 1px solid #edf1f5;
+  border-bottom: 1px solid #edf1f5;
+}
+
+.car-call-section h2,
+.car-call-final h2 {
+  font-size: clamp(1.85rem, 3.5vw, 3rem);
+  line-height: 1.12;
+}
+
+.car-call-section-lead {
+  max-width: 720px;
+  margin: 14px 0 0;
+  color: var(--car-call-muted);
+  line-height: 1.65;
+}
+
+.car-call-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 30px;
+}
+
+.car-call-feature-card {
+  min-height: 190px;
+  padding: 22px;
+  border: 1px solid var(--car-call-border);
+  border-radius: 16px;
+  background: #ffffff;
+}
+
+.car-call-feature-card__icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: #fff1f5;
+  color: var(--car-call-accent);
+}
+
+.car-call-feature-card h3,
+.car-call-step h3,
+.car-call-need h3 {
+  margin: 15px 0 6px;
+  color: var(--car-call-ink);
+  font-size: 1rem;
+}
+
+.car-call-feature-card p,
+.car-call-step p,
+.car-call-need p {
+  margin: 0;
+  color: var(--car-call-muted);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.car-call-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 30px;
+}
+
+.car-call-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 22px;
+  border: 1px solid var(--car-call-border);
+  border-radius: 16px;
+  background: #ffffff;
+}
+
+.car-call-step__number {
+  display: grid;
+  place-items: center;
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--car-call-accent);
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.car-call-step h3 {
+  margin-top: 2px;
+}
+
+.car-call-primary-cta--centered {
+  display: flex;
+  width: fit-content;
+  margin: 30px auto 0;
+}
+
+.car-call-trust-band {
+  padding: 28px 0;
+  background: #101a2d;
+  color: #ffffff;
+}
+
+.car-call-trust-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.car-call-trust-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 48px;
+  text-align: center;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.car-call-trust-item i {
+  color: var(--car-call-gold);
+}
+
+.car-call-trust-disclosure {
+  margin: 18px auto 0;
+  max-width: 780px;
+  color: #c9d2df;
+  text-align: center;
+}
+
+.car-call-needs-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 28px;
+}
+
+.car-call-need {
+  display: flex;
+  gap: 14px;
+  padding: 20px;
+  border: 1px solid var(--car-call-border);
+  border-radius: 14px;
+  background: #ffffff;
+}
+
+.car-call-need > i {
+  margin-top: 3px;
+  width: 24px;
+  color: var(--car-call-accent);
+  text-align: center;
+}
+
+.car-call-need h3 {
+  margin-top: 0;
+}
+
+.car-call-section--airport {
+  background: #ffffff;
+  padding-top: 40px;
+}
+
+.car-call-airport-links {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.car-call-airport-links a {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-height: 74px;
+  padding: 14px;
+  border: 1px solid var(--car-call-border);
+  border-radius: 12px;
+  background: #ffffff;
+  color: var(--car-call-ink);
+  text-decoration: none;
+}
+
+.car-call-airport-links a:hover {
+  border-color: #b9c5d5;
+  box-shadow: 0 8px 24px rgba(23, 35, 58, 0.08);
+}
+
+.car-call-airport-links strong {
+  color: var(--car-call-accent);
+}
+
+.car-call-airport-links span {
+  color: var(--car-call-muted);
+  font-size: 0.78rem;
+}
+
+.car-call-faq-shell {
+  max-width: 900px;
+}
+
+.car-call-faq-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 26px;
+}
+
+.car-call-faq {
+  border: 1px solid var(--car-call-border);
+  border-radius: 12px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.car-call-faq summary {
+  position: relative;
+  padding: 18px 48px 18px 18px;
+  cursor: pointer;
+  color: var(--car-call-ink);
+  font-weight: 750;
+  list-style: none;
+}
+
+.car-call-faq summary::-webkit-details-marker {
+  display: none;
+}
+
+.car-call-faq summary::after {
+  content: '+';
+  position: absolute;
+  top: 50%;
+  right: 18px;
+  transform: translateY(-50%);
+  color: var(--car-call-accent);
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.car-call-faq[open] summary::after {
+  content: '–';
+}
+
+.car-call-faq p {
+  margin: 0;
+  padding: 0 18px 18px;
+  color: var(--car-call-muted);
+  line-height: 1.65;
+}
+
+.car-call-final {
+  padding: clamp(54px, 8vw, 82px) 0;
+  background: linear-gradient(135deg, #fff7f9 0%, #ffffff 70%);
+}
+
+.car-call-final__inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 34px;
+}
+
+.car-call-final p {
+  max-width: 680px;
+  margin: 14px 0 0;
+  color: var(--car-call-muted);
+  line-height: 1.6;
+}
+
+.car-call-final__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.car-call-contact-link {
+  color: #5f6672;
+  font-size: 0.82rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.car-call-mobile-sticky {
+  display: none;
+}
+
+/* Paid-search header: identity + one conversion action, no service navigation. */
+.header.header--car-call-landing {
+  background: #ffffff;
+  box-shadow: 0 1px 0 rgba(22, 35, 58, 0.1), 0 7px 24px rgba(22, 35, 58, 0.06);
+}
+
+.header.header--car-call-landing .logo-icon,
+.header.header--car-call-landing .logo h1 {
+  color: var(--car-call-accent, #8b1538);
+  background: none;
+  -webkit-text-fill-color: currentColor;
+  text-shadow: none;
+  filter: none;
+}
+
+.car-call-paid-header__call {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #8b1538;
+  color: #ffffff;
+}
+
+/* Minimal paid-search footer keeps legal/transparency links but removes browsing distractions. */
+.footer.footer--car-call-landing {
+  padding: 28px 0;
+  background: #101a2d;
+}
+
+.car-call-paid-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  color: #dbe4ef;
+  font-size: 0.82rem;
+}
+
+.car-call-paid-footer__links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 14px;
+}
+
+.car-call-paid-footer a {
+  color: #ffffff;
+  text-underline-offset: 3px;
+}
+
+@media (max-width: 900px) {
+  .car-call-hero__grid,
+  .car-call-final__inner {
+    grid-template-columns: 1fr;
+  }
+
+  .car-call-hero__call-card {
+    max-width: 620px;
+  }
+
+  .car-call-feature-grid,
+  .car-call-trust-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .car-call-needs-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .car-call-airport-links {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .car-call-final__actions {
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 768px) {
+  body.car-call-landing-active {
+    padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .car-call-shell {
+    width: min(100% - 28px, 720px);
+  }
+
+  .car-call-hero {
+    padding-top: 38px;
+  }
+
+  .car-call-hero__grid {
+    gap: 28px;
+  }
+
+  .car-call-hero h1 {
+    font-size: clamp(2.15rem, 10vw, 3.25rem);
+  }
+
+  .car-call-primary-cta {
+    width: 100%;
+    min-width: 0;
+    min-height: 58px;
+    font-size: 1.03rem;
+  }
+
+  .car-call-benefit-row {
+    grid-template-columns: 1fr;
+    gap: 9px;
+  }
+
+  .car-call-hero__call-card {
+    padding: 24px 20px;
+  }
+
+  .car-call-feature-grid,
+  .car-call-steps,
+  .car-call-needs-grid,
+  .car-call-trust-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .car-call-feature-card {
+    min-height: 0;
+  }
+
+  .car-call-trust-item {
+    justify-content: flex-start;
+    min-height: 36px;
+  }
+
+  .car-call-airport-links {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .car-call-primary-cta--centered {
+    width: 100%;
+  }
+
+  .car-call-final__actions {
+    width: 100%;
+    align-items: stretch;
+  }
+
+  .car-call-contact-link {
+    text-align: center;
+  }
+
+  .car-call-mobile-sticky {
+    display: block;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1250;
+    padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
+    background: rgba(255, 255, 255, 0.97);
+    border-top: 1px solid rgba(22, 35, 58, 0.12);
+    box-shadow: 0 -8px 26px rgba(22, 35, 58, 0.13);
+    backdrop-filter: blur(10px);
+  }
+
+  .car-call-mobile-sticky__link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    min-height: 58px;
+    width: 100%;
+    padding: 7px 16px;
+    background: #8b1538;
+    color: #ffffff;
+  }
+
+  .car-call-mobile-sticky__icon {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.13);
+  }
+
+  .car-call-mobile-sticky__copy {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    line-height: 1.18;
+  }
+
+  .car-call-mobile-sticky__copy strong {
+    font-size: 1rem;
+  }
+
+  .car-call-mobile-sticky__copy > span {
+    margin-top: 2px;
+    font-size: 0.78rem;
+    opacity: 0.92;
+  }
+
+  .header.header--car-call-landing {
+    padding: 0.45rem 0;
+  }
+
+  .header.header--car-call-landing .header-inner {
+    flex-wrap: nowrap;
+    gap: 10px;
+  }
+
+  .header.header--car-call-landing .logo h1 {
+    font-size: 1.16rem;
+  }
+
+  .header.header--car-call-landing .logo i {
+    font-size: 1.25rem;
+  }
+
+  .car-call-paid-header__call {
+    min-height: 44px;
+    padding: 8px 11px;
+    border-radius: 10px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+  }
+
+  .car-call-paid-header__call .car-call-paid-header__number-prefix {
+    display: none;
+  }
+
+  .car-call-paid-footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .car-call-paid-footer__links {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 420px) {
+  .car-call-airport-links {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .car-call-step {
+    padding: 18px;
+  }
+
+  .car-call-urgency {
+    align-items: flex-start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .car-call-primary-cta,
+  .car-call-card__button,
+  .car-call-paid-header__call {
+    transition: none;
+  }
+}
