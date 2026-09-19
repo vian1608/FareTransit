@@ -1,0 +1,86 @@
+name: Authorization Integrity V2
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/patch-authorization-integrity-v2.py
+      - .github/workflows/authorization-integrity-v2.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: authorization-integrity-v2-main
+  cancel-in-progress: false
+
+jobs:
+  patch-test-push:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Apply authorization integrity patch
+        run: python3 scripts/patch-authorization-integrity-v2.py
+
+      - name: Backend syntax checks
+        run: |
+          node --check backend/src/modules/authorizations/authorization-snapshot.service.mjs
+          node --check backend/src/modules/authorizations/passenger-authorization.service.mjs
+          node --check backend/src/modules/authorizations/passenger-authorization.controller.mjs
+          node --check backend/src/modules/bookings/booking.repository.mjs
+          node --check backend/src/modules/bookings/booking-mutation.service.mjs
+          node --check backend/src/modules/admin/admin.passenger.controller.mjs
+          node --check backend/src/integrations/resend/resend.service.mjs
+          node --check backend/src/modules/emails/email-renderer.service.mjs
+          node --check backend/src/modules/authorizations/authorization-pdf.service.mjs
+
+      - name: Authorization integrity contract test
+        run: node --test backend/tests/authorization_integrity_v2.test.mjs
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: frontend
+        env:
+          CI: "false"
+        run: npm run build
+
+      - name: Commit implementation
+        run: |
+          git config user.name "FareTransit Automation"
+          git config user.email "actions@users.noreply.github.com"
+          git add backend/src/modules/authorizations/authorization-snapshot.service.mjs \
+                  backend/src/modules/authorizations/passenger-authorization.service.mjs \
+                  backend/src/modules/authorizations/passenger-authorization.controller.mjs \
+                  backend/src/modules/authorizations/authorization-pdf.service.mjs \
+                  backend/src/modules/bookings/booking.repository.mjs \
+                  backend/src/modules/bookings/booking-mutation.service.mjs \
+                  backend/src/modules/admin/admin.passenger.controller.mjs \
+                  backend/src/integrations/resend/resend.service.mjs \
+                  backend/src/modules/emails/email-renderer.service.mjs \
+                  backend/src/shared/utils/airline-lookup.mjs \
+                  backend/src/integrations/resend/templates/passenger-authorization-request.html \
+                  backend/src/integrations/resend/templates/booking-confirmation.html \
+                  frontend/src/features/authorizations/pages/PassengerAuthorizationPage.js \
+                  backend/migrations/129_authorization_integrity_v2.sql \
+                  backend/tests/authorization_integrity_v2.test.mjs
+          if git diff --cached --quiet; then
+            echo "No implementation changes to commit."
+            exit 0
+          fi
+          git commit -m "Implement immutable authorization integrity architecture"
+          git push origin main
