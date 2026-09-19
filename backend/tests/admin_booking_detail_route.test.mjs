@@ -65,7 +65,8 @@ test('admin booking route is a dedicated compact booking workspace', async t => 
     assert.match(passengerController, /passport_expiry/, 'Passport expiry must persist to traveller row.');
     assert.match(passengerController, /from\('contacts'\)/, 'Primary contact must persist to contacts table.');
     assert.match(passengerController, /passenger_name:\s*primaryName/, 'Booking primary passenger summary must stay synchronized.');
-    assert.match(passengerController, /REAUTHORIZATION_REQUIRED/, 'Identity changes after authorization must invalidate the old authorization state.');
+    assert.match(passengerController, /identityChanged \|\| contactChanged/, 'Passenger-sensitive changes must be detected before authorization invalidation.');
+    assert.match(passengerController, /bookingRepository\.bumpAuthorizationRevision\(booking\.id/, 'Identity/contact changes must invalidate prior authorization through centralized booking revisioning.');
   });
 
   await t.test('visual itinerary and compact dropdown behavior are present', () => {
