@@ -101,7 +101,7 @@ export const bookingController = {
       // reservation-received email status that is written by sendBookingRequestReceivedEmail().
       // Fall back to the final BOOKING_CONFIRMATION delivery record for older/completed bookings.
       const bookingRequestEmailStatus = String(completeBooking.booking_request_email_status || '').trim().toUpperCase();
-      const hasBookingRequestEmailStatus = ['SENT', 'FAILED', 'PENDING'].includes(booingRequestEmailStatus);
+      const hasBookingRequestEmailStatus = ['SENT', 'FAILED', 'PENDING'].includes(bookingRequestEmailStatus);
       const confirmationEmailDeliveryRecord = hasBookingRequestEmailStatus
         ? null
         : await bookingRepository.getEmailDeliveryStatus(completeBooking.id, 'BOOKING_CONFIRMATION');
