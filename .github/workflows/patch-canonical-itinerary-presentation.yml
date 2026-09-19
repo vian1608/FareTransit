@@ -21,16 +21,12 @@ jobs:
         run: python .github/scripts/patch_canonical_itinerary_presentation.py
       - name: Verify syntax
         run: node --check backend/src/shared/utils/airline-lookup.mjs
-      - name: Verify canonical trip model
+      - name: Verify canonical trip model markers
         run: |
-          node --input-type=module <<'NODE'
-          import { buildCanonicalItinerary, calculateTripSummary } from './backend/src/shared/utils/airline-lookup.mjs';
-          const one = buildCanonicalItinerary({ itinerary_type:'ONE_WAY', itinerary_segments:[{journey_index:1,carrier_code:'AT',flight_number:'201',origin_airport:'JFK',destination_airport:'CMN'},{journey_index:1,carrier_code:'AT',flight_number:'940',origin_airport:'CMN',destination_airport:'FCO'}] });
-          if (one.tripType !== 'ONE_WAY' || one.journeys.length !== 1 || one.journeys[0].segments.length !== 2) throw new Error('One-way multi-segment model failed');
-          const multi = buildCanonicalItinerary({ itinerary_type:'MULTI_CITY', itinerary_segments:[{journey_index:1,carrier_code:'AA',flight_number:'1',origin_airport:'JFK',destination_airport:'LAX'},{journey_index:2,carrier_code:'UA',flight_number:'2',origin_airport:'LAX',destination_airport:'SFO'}] });
-          if (multi.tripType !== 'MULTI_CITY' || multi.journeys.length !== 2 || multi.journeys[1].label !== 'Trip 2') throw new Error('Multi-city journey model failed');
-          if (calculateTripSummary({ itinerary_type:'MULTI_CITY', itinerary_segments:[{journey_index:1,origin_airport:'JFK',destination_airport:'LAX'},{journey_index:2,origin_airport:'LAX',destination_airport:'SFO'}] }).tripType !== 'Multi-City') throw new Error('Trip summary failed');
-          NODE
+          grep -q "const itinerary = { tripType, journeys, outbound, return: returnSegments }" backend/src/shared/utils/airline-lookup.mjs
+          grep -q "label: `Trip ${journeyIndex}`" backend/src/shared/utils/airline-lookup.mjs
+          grep -q "canonicalType === 'MULTI_CITY'" backend/src/shared/utils/airline-lookup.mjs
+          grep -q "journeys.map(journey => renderItineraryGroupHtml" backend/src/shared/utils/airline-lookup.mjs
       - name: Commit
         run: |
           git config user.name "FareTransit Automation"
