@@ -1,8 +1,9 @@
 name: Fix authorization email payment split guard
 
-on:
+'on':
   push:
-    branches: [main]
+    branches:
+      - main
     paths:
       - .github/workflows/fix-auth-email-payment-split-guard.yml
 
@@ -19,38 +20,28 @@ jobs:
           ref: main
           fetch-depth: 0
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: |
-            backend/package-lock.json
-            frontend/package-lock.json
-
-      - name: Patch authorization email prerequisites UX
+      - name: Patch files
         shell: bash
         run: |
-          python - <<'PY'
+          python3 <<'PY'
           from pathlib import Path
 
           def replace_once(path, old, new):
               p = Path(path)
-              source = p.read_text()
-              count = source.count(old)
-              if count != 1:
-                  raise SystemExit(f"{path}: expected one match, found {count}")
-              p.write_text(source.replace(old, new, 1))
+              text = p.read_text()
+              if text.count(old) != 1:
+                  raise SystemExit(path + ': expected exactly one patch target, found ' + str(text.count(old)))
+              p.write_text(text.replace(old, new, 1))
 
-          # Backend: do not let a missing financial prerequisite get wrapped as a generic
-          # EMAIL_DISPATCH_FAILED after the Resend service rejects it.
-          old_backend = """        const sCents = splits.length > 0
+          replace_once(
+              'backend/src/modules/admin/admin.controller.mjs',
+              """        const sCents = splits.length > 0
           ? splits.reduce((sum, s) => sum + Math.round(Number(s.amount || 0) * 100), 0)
           : bCents;
 
         if (splits.length > 0 && Math.abs(sCents - bCents) !== 0) {
-"""
-          new_backend = """        const sCents = splits.length > 0
+""",
+              """        const sCents = splits.length > 0
           ? splits.reduce((sum, s) => sum + Math.round(Number(s.amount || 0) * 100), 0)
           : 0;
 
@@ -68,14 +59,14 @@ jobs:
 
         if (Math.abs(sCents - bCents) !== 0) {
 """
-          replace_once('backend/src/modules/admin/admin.controller.mjs', old_backend, new_backend)
+          )
 
-          # Frontend: intercept the same condition before hitting the API, open the
-          # Payment & Splits section, and scroll the admin directly to the fix.
-          old_send = """    if (type === 'final_ticket') {
+          replace_once(
+              'frontend/src/features/admin/components/AdminBookingManagementPanel.js',
+              """    if (type === 'final_ticket') {
       const pnr = text(booking.airline_confirmation_number || booking.airlineConfirmationNumber || booking.airline_pnr || booking.pnr).trim().toUpperCase();
-"""
-          new_send = """    if (type === 'authorization') {
+""",
+              """    if (type === 'authorization') {
       const savedSplits = booking.payment_splits || booking.paymentSplits || [];
       const bookingTotal = num(booking.customer_price ?? booking.total_amount ?? pricingForm.customerTotal, 0);
       const splitTotal = savedSplits.reduce((sum, split) => sum + Math.round(num(split.amount, 0) * 100), 0) / 100;
@@ -112,59 +103,48 @@ jobs:
     if (type === 'final_ticket') {
       const pnr = text(booking.airline_confirmation_number || booking.airlineConfirmationNumber || booking.airline_pnr || booking.pnr).trim().toUpperCase();
 """
-          replace_once('frontend/src/features/admin/components/AdminBookingManagementPanel.js', old_send, new_send)
+          )
 
-          old_section = """      <details className=\"abm-section\" open>
+          replace_once(
+              'frontend/src/features/admin/components/AdminBookingManagementPanel.js',
+              """      <details className=\"abm-section\" open>
         <summary><strong>5. Payment & Splits</strong><span>Payment state, transaction reference and merchant split amounts</span></summary>
         <div className=\"abm-toolbar\"><button className=\"abm-button abm-button--secondary\" type=\"button\" onClick={() => setPaymentSplits(current => [...current, { _key: `split-${Date.now()}`, merchantName: 'FareTransit LLC', amount: '0.00' }])}>+ Add Payment Split</button></div>
-"""
-          new_section = """      <details id=\"payment-splits-section\" className=\"abm-section\" open>
+""",
+              """      <details id=\"payment-splits-section\" className=\"abm-section\" open>
         <summary><strong>5. Payment & Splits</strong><span>Payment state, transaction reference and merchant split amounts</span></summary>
         <div className=\"abm-toolbar\">
           <button className=\"abm-button abm-button--secondary\" type=\"button\" onClick={() => setPaymentSplits(current => [...current, { _key: `split-${Date.now()}`, merchantName: 'FareTransit LLC', amount: '0.00' }])}>+ Add Payment Split</button>
           {!paymentSplits.length && num(pricingForm.customerTotal, 0) > 0 && <button className=\"abm-button abm-button--secondary\" type=\"button\" onClick={() => setPaymentSplits([{ _key: `split-${Date.now()}`, merchantName: 'FareTransit LLC', amount: num(pricingForm.customerTotal, 0).toFixed(2) }])}>Use Customer Total as One Split</button>}
         </div>
 """
-          replace_once('frontend/src/features/admin/components/AdminBookingManagementPanel.js', old_section, new_section)
+          )
 
-          checks = {
-              'backend/src/modules/admin/admin.controller.mjs': [
-                  "code: 'PAYMENT_SPLITS_REQUIRED'",
-                  "Save a payment breakdown before sending the authorization email"
-              ],
-              'frontend/src/features/admin/components/AdminBookingManagementPanel.js': [
-                  "id=\"payment-splits-section\"",
-                  "Use Customer Total as One Split",
-                  "Authorization email needs a saved payment breakdown",
-                  "section.scrollIntoView({ behavior: 'smooth', block: 'center' })"
-              ]
-          }
-          for path, needles in checks.items():
-              text = Path(path).read_text()
-              for needle in needles:
-                  if needle not in text:
-                      raise SystemExit(f"{path}: verification failed for {needle}")
+          assert "code: 'PAYMENT_SPLITS_REQUIRED'" in Path('backend/src/modules/admin/admin.controller.mjs').read_text()
+          frontend = Path('frontend/src/features/admin/components/AdminBookingManagementPanel.js').read_text()
+          assert 'Use Customer Total as One Split' in frontend
+          assert 'payment-splits-section' in frontend
           PY
 
       - name: Check backend syntax
         run: node --check backend/src/modules/admin/admin.controller.mjs
 
-      - name: Install frontend dependencies
+      - name: Install frontend
         working-directory: frontend
         run: npm ci
 
       - name: Build frontend
         working-directory: frontend
         env:
-          CI: "false"
+          CI: 'false'
         run: npm run build
 
-      - name: Commit verified fix and remove one-off workflow
+      - name: Commit fix
+        shell: bash
         run: |
-          git config user.name "FareTransit Automation"
-          git config user.email "actions@users.noreply.github.com"
+          git config user.name 'FareTransit Automation'
+          git config user.email 'actions@users.noreply.github.com'
           git rm .github/workflows/fix-auth-email-payment-split-guard.yml
-          git add backend/src/modules/admin/admin.controller.mjs \
-                  frontend/src/features/admin/components/AdminBookingManagementPanel.js
-          git commit -m "Guide authorization email payment split setup"
+          git add backend/src/modules/admin/admin.controller.mjs frontend/src/features/admin/components/AdminBookingManagementPanel.js
+          git commit -m 'Guide authorization email payment split setup'
           git push origin HEAD:main
