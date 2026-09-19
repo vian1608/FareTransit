@@ -44,6 +44,9 @@ export const passengerAuthorizationController = {
       if (error.message === 'AUTHORIZATION_INVALIDATED_PRICE_CHANGE' || error.message === 'AUTHORIZATION_SUPERSEDED') {
         return res.status(409).json({ success: false, error: { code: 'AUTHORIZATION_SUPERSEDED', message: 'The reservation changed after this authorization was issued. Please use the latest authorization email.' } });
       }
+      if (error.message === 'AUTHORIZATION_BOOKING_STATE_UNAVAILABLE') {
+        return res.status(503).json({ success: false, error: { code: 'AUTHORIZATION_STATE_UNAVAILABLE', message: 'We could not verify the current reservation state. Please try again shortly.' } });
+      }
       if (error.message === 'AUTHORIZATION_REVOKED') {
         return res.status(410).json({ success: false, error: { code: 'AUTHORIZATION_REVOKED', message: 'This authorization request was revoked. Contact FareTransit for a new request.' } });
       }
@@ -99,6 +102,9 @@ export const passengerAuthorizationController = {
           success: false,
           error: { code: 'AUTHORIZATION_SUPERSEDED', message: 'This booking changed after the authorization link was issued. Please use the newest authorization request.' }
         });
+      }
+      if (error.message === 'AUTHORIZATION_BOOKING_STATE_UNAVAILABLE') {
+        return res.status(503).json({ success: false, error: { code: 'AUTHORIZATION_STATE_UNAVAILABLE', message: 'We could not verify the current reservation state. Please try again shortly.' } });
       }
       if (error.message.includes('ALREADY')) {
         return res.status(400).json({

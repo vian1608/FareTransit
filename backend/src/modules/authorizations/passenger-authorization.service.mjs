@@ -13,6 +13,21 @@ function hashText(text) {
   return crypto.createHash('sha256').update(String(text || '')).digest('hex');
 }
 
+async function getAuthoritativeBookingAuthorizationState(bookingId) {
+  const { data, error } = await supabase
+    .from('bookings')
+    .select('id,confirmation_code,booking_revision,authorization_status,status,authorization_token,authorization_expires_at')
+    .eq('id', bookingId)
+    .maybeSingle();
+
+  if (error || !data?.id) {
+    logger.error(`[AuthorizationIntegrity] Unable to read authoritative booking state for ${bookingId}: ${error?.message || 'booking not found'}`);
+    if (process.env.NODE_ENV === 'test') return null;
+    throw new Error('AUTHORIZATION_BOOKING_STATE_UNAVAILABLE');
+  }
+  return data;
+}
+
 const AUTH_SECRET = process.env.JWT_SECRET || env.resendApiKey || 'tfs_authorization_secret_key_2026';
 
 function generateStatelessToken(bookingId, expiresAtMs) {
@@ -389,11 +404,15 @@ Email: support@faretransit.com | Call: ${env.supportPhoneDisplay}
       throw new Error('AUTHORIZATION_EXPIRED');
     }
 
-    const booking = await bookingRepository.getById(authRecord.booking_id);
-    if (!booking) throw new Error('BOOKING_NOT_FOUND');
+    // Fail closed against the database row itself. Public token validity must not
+    // depend on repository caches, bounded DTOs, or legacy relation fallbacks.
+    const liveState = await getAuthoritativeBookingAuthorizationState(authRecord.booking_id);
     const authRevision = Number(authRecord.authorization_revision || 1);
-    const bookingRevision = Number(booking.booking_revision || 1);
-    if (authRevision !== bookingRevision) {
+    const bookingRevision = Number(liveState?.booking_revision || 1);
+    const liveAuthorizationStatus = String(liveState?.authorization_status || '').toUpperCase();
+    if (authRevision !== bookingRevision || liveAuthorizationStatus === 'REAUTHORIZATION_REQUIRED') {
+      // Preserve already-accepted evidence exactly as historical evidence. Only
+      // pending rows are transitioned; every stale public token is rejected.
       if (!['accepted', 'authorized'].includes(status)) {
         await supabase.from('passenger_authorizations').update({
           status: 'superseded', authorization_status: 'SUPERSEDED', superseded_at: new Date().toISOString(),
@@ -402,6 +421,9 @@ Email: support@faretransit.com | Call: ${env.supportPhoneDisplay}
       }
       throw new Error('AUTHORIZATION_SUPERSEDED');
     }
+
+    const booking = await bookingRepository.getById(authRecord.booking_id);
+    if (!booking) throw new Error('BOOKING_NOT_FOUND');
 
     const snapshot = authRecord.request_snapshot || null;
     const legacyItinerary = snapshot ? authorizationSnapshotToLegacyItinerary(snapshot) : (authRecord.itinerary_snapshot || {});
@@ -457,6 +479,23 @@ Email: support@faretransit.com | Call: ${env.supportPhoneDisplay}
     if (!authRecord) throw new Error('AUTHORIZATION_NOT_FOUND');
 
     const state = String(authRecord.status || authRecord.authorization_status || '').toLowerCase();
+    const liveState = await getAuthoritativeBookingAuthorizationState(authRecord.booking_id);
+    const authRevision = Number(authRecord.authorization_revision || 1);
+    const bookingRevision = Number(liveState?.booking_revision || 1);
+    const liveAuthorizationStatus = String(liveState?.authorization_status || '').toUpperCase();
+
+    // Revision/lifecycle invalidation wins over idempotency: an accepted historical
+    // token from an older revision is evidence, not a reusable public authorization.
+    if (authRevision !== bookingRevision || liveAuthorizationStatus === 'REAUTHORIZATION_REQUIRED') {
+      if (!['accepted', 'authorized'].includes(state) && !authRecord.consumed_at) {
+        await supabase.from('passenger_authorizations').update({
+          status: 'superseded', authorization_status: 'SUPERSEDED', superseded_at: new Date().toISOString(),
+          status_reason: `Booking revision advanced from ${authRevision} to ${bookingRevision}.`, updated_at: new Date().toISOString()
+        }).eq('id', authRecord.id).catch(() => null);
+      }
+      throw new Error('AUTHORIZATION_SUPERSEDED');
+    }
+
     if (['accepted', 'authorized'].includes(state) || authRecord.consumed_at) throw new Error('AUTHORIZATION_ALREADY_ACCEPTED');
     if (state === 'superseded' || state === 'reauthorization_required') throw new Error('AUTHORIZATION_SUPERSEDED');
     if (state === 'revoked') throw new Error('AUTHORIZATION_REVOKED');
@@ -466,15 +505,6 @@ Email: support@faretransit.com | Call: ${env.supportPhoneDisplay}
 
     const booking = await bookingRepository.getById(authRecord.booking_id);
     if (!booking) throw new Error('BOOKING_NOT_FOUND');
-    const authRevision = Number(authRecord.authorization_revision || 1);
-    const bookingRevision = Number(booking.booking_revision || 1);
-    if (authRevision !== bookingRevision) {
-      await supabase.from('passenger_authorizations').update({
-        status: 'superseded', authorization_status: 'SUPERSEDED', superseded_at: new Date().toISOString(),
-        status_reason: `Booking revision advanced from ${authRevision} to ${bookingRevision}.`, updated_at: new Date().toISOString()
-      }).eq('id', authRecord.id).catch(() => null);
-      throw new Error('AUTHORIZATION_SUPERSEDED');
-    }
 
     // New authorizations MUST carry the immutable request snapshot. Legacy rows
     // may use only their already-frozen quote/itinerary data; live itinerary data

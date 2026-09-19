@@ -11,7 +11,7 @@ let idempotencyColumnsUnavailable = false;
 const BASE_COLUMNS = [
   'id','confirmation_code','status','payment_status','total_amount','customer_price','supplier_price',
   'discount_percent','discount_amount','currency','passenger_name','email','phone','internal_notes',
-  'original_api_price','created_at','updated_at','version','authorization_token','authorization_status','authorized_amount',
+  'original_api_price','created_at','updated_at','version','booking_revision','authorization_token','authorization_status','authorized_amount','authorized_at',
   'airline_code','airline_name','airline_logo_url','airline_confirmation_number','ticket_number','ticket_issued_at',
   'ticket_notes','supplier_confirmation','booking_request_email_status','booking_request_email_id',
   'booking_request_email_sent_at','booking_request_email_recipient','booking_request_email_error',
@@ -20,14 +20,15 @@ const BASE_COLUMNS = [
   'final_confirmation_email_sent_at','final_confirmation_email_recipient','final_confirmation_email_error',
   'voucher_id','voucher_code','voucher_discount','price_before_voucher','minimum_payable_floor','client_request_id','idempotency_key'
 ].join(',');
-const CORE_COLUMNS = 'id,confirmation_code,status,payment_status,total_amount,customer_price,supplier_price,discount_percent,discount_amount,currency,passenger_name,email,phone,internal_notes,original_api_price,created_at,updated_at,voucher_id,voucher_code,voucher_discount,price_before_voucher,minimum_payable_floor';
+const CORE_COLUMNS = 'id,confirmation_code,status,payment_status,total_amount,customer_price,supplier_price,discount_percent,discount_amount,currency,passenger_name,email,phone,internal_notes,original_api_price,created_at,updated_at,booking_revision,authorization_token,authorization_status,authorized_amount,authorization_expires_at,authorized_at,voucher_id,voucher_code,voucher_discount,price_before_voucher,minimum_payable_floor';
 const INSERT_RETURN_COLUMNS = 'id,confirmation_code,created_at,updated_at';
 const TRAVELLER_COLUMNS = 'id,booking_id,role,title,first_name,middle_name,last_name,date_of_birth,gender,nationality,passport_number,passport_expiry';
 const CONTACT_COLUMNS = 'id,booking_id,email,country_code,phone_number';
 const FLIGHT_COLUMNS = 'id,booking_id,leg,trip_type,airline_name,carrier_code,flight_number,departure_airport,arrival_airport,departure_date,arrival_date,departure_time_str,arrival_time_str,duration,stops,cabin_class,created_at';
 const PAYMENT_COLUMNS = 'id,booking_id,payment_provider,payment_amount,currency,payment_status,payment_date,refund_reference_id,refund_amount,refund_reason,refund_timestamp,created_at';
 const PAYMENT_METHOD_COLUMNS = 'id,booking_id,payment_provider,provider_payment_method_id,cardholder_name,card_brand,card_last4,card_exp_month,card_exp_year,billing_email,billing_phone,billing_address_line1,billing_address_line2,billing_city,billing_state,billing_postal_code,billing_country,removed_at,updated_at';
-const SPLIT_COLUMNS = 'id,booking_id,merchant_name,amount,currency,display_order,created_at,updated_at';
+const SPLIT_COLUMNS = 'id,booking_id,merchant_name,merchant_type,merchant_code,amount,currency,display_order,created_at,updated_at';
+const ITINERARY_SEGMENT_COLUMNS = 'id,booking_id,trip_type,direction,journey_direction,journey_index,journey_role,segment_sequence,segment_order,carrier_name,carrier_code,marketing_carrier_code,operating_carrier,flight_number,origin_airport,origin_city,destination_airport,destination_city,departure_date,departure_time,arrival_date,arrival_time,arrival_next_day,cabin,booking_class,terminal,baggage_allowance,aircraft,layover_duration,duration,stop_count,created_at,updated_at';
 const EMAIL_COLUMNS = 'id,booking_id,confirmation_code,email_type,recipient,status,provider,provider_message_id,error_code,error_message,attempt_count,last_attempt_at,sent_at,created_at,updated_at';
 
 function schemaDrift(error) {
@@ -129,9 +130,10 @@ async function findBase(identifier) {
 }
 
 async function getRelations(bookingId) {
-  const [travellersRes, contactsRes, flightsRes, paymentsRes, emailRes, methodRes, splitsRes] = await Promise.all([
+  const [travellersRes, contactsRes, segmentsRes, flightsRes, paymentsRes, emailRes, methodRes, splitsRes] = await Promise.all([
     safe(supabase.from('travellers').select(TRAVELLER_COLUMNS).eq('booking_id', bookingId), []),
     safe(supabase.from('contacts').select(CONTACT_COLUMNS).eq('booking_id', bookingId), []),
+    safe(supabase.from('booking_itinerary_segments').select(ITINERARY_SEGMENT_COLUMNS).eq('booking_id', bookingId).order('journey_index', { ascending: true }).order('segment_sequence', { ascending: true }), []),
     safe(supabase.from('flights').select(FLIGHT_COLUMNS).eq('booking_id', bookingId).order('created_at', { ascending: true }), []),
     safe(supabase.from('payments').select(PAYMENT_COLUMNS).eq('booking_id', bookingId).order('created_at', { ascending: false }).limit(5), []),
     safe(supabase.from('email_deliveries').select(EMAIL_COLUMNS).eq('booking_id', bookingId).order('created_at', { ascending: false }).limit(10), []),
@@ -140,12 +142,13 @@ async function getRelations(bookingId) {
   ]);
 
   const flights = flightsRes.data || [];
+  const canonicalSegments = segmentsRes.data || [];
   return {
     travellers: travellersRes.data || [],
     contacts: contactsRes.data || [],
     flights,
     payments: paymentsRes.data || [],
-    itinerarySegments: toSegments(flights),
+    itinerarySegments: canonicalSegments.length > 0 ? canonicalSegments : toSegments(flights),
     emailLogs: emailRes.data || [],
     paymentMethod: methodRes.data || null,
     paymentSplits: splitsRes.data || []
