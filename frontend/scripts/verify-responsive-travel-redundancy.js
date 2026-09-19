@@ -40,8 +40,16 @@ if (!mobileSwitcher.includes('aria-current') || !mobileSwitcher.includes('mobile
 if (!mobileSwitcherCss.includes('.mobile-service-switcher {\n  display: none;') || !mobileSwitcherCss.includes('@media (max-width: 767px)')) {
   fail('Mobile travel switcher must stay hidden on desktop and appear only on mobile.');
 }
-if (header.includes('header-mobile-call') || header.includes('SUPPORT_PHONE_HREF')) {
-  fail('Header still contains the duplicate mobile Call Now control.');
+if (header.includes('header-mobile-call')) {
+  fail('Header still contains the retired duplicate mobile Call Now control.');
+}
+if (header.includes('SUPPORT_PHONE_HREF')) {
+  const paidRouteOnlyCall = header.includes("location.pathname === '/car-rental/call-now'")
+    && header.includes('if (isPaidCarCallLanding)')
+    && header.includes('data-paid-car-call="true"');
+  if (!paidRouteOnlyCall) {
+    fail('Header phone CTA is not isolated to the dedicated paid car-rental landing page.');
+  }
 }
 if (!productCard.includes('product-search-card__support') || !productCard.includes('primary={primaryCallSupport}')) {
   fail('Product search pages do not expose a primary inline call-support anchor.');

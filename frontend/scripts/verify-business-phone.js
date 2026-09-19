@@ -112,11 +112,20 @@ if (!airlineRoute.includes('href={SUPPORT_PHONE_HREF}') || !airlineRoute.include
   throw new Error('Airline booking CTA must use the centralized FareTransit phone href/display constants.');
 }
 
-// The global header intentionally owns navigation only. Phone conversion lives in
-// contextual inline/sticky support surfaces so mobile users do not see duplicate calls.
+// The normal global header intentionally owns navigation only. A route-scoped call
+// control is allowed on the dedicated paid car-rental landing page, where the normal
+// navigation is replaced rather than duplicated.
 const header = readRepoFile('frontend/src/shared/components/Header.js');
-if (header.includes('SUPPORT_PHONE_HREF') || header.includes('header-mobile-call')) {
-  throw new Error('Header must not reintroduce a duplicate FareTransit Call Now control.');
+if (header.includes('header-mobile-call')) {
+  throw new Error('Header must not reintroduce the retired duplicate mobile Call Now control.');
+}
+if (header.includes('SUPPORT_PHONE_HREF')) {
+  const hasDedicatedPaidGate = header.includes("location.pathname === '/car-rental/call-now'")
+    && header.includes('if (isPaidCarCallLanding)')
+    && header.includes('data-paid-car-call="true"');
+  if (!hasDedicatedPaidGate) {
+    throw new Error('Any Header phone CTA must be isolated to the dedicated paid car-rental landing route.');
+  }
 }
 
 const ctaFiles = [

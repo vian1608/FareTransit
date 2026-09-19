@@ -29,11 +29,18 @@ const INDEXABLE_EXACT = new Set([
   '/train-boston-to-nyc',
 ]);
 
+// Paid-search conversion pages intentionally remain outside the SEO index while
+// still exposing a stable canonical URL and allowing crawlers to follow legal/help links.
+const PPC_NO_INDEX_EXACT = new Set([
+  '/car-rental/call-now',
+]);
+
 const PAGE_NAMES = {
   '/train-nyc-to-dc': 'Train from New York to Washington, D.C.',
   '/train-dc-to-nyc': 'Train from Washington, D.C. to New York',
   '/train-philly-to-nyc': 'Train from Philadelphia to New York',
   '/train-boston-to-nyc': 'Train from Boston to New York',
+  '/car-rental/call-now': 'Car Rental Booking Assistance by Phone',
 };
 
 const VALID_ROUTE_PATHS = new Set(
@@ -190,6 +197,7 @@ export default function SeoRouteGuard() {
   const normalizedPath = normalizePath(location.pathname);
   const canonicalPath = CANONICAL_ALIASES[normalizedPath] || normalizedPath;
   const indexable = isIndexablePath(canonicalPath);
+  const paidLanding = PPC_NO_INDEX_EXACT.has(canonicalPath);
   const seo = getSeo(canonicalPath);
 
   useEffect(() => {
@@ -215,7 +223,9 @@ export default function SeoRouteGuard() {
   const pageName = getPageName(canonicalPath, seo);
   const robotsValue = indexable
     ? 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1'
-    : 'noindex, nofollow, noarchive';
+    : paidLanding
+      ? 'noindex, follow, noarchive'
+      : 'noindex, nofollow, noarchive';
 
   const webPageData = indexable ? {
     '@context': 'https://schema.org',
@@ -272,9 +282,9 @@ export default function SeoRouteGuard() {
     <Helmet>
       <meta name="robots" content={robotsValue} />
       <meta name="googlebot" content={robotsValue} />
-      {indexable && <link rel="canonical" href={canonicalUrl} />}
-      {indexable && <meta property="og:url" content={canonicalUrl} />}
-      {indexable && <meta property="og:type" content="website" />}
+      {(indexable || paidLanding) && <link rel="canonical" href={canonicalUrl} />}
+      {(indexable || paidLanding) && <meta property="og:url" content={canonicalUrl} />}
+      {(indexable || paidLanding) && <meta property="og:type" content="website" />}
       {seo?.title && <title>{seo.title}</title>}
       {seo?.description && <meta name="description" content={seo.description} />}
       {seo?.title && <meta property="og:title" content={seo.title} />}

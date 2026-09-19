@@ -47,6 +47,7 @@ import {
 import { PaymentBootstrap, TokenizedPaymentPage } from '../features/journey/TokenizedPaymentRoutes';
 
 import CarRentalsHomePage from '../features/cars/pages/CarRentalsHomePage';
+import CarRentalCallLandingPage from '../features/cars/pages/CarRentalCallLandingPage';
 import CarRentalLocationPage from '../features/cars/pages/CarRentalLocationPage';
 import CarRentalAirportPage, { CarRentalAirportHubPage } from '../features/cars/pages/CarRentalAirportPage';
 import CarSearchUrlGuard from '../features/cars/pages/CarSearchUrlGuard';
@@ -101,8 +102,9 @@ function App() {
                 <Route path="/hotels/results" element={<HotelSearchPage />} />
                 <Route path="/hotels/:destinationSlug" element={<HotelDestinationPage />} />
 
-                {/* Car Rentals: results are URL-authoritative and copy/paste safe. */}
+                {/* Car Rentals: keep the SEO/browsing hub separate from the focused paid-call landing page. */}
                 <Route path="/car-rentals" element={<CarRentalsHomePage />} />
+                <Route path="/car-rental/call-now" element={<CarRentalCallLandingPage />} />
                 <Route path="/car-rental/airport" element={<CarRentalAirportHubPage />} />
                 <Route path="/car-rental/airport/:airportCode" element={<CarRentalAirportPage />} />
                 <Route path="/car-rentals/search" element={<CarSearchUrlGuard />} />

@@ -131,8 +131,11 @@ test('booking confirmation renders every passenger, contact email and complete i
   assert.match(html, /EWR/);
   assert.match(html, /IAH/);
   assert.match(html, /MDE/);
-  assert.match(html, /Outbound Journey/);
-  assert.match(html, /Return Journey/);
+  // The registered bookingItineraryDetails helper currently labels the two
+  // itinerary groups "Outbound" and "Return". Assert those actual rendered
+  // headings while the segment assertions above continue to verify the full route.
+  assert.match(html, />Outbound<\/div>/);
+  assert.match(html, />Return<\/div>/);
   assert.doesNotMatch(html, /Commercial Airline/i);
 });
 

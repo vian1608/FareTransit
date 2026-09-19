@@ -26,6 +26,41 @@ function Footer() {
   const isAdminRoute = location.pathname.startsWith('/admin');
   const isHotelRoute = location.pathname.startsWith('/hotels');
   const isCarRoute = location.pathname.startsWith('/car-rentals') || location.pathname.startsWith('/car-rental');
+  const isPaidCarCallLanding = location.pathname === '/car-rental/call-now';
+
+  if (isPaidCarCallLanding) {
+    return (
+      <footer className="footer footer--cars footer--car-call-landing">
+        <div className="container car-call-paid-footer">
+          <div>
+            <strong>FareTransit LLC</strong>
+            <div>Independent travel reservation assistance service.</div>
+          </div>
+          <div className="car-call-paid-footer__links" aria-label="FareTransit legal and contact links">
+            <a
+              href={SUPPORT_PHONE_HREF}
+              aria-label={`Call FareTransit at ${SUPPORT_PHONE_DISPLAY}`}
+              data-paid-car-call="true"
+              data-call-location="footer"
+              data-faretransit-phone="true"
+            >
+              <span data-phone-display="true">{SUPPORT_PHONE_DISPLAY}</span>
+            </a>
+            <a
+              href="mailto:support@faretransit.com"
+              data-paid-car-contact="true"
+              data-contact-type="email"
+            >
+              support@faretransit.com
+            </a>
+            <Link to="/terms">Terms</Link>
+            <Link to="/privacy-policy">Privacy</Link>
+            <Link to="/refund-policy">Refund Policy</Link>
+          </div>
+        </div>
+      </footer>
+    );
+  }
 
   return (
     <footer className={`footer${isAdminRoute ? ' footer--admin' : ''}${isHotelRoute ? ' footer--hotels' : ''}${isCarRoute ? ' footer--cars' : ''}`}>
