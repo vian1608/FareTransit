@@ -2,7 +2,8 @@ name: Fix reservation email delivery status
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
     paths:
       - .github/workflows/fix-email-delivery-status.yml
 
@@ -20,8 +21,9 @@ jobs:
           fetch-depth: 0
 
       - name: Patch backend DTO and confirmation UI
-        shell: python
+        shell: bash
         run: |
+          python - <<'PY'
           from pathlib import Path
 
           backend_path = Path('backend/src/modules/bookings/booking.controller.mjs')
@@ -114,6 +116,7 @@ jobs:
           if frontend.count(old_frontend) != 1:
               raise SystemExit(f'Expected frontend block exactly once, found {frontend.count(old_frontend)}')
           frontend_path.write_text(frontend.replace(old_frontend, new_frontend, 1))
+          PY
 
       - name: Check backend syntax
         run: node --check backend/src/modules/bookings/booking.controller.mjs
@@ -127,6 +130,7 @@ jobs:
           npm run build
 
       - name: Commit verified fix and remove one-off workflow
+        shell: bash
         run: |
           git config user.name "FareTransit Automation"
           git config user.email "actions@users.noreply.github.com"
