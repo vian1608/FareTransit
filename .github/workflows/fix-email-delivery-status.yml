@@ -1,0 +1,136 @@
+name: Fix reservation email delivery status
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/fix-email-delivery-status.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Patch backend DTO and confirmation UI
+        shell: python
+        run: |
+          from pathlib import Path
+
+          backend_path = Path('backend/src/modules/bookings/booking.controller.mjs')
+          frontend_path = Path('frontend/src/features/bookings/pages/PaymentSuccessPage.js')
+
+          backend = backend_path.read_text()
+          old_backend = """      const emailDeliveryRecord = await bookingRepository.getEmailDeliveryStatus(completeBooking.id, 'BOOKING_CONFIRMATION');
+      const emailDelivery = {
+        status: emailDeliveryRecord?.status || (completeBooking.authorization_email_sent_at ? 'SENT' : 'UNATTEMPTED'),
+        providerMessageId: emailDeliveryRecord?.provider_message_id || completeBooking.authorization_email_message_id || null,
+        errorMessage: emailDeliveryRecord?.error_message || null,
+        sentAt: emailDeliveryRecord?.sent_at || completeBooking.authorization_email_sent_at || null
+      };
+"""
+          new_backend = """      // The confirmation screen is shown immediately after checkout, so prefer the
+      // reservation-received email status that is written by sendBookingRequestReceivedEmail().
+      // Fall back to the final BOOKING_CONFIRMATION delivery record for older/completed bookings.
+      const bookingRequestEmailStatus = String(completeBooking.booking_request_email_status || '').trim().toUpperCase();
+      const hasBookingRequestEmailStatus = ['SENT', 'FAILED', 'PENDING'].includes(bookingRequestEmailStatus);
+      const confirmationEmailDeliveryRecord = hasBookingRequestEmailStatus
+        ? null
+        : await bookingRepository.getEmailDeliveryStatus(completeBooking.id, 'BOOKING_CONFIRMATION');
+
+      const emailDelivery = hasBookingRequestEmailStatus
+        ? {
+            type: 'BOOKING_REQUEST',
+            status: bookingRequestEmailStatus,
+            providerMessageId: completeBooking.booking_request_email_id || null,
+            errorMessage: completeBooking.booking_request_email_error || null,
+            sentAt: completeBooking.booking_request_email_sent_at || null
+          }
+        : {
+            type: 'BOOKING_CONFIRMATION',
+            status: confirmationEmailDeliveryRecord?.status || (completeBooking.authorization_email_sent_at ? 'SENT' : 'UNATTEMPTED'),
+            providerMessageId: confirmationEmailDeliveryRecord?.provider_message_id || completeBooking.authorization_email_message_id || null,
+            errorMessage: confirmationEmailDeliveryRecord?.error_message || null,
+            sentAt: confirmationEmailDeliveryRecord?.sent_at || completeBooking.authorization_email_sent_at || null
+          };
+"""
+          if backend.count(old_backend) != 1:
+              raise SystemExit(f'Expected backend block exactly once, found {backend.count(old_backend)}')
+          backend_path.write_text(backend.replace(old_backend, new_backend, 1))
+
+          frontend = frontend_path.read_text()
+          old_frontend = """  // Email Delivery Status Notice (Authoritative backend status)
+  const emailDeliveryStatus = booking.emailDelivery?.status || booking.emailDeliveryStatus || (booking.authorization_email_sent_at ? 'SENT' : 'UNATTEMPTED');
+
+  let emailNoticeMessage = '';
+  let emailNoticeType = 'info';
+  if (emailDeliveryStatus === 'SENT') {
+    emailNoticeType = 'success';
+    emailNoticeMessage = `Your booking confirmation has been sent to ${email}.`;
+  } else if (emailDeliveryStatus === 'FAILED') {
+    emailNoticeType = 'warn';
+    const errDetail = booking.emailDelivery?.errorMessage || '';
+    emailNoticeMessage = `Your reservation is saved. Confirmation email delivery notice: ${errDetail || 'Provider attempt logged'}.`;
+  } else {
+    emailNoticeType = 'info';
+    emailNoticeMessage = `Email delivery status is unavailable. Please retain your confirmation code: ${code}.`;
+  }
+"""
+          new_frontend = """  // Email Delivery Status Notice (authoritative backend status)
+  const emailDeliveryStatus = String(
+    booking.emailDelivery?.status
+      || booking.emailDeliveryStatus
+      || (booking.authorization_email_sent_at ? 'SENT' : 'UNATTEMPTED')
+  ).toUpperCase();
+  const emailDeliveryType = booking.emailDelivery?.type || '';
+
+  let emailNoticeMessage = '';
+  let emailNoticeType = 'info';
+  if (emailDeliveryStatus === 'SENT') {
+    emailNoticeType = 'success';
+    const isReservationReceipt = emailDeliveryType === 'BOOKING_REQUEST' || !isPaid;
+    emailNoticeMessage = isReservationReceipt
+      ? `Reservation email sent to ${email}.`
+      : `Your booking confirmation has been sent to ${email}.`;
+  } else if (emailDeliveryStatus === 'FAILED') {
+    emailNoticeType = 'warn';
+    const errDetail = booking.emailDelivery?.errorMessage || '';
+    emailNoticeMessage = `Your reservation is saved. We could not confirm email delivery${errDetail ? `: ${errDetail}` : '.'}`;
+  } else if (emailDeliveryStatus === 'PENDING') {
+    emailNoticeType = 'info';
+    emailNoticeMessage = `Your reservation is saved. Email delivery is being processed for ${email}.`;
+  } else {
+    emailNoticeType = 'info';
+    emailNoticeMessage = `Email delivery status is unavailable. Please retain your confirmation code: ${code}.`;
+  }
+"""
+          if frontend.count(old_frontend) != 1:
+              raise SystemExit(f'Expected frontend block exactly once, found {frontend.count(old_frontend)}')
+          frontend_path.write_text(frontend.replace(old_frontend, new_frontend, 1))
+
+      - name: Check backend syntax
+        run: node --check backend/src/modules/bookings/booking.controller.mjs
+
+      - name: Build frontend
+        working-directory: frontend
+        env:
+          CI: "false"
+        run: |
+          npm ci
+          npm run build
+
+      - name: Commit verified fix and remove one-off workflow
+        run: |
+          git config user.name "FareTransit Automation"
+          git config user.email "actions@users.noreply.github.com"
+          git rm .github/workflows/fix-email-delivery-status.yml
+          git add backend/src/modules/bookings/booking.controller.mjs frontend/src/features/bookings/pages/PaymentSuccessPage.js
+          git commit -m "Fix reservation email delivery status"
+          git push origin HEAD:main
