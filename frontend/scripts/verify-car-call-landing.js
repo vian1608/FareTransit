@@ -14,6 +14,7 @@ const css = read('frontend/src/features/cars/pages/CarRentalCallLandingPage.css'
 const brands = read('frontend/src/features/cars/config/carCallLandingBrands.js');
 const phone = read('frontend/src/shared/constants/supportContact.js');
 const index = read('frontend/public/index.html');
+const prerender = read('frontend/scripts/prerender-seo-hubs.js');
 
 const expectedBrands = ['hertz', 'avis', 'budget', 'enterprise', 'national', 'dollar', 'alamo', 'sixt', 'thrifty'];
 for (const brand of expectedBrands) {
@@ -26,6 +27,13 @@ if (!brands.includes("return CAR_CALL_BRANDS[normalized] || null")) fail('invali
 if (!brands.includes("CAR_CALL_LANDING_CANONICAL = 'https://www.faretransit.com/car-rental/call-now'")) fail('clean canonical URL is missing');
 if (!page.includes('<link rel="canonical" href={CAR_CALL_LANDING_CANONICAL} />')) fail('page canonical tag is missing');
 if (!page.includes('noindex, follow, noarchive')) fail('paid landing robots directive is missing');
+
+if (!prerender.includes("path: '/car-rental/call-now'")) fail('paid route is missing from static prerender output');
+if (!prerender.includes('paidCallLanding: true')) fail('paid route does not use the focused static call shell');
+if (!prerender.includes("indexable: false")) fail('paid prerender must remain non-indexable');
+if (!prerender.includes('data-paid-call-prerender="true"')) fail('focused paid prerender shell is missing');
+if (!prerender.includes('Need a Rental Car in the USA?')) fail('paid prerender hero does not match paid-search intent');
+if (!prerender.includes('Call ${SUPPORT_PHONE_DISPLAY}')) fail('paid prerender lacks a visible phone CTA');
 
 if (!phone.includes("SUPPORT_PHONE_TEL = '+18887808855'")) fail('canonical support phone is not +18887808855');
 if (!phone.includes("SUPPORT_PHONE_DISPLAY = '+1 (888) 780-8855'")) fail('display phone is inconsistent');
@@ -64,4 +72,4 @@ for (const claim of prohibitedClaims) {
   if (combined.includes(claim)) fail(`unsupported claim present: ${claim}`);
 }
 
-console.log(`Car call landing verification passed for ${expectedBrands.length} supported brand variants plus generic fallback.`);
+console.log(`Car call landing verification passed for ${expectedBrands.length} supported brand variants plus generic fallback and static paid-route prerender.`);
