@@ -98,6 +98,7 @@
 .abx-journey-title { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
 .abx-journey-title span { min-width: 74px; color: #8b1236; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: .8px; }
 .abx-journey-title strong { font-size: 13px; }
+.abx-journey-title small { margin-left: auto; color: #718096; font-size: 9px; font-weight: 750; white-space: nowrap; }
 .abx-timeline { position: relative; display: grid; gap: 6px; }
 
 .abx-flight { border: 1px solid #dce4ee; border-radius: 9px; overflow: hidden; background: #fbfcfe; }

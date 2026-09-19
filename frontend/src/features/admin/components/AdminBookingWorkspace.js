@@ -1,6 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { adminAPI, getApiErrorMessage } from '../../../shared/api/api';
+import AirlineLogo from '../../../shared/components/AirlineLogo';
+import { getAirlineName } from '../../../shared/utils/airlineCatalog';
+import { groupSegmentsIntoJourneys, inferLegacyItineraryType } from '../../../shared/utils/itineraryArchitecture';
 import './AdminBookingWorkspace.css';
 
 const emptyPassenger = () => ({
@@ -58,9 +61,11 @@ function normalizeSegments(booking) {
 function segmentView(segment = {}) {
   return {
     id: segment.id || `${segment.journey_direction || 'outbound'}-${segment.segment_sequence || segment.sequence || 0}`,
-    direction: ['return', 'inbound'].includes(text(segment.journey_direction || segment.direction || segment.leg).toLowerCase()) ? 'return' : 'outbound',
+    direction: ['return', 'inbound'].includes(text(segment.journey_direction || segment.direction || segment.leg).toLowerCase()) ? 'return' : (['multi_city', 'multi-city', 'trip'].includes(text(segment.journey_direction || segment.direction || segment.leg).toLowerCase()) ? 'multi_city' : 'outbound'),
+    journeyIndex: Number(segment.journey_index || segment.journeyIndex || (['return', 'inbound'].includes(text(segment.journey_direction || segment.direction || segment.leg).toLowerCase()) ? 2 : 1)),
+    journeyRole: text(segment.journey_role || segment.journeyRole).toUpperCase(),
     sequence: Number(segment.segment_sequence || segment.sequence || 1),
-    airline: segment.carrier_name || segment.airline_name || segment.airlineName || segment.airline || 'Airline',
+    airline: segment.carrier_name || segment.airline_name || segment.airlineName || segment.airline || getAirlineName(segment.carrier_code || segment.marketing_carrier_code || segment.airlineCode),
     carrierCode: text(segment.carrier_code || segment.marketing_carrier_code || segment.airlineCode).toUpperCase(),
     flightNumber: text(segment.flight_number || segment.flightNumber),
     origin: text(segment.origin_airport || segment.originCode || segment.departure_airport || segment.departureAirport).toUpperCase(),
@@ -148,6 +153,7 @@ function Journey({ label, segments }) {
       <div className="abx-journey-title">
         <span>{label}</span>
         <strong>{segments[0].origin} → {segments[segments.length - 1].destination}</strong>
+        <small>{segments.length} flight segment{segments.length === 1 ? '' : 's'} · {segments.length === 1 ? 'Non-stop' : `${segments.length - 1} stop${segments.length - 1 === 1 ? '' : 's'}`}</small>
       </div>
       <div className="abx-timeline">
         {segments.map((segment, index) => {
@@ -157,7 +163,7 @@ function Journey({ label, segments }) {
               <details className="abx-flight" open={index === 0}>
                 <summary>
                   <div className="abx-airline-mark">
-                    {segment.logo ? <img src={segment.logo} alt="" /> : <span>✈</span>}
+                    <AirlineLogo carrierCode={segment.carrierCode} airlineName={segment.airline} src={segment.logo} size={24} />
                   </div>
                   <div className="abx-flight-main">
                     <strong>{segment.origin} <span>→</span> {segment.destination}</strong>
@@ -283,12 +289,13 @@ export default function AdminBookingWorkspace() {
     };
   }, [code]);
 
-  const segments = useMemo(() => normalizeSegments(booking).map(segmentView).sort((a, b) => {
-    if (a.direction !== b.direction) return a.direction === 'outbound' ? -1 : 1;
-    return a.sequence - b.sequence;
-  }), [booking]);
-  const outbound = segments.filter(segment => segment.direction === 'outbound');
-  const inbound = segments.filter(segment => segment.direction === 'return');
+  const rawSegments = useMemo(() => normalizeSegments(booking), [booking]);
+  const itineraryType = useMemo(() => inferLegacyItineraryType(booking, rawSegments), [booking, rawSegments]);
+  const journeyGroups = useMemo(() => groupSegmentsIntoJourneys(rawSegments, itineraryType).map(journey => ({
+    ...journey,
+    segments: journey.segments.map(segmentView)
+  })), [rawSegments, itineraryType]);
+  const segments = useMemo(() => journeyGroups.flatMap(journey => journey.segments), [journeyGroups]);
 
   const updatePassenger = (index, field, value) => {
     setPassengers(current => current.map((passenger, idx) => idx === index ? { ...passenger, [field]: value } : passenger));
@@ -417,8 +424,9 @@ export default function AdminBookingWorkspace() {
           <div className="abx-panel-body">
             {segments.length === 0 ? <div className="abx-empty">No saved itinerary. Use the Itinerary section below to import or add flights.</div> : (
               <>
-                <Journey label={inbound.length ? 'Outbound' : (outbound.length > 1 ? 'Trip / Multi-city' : 'Flight')} segments={outbound} />
-                <Journey label="Return" segments={inbound} />
+                {journeyGroups.map(journey => (
+                  <Journey key={`${itineraryType}-${journey.journeyIndex}`} label={journey.label} segments={journey.segments} />
+                ))}
               </>
             )}
           </div>

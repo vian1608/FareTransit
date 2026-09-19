@@ -159,8 +159,7 @@ export function resolveAirlineName(carrierCode, providedName) {
 export function getCarrierLogoUrl(carrierCode) {
   const code = String(carrierCode || '').trim().toUpperCase();
   if (!code) return '';
-  const match = AIRLINE_DIRECTORY.find(a => a.iataCode === code);
-  return match?.logoUrl || `https://assets.duffel.com/img/airlines/for-floor/sq/${code}.png`;
+  return `https://www.faretransit.com/assets/airlines/${code.toLowerCase()}.png`;
 }
 
 function extractRawSegments(bookingOrSegments) {

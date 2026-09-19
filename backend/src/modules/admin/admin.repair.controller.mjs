@@ -237,62 +237,66 @@ function extractSegments(body = {}) {
   return [];
 }
 
-function normalizeSegments(rawSegments = []) {
-  let outboundSeq = 1;
-  let returnSeq = 1;
+function normalizeItineraryType(value, rawSegments = []) {
+  const raw = String(value || '').trim().toUpperCase().replace(/[-\s]+/g, '_');
+  if (raw === 'MULTI_CITY' || raw === 'MULTICITY') return 'MULTI_CITY';
+  if (raw === 'ROUND_TRIP' || raw === 'ROUNDTRIP') return 'ROUND_TRIP';
+  if (raw === 'ONE_WAY' || raw === 'ONEWAY') return 'ONE_WAY';
+  const hasReturn = rawSegments.some(segment => ['return', 'inbound'].includes(String(segment?.journey_direction || segment?.direction || segment?.leg || '').toLowerCase()));
+  return hasReturn ? 'ROUND_TRIP' : 'ONE_WAY';
+}
 
-  return rawSegments
-    .map((segment, index) => {
-      const rawDirection = String(
-        segment.journey_direction || segment.direction || segment.leg || 'outbound'
-      ).toLowerCase();
-      const direction = ['return', 'inbound'].includes(rawDirection) ? 'return' : 'outbound';
-      const sequence = direction === 'return' ? returnSeq++ : outboundSeq++;
+function normalizeSegments(rawSegments = [], itineraryType = 'ONE_WAY') {
+  const type = normalizeItineraryType(itineraryType, rawSegments);
+  const counters = new Map();
 
-      const origin = String(
-        segment.origin_airport ||
-        segment.originCode ||
-        segment.origin_code ||
-        segment.departureAirport ||
-        segment.departure_airport ||
-        ''
-      ).trim().toUpperCase();
+  return rawSegments.map((segment, index) => {
+    const rawDirection = String(segment.journey_role || segment.journeyRole || segment.journey_direction || segment.direction || segment.leg || '').toUpperCase();
+    let journeyIndex = Number(segment.journey_index || segment.journeyIndex || 0);
+    let journeyRole;
+    let direction;
+    if (type === 'ONE_WAY') {
+      journeyIndex = 1; journeyRole = 'OUTBOUND'; direction = 'outbound';
+    } else if (type === 'ROUND_TRIP') {
+      const isReturn = ['RETURN', 'INBOUND'].includes(rawDirection);
+      journeyIndex = isReturn ? 2 : 1; journeyRole = isReturn ? 'RETURN' : 'OUTBOUND'; direction = isReturn ? 'return' : 'outbound';
+    } else {
+      journeyIndex = journeyIndex > 0 ? journeyIndex : 1; journeyRole = 'TRIP'; direction = 'multi_city';
+    }
+    const sequence = (counters.get(journeyIndex) || 0) + 1;
+    counters.set(journeyIndex, sequence);
+    const origin = String(segment.origin_airport || segment.originCode || segment.origin_code || segment.departureAirport || segment.departure_airport || '').trim().toUpperCase();
+    const destination = String(segment.destination_airport || segment.destinationCode || segment.destination_code || segment.arrivalAirport || segment.arrival_airport || '').trim().toUpperCase();
+    return {
+      ...segment, itinerary_type: type, trip_type: type, journey_index: journeyIndex, journey_role: journeyRole,
+      journey_direction: direction, direction, segment_sequence: sequence, segment_order: index + 1,
+      origin_airport: origin, destination_airport: destination,
+      carrier_code: String(segment.carrier_code || segment.marketing_carrier_code || segment.marketingAirlineCode || segment.airlineCode || '').trim().toUpperCase(),
+      carrier_name: segment.carrier_name || segment.airline_name || segment.marketingAirlineName || segment.airlineName || '',
+      flight_number: String(segment.flight_number || segment.flightNumber || '').trim(),
+      departure_date: segment.departure_date || segment.departureDate || '', departure_time: segment.departure_time || segment.departureTime || '',
+      arrival_date: segment.arrival_date || segment.arrivalDate || segment.departure_date || segment.departureDate || '', arrival_time: segment.arrival_time || segment.arrivalTime || '',
+      cabin: segment.cabin || segment.cabin_class || segment.cabinClass || 'Economy'
+    };
+  }).filter(segment => segment.origin_airport && segment.destination_airport);
+}
 
-      const destination = String(
-        segment.destination_airport ||
-        segment.destinationCode ||
-        segment.destination_code ||
-        segment.arrivalAirport ||
-        segment.arrival_airport ||
-        ''
-      ).trim().toUpperCase();
-
-      return {
-        ...segment,
-        journey_direction: direction,
-        direction,
-        leg: direction,
-        segment_sequence: Number(segment.segment_sequence) || sequence,
-        segment_order: index + 1,
-        origin_airport: origin,
-        destination_airport: destination,
-        carrier_code: String(
-          segment.carrier_code ||
-          segment.marketing_carrier_code ||
-          segment.marketingAirlineCode ||
-          segment.airlineCode ||
-          ''
-        ).trim().toUpperCase(),
-        carrier_name: segment.carrier_name || segment.airline_name || segment.marketingAirlineName || segment.airlineName || '',
-        flight_number: String(segment.flight_number || segment.flightNumber || '').trim(),
-        departure_date: segment.departure_date || segment.departureDate || '',
-        departure_time: segment.departure_time || segment.departureTime || '',
-        arrival_date: segment.arrival_date || segment.arrivalDate || segment.departure_date || segment.departureDate || '',
-        arrival_time: segment.arrival_time || segment.arrivalTime || '',
-        cabin: segment.cabin || segment.cabin_class || segment.cabinClass || 'Economy'
-      };
-    })
-    .filter(segment => segment.origin_airport && segment.destination_airport);
+function validateJourneyContinuity(segments = []) {
+  const groups = new Map();
+  for (const segment of segments) {
+    const index = Number(segment.journey_index || 1);
+    if (!groups.has(index)) groups.set(index, []);
+    groups.get(index).push(segment);
+  }
+  for (const [journeyIndex, group] of groups) {
+    group.sort((a, b) => Number(a.segment_sequence || 0) - Number(b.segment_sequence || 0));
+    for (let i = 0; i < group.length - 1; i += 1) {
+      if (group[i].destination_airport !== group[i + 1].origin_airport) {
+        return { valid: false, message: `Trip ${journeyIndex}: segment ${i + 1} ends at ${group[i].destination_airport}, but segment ${i + 2} starts at ${group[i + 1].origin_airport}.` };
+      }
+    }
+  }
+  return { valid: true };
 }
 
 async function getPersistedSegments(bookingId) {
@@ -564,7 +568,9 @@ export const adminRepairController = {
         });
       }
 
-      const segments = normalizeSegments(extractSegments(body));
+      const rawSegments = extractSegments(body);
+      const itineraryType = normalizeItineraryType(body.itineraryType || body.tripType || existing.itinerary_type, rawSegments);
+      const segments = normalizeSegments(rawSegments, itineraryType);
       if (segments.length === 0) {
         return res.status(400).json({
           success: false,
@@ -573,6 +579,11 @@ export const adminRepairController = {
             message: 'At least one valid flight segment is required. Import or enter a flight before saving.'
           }
         });
+      }
+
+      const continuity = validateJourneyContinuity(segments);
+      if (!continuity.valid) {
+        return res.status(400).json({ success: false, error: { code: 'DISCONNECTED_ITINERARY_JOURNEY', message: continuity.message } });
       }
 
       const invalid = segments.find(segment =>
@@ -625,17 +636,16 @@ export const adminRepairController = {
         'TICKETED'
       ].includes(materialAuthorizationState);
 
+      const bookingUpdate = { itinerary_type: itineraryType, updated_at: new Date().toISOString() };
       if (shouldRequireReauthorization) {
-        await withTimeout(
-          bookingRepository.updateStatus(existing.id, {
-            status: 'REAUTHORIZATION_REQUIRED',
-            authorization_status: 'REAUTHORIZATION_REQUIRED',
-            updated_at: new Date().toISOString()
-          }),
-          6000,
-          'invalidate authorization after itinerary change'
-        );
+        bookingUpdate.status = 'REAUTHORIZATION_REQUIRED';
+        bookingUpdate.authorization_status = 'REAUTHORIZATION_REQUIRED';
       }
+      await withTimeout(
+        bookingRepository.updateStatus(existing.id, bookingUpdate),
+        6000,
+        shouldRequireReauthorization ? 'invalidate authorization after itinerary change' : 'save itinerary type'
+      );
 
       const refreshed = await bookingRepository.getCompleteBookingById(existing.id);
       return res.json({
@@ -646,6 +656,7 @@ export const adminRepairController = {
         booking: refreshed,
         data: refreshed,
         segments: persisted,
+        itineraryType,
         reauthorizationRequired: shouldRequireReauthorization,
         persistenceVerified: true
       });

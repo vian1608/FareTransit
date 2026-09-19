@@ -1,3 +1,5 @@
+import { getAirlineName as getCatalogAirlineName, getAirlineLogoUrl } from './airlineCatalog';
+
 export const CHATGPT_PROMPT_TEMPLATE = `You are an expert travel agent GDS itinerary assistant.
 
 When given an itinerary, convert it ONLY into raw GDS-style lines format matching this exact syntax:
@@ -282,18 +284,12 @@ const AIRLINE_NAMES = {
 export function resolveAirlineName(carrierCode, providedName) {
   if (providedName && typeof providedName === 'string' && providedName.trim()) {
     const p = providedName.trim();
-    if (!p.toLowerCase().includes('airline information unavailable') && !p.toLowerCase().includes('commercial airline')) {
-      return p;
-    }
+    if (!p.toLowerCase().includes('airline information unavailable') && !p.toLowerCase().includes('commercial airline')) return p;
   }
   const code = (carrierCode || '').trim().toUpperCase();
-  if (AIRLINE_NAMES[code]) return AIRLINE_NAMES[code];
-  if (code) return `${code} Airlines`;
-  return 'Airline';
+  return getCatalogAirlineName(code);
 }
 
 export function getCarrierLogoUrl(carrierCode) {
-  const code = (carrierCode || '').trim().toUpperCase();
-  if (!code) return '';
-  return `https://assets.duffel.com/img/airlines/for-floor/sq/${code}.png`;
+  return getAirlineLogoUrl(carrierCode);
 }

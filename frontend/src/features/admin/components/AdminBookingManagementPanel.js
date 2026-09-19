@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { adminAPI, getApiErrorMessage } from '../../../shared/api/api';
 import AdminEmailPreviewModal from '../../../shared/components/admin/AdminEmailPreviewModal';
 import AdminGdsImportModalV2 from './AdminGdsImportModalV2';
+import { canonicalizeSegments, inferLegacyItineraryType, itineraryTypeLabel, normalizeItineraryType, validateJourneyContinuity } from '../../../shared/utils/itineraryArchitecture';
 import './AdminBookingManagementPanel.css';
 
 const text = value => (value === null || value === undefined ? '' : String(value));
@@ -51,12 +52,16 @@ const extractSegments = booking => {
 
 const normalizeSegment = (segment = {}, index = 0) => {
   const rawDirection = text(segment.journey_direction || segment.direction || segment.leg || 'outbound').toLowerCase();
-  const direction = ['return', 'inbound'].includes(rawDirection) ? 'return' : 'outbound';
+  const direction = ['return', 'inbound'].includes(rawDirection) ? 'return' : (['multi_city', 'multi-city', 'trip'].includes(rawDirection) ? 'multi_city' : 'outbound');
+  const journeyIndex = Number(segment.journey_index || segment.journeyIndex || (direction === 'return' ? 2 : 1));
+  const journeyRole = text(segment.journey_role || segment.journeyRole || (direction === 'return' ? 'RETURN' : (direction === 'multi_city' ? 'TRIP' : 'OUTBOUND'))).toUpperCase();
   return {
     ...segment,
     _key: segment.id || segment._key || `segment-${Date.now()}-${index}`,
     journey_direction: direction,
     direction,
+    journey_index: journeyIndex,
+    journey_role: journeyRole,
     carrier_name: segment.carrier_name || segment.airline_name || segment.airlineName || segment.airline || '',
     carrier_code: text(segment.carrier_code || segment.marketing_carrier_code || segment.airlineCode).toUpperCase(),
     flight_number: text(segment.flight_number || segment.flightNumber),
@@ -119,6 +124,7 @@ export default function AdminBookingManagementPanel() {
 
   const [statusForm, setStatusForm] = useState({ status: 'PENDING', notes: '' });
   const [segments, setSegments] = useState([]);
+  const [itineraryType, setItineraryType] = useState('ONE_WAY');
   const [pricingForm, setPricingForm] = useState({ supplierFare: '0.00', taxes: '0.00', customerTotal: '0.00', currency: 'USD', reason: '' });
   const [authForm, setAuthForm] = useState({ authorizedAmount: '0.00', currency: 'USD' });
   const [paymentForm, setPaymentForm] = useState({ paymentStatus: 'PENDING', referenceId: '' });
@@ -139,7 +145,9 @@ export default function AdminBookingManagementPanel() {
     if (!next) return;
     setBooking(next);
     setStatusForm({ status: normalizeStatus(next.status || next.bookingStatus), notes: next.internal_notes || next.internalNotes || '' });
-    setSegments(extractSegments(next).map(normalizeSegment));
+    const loadedSegments = extractSegments(next).map(normalizeSegment);
+    setSegments(loadedSegments);
+    setItineraryType(inferLegacyItineraryType(next, loadedSegments));
 
     const customerTotal = num(next.pricing?.customerTotal ?? next.customer_price ?? next.total_amount, 0);
     const supplierFare = num(next.pricing?.supplierCost ?? next.pricing?.supplierFare ?? next.supplier_fare ?? next.supplier_price ?? next.original_api_price, customerTotal);
@@ -231,22 +239,16 @@ export default function AdminBookingManagementPanel() {
     internalNotes: statusForm.notes
   }), 'Status & notes saved.');
 
-  const canonicalSegments = input => input.map((segment, index) => {
-    const direction = segment.journey_direction === 'return' ? 'return' : 'outbound';
-    const sequence = input.slice(0, index + 1).filter(item => (item.journey_direction === 'return' ? 'return' : 'outbound') === direction).length;
-    return {
-      ...segment,
-      journey_direction: direction,
-      direction,
-      segment_sequence: sequence,
-      origin_airport: text(segment.origin_airport).toUpperCase(),
-      destination_airport: text(segment.destination_airport).toUpperCase(),
-      carrier_code: text(segment.carrier_code).toUpperCase()
-    };
-  });
+  const canonicalSegments = (input, requestedType = itineraryType) => canonicalizeSegments(input, requestedType).map(segment => ({
+    ...segment,
+    origin_airport: text(segment.origin_airport).toUpperCase(),
+    destination_airport: text(segment.destination_airport).toUpperCase(),
+    carrier_code: text(segment.carrier_code).toUpperCase()
+  }));
 
-  const persistItinerary = async sourceSegments => {
-    const finalSegments = canonicalSegments(sourceSegments);
+  const persistItinerary = async (sourceSegments, requestedType = itineraryType) => {
+    const type = normalizeItineraryType(requestedType);
+    const finalSegments = canonicalSegments(sourceSegments, type);
     if (!finalSegments.length) {
       setMessage('itinerary', 'error', 'Add or import at least one flight before saving.');
       return null;
@@ -255,16 +257,26 @@ export default function AdminBookingManagementPanel() {
       setMessage('itinerary', 'error', 'Every flight needs valid 3-letter origin and destination airport codes.');
       return null;
     }
+    const continuity = validateJourneyContinuity(finalSegments, type);
+    if (!continuity.valid) {
+      setMessage('itinerary', 'error', continuity.message);
+      return null;
+    }
+    setItineraryType(type);
     return saveAndRefresh('itinerary', () => adminAPI.patchItinerary(booking.id, {
       segments: finalSegments,
+      itineraryType: type,
+      tripType: type,
       expectedVersion: booking.updated_at || booking.version
     }), 'Itinerary saved.');
   };
 
-  const applyImportedItinerary = async ({ segments: importedSegments }) => {
-    const normalized = (importedSegments || []).map(normalizeSegment);
+  const applyImportedItinerary = async ({ segments: importedSegments, itineraryType: importedType, tripType }) => {
+    const type = normalizeItineraryType(importedType || tripType);
+    const normalized = canonicalSegments((importedSegments || []).map(normalizeSegment), type).map(normalizeSegment);
     setSegments(normalized);
-    const result = await persistItinerary(normalized);
+    setItineraryType(type);
+    const result = await persistItinerary(normalized, type);
     if (!result) throw new Error('The imported itinerary could not be saved.');
     return result;
   };
@@ -488,7 +500,7 @@ export default function AdminBookingManagementPanel() {
 
   const updateSegment = (index, field, value) => setSegments(current => current.map((segment, idx) => idx === index ? { ...segment, [field]: value } : segment));
   const removeSegment = index => setSegments(current => current.filter((_, idx) => idx !== index));
-  const addSegment = () => setSegments(current => [...current, normalizeSegment({ journey_direction: 'outbound', cabin: 'Economy' }, current.length)]);
+  const addSegment = () => setSegments(current => [...current, normalizeSegment({ journey_direction: itineraryType === 'MULTI_CITY' ? 'multi_city' : 'outbound', journey_index: 1, journey_role: itineraryType === 'MULTI_CITY' ? 'TRIP' : 'OUTBOUND', cabin: 'Economy' }, current.length)]);
 
   if (loading) return <section className="abm-panel abm-loading">Loading booking management controls…</section>;
   if (loadError) return <section className="abm-panel"><div className="abm-message abm-message--error">{loadError}</div><button className="abm-button" type="button" onClick={load}>Retry</button></section>;
@@ -523,6 +535,7 @@ export default function AdminBookingManagementPanel() {
         <div className="abm-toolbar">
           <button className="abm-button" type="button" onClick={() => setGdsOpen(true)}>Import GDS / JSON</button>
           <button className="abm-button abm-button--secondary" type="button" onClick={addSegment}>+ Add Flight Manually</button>
+          <span className="abm-note">Trip type: <strong>{itineraryTypeLabel(itineraryType)}</strong></span>
           <button className="abm-button abm-button--danger" type="button" onClick={() => {
             if (!window.confirm('Clear every saved flight segment from this booking?')) return;
             saveAndRefresh('itinerary', () => adminAPI.patchItinerary(booking.id, { clear: true }), 'Itinerary cleared.').then(result => { if (result) setSegments([]); });
@@ -533,7 +546,13 @@ export default function AdminBookingManagementPanel() {
             <details className="abm-flight" open={index === 0} key={segment._key || index}>
               <summary><strong>Flight {index + 1}: {segment.origin_airport || '---'} → {segment.destination_airport || '---'}</strong><span>{segment.carrier_code} {segment.flight_number}</span></summary>
               <div className="abm-grid abm-grid--4">
-                <label><span>Direction</span><select value={segment.journey_direction || 'outbound'} onChange={event => updateSegment(index, 'journey_direction', event.target.value)}><option value="outbound">Outbound</option><option value="return">Return</option></select></label>
+                {itineraryType === 'MULTI_CITY' ? (
+                  <label><span>Trip #</span><input type="number" min="1" value={segment.journey_index || 1} onChange={event => updateSegment(index, 'journey_index', Math.max(1, Number(event.target.value) || 1))} /></label>
+                ) : itineraryType === 'ROUND_TRIP' ? (
+                  <label><span>Journey</span><select value={segment.journey_direction || 'outbound'} onChange={event => updateSegment(index, 'journey_direction', event.target.value)}><option value="outbound">Outbound</option><option value="return">Return</option></select></label>
+                ) : (
+                  <label><span>Journey</span><input value="One Way" disabled /></label>
+                )}
                 <label><span>Airline</span><input value={segment.carrier_name || ''} onChange={event => updateSegment(index, 'carrier_name', event.target.value)} /></label>
                 <label><span>Carrier code</span><input maxLength={3} value={segment.carrier_code || ''} onChange={event => updateSegment(index, 'carrier_code', event.target.value.toUpperCase())} /></label>
                 <label><span>Flight #</span><input value={segment.flight_number || ''} onChange={event => updateSegment(index, 'flight_number', event.target.value)} /></label>
@@ -550,7 +569,7 @@ export default function AdminBookingManagementPanel() {
           ))}
           <SectionMessage state={messages.itinerary} />
         </div>
-        <div className="abm-footer"><button className="abm-button" type="button" onClick={() => persistItinerary(segments)} disabled={busy.itinerary || !segments.length}>{busy.itinerary ? 'Saving & verifying…' : 'Save Itinerary'}</button></div>
+        <div className="abm-footer"><button className="abm-button" type="button" onClick={() => persistItinerary(segments, itineraryType)} disabled={busy.itinerary || !segments.length}>{busy.itinerary ? 'Saving & verifying…' : 'Save Itinerary'}</button></div>
       </details>
 
       <div className="abm-two-column">

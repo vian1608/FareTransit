@@ -460,7 +460,7 @@ export const bookingRepository = {
       fetchWithTimeout(supabase.from('contacts').select('*').eq('booking_id', realId), 'contacts', []),
       fetchWithTimeout(supabase.from('flights').select('*').eq('booking_id', realId), 'flights', []),
       fetchWithTimeout(supabase.from('payments').select('*').eq('booking_id', realId), 'payments', []),
-      fetchWithTimeout(supabase.from('booking_itinerary_segments').select('*').eq('booking_id', realId).order('segment_sequence', { ascending: true }), 'itinerarySegments', []),
+      fetchWithTimeout(supabase.from('booking_itinerary_segments').select('*').eq('booking_id', realId).order('journey_index', { ascending: true }).order('segment_sequence', { ascending: true }), 'itinerarySegments', []),
       fetchWithTimeout(
         isUUID
           ? supabase.from('email_logs').select('*').eq('booking_id', realId).order('created_at', { ascending: false }).limit(25)
@@ -1975,9 +1975,11 @@ export const bookingRepository = {
 
         return {
           booking_id: bookingId,
-          trip_type: seg.trip_type || 'one_way',
+          trip_type: String(seg.trip_type || seg.itinerary_type || 'ONE_WAY').toUpperCase(),
           direction: dir,
           journey_direction: dir,
+          journey_index: Number(seg.journey_index || seg.journeyIndex || (dir === 'return' ? 2 : 1)),
+          journey_role: String(seg.journey_role || seg.journeyRole || (dir === 'return' ? 'RETURN' : (dir === 'multi_city' ? 'TRIP' : 'OUTBOUND'))).toUpperCase(),
           segment_sequence: seq,
           carrier_name: seg.carrier_name || seg.airline_name || seg.airline || (code ? `${code} Airlines` : ''),
           carrier_code: code,
@@ -2059,7 +2061,7 @@ export const bookingRepository = {
       const flightRows = canonicalRows.map((seg) => ({
         booking_id: bookingId,
         leg: seg.journey_direction === 'return' ? 'return' : 'outbound',
-        trip_type: seg.direction === 'return' ? 'round-trip' : 'one-way',
+        trip_type: String(seg.trip_type || seg.itinerary_type || '').toUpperCase() === 'MULTI_CITY' ? 'multi-city' : (String(seg.trip_type || seg.itinerary_type || '').toUpperCase() === 'ROUND_TRIP' ? 'round-trip' : 'one-way'),
         airline_name: seg.carrier_name || seg.airline_name || '',
         carrier_code: seg.carrier_code || seg.marketing_carrier_code || '',
         flight_number: seg.flight_number || '',

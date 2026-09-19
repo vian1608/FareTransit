@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { parseGdsLine } from '../../utils/gdsItineraryHelper';
+import { parseGdsLine, resolveAirlineName } from '../../utils/gdsItineraryHelper';
+import { canonicalizeSegments, normalizeItineraryType, validateJourneyContinuity } from '../../utils/itineraryArchitecture';
+import AirlineLogo from '../AirlineLogo';
 import AdminItineraryHelpModal from './AdminItineraryHelpModal';
 
 export default function AdminItineraryImportModal({
@@ -121,16 +123,16 @@ export default function AdminItineraryImportModal({
           setErrorMsg('Outbound GDS lines are required for One Way import.');
           return;
         }
-        outboundSegs = parseTextToSegments(outboundText, outboundYear).map(s => ({ ...s, journey_direction: 'outbound' }));
+        outboundSegs = parseTextToSegments(outboundText, outboundYear).map((s, index) => ({ ...s, journey_direction: 'outbound', direction: 'outbound', journey_index: 1, journey_role: 'OUTBOUND', segment_sequence: index + 1 }));
         combinedSegments = outboundSegs;
       } else if (tripType === 'round-trip') {
         if (!outboundText.trim()) {
           setErrorMsg('Outbound GDS lines are required for Round Trip import.');
           return;
         }
-        outboundSegs = parseTextToSegments(outboundText, outboundYear).map(s => ({ ...s, journey_direction: 'outbound' }));
+        outboundSegs = parseTextToSegments(outboundText, outboundYear).map((s, index) => ({ ...s, journey_direction: 'outbound', direction: 'outbound', journey_index: 1, journey_role: 'OUTBOUND', segment_sequence: index + 1 }));
         if (returnText.trim()) {
-          returnSegs = parseTextToSegments(returnText, returnYear).map(s => ({ ...s, journey_direction: 'return' }));
+          returnSegs = parseTextToSegments(returnText, returnYear).map((s, index) => ({ ...s, journey_direction: 'return', direction: 'return', journey_index: 2, journey_role: 'RETURN', segment_sequence: index + 1 }));
         }
         combinedSegments = [...outboundSegs, ...returnSegs];
       } else if (tripType === 'multi-city') {
@@ -141,7 +143,9 @@ export default function AdminItineraryImportModal({
             const segs = parseTextToSegments(journey.text, journey.year).map(s => ({
               ...s,
               journey_direction: 'multi_city',
-              journey_index: idx + 1
+              direction: 'multi_city',
+              journey_index: idx + 1,
+              journey_role: 'TRIP'
             }));
             mcSegs.push(...segs);
           }
@@ -158,8 +162,20 @@ export default function AdminItineraryImportModal({
         return;
       }
 
+      const itineraryType = normalizeItineraryType(tripType);
+      combinedSegments = canonicalizeSegments(combinedSegments, itineraryType);
+      const continuity = validateJourneyContinuity(combinedSegments, itineraryType);
+      if (!continuity.valid) {
+        setErrorMsg(continuity.message);
+        return;
+      }
+      outboundSegs = combinedSegments.filter(segment => segment.journey_role === 'OUTBOUND');
+      returnSegs = combinedSegments.filter(segment => segment.journey_role === 'RETURN');
+      mcSegs = combinedSegments.filter(segment => segment.journey_role === 'TRIP');
+
       setParsedPreview({
         tripType,
+        itineraryType,
         outboundSegments: outboundSegs,
         returnSegments: returnSegs,
         multiCityJourneys: mcSegs,
@@ -370,7 +386,7 @@ export default function AdminItineraryImportModal({
                 {multiCityJourneys.map((journey, idx) => (
                   <div key={journey.id} style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px', marginBottom: '12px', backgroundColor: '#f8fafc' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                      <span style={{ fontWeight: 700, fontSize: '13px', color: '#8b1236' }}>Flight / Leg #{idx + 1}</span>
+                      <span style={{ fontWeight: 700, fontSize: '13px', color: '#8b1236' }}>Trip #{idx + 1}</span>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <select value={journey.year} onChange={(e) => handleUpdateMultiCityJourney(journey.id, 'year', e.target.value)} style={{ padding: '2px 6px', fontSize: '12px', borderRadius: '4px' }}>
                           <option value="2026">2026</option>
@@ -397,7 +413,7 @@ export default function AdminItineraryImportModal({
                   onClick={handleAddMultiCityJourney}
                   style={{ width: '100%', padding: '8px', border: '1px dashed #8b1236', borderRadius: '6px', backgroundColor: '#fff5f7', color: '#8b1236', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}
                 >
-                  + Add Flight / Leg Box
+                  + Add Trip
                 </button>
               </div>
             )}
@@ -421,10 +437,11 @@ export default function AdminItineraryImportModal({
               {parsedPreview.allSegments.map((seg, idx) => (
                 <div key={idx} style={{ border: '1px solid #cbd5e1', borderRadius: '6px', padding: '10px 14px', backgroundColor: '#ffffff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
-                    <span style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', padding: '2px 6px', borderRadius: '4px', backgroundColor: seg.journey_direction === 'return' ? '#3b82f6' : '#8b1236', color: '#ffffff', marginRight: '8px' }}>
-                      {seg.journey_direction || 'outbound'}
+                    <span style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', padding: '2px 6px', borderRadius: '4px', backgroundColor: seg.journey_role === 'RETURN' ? '#3b82f6' : '#8b1236', color: '#ffffff', marginRight: '8px' }}>
+                      {parsedPreview.itineraryType === 'MULTI_CITY' ? `Trip ${seg.journey_index}` : (seg.journey_role === 'RETURN' ? 'Return' : (parsedPreview.itineraryType === 'ONE_WAY' ? 'One Way' : 'Outbound'))}
                     </span>
-                    <strong style={{ fontSize: '14px', color: '#0f172a' }}>{seg.carrierCode} {seg.flightNumber}</strong>
+                    <span style={{ display: 'inline-flex', verticalAlign: 'middle', marginRight: '7px' }}><AirlineLogo carrierCode={seg.carrierCode || seg.carrier_code} airlineName={resolveAirlineName(seg.carrierCode || seg.carrier_code)} size={24} /></span>
+                    <strong style={{ fontSize: '14px', color: '#0f172a' }}>{resolveAirlineName(seg.carrierCode || seg.carrier_code)} {seg.carrierCode || seg.carrier_code} {seg.flightNumber || seg.flight_number}</strong>
                     <span style={{ fontSize: '12px', color: '#64748b', marginLeft: '10px' }}>Cabin: {seg.cabin || 'Economy'}</span>
                     <div style={{ fontSize: '13px', fontWeight: 700, color: '#334155', marginTop: '4px' }}>
                       {seg.departureAirport || seg.originAirport || seg.origin_airport} → {seg.arrivalAirport || seg.destinationAirport || seg.destination_airport}
