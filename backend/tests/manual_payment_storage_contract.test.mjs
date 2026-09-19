@@ -38,12 +38,13 @@ test('FareTransit four-step checkout stores billing and masked card metadata wit
     assert.doesNotMatch(cardEntry, /Collect\.js|secure\.nmi\.com|NMI_TOKENIZATION|startPaymentRequest/i);
   });
 
-  await t.test('card brand is detected immediately and is visible to the passenger', () => {
+  await t.test('card network is detected immediately without being confused with number validity', () => {
     assert.match(cardEntry, /\^4.*Visa/);
     assert.match(cardEntry, /\^5.*Mastercard/);
     assert.match(cardEntry, /\^3/);
     assert.match(cardEntry, /American Express/);
-    assert.match(cardEntry, /Card type/);
+    assert.match(cardEntry, /Card network/);
+    assert.match(cardEntry, /cardNumberValid/);
     assert.match(cardEntry, /booking-v3-detected-brand/);
     assert.doesNotMatch(bookingFixesCss, /\.booking-v3-detected-brand\s*\{[^}]*display:\s*none/is);
   });
