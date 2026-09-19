@@ -1,0 +1,58 @@
+name: Authorization Token Lineage Hardening
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/patch-authorization-token-lineage.py
+      - .github/workflows/authorization-token-lineage.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: authorization-token-lineage-main
+  cancel-in-progress: false
+
+jobs:
+  patch-test-push:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Apply token lineage hardening
+        run: python3 scripts/patch-authorization-token-lineage.py
+
+      - name: Syntax checks
+        run: |
+          node --check backend/src/modules/authorizations/passenger-authorization.service.mjs
+          node --check backend/src/modules/authorizations/passenger-authorization.controller.mjs
+
+      - name: Authorization runtime integrity contract
+        run: node backend/tests/authorization_runtime_integrity.test.mjs
+
+      - name: Authorization integrity V2 contract
+        run: node --test backend/tests/authorization_integrity_v2.test.mjs
+
+      - name: Commit implementation
+        run: |
+          git config user.name "FareTransit Automation"
+          git config user.email "actions@users.noreply.github.com"
+          git add backend/src/modules/authorizations/passenger-authorization.service.mjs backend/tests/authorization_runtime_integrity.test.mjs
+          if git diff --cached --quiet; then
+            echo "No implementation changes to commit."
+            exit 0
+          fi
+          git commit -m "Bind authorization links to active token lineage"
+          git push origin main
