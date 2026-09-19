@@ -83,6 +83,7 @@ export const adminController = {
         html: rendered.html,
         text: rendered.text,
         missingFields: rendered.missingFields || [],
+        previewOnly: rendered.previewOnly === true,
         authorizationUrl: rendered.authorizationUrl || null,
         authorizationExpiresAt: rendered.authorizationExpiresAt || null
       };
