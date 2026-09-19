@@ -390,6 +390,40 @@ export default function AdminBookingManagementPanel() {
         ? (resend ? 'resend_authorization' : 'send_authorization')
         : (resend ? 'resend_final_ticket_email' : 'send_final_ticket_email');
 
+    if (type === 'authorization') {
+      const savedSplits = booking.payment_splits || booking.paymentSplits || [];
+      const bookingTotal = num(booking.customer_price ?? booking.total_amount ?? pricingForm.customerTotal, 0);
+      const splitTotal = savedSplits.reduce((sum, split) => sum + Math.round(num(split.amount, 0) * 100), 0) / 100;
+
+      if (!savedSplits.length) {
+        const message = `Authorization email needs a saved payment breakdown totaling ${money(bookingTotal, booking.currency || pricingForm.currency)}. Add the merchant split(s) below and click Save Payment first.`;
+        setMessage('emails', 'error', message);
+        setMessage('payment', 'error', message);
+        window.requestAnimationFrame(() => {
+          const section = document.getElementById('payment-splits-section');
+          if (section) {
+            section.open = true;
+            section.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        });
+        return;
+      }
+
+      if (Math.abs(splitTotal - bookingTotal) > 0.001) {
+        const message = `Saved payment splits total ${money(splitTotal, booking.currency || pricingForm.currency)}, but the booking total is ${money(bookingTotal, booking.currency || pricingForm.currency)}. Correct the split amounts and click Save Payment before sending.`;
+        setMessage('emails', 'error', message);
+        setMessage('payment', 'error', message);
+        window.requestAnimationFrame(() => {
+          const section = document.getElementById('payment-splits-section');
+          if (section) {
+            section.open = true;
+            section.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        });
+        return;
+      }
+    }
+
     if (type === 'final_ticket') {
       const pnr = text(booking.airline_confirmation_number || booking.airlineConfirmationNumber || booking.airline_pnr || booking.pnr).trim().toUpperCase();
       if (!/^[A-Z0-9]{6}$/.test(pnr)) {
@@ -544,9 +578,12 @@ export default function AdminBookingManagementPanel() {
         </details>
       </div>
 
-      <details className="abm-section" open>
+      <details id="payment-splits-section" className="abm-section" open>
         <summary><strong>5. Payment & Splits</strong><span>Payment state, transaction reference and merchant split amounts</span></summary>
-        <div className="abm-toolbar"><button className="abm-button abm-button--secondary" type="button" onClick={() => setPaymentSplits(current => [...current, { _key: `split-${Date.now()}`, merchantName: 'FareTransit LLC', amount: '0.00' }])}>+ Add Payment Split</button></div>
+        <div className="abm-toolbar">
+          <button className="abm-button abm-button--secondary" type="button" onClick={() => setPaymentSplits(current => [...current, { _key: `split-${Date.now()}`, merchantName: 'FareTransit LLC', amount: '0.00' }])}>+ Add Payment Split</button>
+          {!paymentSplits.length && num(pricingForm.customerTotal, 0) > 0 && <button className="abm-button abm-button--secondary" type="button" onClick={() => setPaymentSplits([{ _key: `split-${Date.now()}`, merchantName: 'FareTransit LLC', amount: num(pricingForm.customerTotal, 0).toFixed(2) }])}>Use Customer Total as One Split</button>}
+        </div>
         <div className="abm-body">
           <div className="abm-grid abm-grid--2">
             <label><span>Payment status</span><select value={paymentForm.paymentStatus} onChange={event => setPaymentForm(current => ({ ...current, paymentStatus: event.target.value }))}>{['PENDING','PROCESSING','PAID','FAILED','REFUNDED'].map(status => <option key={status}>{status}</option>)}</select></label>

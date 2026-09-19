@@ -1050,9 +1050,21 @@ export const adminController = {
         const splits = booking.payment_splits || booking.paymentSplits || [];
         const sCents = splits.length > 0
           ? splits.reduce((sum, s) => sum + Math.round(Number(s.amount || 0) * 100), 0)
-          : bCents;
+          : 0;
 
-        if (splits.length > 0 && Math.abs(sCents - bCents) !== 0) {
+        if (splits.length === 0) {
+          return res.status(400).json({
+            success: false,
+            requestId: reqId,
+            emailType: 'authorization',
+            error: {
+              code: 'PAYMENT_SPLITS_REQUIRED',
+              message: `Save a payment breakdown before sending the authorization email. Add one or more merchant splits totaling $${(bCents / 100).toFixed(2)}.`
+            }
+          });
+        }
+
+        if (Math.abs(sCents - bCents) !== 0) {
           return res.status(400).json({
             success: false,
             requestId: reqId,
