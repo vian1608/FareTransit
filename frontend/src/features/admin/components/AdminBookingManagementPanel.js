@@ -132,30 +132,66 @@ function SectionMessage({ state }) {
   return <div className={`abm-message abm-message--${state.type || 'info'}`}>{state.message}</div>;
 }
 
-function PaymentMerchantSelect({ split, options, onSelect }) {
+function PaymentMerchantSelect({ split, options, onSelect, onManualChange }) {
+  const [open, setOpen] = useState(false);
   const inferredType = normalizeMerchantType(split.merchantType, split.merchantName, split.merchantCode);
   const inferredCode = text(split.merchantCode || inferAirlineCodeFromName(split.merchantName)).trim().toUpperCase();
   let selected = options.find(option => option.key === merchantKey(inferredType, inferredCode, split.merchantName));
   if (!selected && split.merchantName) selected = options.find(option => option.name.toLowerCase() === text(split.merchantName).trim().toLowerCase());
-  const currentValue = selected?.key || '';
   const airlines = options.filter(option => option.type === 'AIRLINE' && !option.stale);
   const staleAirlines = options.filter(option => option.type === 'AIRLINE' && option.stale);
   const fareTransit = options.find(option => option.type === 'FARETRANSIT');
-  const others = options.filter(option => option.type === 'OTHER');
+  const others = options.filter(option => option.type === 'OTHER' && option.name.toLowerCase() !== text(split.merchantName).trim().toLowerCase());
+
+  const choose = option => {
+    onSelect(option);
+    setOpen(false);
+  };
+
+  const renderOption = option => (
+    <button className="abm-merchant-option" type="button" key={option.key} onClick={() => choose(option)}>
+      <span className="abm-merchant-option__mark">
+        {option.type === 'AIRLINE'
+          ? <AirlineLogo carrierCode={option.code} airlineName={option.name} src={option.logoUrl} size={22} />
+          : <span className="abm-ft-mark">FT</span>}
+      </span>
+      <span className="abm-merchant-option__copy"><strong>{option.name}</strong>{option.code && <small>{option.code}</small>}</span>
+      {option.stale && <em>Review</em>}
+    </button>
+  );
 
   return (
-    <label className="abm-merchant-field">
-      <span>Merchant</span>
-      <select value={currentValue} onChange={event => onSelect(options.find(option => option.key === event.target.value) || null)}>
-        <option value="">Select merchant…</option>
-        {airlines.length > 0 && <optgroup label="Airlines in this itinerary">{airlines.map(option => <option key={option.key} value={option.key}>{option.name} ({option.code})</option>)}</optgroup>}
-        {staleAirlines.length > 0 && <optgroup label="Saved airline — review">{staleAirlines.map(option => <option key={option.key} value={option.key}>{option.name}{option.code ? ` (${option.code})` : ''} — no longer in itinerary</option>)}</optgroup>}
-        {fareTransit && <optgroup label="FareTransit"><option value={fareTransit.key}>{fareTransit.name}</option></optgroup>}
-        {others.length > 0 && <optgroup label="Saved merchant">{others.map(option => <option key={option.key} value={option.key}>{option.name}</option>)}</optgroup>}
-      </select>
+    <div className="abm-merchant-field" onBlur={event => {
+      if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false);
+    }}>
+      <span className="abm-field-label">Merchant</span>
+      <div className="abm-merchant-combobox">
+        <input
+          value={split.merchantName || ''}
+          placeholder="Select or type merchant"
+          autoComplete="off"
+          aria-label="Merchant name"
+          aria-expanded={open}
+          onFocus={() => setOpen(true)}
+          onChange={event => {
+            onManualChange(event.target.value);
+            setOpen(true);
+          }}
+        />
+        <button className="abm-merchant-toggle" type="button" aria-label="Show merchant suggestions" aria-expanded={open} onClick={() => setOpen(value => !value)}>⌄</button>
+        {open && (
+          <div className="abm-merchant-menu" role="listbox" aria-label="Merchant suggestions">
+            {airlines.length > 0 && <><div className="abm-merchant-menu__heading">Airlines in this itinerary</div>{airlines.map(renderOption)}</>}
+            {staleAirlines.length > 0 && <><div className="abm-merchant-menu__heading">Saved airline — review</div>{staleAirlines.map(renderOption)}</>}
+            {fareTransit && <><div className="abm-merchant-menu__heading">FareTransit</div>{renderOption(fareTransit)}</>}
+            {others.length > 0 && <><div className="abm-merchant-menu__heading">Saved merchants</div>{others.map(renderOption)}</>}
+          </div>
+        )}
+      </div>
+      <small className="abm-merchant-manual-hint">Choose a suggestion above or type any merchant name manually.</small>
       {selected?.type === 'AIRLINE' && <div className="abm-merchant-preview"><AirlineLogo carrierCode={selected.code} airlineName={selected.name} src={selected.logoUrl} size={24} /><span>{selected.name} <b>{selected.code}</b></span>{selected.stale && <em>Review</em>}</div>}
       {selected?.type === 'FARETRANSIT' && <div className="abm-merchant-preview"><span className="abm-ft-mark">FT</span><span>FareTransit LLC</span></div>}
-    </label>
+    </div>
   );
 }
 
@@ -713,7 +749,7 @@ export default function AdminBookingManagementPanel() {
             <label><span>Payment status</span><select value={paymentForm.paymentStatus} onChange={event => setPaymentForm(current => ({ ...current, paymentStatus: event.target.value }))}>{['PENDING','PROCESSING','PAID','FAILED','REFUNDED'].map(status => <option key={status}>{status}</option>)}</select></label>
             <label><span>Transaction / reference ID</span><input value={paymentForm.referenceId} onChange={event => setPaymentForm(current => ({ ...current, referenceId: event.target.value }))} /></label>
           </div>
-          {paymentSplits.map((split, index) => <div className="abm-split-row" key={split._key || index}><PaymentMerchantSelect split={split} options={paymentMerchantOptions} onSelect={merchant => setPaymentSplits(current => current.map((item, idx) => idx === index ? { ...item, merchantName: merchant?.name || '', merchantType: merchant?.type || '', merchantCode: merchant?.code || '', logoUrl: merchant?.logoUrl || '', stale: Boolean(merchant?.stale) } : item))} /><label><span>Amount</span><input inputMode="decimal" value={split.amount} onChange={event => setPaymentSplits(current => current.map((item, idx) => idx === index ? { ...item, amount: event.target.value } : item))} /></label><button className="abm-button abm-button--danger" type="button" onClick={() => setPaymentSplits(current => current.filter((_, idx) => idx !== index))}>Remove</button></div>)}
+          {paymentSplits.map((split, index) => <div className="abm-split-row" key={split._key || index}><PaymentMerchantSelect split={split} options={paymentMerchantOptions} onSelect={merchant => setPaymentSplits(current => current.map((item, idx) => idx === index ? { ...item, merchantName: merchant?.name || '', merchantType: merchant?.type || '', merchantCode: merchant?.code || '', logoUrl: merchant?.logoUrl || '', stale: Boolean(merchant?.stale) } : item))} onManualChange={merchantName => setPaymentSplits(current => current.map((item, idx) => idx === index ? { ...item, merchantName, merchantType: merchantName.trim() ? 'OTHER' : '', merchantCode: '', logoUrl: '', stale: false } : item))} /><label><span>Amount</span><input inputMode="decimal" value={split.amount} onChange={event => setPaymentSplits(current => current.map((item, idx) => idx === index ? { ...item, amount: event.target.value } : item))} /></label><button className="abm-button abm-button--danger" type="button" onClick={() => setPaymentSplits(current => current.filter((_, idx) => idx !== index))}>Remove</button></div>)}
           <div className="abm-note">Split total: {money(paymentSplits.reduce((sum, split) => sum + num(split.amount, 0), 0), pricingForm.currency)} · Booking total: {money(pricingForm.customerTotal, pricingForm.currency)}</div>
           {stalePaymentSplits.length > 0 && <div className="abm-message abm-message--warning">⚠ The itinerary airlines changed after these payment splits were saved. Review {stalePaymentSplits.map(split => split.merchantName).filter(Boolean).join(', ')} before sending authorization. Existing splits were kept unchanged.</div>}
           <SectionMessage state={messages.payment} />

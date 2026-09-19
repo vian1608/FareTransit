@@ -294,12 +294,142 @@
   display: grid;
   grid-template-columns: minmax(0, 1.5fr) minmax(0, .8fr) auto;
   gap: 10px;
-  align-items: end;
+  align-items: start;
   margin-top: 12px;
   padding: 12px;
   background: #f8fafc;
   border: 1px solid #e5ebf2;
   border-radius: 10px;
+}
+
+.abm-split-row > .abm-button--danger {
+  margin-top: 22px;
+}
+
+.abm-merchant-field {
+  min-width: 0;
+}
+
+.abm-field-label {
+  display: block;
+  margin-bottom: 5px;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.abm-merchant-combobox {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 42px;
+  gap: 8px;
+  align-items: start;
+}
+
+.abm-merchant-toggle {
+  width: 42px;
+  height: 42px;
+  border: 1px solid #cbd8e6;
+  border-radius: 9px;
+  background: #fff;
+  color: #173f6d;
+  font-size: 18px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.abm-merchant-toggle:focus,
+.abm-merchant-toggle:hover {
+  border-color: #a20f3d;
+  box-shadow: 0 0 0 3px rgba(162, 15, 61, .09);
+  outline: none;
+}
+
+.abm-merchant-menu {
+  grid-column: 1 / -1;
+  position: static;
+  width: 100%;
+  max-height: 280px;
+  margin-top: 2px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid #d7e1ec;
+  border-radius: 10px;
+  box-shadow: 0 10px 24px rgba(15, 39, 70, .10);
+  padding: 6px;
+  box-sizing: border-box;
+}
+
+.abm-merchant-menu__heading {
+  padding: 8px 9px 5px;
+  color: #7b8798;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.abm-merchant-option {
+  width: 100%;
+  min-height: 42px;
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  padding: 8px 9px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #15253d;
+  text-align: left;
+  cursor: pointer;
+}
+
+.abm-merchant-option:hover,
+.abm-merchant-option:focus {
+  background: #f2f6fb;
+  outline: none;
+}
+
+.abm-merchant-option__mark {
+  width: 26px;
+  min-width: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.abm-merchant-option__copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.abm-merchant-option__copy strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.abm-merchant-option__copy small {
+  color: #718096;
+  font-size: 10px;
+}
+
+.abm-merchant-option em {
+  margin-left: auto;
+  color: #9a6200;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.abm-merchant-manual-hint {
+  display: block;
+  margin-top: 5px;
+  color: #718096;
+  font-size: 11px;
 }
 
 .abm-message {
@@ -475,5 +605,10 @@
   .abm-footer .abm-button,
   .abm-toolbar .abm-button {
     width: 100%;
+  }
+
+  .abm-split-row > .abm-button--danger {
+    width: 100%;
+    margin-top: 0;
   }
 }
