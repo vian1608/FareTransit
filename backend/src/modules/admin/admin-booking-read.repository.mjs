@@ -35,7 +35,9 @@ const CONTACT_COLUMNS = 'id,booking_id,email,country_code,phone_number';
 const FLIGHT_COLUMNS = 'id,booking_id,leg,trip_type,airline_name,carrier_code,flight_number,departure_airport,arrival_airport,departure_date,arrival_date,departure_time_str,arrival_time_str,duration,stops,cabin_class,created_at';
 const PAYMENT_COLUMNS = 'id,booking_id,payment_provider,payment_amount,currency,payment_status,payment_date,refund_reference_id,refund_amount,refund_reason,refund_timestamp,created_at';
 const PAYMENT_METHOD_COLUMNS = 'id,booking_id,payment_provider,provider_payment_method_id,cardholder_name,card_brand,card_last4,card_exp_month,card_exp_year,billing_email,billing_address_line1,billing_address_line2,billing_city,billing_state,billing_postal_code,billing_country,billing_phone,removed_at,updated_at';
-const SPLIT_COLUMNS = 'id,booking_id,merchant_name,amount,currency,created_at,updated_at';
+const SPLIT_COLUMNS = 'id,booking_id,merchant_name,merchant_type,merchant_code,amount,currency,display_order,created_at,updated_at,removed_at';
+const SPLIT_CORE_COLUMNS = 'id,booking_id,merchant_name,amount,currency,display_order,created_at,updated_at,removed_at';
+const LEGACY_SPLIT_COLUMNS = 'id,booking_id,merchant_name,amount,currency,created_at,updated_at';
 
 function mapFlightToSegment(flight, index) {
   const direction = ['return', 'inbound'].includes(String(flight.leg || '').toLowerCase()) ? 'return' : 'outbound';
@@ -82,6 +84,26 @@ async function loadCore(identifier) {
   return result.data || null;
 }
 
+async function loadPaymentSplits(bookingId) {
+  const legacy = await safeResult(
+    supabase.from('payment_authorization_splits').select(LEGACY_SPLIT_COLUMNS).eq('booking_id', bookingId).order('created_at', { ascending: true }),
+    []
+  );
+  if ((legacy.data || []).length) return { data: legacy.data.map((row, index) => ({ ...row, display_order: index + 1, _source: 'payment_authorization_splits' })), error: null };
+
+  let canonical = await safeResult(
+    supabase.from('booking_payment_splits').select(SPLIT_COLUMNS).eq('booking_id', bookingId).is('removed_at', null).order('display_order', { ascending: true }),
+    []
+  );
+  if (canonical.error && isSchemaDrift(canonical.error)) {
+    canonical = await safeResult(
+      supabase.from('booking_payment_splits').select(SPLIT_CORE_COLUMNS).eq('booking_id', bookingId).is('removed_at', null).order('display_order', { ascending: true }),
+      []
+    );
+  }
+  return { data: canonical.data || [], error: canonical.error || legacy.error || null };
+}
+
 async function loadDetailRelations(bookingId) {
   const [travellersRes, contactsRes, flightsRes, paymentsRes, methodRes, splitsRes] = await Promise.all([
     safeResult(supabase.from('travellers').select(TRAVELLER_COLUMNS).eq('booking_id', bookingId), []),
@@ -89,7 +111,7 @@ async function loadDetailRelations(bookingId) {
     safeResult(supabase.from('flights').select(FLIGHT_COLUMNS).eq('booking_id', bookingId).order('created_at', { ascending: true }), []),
     safeResult(supabase.from('payments').select(PAYMENT_COLUMNS).eq('booking_id', bookingId).order('created_at', { ascending: false }).limit(5), []),
     safeResult(supabase.from('booking_payment_methods').select(PAYMENT_METHOD_COLUMNS).eq('booking_id', bookingId).is('removed_at', null).maybeSingle(), null),
-    safeResult(supabase.from('booking_payment_splits').select(SPLIT_COLUMNS).eq('booking_id', bookingId).order('created_at', { ascending: true }), [])
+    loadPaymentSplits(bookingId)
   ]);
 
   return {

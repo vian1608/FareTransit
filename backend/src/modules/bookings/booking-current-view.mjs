@@ -1,4 +1,4 @@
-import { buildCanonicalItinerary } from '../../shared/utils/airline-lookup.mjs';
+import { buildCanonicalItinerary, getAirlineName, getCarrierLogoUrl } from '../../shared/utils/airline-lookup.mjs';
 
 const clean = value => value === null || value === undefined ? '' : String(value).trim();
 const numeric = value => { const n = Number(value); return Number.isFinite(n) ? n : null; };
@@ -7,6 +7,33 @@ function latestPayment(record) {
   const rows = Array.isArray(record.payments) ? [...record.payments] : [];
   rows.sort((a, b) => new Date(b.payment_date || b.paid_at || b.created_at || 0) - new Date(a.payment_date || a.paid_at || a.created_at || 0));
   return rows[0] || null;
+}
+
+function paymentMerchantContext(record) {
+  const segments = Array.isArray(record.itinerary_segments) && record.itinerary_segments.length ? record.itinerary_segments : (Array.isArray(record.flights) ? record.flights : []);
+  const airlines = new Map();
+  segments.forEach(segment => {
+    const code = clean(segment.carrier_code || segment.marketing_carrier_code || segment.airline_code).toUpperCase();
+    if (!code) return;
+    const name = clean(segment.carrier_name || segment.airline_name) || getAirlineName(code);
+    airlines.set(code, { merchantType: 'AIRLINE', merchant_type: 'AIRLINE', merchantCode: code, merchant_code: code, merchantName: name, merchant_name: name, logoUrl: getCarrierLogoUrl(code), logo_url: getCarrierLogoUrl(code), stale: false });
+  });
+  const available = [...airlines.values(), { merchantType: 'FARETRANSIT', merchant_type: 'FARETRANSIT', merchantCode: null, merchant_code: null, merchantName: 'FareTransit LLC', merchant_name: 'FareTransit LLC', logoUrl: null, logo_url: null, stale: false }];
+  const rawSplits = Array.isArray(record.payment_splits) ? record.payment_splits : (Array.isArray(record.paymentSplits) ? record.paymentSplits : []);
+  const byName = new Map([...airlines.values()].map(item => [clean(item.merchantName).toLowerCase(), item]));
+  const enriched = rawSplits.map(split => {
+    const name = clean(split.merchant_name || split.merchantName);
+    let type = clean(split.merchant_type || split.merchantType).toUpperCase();
+    let code = clean(split.merchant_code || split.merchantCode).toUpperCase();
+    if (!type && name.toLowerCase() === 'faretransit llc') type = 'FARETRANSIT';
+    const nameMatch = byName.get(name.toLowerCase());
+    if (nameMatch) { type = 'AIRLINE'; code = nameMatch.merchantCode; }
+    if (!type) type = code ? 'AIRLINE' : 'OTHER';
+    const stale = type === 'AIRLINE' && Boolean(code) && !airlines.has(code);
+    return { ...split, merchant_type: type, merchantType: type, merchant_code: code || null, merchantCode: code || null, merchant_name: name, merchantName: name, logo_url: type === 'AIRLINE' && code ? getCarrierLogoUrl(code) : null, logoUrl: type === 'AIRLINE' && code ? getCarrierLogoUrl(code) : null, stale };
+  });
+  const staleNames = enriched.filter(split => split.stale).map(split => split.merchantName).filter(Boolean);
+  return { available, splits: enriched, warnings: staleNames.length ? [`Itinerary airlines changed after payment splits were saved. Review: ${staleNames.join(', ')}.`] : [] };
 }
 
 function orderedTravellers(record) {
@@ -43,6 +70,7 @@ export function bookingCurrentView(record = {}) {
   const last = outbound[outbound.length - 1] || first;
   const airline = clean(first.airlineName || first.carrierName || record.airline_name || record.airlineName || record.carrier || record.airline);
   const airlineCode = clean(first.carrierCode || record.airline_code || record.airlineCode).toUpperCase();
+  const paymentMerchant = paymentMerchantContext(record);
 
   return {
     ...record,
@@ -63,6 +91,12 @@ export function bookingCurrentView(record = {}) {
     supplierPrice: supplierTotal,
     currency,
     itinerary,
+    payment_splits: paymentMerchant.splits,
+    paymentSplits: paymentMerchant.splits,
+    available_payment_merchants: paymentMerchant.available,
+    availablePaymentMerchants: paymentMerchant.available,
+    payment_split_warnings: paymentMerchant.warnings,
+    paymentSplitWarnings: paymentMerchant.warnings,
     carrier: airline || null,
     airline: airline || null,
     airline_name: airline || clean(record.airline_name) || null,

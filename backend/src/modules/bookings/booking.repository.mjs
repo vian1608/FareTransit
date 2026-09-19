@@ -15,6 +15,37 @@ const auditLogsMemoryStore = new Map();
 const paymentMethodsMemoryStore = new Map();
 const emailDeliveriesMemoryStore = new Map();
 
+const splitMerchantType = (split = {}) => {
+  const explicit = String(split.merchant_type || split.merchantType || '').trim().toUpperCase();
+  if (['AIRLINE', 'FARETRANSIT', 'OTHER'].includes(explicit)) return explicit;
+  if (String(split.merchant_name || split.merchantName || '').trim().toLowerCase() === 'faretransit llc') return 'FARETRANSIT';
+  return String(split.merchant_code || split.merchantCode || '').trim() ? 'AIRLINE' : 'OTHER';
+};
+
+async function mirrorBookingPaymentSplits(bookingId, splits = [], defaultCurrency = 'USD') {
+  try {
+    await supabase.from('booking_payment_splits').delete().eq('booking_id', bookingId);
+    if (!splits.length) return;
+    const structured = splits.map((split, index) => ({
+      booking_id: bookingId,
+      merchant_name: String(split.merchant_name || split.merchantName || '').trim(),
+      merchant_type: splitMerchantType(split),
+      merchant_code: String(split.merchant_code || split.merchantCode || '').trim().toUpperCase() || null,
+      amount: Math.round(Number(split.amount || 0) * 100) / 100,
+      currency: String(split.currency || defaultCurrency || 'USD').toUpperCase(),
+      display_order: index + 1,
+      updated_at: new Date().toISOString()
+    }));
+    let result = await supabase.from('booking_payment_splits').insert(structured);
+    if (result.error && (String(result.error.message).includes('schema cache') || String(result.error.message).includes('column'))) {
+      const compatible = structured.map(({ merchant_type, merchant_code, ...row }) => row);
+      result = await supabase.from('booking_payment_splits').insert(compatible);
+    }
+    if (result.error) logger.warn(`[PaymentSplits] mirror warning: ${result.error.message}`);
+  } catch (error) {
+    logger.warn(`[PaymentSplits] mirror warning: ${error.message}`);
+  }
+}
 
 export const bookingRepository = {
   getBookingByClientRequestId: async (clientRequestId) => {
@@ -2127,6 +2158,7 @@ export const bookingRepository = {
         });
       }
 
+      await mirrorBookingPaymentSplits(realId, splits, booking?.currency || 'USD');
       return formatted;
     } catch (e) {
       logger.warn(`savePaymentSplits notice: ${e.message}`);
@@ -2799,6 +2831,7 @@ export const bookingRepository = {
       }
 
       logger.info(`[Transaction] Commit successful for booking ${realId}. Splits total: $${calculatedTotal.toFixed(2)}`);
+      await mirrorBookingPaymentSplits(realId, splitsInput, booking.currency || 'USD');
       logger.info(`[Transaction] --- updatePaymentSplitsAndTotal END ---`);
 
       // Return refreshed full booking representation

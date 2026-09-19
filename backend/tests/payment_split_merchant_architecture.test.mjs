@@ -1,0 +1,21 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import test from 'node:test';
+const panel = fs.readFileSync('frontend/src/features/admin/components/AdminBookingManagementPanel.js', 'utf8');
+const readRepo = fs.readFileSync('backend/src/modules/admin/admin-booking-read.repository.mjs', 'utf8');
+const currentView = fs.readFileSync('backend/src/modules/bookings/booking-current-view.mjs', 'utf8');
+const bookingRepo = fs.readFileSync('backend/src/modules/bookings/booking.repository.mjs', 'utf8');
+test('airline-aware payment split architecture', () => {
+  assert.match(panel, /Airlines in this itinerary/);
+  assert.match(panel, /PaymentMerchantSelect/);
+  assert.match(panel, /availablePaymentMerchants/);
+  assert.match(panel, /merchantType/);
+  assert.match(panel, /merchantCode/);
+  assert.match(panel, /freshBooking = await load/);
+  assert.match(panel, /Existing splits were kept unchanged/);
+  assert.match(readRepo, /payment_authorization_splits/);
+  assert.match(readRepo, /booking_payment_splits/);
+  assert.match(currentView, /available_payment_merchants/);
+  assert.match(currentView, /payment_split_warnings/);
+  assert.match(bookingRepo, /mirrorBookingPaymentSplits/);
+});

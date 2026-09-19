@@ -3,6 +3,8 @@ import { useParams } from 'react-router-dom';
 import { adminAPI, getApiErrorMessage } from '../../../shared/api/api';
 import AdminEmailPreviewModal from '../../../shared/components/admin/AdminEmailPreviewModal';
 import AdminGdsImportModalV2 from './AdminGdsImportModalV2';
+import AirlineLogo from '../../../shared/components/AirlineLogo';
+import { MAJOR_AIRLINES, getAirlineName, getAirlineLogoUrl } from '../../../shared/utils/airlineCatalog';
 import { canonicalizeSegments, inferLegacyItineraryType, itineraryTypeLabel, normalizeItineraryType, validateJourneyContinuity } from '../../../shared/utils/itineraryArchitecture';
 import './AdminBookingManagementPanel.css';
 
@@ -13,6 +15,24 @@ const num = (value, fallback = 0) => {
 };
 const normalizeStatus = value => text(value || 'PENDING').toUpperCase();
 const unwrapBooking = response => response?.booking || response?.data?.booking || response?.data || response || null;
+const inferAirlineCodeFromName = value => {
+  const target = text(value).trim().toLowerCase();
+  if (!target) return '';
+  return Object.entries(MAJOR_AIRLINES).find(([, name]) => text(name).toLowerCase() === target)?.[0] || '';
+};
+const normalizeMerchantType = (value, merchantName = '', merchantCode = '') => {
+  const explicit = text(value).trim().toUpperCase();
+  if (['AIRLINE', 'FARETRANSIT', 'OTHER'].includes(explicit)) return explicit;
+  if (text(merchantName).trim().toLowerCase() === 'faretransit llc') return 'FARETRANSIT';
+  if (text(merchantCode).trim() || inferAirlineCodeFromName(merchantName)) return 'AIRLINE';
+  return 'OTHER';
+};
+const merchantKey = (type, code = '', name = '') => {
+  const normalizedType = normalizeMerchantType(type, name, code);
+  if (normalizedType === 'AIRLINE') return `AIRLINE:${text(code || inferAirlineCodeFromName(name)).trim().toUpperCase()}`;
+  if (normalizedType === 'FARETRANSIT') return 'FARETRANSIT:';
+  return `OTHER:${text(name).trim().toLowerCase()}`;
+};
 const emailWasSent = value => ['SENT', 'ACCEPTED', 'DELIVERED', 'MANUALLY_SENT'].includes(normalizeStatus(value));
 
 const withTimeout = (promise, ms, label) => {
@@ -112,6 +132,33 @@ function SectionMessage({ state }) {
   return <div className={`abm-message abm-message--${state.type || 'info'}`}>{state.message}</div>;
 }
 
+function PaymentMerchantSelect({ split, options, onSelect }) {
+  const inferredType = normalizeMerchantType(split.merchantType, split.merchantName, split.merchantCode);
+  const inferredCode = text(split.merchantCode || inferAirlineCodeFromName(split.merchantName)).trim().toUpperCase();
+  let selected = options.find(option => option.key === merchantKey(inferredType, inferredCode, split.merchantName));
+  if (!selected && split.merchantName) selected = options.find(option => option.name.toLowerCase() === text(split.merchantName).trim().toLowerCase());
+  const currentValue = selected?.key || '';
+  const airlines = options.filter(option => option.type === 'AIRLINE' && !option.stale);
+  const staleAirlines = options.filter(option => option.type === 'AIRLINE' && option.stale);
+  const fareTransit = options.find(option => option.type === 'FARETRANSIT');
+  const others = options.filter(option => option.type === 'OTHER');
+
+  return (
+    <label className="abm-merchant-field">
+      <span>Merchant</span>
+      <select value={currentValue} onChange={event => onSelect(options.find(option => option.key === event.target.value) || null)}>
+        <option value="">Select merchant…</option>
+        {airlines.length > 0 && <optgroup label="Airlines in this itinerary">{airlines.map(option => <option key={option.key} value={option.key}>{option.name} ({option.code})</option>)}</optgroup>}
+        {staleAirlines.length > 0 && <optgroup label="Saved airline — review">{staleAirlines.map(option => <option key={option.key} value={option.key}>{option.name}{option.code ? ` (${option.code})` : ''} — no longer in itinerary</option>)}</optgroup>}
+        {fareTransit && <optgroup label="FareTransit"><option value={fareTransit.key}>{fareTransit.name}</option></optgroup>}
+        {others.length > 0 && <optgroup label="Saved merchant">{others.map(option => <option key={option.key} value={option.key}>{option.name}</option>)}</optgroup>}
+      </select>
+      {selected?.type === 'AIRLINE' && <div className="abm-merchant-preview"><AirlineLogo carrierCode={selected.code} airlineName={selected.name} src={selected.logoUrl} size={24} /><span>{selected.name} <b>{selected.code}</b></span>{selected.stale && <em>Review</em>}</div>}
+      {selected?.type === 'FARETRANSIT' && <div className="abm-merchant-preview"><span className="abm-ft-mark">FT</span><span>FareTransit LLC</span></div>}
+    </label>
+  );
+}
+
 export default function AdminBookingManagementPanel() {
   const { code } = useParams();
   const [booking, setBooking] = useState(null);
@@ -163,6 +210,11 @@ export default function AdminBookingManagementPanel() {
     setPaymentSplits((next.payment_splits || next.paymentSplits || []).map((split, index) => ({
       _key: split.id || `split-${Date.now()}-${index}`,
       merchantName: split.merchant_name || split.merchantName || '',
+      merchantType: normalizeMerchantType(split.merchant_type || split.merchantType, split.merchant_name || split.merchantName, split.merchant_code || split.merchantCode),
+      merchantCode: text(split.merchant_code || split.merchantCode || inferAirlineCodeFromName(split.merchant_name || split.merchantName)).toUpperCase(),
+      logoUrl: split.logo_url || split.logoUrl || '',
+      stale: Boolean(split.stale),
+      currency: split.currency || next.currency || 'USD',
       amount: text(split.amount)
     })));
 
@@ -222,8 +274,10 @@ export default function AdminBookingManagementPanel() {
       const response = await withTimeout(Promise.resolve().then(factory), 25000, successMessage || 'Save');
       if (response?.success === false) throw new Error(response?.error?.message || 'The server rejected the update.');
       const responseBooking = unwrapBooking(response);
-      if (responseBooking?.id) hydrate(responseBooking);
-      else await load();
+      // Always reload the complete booking after a mutation. Compact mutation payloads
+      // must never wipe relationship data such as persisted payment splits.
+      const freshBooking = await load();
+      if (!freshBooking?.id && responseBooking?.id) hydrate(responseBooking);
       setMessage(section, 'success', response?.message || successMessage || 'Saved successfully.');
       return response;
     } catch (error) {
@@ -315,13 +369,64 @@ export default function AdminBookingManagementPanel() {
     }), 'Authorization settings saved.');
   };
 
+  const paymentMerchantOptions = useMemo(() => {
+    const options = new Map();
+    const serverOptions = booking?.availablePaymentMerchants || booking?.available_payment_merchants || [];
+    serverOptions.forEach(option => {
+      const type = normalizeMerchantType(option.merchantType || option.merchant_type || option.type, option.merchantName || option.merchant_name || option.name, option.merchantCode || option.merchant_code || option.code);
+      const code = text(option.merchantCode || option.merchant_code || option.code).trim().toUpperCase();
+      const name = text(option.merchantName || option.merchant_name || option.name || (code ? getAirlineName(code) : '')).trim();
+      if (!name) return;
+      const key = merchantKey(type, code, name);
+      options.set(key, { key, type, code, name, logoUrl: option.logoUrl || option.logo_url || (type === 'AIRLINE' ? getAirlineLogoUrl(code) : ''), stale: Boolean(option.stale) });
+    });
+    segments.forEach(segment => {
+      const code = text(segment.carrier_code || segment.marketing_carrier_code || segment.airlineCode).trim().toUpperCase();
+      if (!code) return;
+      const name = text(segment.carrier_name || segment.airline_name || segment.airlineName || getAirlineName(code)).trim() || getAirlineName(code);
+      const key = `AIRLINE:${code}`;
+      options.set(key, { key, type: 'AIRLINE', code, name, logoUrl: getAirlineLogoUrl(code), stale: false });
+    });
+    options.set('FARETRANSIT:', { key: 'FARETRANSIT:', type: 'FARETRANSIT', code: '', name: 'FareTransit LLC', logoUrl: '', stale: false });
+    paymentSplits.forEach(split => {
+      const name = text(split.merchantName).trim();
+      if (!name) return;
+      let type = normalizeMerchantType(split.merchantType, name, split.merchantCode);
+      let code = text(split.merchantCode || inferAirlineCodeFromName(name)).trim().toUpperCase();
+      const nameMatch = [...options.values()].find(option => option.type === 'AIRLINE' && option.name.toLowerCase() === name.toLowerCase());
+      if (nameMatch) { type = 'AIRLINE'; code = nameMatch.code; }
+      const key = merchantKey(type, code, name);
+      if (!options.has(key)) options.set(key, { key, type, code, name, logoUrl: type === 'AIRLINE' ? getAirlineLogoUrl(code) : '', stale: type === 'AIRLINE' });
+    });
+    return [...options.values()];
+  }, [booking, segments, paymentSplits]);
+
+  const resolvePaymentMerchant = split => {
+    const type = normalizeMerchantType(split.merchantType, split.merchantName, split.merchantCode);
+    const code = text(split.merchantCode || inferAirlineCodeFromName(split.merchantName)).trim().toUpperCase();
+    return paymentMerchantOptions.find(option => option.key === merchantKey(type, code, split.merchantName))
+      || paymentMerchantOptions.find(option => option.name.toLowerCase() === text(split.merchantName).trim().toLowerCase())
+      || null;
+  };
+
+  const stalePaymentSplits = paymentSplits.filter(split => resolvePaymentMerchant(split)?.stale || split.stale);
+
   const savePayment = () => {
     if (!paymentSplits.length) {
       setMessage('payment', 'error', 'Add at least one payment split.');
       return;
     }
-    const splits = paymentSplits.map(split => ({ merchantName: split.merchantName.trim(), amount: num(split.amount, NaN) }));
-    if (splits.some(split => !split.merchantName || !Number.isFinite(split.amount) || split.amount <= 0)) {
+    const splits = paymentSplits.map(split => {
+      const merchant = resolvePaymentMerchant(split);
+      return {
+        merchantName: text(merchant?.name || split.merchantName).trim(),
+        merchantType: merchant?.type || normalizeMerchantType(split.merchantType, split.merchantName, split.merchantCode),
+        merchantCode: text(merchant?.code || split.merchantCode || inferAirlineCodeFromName(split.merchantName)).trim().toUpperCase() || null,
+        currency: pricingForm.currency || 'USD',
+        amount: num(split.amount, NaN)
+      };
+    });
+    if (splits.some(split => !split.merchantName || !split.merchantType || !Number.isFinite(split.amount) || split.amount <= 0)) {
       setMessage('payment', 'error', 'Every split needs a merchant name and amount greater than zero.');
       return;
     }
@@ -600,16 +705,17 @@ export default function AdminBookingManagementPanel() {
       <details id="payment-splits-section" className="abm-section" open>
         <summary><strong>5. Payment & Splits</strong><span>Payment state, transaction reference and merchant split amounts</span></summary>
         <div className="abm-toolbar">
-          <button className="abm-button abm-button--secondary" type="button" onClick={() => setPaymentSplits(current => [...current, { _key: `split-${Date.now()}`, merchantName: 'FareTransit LLC', amount: '0.00' }])}>+ Add Payment Split</button>
-          {!paymentSplits.length && num(pricingForm.customerTotal, 0) > 0 && <button className="abm-button abm-button--secondary" type="button" onClick={() => setPaymentSplits([{ _key: `split-${Date.now()}`, merchantName: 'FareTransit LLC', amount: num(pricingForm.customerTotal, 0).toFixed(2) }])}>Use Customer Total as One Split</button>}
+          <button className="abm-button abm-button--secondary" type="button" onClick={() => setPaymentSplits(current => [...current, { _key: `split-${Date.now()}`, merchantName: '', merchantType: '', merchantCode: '', amount: '0.00' }])}>+ Add Payment Split</button>
+          {!paymentSplits.length && num(pricingForm.customerTotal, 0) > 0 && <button className="abm-button abm-button--secondary" type="button" onClick={() => setPaymentSplits([{ _key: `split-${Date.now()}`, merchantName: 'FareTransit LLC', merchantType: 'FARETRANSIT', merchantCode: '', amount: num(pricingForm.customerTotal, 0).toFixed(2) }])}>Use Customer Total as One Split</button>}
         </div>
         <div className="abm-body">
           <div className="abm-grid abm-grid--2">
             <label><span>Payment status</span><select value={paymentForm.paymentStatus} onChange={event => setPaymentForm(current => ({ ...current, paymentStatus: event.target.value }))}>{['PENDING','PROCESSING','PAID','FAILED','REFUNDED'].map(status => <option key={status}>{status}</option>)}</select></label>
             <label><span>Transaction / reference ID</span><input value={paymentForm.referenceId} onChange={event => setPaymentForm(current => ({ ...current, referenceId: event.target.value }))} /></label>
           </div>
-          {paymentSplits.map((split, index) => <div className="abm-split-row" key={split._key || index}><label><span>Merchant</span><input value={split.merchantName} onChange={event => setPaymentSplits(current => current.map((item, idx) => idx === index ? { ...item, merchantName: event.target.value } : item))} /></label><label><span>Amount</span><input inputMode="decimal" value={split.amount} onChange={event => setPaymentSplits(current => current.map((item, idx) => idx === index ? { ...item, amount: event.target.value } : item))} /></label><button className="abm-button abm-button--danger" type="button" onClick={() => setPaymentSplits(current => current.filter((_, idx) => idx !== index))}>Remove</button></div>)}
-          <div className="abm-note">Split total: {money(paymentSplits.reduce((sum, split) => sum + num(split.amount, 0), 0))} · Booking total: {money(pricingForm.customerTotal)}</div>
+          {paymentSplits.map((split, index) => <div className="abm-split-row" key={split._key || index}><PaymentMerchantSelect split={split} options={paymentMerchantOptions} onSelect={merchant => setPaymentSplits(current => current.map((item, idx) => idx === index ? { ...item, merchantName: merchant?.name || '', merchantType: merchant?.type || '', merchantCode: merchant?.code || '', logoUrl: merchant?.logoUrl || '', stale: Boolean(merchant?.stale) } : item))} /><label><span>Amount</span><input inputMode="decimal" value={split.amount} onChange={event => setPaymentSplits(current => current.map((item, idx) => idx === index ? { ...item, amount: event.target.value } : item))} /></label><button className="abm-button abm-button--danger" type="button" onClick={() => setPaymentSplits(current => current.filter((_, idx) => idx !== index))}>Remove</button></div>)}
+          <div className="abm-note">Split total: {money(paymentSplits.reduce((sum, split) => sum + num(split.amount, 0), 0), pricingForm.currency)} · Booking total: {money(pricingForm.customerTotal, pricingForm.currency)}</div>
+          {stalePaymentSplits.length > 0 && <div className="abm-message abm-message--warning">⚠ The itinerary airlines changed after these payment splits were saved. Review {stalePaymentSplits.map(split => split.merchantName).filter(Boolean).join(', ')} before sending authorization. Existing splits were kept unchanged.</div>}
           <SectionMessage state={messages.payment} />
         </div>
         <div className="abm-footer"><button className="abm-button" type="button" onClick={savePayment} disabled={busy.payment}>{busy.payment ? 'Saving & verifying…' : 'Save Payment'}</button></div>
