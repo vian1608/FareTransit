@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import './CardNumberInput.css';
 
+const CARD_NUMBER_DIGITS = 16;
+
 function CardNumberInput({ id, value, onChange, onBrandChange, placeholder = 'Card Number', required = false, disabled = false }) {
   const [brand, setBrand] = useState('unknown');
 
@@ -12,20 +14,11 @@ function CardNumberInput({ id, value, onChange, onBrandChange, placeholder = 'Ca
     return 'unknown';
   };
 
-  const formatCardNumber = (num, cardBrand) => {
-    let clean = num.replace(/\D/g, '');
-    if (cardBrand === 'amex') {
-      clean = clean.slice(0, 15);
-      const match = clean.match(/^(\d{0,4})(\d{0,6})(\d{0,5})$/);
-      if (match) {
-        return [match[1], match[2], match[3]].filter(x => x).join(' ');
-      }
-    } else {
-      clean = clean.slice(0, 16);
-      const match = clean.match(/^(\d{0,4})(\d{0,4})(\d{0,4})(\d{0,4})$/);
-      if (match) {
-        return [match[1], match[2], match[3], match[4]].filter(x => x).join(' ');
-      }
+  const formatCardNumber = (num) => {
+    const clean = num.replace(/\D/g, '').slice(0, CARD_NUMBER_DIGITS);
+    const match = clean.match(/^(\d{0,4})(\d{0,4})(\d{0,4})(\d{0,4})$/);
+    if (match) {
+      return [match[1], match[2], match[3], match[4]].filter(x => x).join(' ');
     }
     return clean;
   };
@@ -40,9 +33,8 @@ function CardNumberInput({ id, value, onChange, onBrandChange, placeholder = 'Ca
   }, [value, brand, onBrandChange]);
 
   const handleChange = (e) => {
-    const raw = e.target.value.replace(/\D/g, '');
-    const currentBrand = detectBrand(raw);
-    const formatted = formatCardNumber(raw, currentBrand);
+    const raw = e.target.value.replace(/\D/g, '').slice(0, CARD_NUMBER_DIGITS);
+    const formatted = formatCardNumber(raw);
     onChange(formatted);
   };
 
@@ -69,6 +61,7 @@ function CardNumberInput({ id, value, onChange, onBrandChange, placeholder = 'Ca
         disabled={disabled}
         inputMode="numeric"
         autoComplete="cc-number"
+        maxLength={19}
       />
       <i className={getBrandIcon()}></i>
     </div>
