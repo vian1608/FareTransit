@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - scripts/patch-payment-split-merchants.mjs
+      - scripts/patch-payment-split-merchants.py
       - .github/workflows/payment-split-hotfix.yml
   workflow_dispatch:
 
@@ -32,7 +32,7 @@ jobs:
           node-version: 22
 
       - name: Apply architecture patch
-        run: node scripts/patch-payment-split-merchants.mjs
+        run: python3 scripts/patch-payment-split-merchants.py
 
       - name: Backend syntax checks
         run: |
