@@ -6,8 +6,8 @@ function detectCardBrand(value) {
   const digits = digitsOnly(value);
   if (!digits) return '';
 
-  // Give immediate network feedback while the passenger types, then refine
-  // the less-common 3-series networks when enough digits are available.
+  // Network detection is only typing feedback. A detected network does not
+  // mean the complete card number has passed checksum validation.
   if (/^4/.test(digits)) return 'Visa';
   if (/^5/.test(digits)) return 'Mastercard';
   if (/^6/.test(digits)) return 'Discover';
@@ -25,13 +25,15 @@ function detectCardBrand(value) {
 
 function maxCardDigits(value) {
   const digits = digitsOnly(value);
-  // American Express uses 15 digits. All other supported entry is capped at 16.
-  return /^3[47]/.test(digits) ? 15 : 16;
+  // American Express uses 15 digits. Other supported payment-card PANs can
+  // legitimately extend beyond 16 digits, so do not truncate valid 17-19
+  // digit numbers before checksum validation.
+  return /^3[47]/.test(digits) ? 15 : 19;
 }
 
 function passesLuhn(value) {
   const digits = digitsOnly(value);
-  if (digits.length < 12 || digits.length > maxCardDigits(digits)) return false;
+  if (digits.length < 12 || digits.length > 19 || digits.length > maxCardDigits(digits)) return false;
   let sum = 0;
   let doubleDigit = false;
   for (let index = digits.length - 1; index >= 0; index -= 1) {
@@ -81,13 +83,14 @@ const PaymentCardEntry = forwardRef(function PaymentCardEntry({ nameOnCard, onNa
   const [touched, setTouched] = useState(false);
 
   const brand = useMemo(() => detectCardBrand(cardNumber), [cardNumber]);
+  const cardNumberValid = useMemo(() => passesLuhn(cardNumber), [cardNumber]);
   const expiryParts = useMemo(() => parseExpiry(expiry), [expiry]);
   const valid = useMemo(() => (
     Boolean(String(nameOnCard || '').trim())
-    && passesLuhn(cardNumber)
+    && cardNumberValid
     && Boolean(expiryParts)
     && /^\d{3,4}$/.test(securityCode)
-  ), [nameOnCard, cardNumber, expiryParts, securityCode]);
+  ), [nameOnCard, cardNumberValid, expiryParts, securityCode]);
 
   useEffect(() => {
     onBrandChange?.(brand);
@@ -95,7 +98,9 @@ const PaymentCardEntry = forwardRef(function PaymentCardEntry({ nameOnCard, onNa
 
   const getValidationMessage = () => {
     if (!String(nameOnCard || '').trim()) return 'Enter the name shown on the card.';
-    if (!passesLuhn(cardNumber)) return 'Enter a valid card number.';
+    const cardDigits = digitsOnly(cardNumber);
+    if (cardDigits.length < 12) return 'Enter the complete card number.';
+    if (!cardNumberValid) return 'Check the card number and try again.';
     if (!/^\d{3,4}$/.test(securityCode)) return 'Enter a valid CID/CVV.';
     if (!expiryParts) return 'Enter a valid future expiration date in MM/YY format.';
     return '';
@@ -120,7 +125,7 @@ const PaymentCardEntry = forwardRef(function PaymentCardEntry({ nameOnCard, onNa
       setExpiry('');
       setTouched(false);
     },
-  }), [valid, nameOnCard, cardNumber, securityCode, expiryParts, brand]);
+  }), [valid, nameOnCard, cardNumber, securityCode, expiryParts, brand, cardNumberValid]);
 
   const showError = touched && !valid;
   const isAmexLength = /^3[47]/.test(cardNumber);
@@ -143,13 +148,13 @@ const PaymentCardEntry = forwardRef(function PaymentCardEntry({ nameOnCard, onNa
             setCardNumber(digits.slice(0, maxCardDigits(digits)));
           }}
           placeholder="Card Number"
-          maxLength={isAmexLength ? 17 : 19}
-          aria-invalid={showError && !passesLuhn(cardNumber)}
+          maxLength={isAmexLength ? 17 : 23}
+          aria-invalid={showError && !cardNumberValid}
           required
         />
         {brand && (
-          <span className={`booking-v3-detected-brand booking-v3-detected-brand--${brand.toLowerCase().replace(/\s+/g, '-')}`} aria-live="polite">
-            <span className="booking-v3-detected-brand__label">Card type</span>
+          <span className={`booking-v3-detected-brand booking-v3-detected-brand--${brand.toLowerCase().replace(/\s+/g, '-')}${cardNumberValid ? ' is-valid' : ''}`} aria-live="polite">
+            <span className="booking-v3-detected-brand__label">Card network</span>
             <strong>{brand}</strong>
           </span>
         )}
@@ -216,5 +221,5 @@ const PaymentCardEntry = forwardRef(function PaymentCardEntry({ nameOnCard, onNa
   );
 });
 
-export { detectCardBrand, maxCardDigits };
+export { detectCardBrand, maxCardDigits, passesLuhn };
 export default PaymentCardEntry;
