@@ -1,19 +1,8 @@
-const LOCAL_LOGOS = {
-  AA: '/assets/logos/american-airlines.png',
-  AS: '/assets/logos/alaska-airlines.png',
-  BA: '/assets/logos/british-airways.png',
-  CX: '/assets/logos/cathay-pacific.png',
-  DL: '/assets/logos/delta.png',
-  EK: '/assets/logos/emirates.png',
-  AF: '/assets/logos/air-france.png',
-  HA: '/assets/logos/hawaiian.png',
-  KL: '/assets/logos/klm.png',
-  LH: '/assets/logos/lufthansa.png',
-  QF: '/assets/logos/Qantas-Logo-1536x966.png',
-  SQ: '/assets/logos/singapore-airlines.png',
-  WN: '/assets/logos/southwest.png',
-  TK: '/assets/logos/Turkish_Airlines_logo-1536x864.png',
-  UA: '/assets/logos/united.png'
+const LEGACY_LOCAL_LOGOS = {
+  AA: '/assets/logos/american-airlines.png', AS: '/assets/logos/alaska-airlines.png', BA: '/assets/logos/british-airways.png',
+  CX: '/assets/logos/cathay-pacific.png', DL: '/assets/logos/delta.png', EK: '/assets/logos/emirates.png', AF: '/assets/logos/air-france.png',
+  HA: '/assets/logos/hawaiian.png', KL: '/assets/logos/klm.png', LH: '/assets/logos/lufthansa.png', QF: '/assets/logos/Qantas-Logo-1536x966.png',
+  SQ: '/assets/logos/singapore-airlines.png', WN: '/assets/logos/southwest.png', TK: '/assets/logos/Turkish_Airlines_logo-1536x864.png', UA: '/assets/logos/united.png'
 };
 
 export const MAJOR_AIRLINES = {
@@ -33,10 +22,8 @@ export const MAJOR_AIRLINES = {
   ZH: 'Shenzhen Airlines', '3U': 'Sichuan Airlines', SC: 'Shandong Airlines', HO: 'Juneyao Air', '9C': 'Spring Airlines',
   QF: 'Qantas', NZ: 'Air New Zealand', VA: 'Virgin Australia', JQ: 'Jetstar',
   LA: 'LATAM Airlines', AV: 'Avianca', CM: 'Copa Airlines', AM: 'Aeromexico', G3: 'GOL', AD: 'Azul', AR: 'Aerolineas Argentinas',
-  Y4: 'Volaris', VB: 'Viva Aerobus',
-  LY: 'El Al', ME: 'Middle East Airlines',
-  SU: 'Aeroflot', JU: 'Air Serbia', RO: 'TAROM', BT: 'airBaltic', DY: 'Norwegian',
-  UX: 'Air Europa', PC: 'Pegasus Airlines', XQ: 'SunExpress',
+  Y4: 'Volaris', VB: 'Viva Aerobus', LY: 'El Al', ME: 'Middle East Airlines', SU: 'Aeroflot', JU: 'Air Serbia',
+  RO: 'TAROM', BT: 'airBaltic', DY: 'Norwegian', UX: 'Air Europa', PC: 'Pegasus Airlines', XQ: 'SunExpress',
   D7: 'AirAsia X', FD: 'Thai AirAsia', QZ: 'Indonesia AirAsia', UO: 'HK Express', HX: 'Hong Kong Airlines'
 };
 
@@ -48,13 +35,12 @@ export const getAirlineName = carrierCode => {
 export const getAirlineLogoCandidates = carrierCode => {
   const code = String(carrierCode || '').trim().toUpperCase();
   if (!code) return [];
-  const candidates = [];
-  if (LOCAL_LOGOS[code]) candidates.push(LOCAL_LOGOS[code]);
+  const candidates = [`/assets/airlines/${code.toLowerCase()}.png`];
+  if (LEGACY_LOCAL_LOGOS[code]) candidates.push(LEGACY_LOCAL_LOGOS[code]);
   candidates.push(`https://assets.duffel.com/img/airlines/for-floor/sq/${encodeURIComponent(code)}.png`);
   candidates.push(`https://images.kiwi.com/airlines/64/${encodeURIComponent(code)}.png`);
   return [...new Set(candidates)];
 };
 
 export const getAirlineLogoUrl = carrierCode => getAirlineLogoCandidates(carrierCode)[0] || '';
-
 export default MAJOR_AIRLINES;
