@@ -11,7 +11,7 @@ let idempotencyColumnsUnavailable = false;
 const BASE_COLUMNS = [
   'id','confirmation_code','status','payment_status','total_amount','customer_price','supplier_price',
   'discount_percent','discount_amount','currency','passenger_name','email','phone','internal_notes',
-  'original_api_price','created_at','updated_at','version','booking_revision','authorization_token','authorization_status','authorized_amount','authorized_at',
+  'original_api_price','created_at','updated_at','version','booking_revision','authorization_token','authorization_status','authorized_amount',
   'airline_code','airline_name','airline_logo_url','airline_confirmation_number','ticket_number','ticket_issued_at',
   'ticket_notes','supplier_confirmation','booking_request_email_status','booking_request_email_id',
   'booking_request_email_sent_at','booking_request_email_recipient','booking_request_email_error',
@@ -20,7 +20,7 @@ const BASE_COLUMNS = [
   'final_confirmation_email_sent_at','final_confirmation_email_recipient','final_confirmation_email_error',
   'voucher_id','voucher_code','voucher_discount','price_before_voucher','minimum_payable_floor','client_request_id','idempotency_key'
 ].join(',');
-const CORE_COLUMNS = 'id,confirmation_code,status,payment_status,total_amount,customer_price,supplier_price,discount_percent,discount_amount,currency,passenger_name,email,phone,internal_notes,original_api_price,created_at,updated_at,booking_revision,authorization_token,authorization_status,authorized_amount,authorization_expires_at,authorized_at,voucher_id,voucher_code,voucher_discount,price_before_voucher,minimum_payable_floor';
+const CORE_COLUMNS = 'id,confirmation_code,status,payment_status,total_amount,customer_price,supplier_price,discount_percent,discount_amount,currency,passenger_name,email,phone,internal_notes,original_api_price,created_at,updated_at,booking_revision,authorization_token,authorization_status,authorized_amount,authorization_expires_at,voucher_id,voucher_code,voucher_discount,price_before_voucher,minimum_payable_floor';
 const INSERT_RETURN_COLUMNS = 'id,confirmation_code,created_at,updated_at';
 const TRAVELLER_COLUMNS = 'id,booking_id,role,title,first_name,middle_name,last_name,date_of_birth,gender,nationality,passport_number,passport_expiry';
 const CONTACT_COLUMNS = 'id,booking_id,email,country_code,phone_number';
