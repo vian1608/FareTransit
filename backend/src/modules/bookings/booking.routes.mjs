@@ -56,7 +56,7 @@ router.post(
 );
 router.get('/search', searchRateLimiter, bookingCurrentSearchController.search);
 router.get('/reservation/:reference', bookingReadRateLimiter, bookingPublicReservationController.get);
-router.get('/user/:email', bookingReadRateLimiter, bookingController.getByUserEmail);
+router.get('/user/:email', bookingReadRateLimiter, authenticate, bookingController.getByUserEmail);
 router.use('/abandoned', abandonedBookingRouter);
 
 router.post('/:id/resend-confirmation', bookingRateLimiter, ...flightEdit, bookingController.resendConfirmation);
@@ -71,7 +71,7 @@ router.patch('/:id/ticket', bookingRateLimiter, ...ticketEdit, bookingController
 router.patch('/:id/notes', bookingRateLimiter, ...flightEdit, bookingController.updateNotes);
 
 router.get('/confirmation/:confirmationCode', bookingReadRateLimiter, bookingController.getConfirmationDTO);
-router.get('/:reference', bookingReadRateLimiter, bookingController.getByReference);
+router.get('/:reference', bookingReadRateLimiter, bookingPublicReservationController.get);
 
 export default router;
 export { router as bookingRouter };

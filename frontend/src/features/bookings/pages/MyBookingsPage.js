@@ -17,7 +17,7 @@ function MyBookings() {
   const performSearch = useCallback(async (queryToSearch) => {
     const query = String(queryToSearch || '').trim();
     if (!query) {
-      setError('Please enter a confirmation code, customer name, or email address.');
+      setError('Please enter your confirmation code.');
       return;
     }
 
@@ -51,12 +51,24 @@ function MyBookings() {
     }
 
     const userStr = localStorage.getItem('user');
-    if (!userStr) return;
+    const token = localStorage.getItem('token');
+    if (!userStr || !token) return;
     try {
       const userObj = JSON.parse(userStr);
       if (userObj?.email) {
-        setSearchQuery(userObj.email);
-        performSearch(userObj.email);
+        setLoading(true);
+        setError('');
+        setSearched(true);
+        bookingAPI.getByUser(userObj.email)
+          .then((response) => {
+            if (response?.success) setBookings(Array.isArray(response.data) ? response.data : []);
+            else setBookings([]);
+          })
+          .catch(() => {
+            setBookings([]);
+            setError('Unable to load your saved bookings. You can still retrieve a reservation using its confirmation code.');
+          })
+          .finally(() => setLoading(false));
       }
     } catch {
       // Ignore stale local user data. Manual booking lookup remains available.
@@ -163,7 +175,7 @@ function MyBookings() {
       <div className="bookings-container">
         <header className="bookings-header">
           <h1>Track Your Bookings</h1>
-          <p>Retrieve and view reservation details using your confirmation code, customer name, or email address.</p>
+          <p>Retrieve a reservation with its confirmation code. Signed-in customers also see bookings linked to their account.</p>
         </header>
 
         <div className="bookings-layout">
@@ -173,11 +185,11 @@ function MyBookings() {
                 <i className="fas fa-search search-icon" />
                 <input
                   type="text"
-                  placeholder="Enter confirmation code, name, or email..."
+                  placeholder="Enter confirmation code..."
                   value={searchQuery}
                   onChange={(event) => setSearchQuery(event.target.value)}
                   className="search-input-field"
-                  aria-label="Booking confirmation code, customer name, or email"
+                  aria-label="Booking confirmation code"
                 />
                 <button type="submit" className="search-submit-btn" disabled={loading}>
                   {loading ? <><i className="fas fa-circle-notch fa-spin" /> Searching...</> : 'Retrieve'}

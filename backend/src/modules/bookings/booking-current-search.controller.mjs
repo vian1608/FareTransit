@@ -1,4 +1,4 @@
-import { searchCanonicalReservations } from '../reservations/canonical-reservation.service.mjs';
+import { resolveCanonicalReservation, searchCanonicalReservations } from '../reservations/canonical-reservation.service.mjs';
 
 function toSearchResult(row) {
   const common = {
@@ -16,8 +16,8 @@ function toSearchResult(row) {
     passenger_name: row.customerName || 'Customer',
     customer_name: row.customerName || null,
     customerName: row.customerName || null,
-    email: row.email || null,
-    phone: row.phone || null,
+    email: null,
+    phone: null,
     total_amount: Number(row.total || 0),
     amount: Number(row.total || 0),
     currency: row.currency || 'USD',
@@ -73,14 +73,54 @@ export async function searchCurrentBookings(query) {
   return rows.map(toSearchResult);
 }
 
+export async function findPublicBookingByExactReference(query) {
+  const reference = String(query || '').trim();
+  if (!reference) return [];
+  const reservation = await resolveCanonicalReservation(reference);
+  if (!reservation) return [];
+  return [toSearchResult({
+    id: null,
+    reference: reservation.reference,
+    serviceType: reservation.serviceType,
+    status: reservation.status,
+    authorizationStatus: reservation.authorizationStatus,
+    paymentStatus: reservation.paymentStatus,
+    customerName: reservation.customer?.name || null,
+    email: null,
+    phone: null,
+    total: reservation.pricing?.total || 0,
+    currency: reservation.pricing?.currency || 'USD',
+    createdAt: reservation.createdAt || null,
+    updatedAt: null,
+    travelDate: reservation.flight?.flights?.[0]?.departureDate || reservation.car?.pickupAt || reservation.hotel?.checkIn || null,
+    airlineName: reservation.flight?.airlineName || null,
+    origin: reservation.flight?.flights?.[0]?.departureAirport || null,
+    destination: reservation.flight?.flights?.at(-1)?.arrivalAirport || reservation.hotel?.destination || null,
+    rentalCompanyName: reservation.car?.rentalCompanyName || null,
+    vehicleName: reservation.car?.vehicleName || null,
+    vehicleCategory: reservation.car?.vehicleCategory || null,
+    pickupLocation: reservation.car?.pickupLocation || null,
+    pickupAt: reservation.car?.pickupAt || null,
+    dropoffLocation: reservation.car?.dropoffLocation || null,
+    dropoffAt: reservation.car?.dropoffAt || null,
+    supplierConfirmation: reservation.car?.supplierConfirmation || reservation.hotel?.supplierConfirmation || null,
+    propertyName: reservation.hotel?.propertyName || null,
+    checkIn: reservation.hotel?.checkIn || null,
+    checkOut: reservation.hotel?.checkOut || null,
+    supplierName: reservation.hotel?.supplierName || null
+  })];
+}
+
 export const bookingCurrentSearchController = {
   search: async (req, res, next) => {
     try {
       const query = String(req.query?.query || '').trim();
       if (!query) {
-        return res.status(400).json({ success: false, error: { code: 'SEARCH_QUERY_REQUIRED', message: 'Confirmation code, customer name, or email is required.' } });
+        return res.status(400).json({ success: false, error: { code: 'SEARCH_QUERY_REQUIRED', message: 'Confirmation code is required.' } });
       }
-      const data = await searchCurrentBookings(query);
+      // Anonymous search intentionally supports an exact reservation reference only.
+      // Customer-name/email search allowed enumeration of other customers' bookings.
+      const data = await findPublicBookingByExactReference(query);
       return res.json({ success: true, data, count: data.length });
     } catch (error) {
       return next(error);

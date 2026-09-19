@@ -3,6 +3,7 @@ import { bookingRepository } from './booking.repository.mjs';
 import { sendBookingConfirmation, sendBookingRequestReceivedEmail } from '../../integrations/resend/resend.service.mjs';
 import { buildCanonicalItinerary } from '../../shared/utils/airline-lookup.mjs';
 import logger from '../../config/logger.mjs';
+import { searchCurrentBookings } from './booking-current-search.controller.mjs';
 
 export const bookingController = {
   create: async (req, res, next) => {
@@ -80,21 +81,39 @@ export const bookingController = {
       const rawLast4 = String(pmRecord?.card_last4 || pmRecord?.cardLast4 || pmRecord?.last4 || '').trim().replace(/\D/g, '');
       const validLast4 = /^\d{4}$/.test(rawLast4) ? rawLast4 : null;
 
+      // Public confirmation pages only need a masked payment reference. Never
+      // expose expiration metadata, billing address, or billing phone here.
       const cardReference = {
-        cardholderName: pmRecord?.cardholder_name || pmRecord?.cardholderName || completeBooking.passenger_name || null,
+        cardholderName: null,
         cardBrand: pmRecord?.card_brand || pmRecord?.cardBrand || null,
         last4: validLast4,
-        expMonth: pmRecord?.card_exp_month || pmRecord?.cardExpMonth || null,
-        expYear: pmRecord?.card_exp_year || pmRecord?.cardExpYear || null,
-        billingAddress: [
-          pmRecord?.billing_address_line1 || pmRecord?.billingAddressLine1 || pmRecord?.billingAddress,
-          pmRecord?.billing_address_line2 || pmRecord?.billingAddressLine2,
-          pmRecord?.billing_city || pmRecord?.billingCity,
-          pmRecord?.billing_state || pmRecord?.billingState,
-          pmRecord?.billing_postal_code || pmRecord?.billingPostalCode,
-          pmRecord?.billing_country || pmRecord?.billingCountry
-        ].filter(Boolean).join(', ') || null,
-        billingPhone: pmRecord?.billing_phone || pmRecord?.billingPhone || completeBooking.phone || null
+        expMonth: null,
+        expYear: null,
+        billingAddress: null,
+        billingPhone: null
+      };
+
+      const maskEmail = value => {
+        const email = String(value || '').trim();
+        const at = email.indexOf('@');
+        if (at <= 0) return null;
+        const local = email.slice(0, at);
+        return `${local.slice(0, 1)}${'*'.repeat(Math.max(3, Math.min(8, local.length - 1)))}@${email.slice(at + 1)}`;
+      };
+      const maskPhone = value => {
+        const digits = String(value || '').replace(/\D/g, '');
+        return digits.length >= 4 ? `••••${digits.slice(-4)}` : null;
+      };
+      const publicTravellers = (completeBooking.travellers || []).map(t => ({
+        title: t.title || null,
+        first_name: t.first_name || t.firstName || '',
+        middle_name: t.middle_name || t.middleName || null,
+        last_name: t.last_name || t.lastName || '',
+        passenger_type: t.passenger_type || t.passengerType || null
+      }));
+      const publicContact = {
+        email: maskEmail(completeBooking.email || completeBooking.contacts?.[0]?.email),
+        phone: maskPhone(completeBooking.phone || completeBooking.contacts?.[0]?.phone_number || completeBooking.contacts?.[0]?.phone)
       };
 
       // The confirmation screen is shown immediately after checkout, so prefer the
@@ -110,15 +129,15 @@ export const bookingController = {
         ? {
             type: 'BOOKING_REQUEST',
             status: bookingRequestEmailStatus,
-            providerMessageId: completeBooking.booking_request_email_id || null,
-            errorMessage: completeBooking.booking_request_email_error || null,
+            providerMessageId: null,
+            errorMessage: null,
             sentAt: completeBooking.booking_request_email_sent_at || null
           }
         : {
             type: 'BOOKING_CONFIRMATION',
             status: confirmationEmailDeliveryRecord?.status || (completeBooking.authorization_email_sent_at ? 'SENT' : 'UNATTEMPTED'),
-            providerMessageId: confirmationEmailDeliveryRecord?.provider_message_id || completeBooking.authorization_email_message_id || null,
-            errorMessage: confirmationEmailDeliveryRecord?.error_message || null,
+            providerMessageId: null,
+            errorMessage: null,
             sentAt: confirmationEmailDeliveryRecord?.sent_at || completeBooking.authorization_email_sent_at || null
           };
 
@@ -147,16 +166,16 @@ export const bookingController = {
           status: completeBooking.status,
           paymentStatus: completeBooking.payment_status || completeBooking.paymentStatus,
           passengerName: completeBooking.passenger_name || completeBooking.customerName,
-          email: completeBooking.email,
-          phone: completeBooking.phone,
+          email: maskEmail(completeBooking.email),
+          phone: maskPhone(completeBooking.phone),
           totalAmount: totalAmount,
           currency: (completeBooking.currency || 'USD').toUpperCase(),
           bookingDate: completeBooking.created_at || new Date().toISOString()
         },
         itinerary,
         flights: normalizedFlights,
-        travellers: completeBooking.travellers || [],
-        contact: completeBooking.contacts?.[0] || { email: completeBooking.email, phone: completeBooking.phone },
+        travellers: publicTravellers,
+        contact: publicContact,
         cardReference,
         paymentMethod: cardReference,
         emailDelivery,
@@ -175,8 +194,20 @@ export const bookingController = {
 
   getByUserEmail: async (req, res, next) => {
     try {
-      const { email } = req.params;
-      const bookings = await bookingService.getBookingsForEmail(email);
+      const requestedEmail = String(req.params.email || '').trim().toLowerCase();
+      const authenticatedEmail = String(req.user?.email || '').trim().toLowerCase();
+      if (!requestedEmail || !authenticatedEmail || requestedEmail !== authenticatedEmail) {
+        return res.status(403).json({
+          success: false,
+          error: { code: 'BOOKING_OWNER_MISMATCH', message: 'You can only retrieve bookings for your own account.' }
+        });
+      }
+      const bookings = (await searchCurrentBookings(requestedEmail))
+        .filter(row => {
+          // searchCurrentBookings intentionally strips contact output, so verify ownership
+          // from the authenticated request rather than trusting a client-provided identity.
+          return row && row.confirmation_code;
+        });
       res.json({
         success: true,
         data: bookings
