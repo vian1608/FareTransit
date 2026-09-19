@@ -41,7 +41,7 @@ function useBrowserPathname() {
 
 function productThemeForPath(pathname = '/') {
   if (pathname.startsWith('/hotels')) return 'hotels';
-  if (pathname.startsWith('/car-rentals')) return 'cars';
+  if (pathname.startsWith('/car-rentals') || pathname.startsWith('/car-rental')) return 'cars';
   return 'flights';
 }
 
@@ -270,14 +270,16 @@ function useStickySupportVisibility(pathname, enabled, portalTarget) {
 
 export default function SupportCallLayer() {
   const pathname = useBrowserPathname();
+  const isDedicatedCarCallLanding = pathname === '/car-rental/call-now';
   const routeTheme = productThemeForPath(pathname);
   const securePaymentTheme = useSecurePaymentTheme(pathname);
   const theme = pathname.startsWith('/secure-payment') ? securePaymentTheme : routeTheme;
-  const stickyEligible = isTravelJourneyPath(pathname);
-  const portalConfig = useMemo(() => portalConfigForPath(pathname), [pathname]);
+  const stickyEligible = !isDedicatedCarCallLanding && isTravelJourneyPath(pathname);
+  const portalConfig = useMemo(() => isDedicatedCarCallLanding ? null : portalConfigForPath(pathname), [isDedicatedCarCallLanding, pathname]);
   const portalTarget = usePortalTarget(portalConfig?.selector, pathname);
   const showSticky = useStickySupportVisibility(pathname, stickyEligible, portalTarget);
 
+  if (isDedicatedCarCallLanding) return null;
   if (!stickyEligible && !portalTarget) return null;
 
   return (
