@@ -1,0 +1,37 @@
+name: Authorization Egress Schema Hotfix
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/hotfix-authorization-egress.py
+      - .github/workflows/authorization-egress-hotfix.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  hotfix-test-push:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Apply hotfix
+        run: python3 scripts/hotfix-authorization-egress.py
+      - name: Syntax and contracts
+        run: |
+          node --check backend/src/modules/bookings/booking.repository.egress-hardening.mjs
+          node backend/tests/authorization_runtime_integrity.test.mjs
+          node backend/tests/supabase_egress_hardening_contract.test.mjs
+      - name: Commit implementation
+        run: |
+          git config user.name "FareTransit Automation"
+          git config user.email "actions@users.noreply.github.com"
+          git add backend/src/modules/bookings/booking.repository.egress-hardening.mjs
+          git commit -m "Align bounded booking projection with production schema"
+          git push origin main
