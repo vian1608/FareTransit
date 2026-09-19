@@ -175,18 +175,29 @@ function PaymentSuccessPage() {
   const paymentStatusDisplay = isPaid ? 'Paid' : 'Pending';
   const bookingStatusDisplay = displayText(booking.booking?.status || booking.status, 'PENDING').toUpperCase();
 
-  // Email Delivery Status Notice (Authoritative backend status)
-  const emailDeliveryStatus = booking.emailDelivery?.status || booking.emailDeliveryStatus || (booking.authorization_email_sent_at ? 'SENT' : 'UNATTEMPTED');
+  // Email Delivery Status Notice (authoritative backend status)
+  const emailDeliveryStatus = String(
+    booking.emailDelivery?.status
+      || booking.emailDeliveryStatus
+      || (booking.authorization_email_sent_at ? 'SENT' : 'UNATTEMPTED')
+  ).toUpperCase();
+  const emailDeliveryType = booking.emailDelivery?.type || '';
 
   let emailNoticeMessage = '';
   let emailNoticeType = 'info';
   if (emailDeliveryStatus === 'SENT') {
     emailNoticeType = 'success';
-    emailNoticeMessage = `Your booking confirmation has been sent to ${email}.`;
+    const isReservationReceipt = emailDeliveryType === 'BOOKING_REQUEST' || !isPaid;
+    emailNoticeMessage = isReservationReceipt
+      ? `Reservation email sent to ${email}.`
+      : `Your booking confirmation has been sent to ${email}.`;
   } else if (emailDeliveryStatus === 'FAILED') {
     emailNoticeType = 'warn';
     const errDetail = booking.emailDelivery?.errorMessage || '';
-    emailNoticeMessage = `Your reservation is saved. Confirmation email delivery notice: ${errDetail || 'Provider attempt logged'}.`;
+    emailNoticeMessage = `Your reservation is saved. We could not confirm email delivery${errDetail ? `: ${errDetail}` : '.'}`;
+  } else if (emailDeliveryStatus === 'PENDING') {
+    emailNoticeType = 'info';
+    emailNoticeMessage = `Your reservation is saved. Email delivery is being processed for ${email}.`;
   } else {
     emailNoticeType = 'info';
     emailNoticeMessage = `Email delivery status is unavailable. Please retain your confirmation code: ${code}.`;

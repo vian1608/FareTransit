@@ -97,13 +97,30 @@ export const bookingController = {
         billingPhone: pmRecord?.billing_phone || pmRecord?.billingPhone || completeBooking.phone || null
       };
 
-      const emailDeliveryRecord = await bookingRepository.getEmailDeliveryStatus(completeBooking.id, 'BOOKING_CONFIRMATION');
-      const emailDelivery = {
-        status: emailDeliveryRecord?.status || (completeBooking.authorization_email_sent_at ? 'SENT' : 'UNATTEMPTED'),
-        providerMessageId: emailDeliveryRecord?.provider_message_id || completeBooking.authorization_email_message_id || null,
-        errorMessage: emailDeliveryRecord?.error_message || null,
-        sentAt: emailDeliveryRecord?.sent_at || completeBooking.authorization_email_sent_at || null
-      };
+      // The confirmation screen is shown immediately after checkout, so prefer the
+      // reservation-received email status that is written by sendBookingRequestReceivedEmail().
+      // Fall back to the final BOOKING_CONFIRMATION delivery record for older/completed bookings.
+      const bookingRequestEmailStatus = String(completeBooking.booking_request_email_status || '').trim().toUpperCase();
+      const hasBookingRequestEmailStatus = ['SENT', 'FAILED', 'PENDING'].includes(booingRequestEmailStatus);
+      const confirmationEmailDeliveryRecord = hasBookingRequestEmailStatus
+        ? null
+        : await bookingRepository.getEmailDeliveryStatus(completeBooking.id, 'BOOKING_CONFIRMATION');
+
+      const emailDelivery = hasBookingRequestEmailStatus
+        ? {
+            type: 'BOOKING_REQUEST',
+            status: bookingRequestEmailStatus,
+            providerMessageId: completeBooking.booking_request_email_id || null,
+            errorMessage: completeBooking.booking_request_email_error || null,
+            sentAt: completeBooking.booking_request_email_sent_at || null
+          }
+        : {
+            type: 'BOOKING_CONFIRMATION',
+            status: confirmationEmailDeliveryRecord?.status || (completeBooking.authorization_email_sent_at ? 'SENT' : 'UNATTEMPTED'),
+            providerMessageId: confirmationEmailDeliveryRecord?.provider_message_id || completeBooking.authorization_email_message_id || null,
+            errorMessage: confirmationEmailDeliveryRecord?.error_message || null,
+            sentAt: confirmationEmailDeliveryRecord?.sent_at || completeBooking.authorization_email_sent_at || null
+          };
 
       // Map raw flights list to camelCase normalized flight segments
       const rawFlights = completeBooking.flights || completeBooking.itinerary_segments || [];
