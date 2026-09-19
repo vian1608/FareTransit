@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - scripts/patch-authorization-integrity-v2.py
+      - scripts/run-authorization-integrity-v2.py
       - .github/workflows/authorization-integrity-v2.yml
   workflow_dispatch:
 
@@ -32,7 +33,7 @@ jobs:
           node-version: 22
 
       - name: Apply authorization integrity patch
-        run: python3 scripts/patch-authorization-integrity-v2.py
+        run: python3 scripts/run-authorization-integrity-v2.py
 
       - name: Backend syntax checks
         run: |
