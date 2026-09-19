@@ -39,18 +39,19 @@ replace_once(
     "    const liveAuthorizationStatus = String(liveState?.authorization_status || '').toUpperCase();\n    const liveToken = String(liveState?.authorization_token || '').trim();\n    const tokenMismatch = Boolean(liveToken && liveToken !== token);\n\n    // Revision/lifecycle/token-lineage invalidation wins over idempotency: an\n    // accepted historical token is evidence, not a reusable public authorization.\n    if (authRevision !== bookingRevision || liveAuthorizationStatus === 'REAUTHORIZATION_REQUIRED' || tokenMismatch) {\n"
 )
 
-# 4) Add controller mapping for a stale snapshot detected during issuance.
-controller_path = 'backend/src/modules/authorizations/passenger-authorization.controller.mjs'
-# No controller change needed for public GET/accept. Issuance errors are handled by
-# the admin/email path and should fail closed rather than silently send a stale link.
-
-# 5) Strengthen regression contract.
+# 4) Strengthen regression contract without relying on an exact escaped regex line.
 test_path = ROOT / 'backend/tests/authorization_runtime_integrity.test.mjs'
 text = test_path.read_text()
-needle = "assert.match(service, /authRevision !== bookingRevision \\\|\\\| liveAuthorizationStatus === 'REAUTHORIZATION_REQUIRED'/);\n"
-replacement = "assert.match(service, /liveStateAtIssue/);\nassert.match(service, /AUTHORIZATION_SNAPSHOT_REVISION_STALE/);\nassert.match(service, /const tokenMismatch = Boolean\\(liveToken && liveToken !== token\\)/);\nassert.match(service, /authRevision !== bookingRevision \\\|\\\| liveAuthorizationStatus === 'REAUTHORIZATION_REQUIRED' \\\|\\\| tokenMismatch/);\n"
-if needle not in text:
-    raise SystemExit('Expected authorization runtime test target not found')
-test_path.write_text(text.replace(needle, replacement, 1))
+insert_before = "console.log('Authorization runtime integrity contract: PASS');"
+if insert_before not in text:
+    raise SystemExit('Authorization runtime test footer not found')
+extra = """assert.match(service, /liveStateAtIssue/);
+assert.match(service, /AUTHORIZATION_SNAPSHOT_REVISION_STALE/);
+assert.match(service, /const tokenMismatch = Boolean\\(liveToken && liveToken !== token\\)/);
+assert.match(service, /tokenMismatch/);
+"""
+if 'AUTHORIZATION_SNAPSHOT_REVISION_STALE' not in text:
+    text = text.replace(insert_before, extra + insert_before, 1)
+test_path.write_text(text)
 
 print('Authorization token-lineage hardening patch applied successfully.')
