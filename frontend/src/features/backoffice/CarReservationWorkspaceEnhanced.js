@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import CarReservationWorkspace from './CarReservationWorkspace';
-import { backofficeBlobFetch, boPatch, boPost } from './backofficeApi';
+import { backofficeBlobFetch, boGet, boPatch, boPost } from './backofficeApi';
 import './CarAuthorizationComposer.css';
 
 function formatMoney(value, currency = 'USD') {
@@ -94,15 +94,77 @@ function AuthorizationComposerModal({ reference, data, busy, error, onChange, on
   </div>;
 }
 
+function TicketComposerModal({ data, confirmation, busy, error, onChange, onClose, onSend }) {
+  const preview = data || {};
+  return <div className="carauth-modal-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget && !busy) onClose(); }}>
+    <section className="carauth-modal carticket-modal" role="dialog" aria-modal="true" aria-labelledby="carticket-title">
+      <header className="carauth-modal-header">
+        <div>
+          <span className="carauth-eyebrow">BOOKING CONFIRMATION</span>
+          <h2 id="carticket-title">Send Car Rental E-Ticket</h2>
+          <p>Enter the supplier reservation number. FareTransit will mark the rental booked and email the passenger a confirmation with a PDF e-ticket.</p>
+        </div>
+        <button type="button" className="carauth-close" onClick={onClose} disabled={busy} aria-label="Close e-ticket preview">×</button>
+      </header>
+
+      {error && <div className="carauth-error" role="alert">{error}</div>}
+
+      <div className="carauth-modal-body">
+        <div className="carauth-editor">
+          <label><span>Passenger email</span><input value={preview.to || ''} readOnly /></label>
+          <label><span>Rental reservation / confirmation number</span><input value={confirmation} maxLength="120" autoFocus onChange={event => onChange(event.target.value)} placeholder="Example: EN12345678" /></label>
+          <div className="carauth-security-note"><strong>This completes the booking workflow.</strong><span>Sending the e-ticket saves this supplier confirmation number, marks the reservation BOOKED, emails the passenger, attaches a PDF e-ticket, and records the send in the reservation activity log.</span></div>
+        </div>
+
+        <aside className="carauth-preview">
+          <div className="carauth-email-card">
+            <div className="carauth-brand">Fare<span>Transit</span></div>
+            <small>Car Rental E-Ticket / Reservation Confirmation</small>
+            <RentalCompanyBrand preview={preview} />
+            <div className="carauth-email-subject">Your rental is confirmed</div>
+            <div className="carauth-email-message">Your passenger will receive the supplier confirmation number and complete pickup/drop-off details, with a PDF e-ticket attached.</div>
+            <div className="carauth-email-summary">
+              <span>Supplier confirmation</span><strong>{confirmation || 'Enter confirmation number'}</strong>
+              <span>FareTransit booking ID</span><strong>{preview.bookingReference || '—'}</strong>
+              <span>Vehicle</span><strong>{preview.vehicle || '—'}</strong>
+              <span>Total</span><strong>{formatMoney(preview.totalAmount, preview.currency)}</strong>
+            </div>
+          </div>
+
+          <div className="carauth-auth-summary">
+            <h3>E-ticket details</h3>
+            <dl>
+              <div><dt>Renter</dt><dd>{preview.renterName || 'Not set'}</dd></div>
+              <div><dt>Rental company</dt><dd>{preview.rentalCompany || 'Not set'}</dd></div>
+              <div><dt>Pickup</dt><dd>{preview.pickupLocation || 'Not set'}<small>{formatDateTime(preview.pickupAt)}</small></dd></div>
+              <div><dt>Drop-off</dt><dd>{preview.dropoffLocation || 'Not set'}<small>{formatDateTime(preview.dropoffAt)}</small></dd></div>
+            </dl>
+          </div>
+        </aside>
+      </div>
+
+      <footer className="carauth-modal-actions">
+        <button type="button" className="bo-button secondary" onClick={onClose} disabled={busy}>Cancel</button>
+        <button type="button" className="bo-button" onClick={onSend} disabled={!!busy || !confirmation.trim() || !preview.to}>{busy === 'ticket-send' ? 'Sending E-Ticket…' : 'Confirm Booking & Send E-Ticket'}</button>
+      </footer>
+    </section>
+  </div>;
+}
+
 export default function CarReservationWorkspaceEnhanced() {
   const { id } = useParams();
   const [composer, setComposer] = useState(null);
+  const [ticketComposer, setTicketComposer] = useState(null);
+  const [ticketConfirmation, setTicketConfirmation] = useState('');
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
+  const [ticketError, setTicketError] = useState('');
   const [launchMessage, setLaunchMessage] = useState('');
 
+  const hasUnsavedChanges = () => Boolean(document.querySelector('.carws-unsaved-indicator'));
+
   const openComposer = async () => {
-    if (document.querySelector('.carws-unsaved-indicator')) {
+    if (hasUnsavedChanges()) {
       setLaunchMessage('Save the reservation changes first, then preview the authorization.');
       return;
     }
@@ -114,6 +176,25 @@ export default function CarReservationWorkspaceEnhanced() {
       setComposer(data);
     } catch (requestError) {
       setLaunchMessage(requestError.message || 'Unable to prepare the authorization preview.');
+    } finally {
+      setBusy('');
+    }
+  };
+
+  const openTicketComposer = async () => {
+    if (hasUnsavedChanges()) {
+      setLaunchMessage('Save the reservation changes first, then prepare the e-ticket.');
+      return;
+    }
+    setBusy('ticket-compose');
+    setTicketError('');
+    setLaunchMessage('');
+    try {
+      const data = await boGet(`/bookings/cars/${encodeURIComponent(id)}/ticket/compose`);
+      setTicketComposer(data);
+      setTicketConfirmation(data?.supplierConfirmation || '');
+    } catch (requestError) {
+      setLaunchMessage(requestError.message || 'Unable to prepare the e-ticket.');
     } finally {
       setBusy('');
     }
@@ -176,12 +257,36 @@ export default function CarReservationWorkspaceEnhanced() {
     }
   };
 
+  const sendTicket = async () => {
+    const supplierConfirmation = ticketConfirmation.trim();
+    if (!supplierConfirmation) {
+      setTicketError('Enter the rental-company reservation / confirmation number.');
+      return;
+    }
+    setBusy('ticket-send');
+    setTicketError('');
+    try {
+      const result = await boPost(`/bookings/cars/${encodeURIComponent(id)}/ticket/send`, { supplierConfirmation });
+      setTicketComposer(null);
+      setTicketConfirmation('');
+      setLaunchMessage(`E-ticket sent successfully to ${result?.recipient || 'the passenger'}. Reservation marked BOOKED.`);
+      window.setTimeout(() => window.location.reload(), 900);
+    } catch (requestError) {
+      setTicketError(requestError.message || 'Unable to send the e-ticket.');
+    } finally {
+      setBusy('');
+    }
+  };
+
+  const successMessage = /sent successfully|marked BOOKED/i.test(launchMessage);
+
   return <div className="carws-enhanced">
     <CarReservationWorkspace />
     <div className="carauth-launchbar">
-      {launchMessage && <span className={launchMessage.startsWith('Authorization sent') ? 'success' : 'warning'}>{launchMessage}</span>}
+      {launchMessage && <span className={successMessage ? 'success' : 'warning'}>{launchMessage}</span>}
       <button type="button" className="bo-button secondary carauth-launch" onClick={viewAuthorizationEvidence} disabled={!!busy}>{busy === 'evidence' ? 'Opening Evidence…' : 'View Authorization'}</button>
-      <button type="button" className="bo-button carauth-launch" onClick={openComposer} disabled={!!busy}>{busy === 'compose' ? 'Preparing Preview…' : 'Preview & Send Authorization'}</button>
+      <button type="button" className="bo-button secondary carauth-launch" onClick={openComposer} disabled={!!busy}>{busy === 'compose' ? 'Preparing Preview…' : 'Preview & Send Authorization'}</button>
+      <button type="button" className="bo-button carauth-launch" onClick={openTicketComposer} disabled={!!busy}>{busy === 'ticket-compose' ? 'Preparing E-Ticket…' : 'Send E-Ticket'}</button>
     </div>
     {composer && <AuthorizationComposerModal
       reference={id}
@@ -192,6 +297,15 @@ export default function CarReservationWorkspaceEnhanced() {
       onClose={() => { if (!busy) { setComposer(null); setError(''); } }}
       onSave={saveEmailDraft}
       onSend={sendAuthorization}
+    />}
+    {ticketComposer && <TicketComposerModal
+      data={ticketComposer}
+      confirmation={ticketConfirmation}
+      busy={busy}
+      error={ticketError}
+      onChange={setTicketConfirmation}
+      onClose={() => { if (!busy) { setTicketComposer(null); setTicketError(''); } }}
+      onSend={sendTicket}
     />}
   </div>;
 }
