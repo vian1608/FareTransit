@@ -31,7 +31,7 @@ for (const key of ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'u
 
 assert.match(page, /Need a car today\?/);
 assert.match(page, /data-paid-car-call="true"/);
-assert.match(page, /data-call-location="mobile-sticky"/);
+assert.match(page, /locationLabel="mobile-sticky"/);
 assert.match(page, /data-phone-display="true"/);
 assert.match(page, /noindex, follow, noarchive/);
 assert.doesNotMatch(page, /dangerouslySetInnerHTML/);
