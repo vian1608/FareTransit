@@ -39,9 +39,13 @@ replace_once(
     "    const liveAuthorizationStatus = String(liveState?.authorization_status || '').toUpperCase();\n    const liveToken = String(liveState?.authorization_token || '').trim();\n    const tokenMismatch = Boolean(liveToken && liveToken !== token);\n\n    // Revision/lifecycle/token-lineage invalidation wins over idempotency: an\n    // accepted historical token is evidence, not a reusable public authorization.\n    if (authRevision !== bookingRevision || liveAuthorizationStatus === 'REAUTHORIZATION_REQUIRED' || tokenMismatch) {\n"
 )
 
-# 4) Strengthen regression contract without relying on an exact escaped regex line.
+# 4) Strengthen regression contract and update the existing wording assertion.
 test_path = ROOT / 'backend/tests/authorization_runtime_integrity.test.mjs'
 text = test_path.read_text()
+text = text.replace(
+    "assert.match(service, /Revision\\/lifecycle invalidation wins over idempotency/);",
+    "assert.match(service, /Revision\\/lifecycle\\/token-lineage invalidation wins over idempotency/);"
+)
 insert_before = "console.log('Authorization runtime integrity contract: PASS');"
 if insert_before not in text:
     raise SystemExit('Authorization runtime test footer not found')
