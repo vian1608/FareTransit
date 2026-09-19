@@ -1976,7 +1976,6 @@ export const bookingRepository = {
         return {
           booking_id: bookingId,
           trip_type: seg.trip_type || 'one_way',
-          leg: dir,
           direction: dir,
           journey_direction: dir,
           segment_sequence: seq,
@@ -2062,6 +2061,7 @@ export const bookingRepository = {
         leg: seg.journey_direction === 'return' ? 'return' : 'outbound',
         trip_type: seg.direction === 'return' ? 'round-trip' : 'one-way',
         airline_name: seg.carrier_name || seg.airline_name || '',
+        carrier_code: seg.carrier_code || seg.marketing_carrier_code || '',
         flight_number: seg.flight_number || '',
         departure_airport: seg.origin_airport || '',
         arrival_airport: seg.destination_airport || '',

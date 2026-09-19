@@ -266,6 +266,7 @@ const AIRLINE_NAMES = {
   KL: 'KLM Royal Dutch Airlines',
   EK: 'Emirates',
   QR: 'Qatar Airways',
+  AT: 'Royal Air Maroc',
   SQ: 'Singapore Airlines',
   CX: 'Cathay Pacific',
   TK: 'Turkish Airlines',

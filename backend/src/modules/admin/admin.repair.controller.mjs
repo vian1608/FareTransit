@@ -296,21 +296,60 @@ function normalizeSegments(rawSegments = []) {
 }
 
 async function getPersistedSegments(bookingId) {
-  const result = await withTimeout(
+  const normalized = await withTimeout(
     supabase
       .from('booking_itinerary_segments')
       .select('*')
       .eq('booking_id', bookingId)
       .order('segment_order', { ascending: true }),
     5000,
-    'verify itinerary persistence'
+    'verify normalized itinerary persistence'
   );
 
-  if (result?.error) {
-    throw new Error(result.error.message);
+  if (!normalized?.error && Array.isArray(normalized?.data) && normalized.data.length > 0) {
+    return normalized.data;
   }
 
-  return result?.data || [];
+  // saveItinerarySegments intentionally falls back to the production `flights`
+  // table if the normalized table is unavailable. Verification must recognize
+  // that durable fallback, otherwise a successful multi-segment save is falsely
+  // reported as ITINERARY_PERSISTENCE_MISMATCH.
+  const fallback = await withTimeout(
+    supabase
+      .from('flights')
+      .select('*')
+      .eq('booking_id', bookingId)
+      .order('departure_date', { ascending: true })
+      .order('departure_time_str', { ascending: true }),
+    5000,
+    'verify legacy itinerary persistence'
+  );
+
+  if (fallback?.error) {
+    const primaryMessage = normalized?.error?.message ? ` Normalized store: ${normalized.error.message}.` : '';
+    throw new Error(`Unable to verify itinerary persistence.${primaryMessage} Legacy store: ${fallback.error.message}`);
+  }
+
+  return (fallback?.data || []).map((flight, index) => ({
+    id: flight.id,
+    booking_id: flight.booking_id,
+    journey_direction: ['return', 'inbound'].includes(String(flight.leg || '').toLowerCase()) ? 'return' : 'outbound',
+    direction: ['return', 'inbound'].includes(String(flight.leg || '').toLowerCase()) ? 'return' : 'outbound',
+    segment_sequence: index + 1,
+    segment_order: index + 1,
+    carrier_name: flight.airline_name || '',
+    carrier_code: flight.carrier_code || '',
+    marketing_carrier_code: flight.carrier_code || '',
+    flight_number: flight.flight_number || '',
+    origin_airport: flight.departure_airport || '',
+    destination_airport: flight.arrival_airport || '',
+    departure_date: flight.departure_date || '',
+    departure_time: flight.departure_time_str || '',
+    arrival_date: flight.arrival_date || '',
+    arrival_time: flight.arrival_time_str || '',
+    cabin: flight.cabin_class || 'Economy',
+    stop_count: Number.parseInt(flight.stops || 0, 10)
+  }));
 }
 
 export const adminRepairController = {

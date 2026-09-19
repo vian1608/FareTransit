@@ -21,6 +21,7 @@ export const AIRLINE_DIRECTORY = [
   { name: 'KLM', iataCode: 'KL', icaoCode: 'KLM', logoUrl: '/airlines/kl.png' },
   { name: 'Emirates', iataCode: 'EK', icaoCode: 'UAE', logoUrl: '/airlines/ek.png' },
   { name: 'Qatar Airways', iataCode: 'QR', icaoCode: 'QTR', logoUrl: '/airlines/qr.png' },
+  { name: 'Royal Air Maroc', iataCode: 'AT', icaoCode: 'RAM', logoUrl: '/airlines/at.png' },
   { name: 'Turkish Airlines', iataCode: 'TK', icaoCode: 'THY', logoUrl: '/airlines/tk.png' },
   { name: 'Singapore Airlines', iataCode: 'SQ', icaoCode: 'SIA', logoUrl: '/airlines/sq.png' },
   { name: 'Cathay Pacific', iataCode: 'CX', icaoCode: 'CPA', logoUrl: '/airlines/cx.png' },

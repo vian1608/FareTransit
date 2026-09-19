@@ -44,10 +44,12 @@ export default function AdminItineraryImportModal({
           flightNumber: parsed.flight_number || parsed.flightNumber || '',
           carrier_code: parsed.carrier_code || parsed.carrierCode || '',
           flight_number: parsed.flight_number || parsed.flightNumber || '',
-          originAirport: parsed.origin_airport || parsed.originAirport || '',
-          destinationAirport: parsed.destination_airport || parsed.destinationAirport || '',
-          origin_airport: parsed.origin_airport || parsed.originAirport || '',
-          destination_airport: parsed.destination_airport || parsed.destinationAirport || '',
+          originAirport: parsed.origin_airport || parsed.originAirport || parsed.departureAirport || '',
+          destinationAirport: parsed.destination_airport || parsed.destinationAirport || parsed.arrivalAirport || '',
+          departureAirport: parsed.departureAirport || parsed.origin_airport || parsed.originAirport || '',
+          arrivalAirport: parsed.arrivalAirport || parsed.destination_airport || parsed.destinationAirport || '',
+          origin_airport: parsed.origin_airport || parsed.originAirport || parsed.departureAirport || '',
+          destination_airport: parsed.destination_airport || parsed.destinationAirport || parsed.arrivalAirport || '',
           departureDate: parsed.departure_date || parsed.departureDate || '',
           departure_date: parsed.departure_date || parsed.departureDate || '',
           arrivalDate: parsed.arrival_date || parsed.arrivalDate || parsed.departure_date || '',
@@ -60,7 +62,26 @@ export default function AdminItineraryImportModal({
         });
       }
     });
-    return segs;
+    return segs.map((segment, index) => {
+      const next = segs[index + 1];
+      const sameConnection = next &&
+        segment.destination_airport &&
+        next.origin_airport &&
+        segment.destination_airport === next.origin_airport;
+      const nextDepartureIsLaterDay = sameConnection &&
+        next.departureDate &&
+        segment.departureDate &&
+        next.departureDate > segment.departureDate;
+
+      if (nextDepartureIsLaterDay && (!segment.arrivalDate || segment.arrivalDate === segment.departureDate)) {
+        return {
+          ...segment,
+          arrivalDate: next.departureDate,
+          arrival_date: next.departureDate
+        };
+      }
+      return segment;
+    });
   };
 
   const handleSelectTripType = (type) => {
@@ -406,7 +427,7 @@ export default function AdminItineraryImportModal({
                     <strong style={{ fontSize: '14px', color: '#0f172a' }}>{seg.carrierCode} {seg.flightNumber}</strong>
                     <span style={{ fontSize: '12px', color: '#64748b', marginLeft: '10px' }}>Cabin: {seg.cabin || 'Economy'}</span>
                     <div style={{ fontSize: '13px', fontWeight: 700, color: '#334155', marginTop: '4px' }}>
-                      {seg.departureAirport} → {seg.arrivalAirport}
+                      {seg.departureAirport || seg.originAirport || seg.origin_airport} → {seg.arrivalAirport || seg.destinationAirport || seg.destination_airport}
                     </div>
                   </div>
                   <div style={{ textAlign: 'right', fontSize: '12px', color: '#475569' }}>
