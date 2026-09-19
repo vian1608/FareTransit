@@ -96,12 +96,14 @@ test('FareTransit premium four-step checkout keeps navigation and totals consist
     assert.match(paymentFixCss, /grid-template-columns: repeat\(6/);
   });
 
-  await t.test('card entry supports up to 19 digits while keeping Amex at 15', () => {
-    assert.match(cardEntry, /function maxCardDigits/);
-    assert.match(cardEntry, /\? 15 : 19/);
-    assert.match(cardEntry, /digits\.slice\(0, maxCardDigits\(digits\)\)/);
-    assert.match(cardEntry, /maxLength=\{isAmexLength \? 17 : 23\}/);
-    assert.match(cardEntry, /sum % 10 === 0/);
+  await t.test('card entry accepts exactly 16 digits and blocks a 17th digit', () => {
+    assert.match(cardEntry, /const CARD_NUMBER_DIGITS = 16/);
+    assert.match(cardEntry, /digitsOnly\(value\)\.length === CARD_NUMBER_DIGITS/);
+    assert.match(cardEntry, /setCardNumber\(digits\.slice\(0, CARD_NUMBER_DIGITS\)\)/);
+    assert.match(cardEntry, /maxLength=\{19\}/);
+    assert.match(cardEntry, /Enter the complete 16-digit card number/);
+    assert.doesNotMatch(cardEntry, /\? 15 : 19/);
+    assert.doesNotMatch(cardEntry, /sum % 10 === 0/);
   });
 
   await t.test('booking conversion adapter is Promise-safe for checkout catch handling', () => {

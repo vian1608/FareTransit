@@ -1,13 +1,15 @@
 import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useState } from 'react';
 
+const CARD_NUMBER_DIGITS = 16;
 const digitsOnly = (value) => String(value || '').replace(/\D/g, '');
 
 function detectCardBrand(value) {
   const digits = digitsOnly(value);
   if (!digits) return '';
 
-  // Network detection is only typing feedback. A detected network does not
-  // mean the complete card number has passed checksum validation.
+  // Network detection is typing feedback only. FareTransit's checkout accepts
+  // a complete 16-digit card number and leaves issuer/processor verification
+  // to the payment workflow rather than rejecting a customer on a local checksum.
   if (/^4/.test(digits)) return 'Visa';
   if (/^5/.test(digits)) return 'Mastercard';
   if (/^6/.test(digits)) return 'Discover';
@@ -23,29 +25,23 @@ function detectCardBrand(value) {
   return digits.length >= 6 ? 'Other' : '';
 }
 
-function maxCardDigits(value) {
-  const digits = digitsOnly(value);
-  // American Express uses 15 digits. Other supported payment-card PANs can
-  // legitimately extend beyond 16 digits, so do not truncate valid 17-19
-  // digit numbers before checksum validation.
-  return /^3[47]/.test(digits) ? 15 : 19;
+function maxCardDigits() {
+  return CARD_NUMBER_DIGITS;
 }
 
-function passesLuhn(value) {
-  const digits = digitsOnly(value);
-  if (digits.length < 12 || digits.length > 19 || digits.length > maxCardDigits(digits)) return false;
-  let sum = 0;
-  let doubleDigit = false;
-  for (let index = digits.length - 1; index >= 0; index -= 1) {
-    let digit = Number(digits[index]);
-    if (doubleDigit) {
-      digit *= 2;
-      if (digit > 9) digit -= 9;
-    }
-    sum += digit;
-    doubleDigit = !doubleDigit;
-  }
-  return sum % 10 === 0;
+function isCompleteCardNumber(value) {
+  return digitsOnly(value).length === CARD_NUMBER_DIGITS;
+}
+
+function formatCardNumber(value) {
+  const digits = digitsOnly(value).slice(0, CARD_NUMBER_DIGITS);
+  return digits.replace(/(.{4})/g, '$1 ').trim();
+}
+
+function formatExpiry(value) {
+  const digits = digitsOnly(value).slice(0, 4);
+  if (digits.length <= 2) return digits;
+  return `${digits.slice(0, 2)}/${digits.slice(2)}`;
 }
 
 function parseExpiry(value) {
@@ -61,21 +57,6 @@ function parseExpiry(value) {
   return { month, year };
 }
 
-function formatCardNumber(value) {
-  const digits = digitsOnly(value).slice(0, maxCardDigits(value));
-  if (/^3[47]/.test(digits)) {
-    const groups = [digits.slice(0, 4), digits.slice(4, 10), digits.slice(10, 15)].filter(Boolean);
-    return groups.join(' ');
-  }
-  return digits.replace(/(.{4})/g, '$1 ').trim();
-}
-
-function formatExpiry(value) {
-  const digits = digitsOnly(value).slice(0, 4);
-  if (digits.length <= 2) return digits;
-  return `${digits.slice(0, 2)}/${digits.slice(2)}`;
-}
-
 const PaymentCardEntry = forwardRef(function PaymentCardEntry({ nameOnCard, onNameChange, onFocus, onBrandChange }, ref) {
   const [cardNumber, setCardNumber] = useState('');
   const [securityCode, setSecurityCode] = useState('');
@@ -83,7 +64,7 @@ const PaymentCardEntry = forwardRef(function PaymentCardEntry({ nameOnCard, onNa
   const [touched, setTouched] = useState(false);
 
   const brand = useMemo(() => detectCardBrand(cardNumber), [cardNumber]);
-  const cardNumberValid = useMemo(() => passesLuhn(cardNumber), [cardNumber]);
+  const cardNumberValid = useMemo(() => isCompleteCardNumber(cardNumber), [cardNumber]);
   const expiryParts = useMemo(() => parseExpiry(expiry), [expiry]);
   const valid = useMemo(() => (
     Boolean(String(nameOnCard || '').trim())
@@ -99,8 +80,7 @@ const PaymentCardEntry = forwardRef(function PaymentCardEntry({ nameOnCard, onNa
   const getValidationMessage = () => {
     if (!String(nameOnCard || '').trim()) return 'Enter the name shown on the card.';
     const cardDigits = digitsOnly(cardNumber);
-    if (cardDigits.length < 12) return 'Enter the complete card number.';
-    if (!cardNumberValid) return 'Check the card number and try again.';
+    if (cardDigits.length !== CARD_NUMBER_DIGITS) return 'Enter the complete 16-digit card number.';
     if (!/^\d{3,4}$/.test(securityCode)) return 'Enter a valid CID/CVV.';
     if (!expiryParts) return 'Enter a valid future expiration date in MM/YY format.';
     return '';
@@ -125,10 +105,9 @@ const PaymentCardEntry = forwardRef(function PaymentCardEntry({ nameOnCard, onNa
       setExpiry('');
       setTouched(false);
     },
-  }), [valid, nameOnCard, cardNumber, securityCode, expiryParts, brand, cardNumberValid]);
+  }), [valid, nameOnCard, cardNumber, securityCode, expiryParts, brand]);
 
   const showError = touched && !valid;
-  const isAmexLength = /^3[47]/.test(cardNumber);
 
   return (
     <div className="booking-v3-card-entry">
@@ -145,10 +124,10 @@ const PaymentCardEntry = forwardRef(function PaymentCardEntry({ nameOnCard, onNa
           onBlur={() => setTouched(true)}
           onChange={(event) => {
             const digits = digitsOnly(event.target.value);
-            setCardNumber(digits.slice(0, maxCardDigits(digits)));
+            setCardNumber(digits.slice(0, CARD_NUMBER_DIGITS));
           }}
           placeholder="Card Number"
-          maxLength={isAmexLength ? 17 : 23}
+          maxLength={19}
           aria-invalid={showError && !cardNumberValid}
           required
         />
@@ -221,5 +200,5 @@ const PaymentCardEntry = forwardRef(function PaymentCardEntry({ nameOnCard, onNa
   );
 });
 
-export { detectCardBrand, maxCardDigits, passesLuhn };
+export { CARD_NUMBER_DIGITS, detectCardBrand, maxCardDigits, isCompleteCardNumber };
 export default PaymentCardEntry;

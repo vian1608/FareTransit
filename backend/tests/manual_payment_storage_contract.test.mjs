@@ -33,7 +33,10 @@ test('FareTransit four-step checkout stores billing and masked card metadata wit
     assert.match(cardEntry, /Name on Card/);
     assert.match(cardEntry, /CID\/CVV/);
     assert.match(cardEntry, /Expiration Date/);
-    assert.match(cardEntry, /passesLuhn/);
+    assert.match(cardEntry, /CARD_NUMBER_DIGITS = 16/);
+    assert.match(cardEntry, /isCompleteCardNumber/);
+    assert.match(cardEntry, /maxLength=\{19\}/);
+    assert.doesNotMatch(cardEntry, /passesLuhn/);
     assert.match(cardEntry, /getMaskedMetadata/);
     assert.doesNotMatch(cardEntry, /Collect\.js|secure\.nmi\.com|NMI_TOKENIZATION|startPaymentRequest/i);
   });
