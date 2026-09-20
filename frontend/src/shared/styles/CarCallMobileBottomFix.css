@@ -18,6 +18,16 @@ body.car-call-landing-active .tfs-customer-back {
   transform-origin: center !important;
 }
 
+/* Keep the independence/trademark disclosure immediately subordinate to the
+   hero support line. It is intentionally plain text rather than a warning box. */
+.car-call-page .car-call-disclosure {
+  max-width: 680px;
+  margin: 7px 0 0 !important;
+  color: #74686d !important;
+  font-size: 12.5px !important;
+  line-height: 1.5 !important;
+}
+
 /* Make the phone treatment inside the main CTA mirror the FareTransit mark:
    burgundy rounded square outside, lighter circular phone well inside. */
 .car-call-page .car-call-primary-cta__icon {
@@ -66,6 +76,11 @@ body.car-call-landing-active .tfs-customer-back {
 
   .car-call-page {
     min-height: 100svh;
+  }
+
+  .car-call-page .car-call-disclosure {
+    font-size: 12px !important;
+    line-height: 1.48 !important;
   }
 
   .car-call-mini-footer {
