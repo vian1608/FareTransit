@@ -10,7 +10,8 @@ function PageTransition({ children }) {
   const location = useLocation();
   const pathname = location.pathname || '/';
   const isAdmin = pathname.startsWith('/admin');
-  const isCars = pathname.startsWith('/car-rentals');
+  const isPaidCarCallLanding = pathname === '/car-rental/call-now';
+  const isCars = pathname.startsWith('/car-rentals') || isPaidCarCallLanding;
   const isRail = pathname.startsWith('/amtrak') || pathname.startsWith('/train-');
   const theme = isAdmin ? 'admin' : (isCars ? 'cars' : (isRail ? 'rail' : 'flights'));
 
@@ -31,6 +32,7 @@ function PageTransition({ children }) {
     pathname.startsWith('/return-flight') ||
     pathname.startsWith('/booking-confirmed') ||
     pathname.startsWith('/confirmation/') ||
+    isPaidCarCallLanding ||
     isInformationPage;
 
   useEffect(() => {
