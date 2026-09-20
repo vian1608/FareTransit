@@ -38,8 +38,8 @@ export const CAR_CALL_BRANDS = Object.freeze({
   }),
   sixt: Object.freeze({
     key: 'sixt',
-    displayName: 'Sixt',
-    headline: 'Looking for a Sixt Rental?',
+    displayName: 'SIXT',
+    headline: 'Looking for a SIXT Rental?',
   }),
   thrifty: Object.freeze({
     key: 'thrifty',
