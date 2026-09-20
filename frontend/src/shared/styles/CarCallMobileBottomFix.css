@@ -18,6 +18,46 @@ body.car-call-landing-active .tfs-customer-back {
   transform-origin: center !important;
 }
 
+/* Make the phone treatment inside the main CTA mirror the FareTransit mark:
+   burgundy rounded square outside, lighter circular phone well inside. */
+.car-call-page .car-call-primary-cta__icon {
+  width: 48px !important;
+  height: 48px !important;
+  flex: 0 0 48px !important;
+  display: grid !important;
+  place-items: center !important;
+  border-radius: 14px !important;
+  background: linear-gradient(145deg, #b4164d, #850f35) !important;
+  box-shadow: 0 8px 18px rgba(92, 7, 34, .22) !important;
+}
+
+.car-call-page .car-call-primary-cta__icon > i.fas.fa-phone {
+  width: 34px !important;
+  height: 34px !important;
+  display: grid !important;
+  place-items: center !important;
+  border-radius: 50% !important;
+  background: rgba(255,255,255,.16) !important;
+  color: #fff !important;
+  font-size: 15px !important;
+}
+
+/* Keep the smaller call actions visually consistent with the same inner
+   circular handset treatment without changing the surrounding button layout. */
+.car-call-page .car-call-topbar__phone > i.fas.fa-phone,
+.car-call-page .car-call-callbar__button > i.fas.fa-phone,
+.car-call-page .car-call-sticky__button > i.fas.fa-phone {
+  width: 30px !important;
+  height: 30px !important;
+  flex: 0 0 30px !important;
+  display: grid !important;
+  place-items: center !important;
+  border-radius: 50% !important;
+  background: rgba(255,255,255,.16) !important;
+  color: #fff !important;
+  font-size: 13px !important;
+}
+
 @media (max-width: 620px) {
   body.car-call-landing-active {
     padding-bottom: 0 !important;
