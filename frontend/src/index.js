@@ -18,6 +18,7 @@ import './features/bookings/addons/BaggageAncillary.css';
 import './features/bookings/addons/TripAddonsEnhancement.css';
 import './shared/styles/SitewideInteractionPolish.css';
 import './shared/styles/ResponsiveTravelRedundancy.css';
+import './shared/styles/CarCallMobileBottomFix.css';
 import './features/backoffice/AdminLegacyCompatibility.css';
 import App from './app/App';
 import BackOfficeRouter from './features/backoffice/BackOfficeRouter';
