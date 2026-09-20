@@ -1,0 +1,117 @@
+/* Mobile bottom-of-page correction for the paid car-rental call landing page.
+   Keep the fixed conversion CTA anchored to the viewport while reserving its
+   space inside the footer instead of adding blank padding after the document. */
+
+@media (max-width: 620px) {
+  body.car-call-landing-active {
+    padding-bottom: 0 !important;
+    overflow-x: hidden;
+  }
+
+  .car-call-page {
+    min-height: 100svh;
+  }
+
+  .car-call-mini-footer {
+    position: relative;
+    z-index: 1;
+    background: #fff;
+  }
+
+  .car-call-mini-footer__inner {
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 1fr;
+    justify-items: center;
+    gap: 12px;
+    padding: 20px 0 calc(84px + env(safe-area-inset-bottom));
+    text-align: center;
+  }
+
+  .car-call-mini-footer__brand {
+    display: flex;
+    justify-content: center;
+    margin: 0;
+  }
+
+  .car-call-mini-footer nav {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    margin: 0;
+  }
+
+  .car-call-sticky {
+    position: fixed;
+    z-index: 100;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    min-height: 0;
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+    gap: 10px;
+    box-sizing: border-box;
+    transform: translateZ(0);
+  }
+
+  .car-call-sticky__brand {
+    width: 44px;
+    height: 44px;
+    flex-basis: 44px;
+  }
+
+  .car-call-sticky__copy {
+    min-width: 0;
+  }
+
+  .car-call-sticky__copy small {
+    line-height: 1.2;
+  }
+
+  .car-call-sticky__copy strong {
+    margin-top: 3px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .car-call-sticky__button {
+    min-height: 44px;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 390px) {
+  .car-call-mini-footer__inner {
+    padding-bottom: calc(80px + env(safe-area-inset-bottom));
+  }
+
+  .car-call-sticky {
+    grid-template-columns: 40px minmax(0, 1fr) auto;
+    gap: 8px;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .car-call-sticky__brand {
+    width: 40px;
+    height: 40px;
+    flex-basis: 40px;
+  }
+
+  .car-call-sticky__copy small {
+    display: none;
+  }
+
+  .car-call-sticky__copy strong {
+    margin-top: 0;
+  }
+
+  .car-call-sticky__button {
+    min-height: 40px;
+    padding: 0 11px;
+  }
+}
