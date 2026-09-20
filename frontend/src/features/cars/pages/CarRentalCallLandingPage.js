@@ -245,6 +245,7 @@ export default function CarRentalCallLandingPage() {
                 <span aria-hidden="true">•</span>
                 <span>Independent reservation assistance</span>
               </p>
+              <p className="car-call-disclosure">{copy.disclosure}</p>
 
               <div className="car-call-benefit-grid" aria-label="Rental assistance benefits">
                 {BENEFITS.map(([icon, title, text]) => (
@@ -255,7 +256,6 @@ export default function CarRentalCallLandingPage() {
                   </article>
                 ))}
               </div>
-              <p className="car-call-disclosure">{copy.disclosure}</p>
             </div>
 
             <div className="car-call-hero__visual" aria-hidden="true">
