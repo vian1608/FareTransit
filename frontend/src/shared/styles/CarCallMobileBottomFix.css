@@ -1,24 +1,27 @@
-/* Mobile corrections for the paid car-rental call landing page.
+/* Corrections for the paid car-rental call landing page.
    Keep the conversion CTA anchored to the viewport, avoid footer collisions,
    suppress paid-landing back navigation, and use the approved handset direction. */
 
-/* Match the approved mirrored handset orientation on this paid landing only. */
-.car-call-page .fa-phone {
-  display: inline-block;
-  transform: scaleX(-1);
-  transform-origin: center;
+/* This landing page is an acquisition entry point, so the shared floating
+   CustomerBackButton must never appear at any viewport size. */
+body.car-call-landing-active .tfs-customer-back-wrap,
+body.car-call-landing-active .tfs-customer-back {
+  display: none !important;
+}
+
+/* Mirror the actual Font Awesome handset element on this paid landing only.
+   The higher specificity + !important prevents Font Awesome/base icon rules
+   from restoring the default handset direction. */
+.car-call-page i.fas.fa-phone {
+  display: inline-block !important;
+  transform: scaleX(-1) !important;
+  transform-origin: center !important;
 }
 
 @media (max-width: 620px) {
   body.car-call-landing-active {
     padding-bottom: 0 !important;
     overflow-x: hidden;
-  }
-
-  /* PageTransition adds a contextual back control on car sub-pages. It is not
-     useful on the paid-search landing and competes with the dedicated header. */
-  body.car-call-landing-active .page-transition-back {
-    display: none !important;
   }
 
   .car-call-page {
