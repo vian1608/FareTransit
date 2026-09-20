@@ -46,7 +46,6 @@ body.car-call-landing-active .main {
   margin: 0 auto;
 }
 
-/* Brand identity */
 .car-call-brand {
   color: inherit;
   text-decoration: none;
@@ -118,7 +117,6 @@ body.car-call-landing-active .main {
   font-size: 20px;
 }
 
-/* Header */
 .car-call-topbar {
   position: sticky;
   top: 0;
@@ -195,7 +193,6 @@ body.car-call-landing-active .main {
   letter-spacing: -.01em;
 }
 
-/* Hero */
 .car-call-hero {
   position: relative;
   overflow: hidden;
@@ -375,7 +372,7 @@ body.car-call-landing-active .main {
   margin-right: calc((100vw - min(1180px, calc(100vw - 48px))) / -2);
   background-image:
     linear-gradient(90deg, #fff 0%, rgba(255,255,255,.32) 18%, rgba(255,255,255,0) 42%),
-    url('/images/hero/car-rental-road.svg');
+    url('https://www.faretransit.com/images/hero/car-rental-road.svg');
   background-size: cover;
   background-position: center;
 }
@@ -462,7 +459,6 @@ body.car-call-landing-active .main {
   text-align: center;
 }
 
-/* Process */
 .car-call-process-wrap {
   padding: 36px 0 24px;
   background: #fff;
@@ -555,7 +551,6 @@ body.car-call-landing-active .main {
   font-size: 14px;
 }
 
-/* Trust strip */
 .car-call-trust-strip {
   padding: 24px 0 32px;
   background: #fff;
@@ -607,7 +602,6 @@ body.car-call-landing-active .main {
   line-height: 1.35;
 }
 
-/* FAQ */
 .car-call-faq-section {
   padding: 52px 0 42px;
   background: linear-gradient(180deg, #fff8fa, #fff4f7);
@@ -704,7 +698,6 @@ body.car-call-landing-active .main {
   line-height: 1.6;
 }
 
-/* Final call bar */
 .car-call-callbar {
   background: linear-gradient(100deg, #9d123e, #840e34);
   color: #fff;
@@ -768,7 +761,6 @@ body.car-call-landing-active .main {
   background: #fff8fa;
 }
 
-/* Footer */
 .car-call-mini-footer {
   background: #fff;
   border-top: 1px solid #f0e4e8;
@@ -828,7 +820,6 @@ body.car-call-landing-active .main {
   white-space: nowrap;
 }
 
-/* Mobile sticky call action */
 .car-call-sticky {
   display: none;
 }
@@ -927,7 +918,7 @@ body.car-call-landing-active .main {
     border-radius: 26px 26px 0 0;
     background-image:
       linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,0)),
-      url('/images/hero/car-rental-road.svg');
+      url('https://www.faretransit.com/images/hero/car-rental-road.svg');
     background-position: 58% center;
   }
 
