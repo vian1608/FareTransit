@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 760" role="img" aria-labelledby="title desc">
+  <title id="title">Scenic car rental road illustration</title>
+  <desc id="desc">A neutral white SUV beside a scenic road with mountains and a traveler silhouette.</desc>
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e9f2f8"/>
+      <stop offset="0.56" stop-color="#f6e8e6"/>
+      <stop offset="1" stop-color="#f8efe8"/>
+    </linearGradient>
+    <linearGradient id="mountain" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6d7b6d"/>
+      <stop offset="1" stop-color="#30483d"/>
+    </linearGradient>
+    <linearGradient id="road" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#d6c4b6"/>
+      <stop offset="1" stop-color="#9b8576"/>
+    </linearGradient>
+    <linearGradient id="car" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fbfbfb"/>
+      <stop offset="1" stop-color="#d9dde0"/>
+    </linearGradient>
+    <linearGradient id="burgundy" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#a61646"/>
+      <stop offset="1" stop-color="#71102e"/>
+    </linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="180%">
+      <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#28151c" flood-opacity="0.22"/>
+    </filter>
+  </defs>
+
+  <rect width="960" height="760" fill="url(#sky)"/>
+  <circle cx="742" cy="112" r="64" fill="#fff" opacity="0.54"/>
+  <path d="M0 330 L125 208 232 286 350 166 487 295 603 184 724 270 844 156 960 240 960 470 0 470Z" fill="#8c9488" opacity="0.38"/>
+  <path d="M0 376 L164 246 286 335 413 225 552 340 676 250 818 317 960 218 960 495 0 495Z" fill="url(#mountain)" opacity="0.93"/>
+  <path d="M0 480 C220 426 410 430 960 548 L960 760 0 760Z" fill="#d9c9bb"/>
+  <path d="M0 570 C250 500 525 505 960 590 L960 760 0 760Z" fill="url(#road)"/>
+  <path d="M72 654 C330 589 595 596 930 650" fill="none" stroke="#f5eadf" stroke-width="10" stroke-linecap="round" stroke-dasharray="54 38" opacity="0.88"/>
+
+  <g filter="url(#shadow)" transform="translate(270 330)">
+    <ellipse cx="332" cy="292" rx="286" ry="46" fill="#3a282d" opacity="0.18"/>
+    <path d="M94 124 C128 55 202 18 300 18 H406 C468 18 524 52 557 111 L604 183 C620 208 628 235 628 270 V303 H46 V252 C46 214 57 180 77 149Z" fill="url(#car)" stroke="#bfc4c8" stroke-width="5"/>
+    <path d="M178 79 C206 48 245 34 300 34 H399 C442 34 480 53 505 86 L538 132 H145Z" fill="#7b929e" opacity="0.94"/>
+    <path d="M311 35 V132" stroke="#e5eaed" stroke-width="8"/>
+    <path d="M58 209 H612" stroke="#b8bec2" stroke-width="4" opacity="0.75"/>
+    <rect x="68" y="174" width="88" height="34" rx="14" fill="#f5f0db"/>
+    <rect x="520" y="174" width="88" height="34" rx="14" fill="#9f173f"/>
+    <rect x="249" y="255" width="178" height="30" rx="9" fill="#eceff1" stroke="#c8cdd1" stroke-width="3"/>
+    <circle cx="151" cy="299" r="58" fill="#25272a"/>
+    <circle cx="151" cy="299" r="31" fill="#8c9297"/>
+    <circle cx="521" cy="299" r="58" fill="#25272a"/>
+    <circle cx="521" cy="299" r="31" fill="#8c9297"/>
+  </g>
+
+  <g transform="translate(745 238)" filter="url(#shadow)">
+    <circle cx="62" cy="51" r="36" fill="#d6a47f"/>
+    <path d="M23 52 C29 7 95 0 110 47 C85 33 48 34 23 52Z" fill="#b78153"/>
+    <path d="M48 82 C70 75 96 84 107 109 L133 179 C139 196 132 214 116 222 L83 237 50 215 25 140 C17 112 26 91 48 82Z" fill="#eee5da"/>
+    <path d="M69 230 L58 350" stroke="#39414a" stroke-width="22" stroke-linecap="round"/>
+    <path d="M96 230 L116 350" stroke="#39414a" stroke-width="22" stroke-linecap="round"/>
+    <path d="M36 112 L3 191" stroke="#d6a47f" stroke-width="18" stroke-linecap="round"/>
+    <path d="M109 113 L150 188" stroke="#d6a47f" stroke-width="18" stroke-linecap="round"/>
+    <path d="M50 96 C65 77 91 77 104 97" fill="none" stroke="url(#burgundy)" stroke-width="13" stroke-linecap="round"/>
+  </g>
+
+  <rect x="32" y="32" width="896" height="696" rx="36" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.32"/>
+</svg>
