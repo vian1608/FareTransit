@@ -99,6 +99,7 @@ export default function CustomerBackButton() {
     || pathname === '/flights'
     || pathname === '/hotels'
     || pathname === '/car-rentals'
+    || pathname === '/car-rental/call-now'
     || pathname.startsWith('/senior-travel');
 
   if (isPrimaryLandingPage || pathname.startsWith('/admin')) return null;
