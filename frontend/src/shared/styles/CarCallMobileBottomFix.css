@@ -1,11 +1,24 @@
-/* Mobile bottom-of-page correction for the paid car-rental call landing page.
-   Keep the fixed conversion CTA anchored to the viewport while reserving its
-   space inside the footer instead of adding blank padding after the document. */
+/* Mobile corrections for the paid car-rental call landing page.
+   Keep the conversion CTA anchored to the viewport, avoid footer collisions,
+   suppress paid-landing back navigation, and use the approved handset direction. */
+
+/* Match the approved mirrored handset orientation on this paid landing only. */
+.car-call-page .fa-phone {
+  display: inline-block;
+  transform: scaleX(-1);
+  transform-origin: center;
+}
 
 @media (max-width: 620px) {
   body.car-call-landing-active {
     padding-bottom: 0 !important;
     overflow-x: hidden;
+  }
+
+  /* PageTransition adds a contextual back control on car sub-pages. It is not
+     useful on the paid-search landing and competes with the dedicated header. */
+  body.car-call-landing-active .page-transition-back {
+    display: none !important;
   }
 
   .car-call-page {
@@ -16,6 +29,7 @@
     position: relative;
     z-index: 1;
     background: #fff;
+    border-top: 1px solid #f0e4e8;
   }
 
   .car-call-mini-footer__inner {
@@ -23,15 +37,15 @@
     display: grid;
     grid-template-columns: 1fr;
     justify-items: center;
-    gap: 12px;
-    padding: 20px 0 calc(84px + env(safe-area-inset-bottom));
+    gap: 10px;
+    padding: 22px 0 calc(96px + env(safe-area-inset-bottom));
     text-align: center;
   }
 
+  /* The fixed CTA already carries the FareTransit/phone treatment on mobile.
+     Hiding the duplicated footer mark prevents the two blocks from merging. */
   .car-call-mini-footer__brand {
-    display: flex;
-    justify-content: center;
-    margin: 0;
+    display: none !important;
   }
 
   .car-call-mini-footer nav {
@@ -54,6 +68,8 @@
     grid-template-columns: 44px minmax(0, 1fr) auto;
     gap: 10px;
     box-sizing: border-box;
+    border-top: 1px solid rgba(255, 255, 255, .14);
+    box-shadow: 0 -10px 26px rgba(63, 13, 33, .18);
     transform: translateZ(0);
   }
 
@@ -86,7 +102,7 @@
 
 @media (max-width: 390px) {
   .car-call-mini-footer__inner {
-    padding-bottom: calc(80px + env(safe-area-inset-bottom));
+    padding-bottom: calc(88px + env(safe-area-inset-bottom));
   }
 
   .car-call-sticky {
