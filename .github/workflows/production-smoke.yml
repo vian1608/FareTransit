@@ -91,7 +91,7 @@ jobs:
             exit 1
           }
 
-      - name: Verify live Flight and Car public reservation parity
+      - name: Verify retained Car public reservation parity
         shell: bash
         run: |
           set -euo pipefail
@@ -112,7 +112,9 @@ jobs:
               exit 1
             }
           }
-          check_service "DEMO-FT-1003" "FLIGHT"
+
+          # Keep smoke checks tied only to intentionally retained non-sensitive fixtures.
+          # The deleted DEMO-FT-1003 flight fixture must not be re-created just for CI.
           check_service "CSJW3D" "CAR"
 
       - name: Verify canonical search remains healthy when a service has no live fixture
