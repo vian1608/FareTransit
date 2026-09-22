@@ -125,8 +125,69 @@
       window.fareTransitApplyGoogleForwardingNumber();
     };
 
+    window.fareTransitGetCallAttribution = function () {
+      var params = new URLSearchParams(window.location.search || '');
+      var keys = ['gclid', 'gbraid', 'wbraid', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'brand'];
+      var attribution = {};
+
+      keys.forEach(function (key) {
+        var value = params.get(key);
+        if (value) attribution[key] = value;
+      });
+
+      try {
+        if (Object.keys(attribution).length) {
+          window.sessionStorage.setItem('faretransit_call_attribution', JSON.stringify(attribution));
+        } else {
+          var stored = window.sessionStorage.getItem('faretransit_call_attribution');
+          if (stored) attribution = JSON.parse(stored) || {};
+        }
+      } catch (e) {
+        // Tracking must never interfere with the call CTA.
+      }
+
+      return attribution;
+    };
+
+    window.fareTransitTrackPhoneClick = function (link) {
+      if (!link || typeof window.gtag !== 'function') return;
+
+      var href = link.getAttribute('href') || '';
+      var digits = href.replace(/\D/g, '');
+      var attribution = window.fareTransitGetCallAttribution();
+      var label = (link.getAttribute('aria-label') || link.textContent || 'Phone CTA').replace(/\s+/g, ' ').trim().slice(0, 100);
+      var forwardingActive = !!window.__fareTransitGoogleForwardingMobile &&
+        digits !== window.__fareTransitOriginalPhoneDigits && digits !== '8887808855';
+
+      window.gtag('event', 'phone_click', {
+        send_to: 'G-TBWQGCGY6B',
+        event_category: 'phone',
+        event_label: label,
+        page_location: window.location.href,
+        page_path: window.location.pathname,
+        phone_destination_type: forwardingActive ? 'google_forwarding_number' : 'business_number',
+        brand: attribution.brand || '',
+        utm_source: attribution.utm_source || '',
+        utm_medium: attribution.utm_medium || '',
+        utm_campaign: attribution.utm_campaign || '',
+        utm_content: attribution.utm_content || '',
+        utm_term: attribution.utm_term || '',
+        gclid_present: attribution.gclid ? 'yes' : 'no',
+        gbraid_present: attribution.gbraid ? 'yes' : 'no',
+        wbraid_present: attribution.wbraid ? 'yes' : 'no'
+      });
+    };
+
     document.addEventListener('DOMContentLoaded', function () {
+      window.fareTransitGetCallAttribution();
       window.fareTransitApplyGoogleForwardingNumber();
+
+      document.addEventListener('click', function (event) {
+        var target = event.target;
+        var link = target && target.closest ? target.closest('a[href^="tel:"]') : null;
+        if (link) window.fareTransitTrackPhoneClick(link);
+      }, true);
+
       var observer = new MutationObserver(function () {
         window.fareTransitApplyGoogleForwardingNumber();
       });
