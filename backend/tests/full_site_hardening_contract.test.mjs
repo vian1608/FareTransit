@@ -58,8 +58,6 @@ for (const [name, source] of Object.entries({ contact, terms, privacy, refund })
   assert.match(source, /InfoPageShell/, `${name} is not using the shared modern information-page shell`);
 }
 
-// Public information pages should use a consistent modern shell with breadcrumbs,
-// structured content, contextual support, and no disconnected floating back control.
 assert.match(infoLayout, /info-breadcrumbs/);
 assert.match(infoLayout, /info-toc/);
 assert.match(infoLayout, /InfoSupportCTA/);
@@ -110,9 +108,12 @@ assert.match(carCheckout, /termsAccepted/);
 assert.match(carRequestConfirmation, /Pending confirmation/);
 assert.match(carRequestConfirmation, /not an Enterprise or supplier confirmation/i);
 
-// The public car-rental landing page remains a call-first PPC surface; live
-// inventory is exposed through the dedicated /car-rentals search flow rather than
-// weakening the brand-specific call landing contract.
+// The indexed /car-rentals page is the OTA-style online entry point, while the
+// dedicated PPC/call landing route remains available separately for call campaigns.
+assert.match(carHome, /CarSearchForm/);
+assert.match(carHome, /Enterprise inventory/);
+assert.match(carHome, /reservation request/i);
+assert.match(carHome, /No card at request/);
 assert.match(carHome, /SUPPORT_PHONE_HREF/);
 assert.match(carHome, /SUPPORT_PHONE_DISPLAY/);
 assert.match(carHome, /RENTAL_BRANDS/);
@@ -121,9 +122,7 @@ for (const brand of ['Hertz', 'Avis', 'Budget', 'Enterprise', 'Sixt']) {
 }
 assert.match(carHome, /to="\/contact"/);
 assert.match(carHome, /data-support-call-primary/);
-assert.doesNotMatch(carHome, /className="car-mobile-cta"/);
 assert.match(carHome, /not affiliated with or endorsed by/);
-assert.doesNotMatch(carHome, /CarSearchForm/);
 assert.doesNotMatch(carHome, /ProductSearchCard/);
 
 assert.match(returnFlights, /setError\(normalizeError/);
@@ -138,8 +137,6 @@ assert.doesNotMatch(myBookings, /Retry Payment \(Card Failed\)/);
 assert.doesNotMatch(myBookings, /to="\/booking"/);
 assert.match(myBookings, /normalizeError/);
 
-// Legacy confirmation routes must never declare a booking successful from
-// sessionStorage alone; they must route through the backend-backed confirmation page.
 for (const [name, source] of Object.entries({ oneWayConfirmation, roundTripConfirmation })) {
   assert.match(source, /Navigate to={`\/booking-confirmed\//, `${name} does not forward to canonical confirmation`);
   assert.match(source, /Reservation Reference Required/, `${name} lacks safe missing-reference state`);
