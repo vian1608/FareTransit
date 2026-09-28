@@ -48,12 +48,16 @@ export const carController = {
         phone: String(customerInput.phone || '').trim()
       };
 
-      // Notification delivery must never turn a successfully stored request into a failed checkout.
-      void sendCarRequestNotifications({ booking, customer }).catch((error) => {
-        logger.warn(`[CarBooking] notification notice: ${error.message}`);
-      });
+      // A retried POST returns the same reservation and public token, but does not
+      // resend customer/admin notifications. Notification failures also never undo
+      // a successfully persisted request.
+      if (booking.created) {
+        void sendCarRequestNotifications({ booking, customer }).catch((error) => {
+          logger.warn(`[CarBooking] notification notice: ${error.message}`);
+        });
+      }
 
-      return res.status(201).json({
+      return res.status(booking.created ? 201 : 200).json({
         success: true,
         data: booking,
         message: 'Reservation request received. FareTransit will confirm supplier availability and final details.'
@@ -68,8 +72,8 @@ export const carController = {
   },
 
   /**
-   * Customer-safe request lookup using the one-time public read token returned
-   * when the request is created.
+   * Customer-safe request lookup using the public read token returned when the
+   * request is created. No customer PII is exposed by this endpoint.
    * GET /api/cars/bookings/:reference?token=...
    */
   getBooking: async (req, res) => {
