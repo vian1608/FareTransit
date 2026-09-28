@@ -1,0 +1,265 @@
+.car-ota-hero {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 84% 18%, rgba(56, 189, 248, 0.22), transparent 28%),
+    linear-gradient(135deg, #071d32 0%, #0b2945 46%, #123d62 100%);
+  color: #fff;
+  padding: 3.25rem 0 2.6rem;
+}
+
+.car-ota-hero__backdrop {
+  position: absolute;
+  inset: 0;
+  opacity: 0.16;
+  background-image:
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size: 42px 42px;
+  pointer-events: none;
+}
+
+.car-ota-hero__content {
+  position: relative;
+  z-index: 1;
+}
+
+.car-ota-hero__copy {
+  max-width: 880px;
+  margin: 1.2rem 0 1.45rem;
+}
+
+.car-ota-hero .car-ppc-eyebrow {
+  color: #8ed6ff;
+  margin-bottom: .65rem;
+}
+
+.car-ota-hero h1 {
+  color: #fff;
+  font-size: clamp(2.15rem, 5vw, 3.85rem);
+  line-height: 1.03;
+  letter-spacing: -.04em;
+  margin: 0;
+  max-width: 860px;
+}
+
+.car-ota-hero__copy > p {
+  color: rgba(255,255,255,.82);
+  line-height: 1.65;
+  max-width: 780px;
+  font-size: 1.02rem;
+  margin: 1rem 0 0;
+}
+
+.car-ota-search-panel {
+  background: rgba(255,255,255,.985);
+  color: #123043;
+  border: 1px solid rgba(255,255,255,.6);
+  border-radius: 18px;
+  box-shadow: 0 24px 65px rgba(0,0,0,.24);
+  padding: 1.15rem 1.25rem 1rem;
+}
+
+.car-ota-search-panel__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: .85rem;
+  padding: 0 .1rem;
+}
+
+.car-ota-search-panel__header span {
+  color: #64748b;
+  font-size: .72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.car-ota-search-panel__header h2 {
+  margin: .12rem 0 0;
+  color: #0f2b45;
+  font-size: 1.18rem;
+}
+
+.car-ota-live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: .42rem;
+  padding: .42rem .68rem;
+  border: 1px solid #bbf7d0;
+  border-radius: 999px;
+  background: #f0fdf4;
+  color: #166534;
+  white-space: nowrap;
+  font-size: .75rem;
+  font-weight: 750;
+}
+
+.car-ota-live-badge i {
+  font-size: .48rem;
+  color: #22c55e;
+}
+
+.car-ota-search-panel .car-search-form {
+  margin: 0;
+  max-width: none;
+}
+
+.car-ota-search-disclosure {
+  display: flex;
+  align-items: flex-start;
+  gap: .55rem;
+  margin-top: .75rem;
+  padding-top: .75rem;
+  border-top: 1px solid #e7edf4;
+  color: #667789;
+  font-size: .72rem;
+  line-height: 1.48;
+}
+
+.car-ota-search-disclosure i {
+  color: #1e88e5;
+  margin-top: .12rem;
+}
+
+.car-ota-hero__support-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .65rem 1rem;
+  margin-top: 1rem;
+  color: rgba(255,255,255,.72);
+  font-size: .8rem;
+}
+
+.car-ota-support-link,
+.car-ota-contact-link {
+  display: inline-flex;
+  align-items: center;
+  gap: .38rem;
+  text-decoration: none;
+  font-weight: 800;
+}
+
+.car-ota-support-link {
+  color: #fff;
+}
+
+.car-ota-contact-link {
+  color: #8ed6ff;
+}
+
+.car-ota-support-link:hover,
+.car-ota-contact-link:hover {
+  color: #fff;
+  text-decoration: underline;
+}
+
+.car-ota-trust-strip {
+  background: #fff;
+  border-bottom: 1px solid rgba(13,43,69,.08);
+}
+
+.car-ota-trust-strip__grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.car-ota-trust-strip__grid > span {
+  min-height: 92px;
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  align-content: center;
+  column-gap: .6rem;
+  padding: .9rem 1rem;
+  border-right: 1px solid rgba(13,43,69,.08);
+}
+
+.car-ota-trust-strip__grid > span:last-child {
+  border-right: 0;
+}
+
+.car-ota-trust-strip__grid i {
+  grid-row: 1 / span 2;
+  align-self: center;
+  color: #1e88e5;
+  font-size: 1.15rem;
+}
+
+.car-ota-trust-strip__grid strong {
+  color: #123043;
+  font-size: .84rem;
+}
+
+.car-ota-trust-strip__grid small {
+  color: #718096;
+  font-size: .72rem;
+  line-height: 1.4;
+}
+
+.car-brand-card--logo {
+  position: relative;
+}
+
+.car-brand-live-label {
+  position: absolute;
+  left: 50%;
+  bottom: .45rem;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  padding: .2rem .42rem;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #166534 !important;
+  font-size: .62rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0 !important;
+}
+
+@media (max-width: 920px) {
+  .car-ota-trust-strip__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .car-ota-trust-strip__grid > span:nth-child(2) {
+    border-right: 0;
+  }
+  .car-ota-trust-strip__grid > span:nth-child(-n+2) {
+    border-bottom: 1px solid rgba(13,43,69,.08);
+  }
+}
+
+@media (max-width: 640px) {
+  .car-ota-hero {
+    padding: 1.65rem 0 1.6rem;
+  }
+  .car-ota-search-panel {
+    margin-left: -.25rem;
+    margin-right: -.25rem;
+    padding: .95rem .85rem .85rem;
+    border-radius: 14px;
+  }
+  .car-ota-search-panel__header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: .55rem;
+  }
+  .car-ota-live-badge {
+    font-size: .68rem;
+  }
+  .car-ota-hero__support-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .car-ota-trust-strip__grid {
+    grid-template-columns: 1fr;
+  }
+  .car-ota-trust-strip__grid > span {
+    border-right: 0;
+    border-bottom: 1px solid rgba(13,43,69,.08);
+  }
+  .car-ota-trust-strip__grid > span:last-child {
+    border-bottom: 0;
+  }
+}

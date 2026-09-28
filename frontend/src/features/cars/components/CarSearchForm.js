@@ -47,84 +47,71 @@ function getTomorrowDateString(daysOffset = 1) {
 
 function CarSearchForm({ initialValues = {}, compact = false }) {
   const navigate = useNavigate();
-
-  const [sameDropoff, setSameDropoff] = useState(initialValues.sameDropoff !== false);
-  const [pickupText, setPickupText] = useState(initialValues.pickupText || 'JFK');
-  const [pickupLocationObj, setPickupLocationObj] = useState(
-    initialValues.pickupLocationObj || { type: 'airport', airport: 'JFK', label: 'John F. Kennedy International Airport (JFK)' }
-  );
-
-  const [dropoffText, setDropoffText] = useState(initialValues.dropoffText || 'JFK');
-  const [dropoffLocationObj, setDropoffLocationObj] = useState(
-    initialValues.dropoffLocationObj || { type: 'airport', airport: 'JFK', label: 'John F. Kennedy International Airport (JFK)' }
-  );
-
+  const [pickupText, setPickupText] = useState(initialValues.pickupText || initialValues.pickupLocationObj?.label || '');
+  const [pickupLocationObj, setPickupLocationObj] = useState(initialValues.pickupLocationObj || null);
   const [pickupDate, setPickupDate] = useState(initialValues.pickupDate || getTomorrowDateString(7));
   const [pickupTime, setPickupTime] = useState(initialValues.pickupTime || '10:00:00');
   const [dropoffDate, setDropoffDate] = useState(initialValues.dropoffDate || getTomorrowDateString(12));
   const [dropoffTime, setDropoffTime] = useState(initialValues.dropoffTime || '10:00:00');
-
   const [driverAge, setDriverAge] = useState(initialValues.driverAge || 30);
   const [driverCountry, setDriverCountry] = useState(initialValues.driverCountry || 'us');
   const [currency, setCurrency] = useState(initialValues.currency || 'USD');
-
   const [errorMsg, setErrorMsg] = useState('');
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const handleSubmit = (event) => {
+    event.preventDefault();
     setErrorMsg('');
 
-    if (!pickupText) {
-      setErrorMsg('Please specify a pickup airport or city location.');
+    if (!pickupLocationObj?.id) {
+      setErrorMsg('Choose a pickup location from the Enterprise location suggestions.');
       return;
     }
 
-    if (!sameDropoff && !dropoffText) {
-      setErrorMsg('Please specify a drop-off location.');
-      return;
-    }
-
-    const ageNum = parseInt(driverAge, 10);
-    if (isNaN(ageNum) || ageNum < 18 || ageNum > 99) {
+    const ageNum = Number.parseInt(driverAge, 10);
+    if (!Number.isFinite(ageNum) || ageNum < 18 || ageNum > 99) {
       setErrorMsg('Driver age must be between 18 and 99 years.');
       return;
     }
 
     const pickupDt = new Date(`${pickupDate}T${pickupTime}`);
     const dropoffDt = new Date(`${dropoffDate}T${dropoffTime}`);
-
-    if (isNaN(pickupDt.getTime()) || isNaN(dropoffDt.getTime())) {
-      setErrorMsg('Please select valid pickup and drop-off dates.');
+    if (!Number.isFinite(pickupDt.getTime()) || !Number.isFinite(dropoffDt.getTime())) {
+      setErrorMsg('Please select valid pickup and return dates.');
       return;
     }
-
     if (dropoffDt <= pickupDt) {
-      setErrorMsg('Drop-off date/time must be after pickup date/time.');
+      setErrorMsg('Return date/time must be after pickup date/time.');
       return;
     }
 
     const searchParams = {
-      pickupLocation: pickupLocationObj || { type: 'airport', airport: pickupText.substring(0, 3).toUpperCase() },
-      dropoffLocation: sameDropoff 
-        ? (pickupLocationObj || { type: 'airport', airport: pickupText.substring(0, 3).toUpperCase() })
-        : (dropoffLocationObj || { type: 'airport', airport: dropoffText.substring(0, 3).toUpperCase() }),
-      pickupText,
-      dropoffText: sameDropoff ? pickupText : dropoffText,
-      sameDropoff,
+      pickupLocation: pickupLocationObj,
+      dropoffLocation: pickupLocationObj,
+      pickupLocationObj,
+      pickupText: pickupLocationObj.label || pickupText,
+      dropoffText: pickupLocationObj.label || pickupText,
+      sameDropoff: true,
       pickupDate,
       pickupTime,
       dropoffDate,
       dropoffTime,
-      pickupDatetime: `${pickupDate}T${pickupTime}`,
-      dropoffDatetime: `${dropoffDate}T${dropoffTime}`,
       driverAge: ageNum,
       driverCountry,
       currency
     };
 
+    try {
+      sessionStorage.setItem('carSearchParams', JSON.stringify(searchParams));
+    } catch {
+      // URL remains authoritative if session storage is unavailable.
+    }
+
     const query = new URLSearchParams({
-      pickup: searchParams.pickupLocation.airport || searchParams.pickupLocation.city || pickupText,
-      dropoff: searchParams.dropoffLocation.airport || searchParams.dropoffLocation.city || (sameDropoff ? pickupText : dropoffText),
+      pickupId: String(pickupLocationObj.id),
+      pickup: pickupLocationObj.code || pickupLocationObj.airportCode || pickupLocationObj.name || pickupLocationObj.label,
+      pickupLabel: pickupLocationObj.label || pickupText,
+      pickupAddress: pickupLocationObj.address || '',
+      pickupType: pickupLocationObj.type || 'branch',
       pickupDate,
       pickupTime,
       dropoffDate,
@@ -167,14 +154,9 @@ function CarSearchForm({ initialValues = {}, compact = false }) {
         <div className="car-meta-item">
           <label className="car-meta-label">
             <i className="fas fa-globe" aria-hidden="true" />
-            <span>Country</span>
+            <span>Driver Country</span>
           </label>
-          <CustomSelect
-            id="driver-country-select"
-            value={driverCountry}
-            onChange={(val) => setDriverCountry(val)}
-            options={COUNTRY_OPTIONS}
-          />
+          <CustomSelect id="driver-country-select" value={driverCountry} onChange={setDriverCountry} options={COUNTRY_OPTIONS} />
         </div>
 
         <div className="car-meta-item">
@@ -182,56 +164,31 @@ function CarSearchForm({ initialValues = {}, compact = false }) {
             <i className="fas fa-dollar-sign" aria-hidden="true" />
             <span>Currency</span>
           </label>
-          <CustomSelect
-            id="car-currency-select"
-            value={currency}
-            onChange={(val) => setCurrency(val)}
-            options={CURRENCY_OPTIONS}
-          />
+          <CustomSelect id="car-currency-select" value={currency} onChange={setCurrency} options={CURRENCY_OPTIONS} />
         </div>
 
-        <div className="car-same-dropoff-toggle">
-          <label className="car-checkbox-label">
-            <input
-              type="checkbox"
-              checked={sameDropoff}
-              onChange={(e) => setSameDropoff(e.target.checked)}
-            />
-            <span>Return car to same location</span>
-          </label>
+        <div className="car-same-dropoff-toggle" aria-label="Return location">
+          <i className="fas fa-check-circle" aria-hidden="true" />
+          <span>Return to the same location</span>
         </div>
       </div>
 
       <div className="car-search-row car-locations-row">
         <div className="car-search-field">
           <LocationAutocomplete
-            label="Pickup Location"
+            label="Pickup & Return Location"
             id="pickup-location-input"
             value={pickupText}
             onChange={(text, obj) => {
               setPickupText(text);
               setPickupLocationObj(obj);
             }}
-            placeholder="Airport code (e.g. JFK) or City..."
+            placeholder="Airport code, city, or address..."
+            countryCode="US"
             required
           />
+          <small className="car-search-field-help">Current live Enterprise inventory supports same-location returns. One-way rentals can still be handled by phone.</small>
         </div>
-
-        {!sameDropoff && (
-          <div className="car-search-field">
-            <LocationAutocomplete
-              label="Drop-off Location"
-              id="dropoff-location-input"
-              value={dropoffText}
-              onChange={(text, obj) => {
-                setDropoffText(text);
-                setDropoffLocationObj(obj);
-              }}
-              placeholder="Airport code (e.g. MIA) or City..."
-              required
-            />
-          </div>
-        )}
       </div>
 
       <div className="car-search-row car-dates-row">
@@ -240,40 +197,30 @@ function CarSearchForm({ initialValues = {}, compact = false }) {
             id="car-pickup-date"
             label="Pickup Date"
             value={pickupDate}
-            onChange={(val) => setPickupDate(val)}
+            onChange={setPickupDate}
             minDate={new Date().toISOString().split('T')[0]}
             theme="cars"
             required
           />
           <div className="car-time-picker">
             <label className="car-meta-label">Time</label>
-            <CustomSelect
-              id="car-pickup-time"
-              value={pickupTime}
-              onChange={(val) => setPickupTime(val)}
-              options={TIME_OPTIONS}
-            />
+            <CustomSelect id="car-pickup-time" value={pickupTime} onChange={setPickupTime} options={TIME_OPTIONS} />
           </div>
         </div>
 
         <div className="car-search-field car-datetime-group">
           <TravelDatePicker
             id="car-dropoff-date"
-            label="Drop-off Date"
+            label="Return Date"
             value={dropoffDate}
-            onChange={(val) => setDropoffDate(val)}
+            onChange={setDropoffDate}
             minDate={pickupDate || new Date().toISOString().split('T')[0]}
             theme="cars"
             required
           />
           <div className="car-time-picker">
             <label className="car-meta-label">Time</label>
-            <CustomSelect
-              id="car-dropoff-time"
-              value={dropoffTime}
-              onChange={(val) => setDropoffTime(val)}
-              options={TIME_OPTIONS}
-            />
+            <CustomSelect id="car-dropoff-time" value={dropoffTime} onChange={setDropoffTime} options={TIME_OPTIONS} />
           </div>
         </div>
       </div>
@@ -281,7 +228,7 @@ function CarSearchForm({ initialValues = {}, compact = false }) {
       <div className="car-search-submit-wrapper">
         <button type="submit" className="car-search-submit-btn">
           <i className="fas fa-car" aria-hidden="true" />
-          <span>Search Rental Cars</span>
+          <span>Search Live Cars</span>
         </button>
       </div>
     </form>

@@ -1,142 +1,115 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { carAPI } from '../../../shared/api/api';
+import { carRentalApi } from '../carRentalApi';
 import './LocationAutocomplete.css';
 
 /**
- * Car Rental Location Autocomplete
- * Supports Airports (3-letter IATA), Cities (Booking.com city ID), and Coordinates.
+ * Enterprise rental-location autocomplete powered server-side through Parse.
+ * A location must be selected from the suggestions because search_vehicles
+ * requires Enterprise's internal location ID.
  */
 function LocationAutocomplete({
   label,
   id,
   value,
   onChange,
-  placeholder = 'City, airport, or region...',
+  placeholder = 'City, airport code, or address...',
   required = false,
-  disabled = false
+  disabled = false,
+  countryCode = 'US'
 }) {
   const [query, setQuery] = useState(typeof value === 'string' ? value : (value?.label || ''));
-  // Search term is intentionally separate from the displayed value. This keeps
-  // the default JFK value, parent-driven values, and selected suggestions from
-  // automatically triggering autocomplete and reopening the dropdown.
   const [searchTerm, setSearchTerm] = useState('');
   const [options, setOptions] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const containerRef = useRef(null);
+  const requestSequence = useRef(0);
 
   useEffect(() => {
-    if (typeof value === 'string') {
-      setQuery(value);
-    } else if (value && value.label) {
-      setQuery(value.label);
-    }
+    if (typeof value === 'string') setQuery(value);
+    else if (value?.label) setQuery(value.label);
   }, [value]);
 
   useEffect(() => {
     function handleClickOutside(event) {
-      if (containerRef.current && !containerRef.current.contains(event.target)) {
-        setIsOpen(false);
-      }
+      if (containerRef.current && !containerRef.current.contains(event.target)) setIsOpen(false);
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Debounced API search (300ms). Only explicit user typing updates searchTerm,
-  // so the prefilled JFK airport no longer opens suggestions on page load.
+  // Parse charges per successful call. Require three characters and debounce
+  // deliberate typing so we do not burn credits on every keystroke.
   useEffect(() => {
     const trimmed = searchTerm.trim();
-    if (!trimmed || trimmed.length < 2) {
+    if (trimmed.length < 3) {
       setOptions([]);
       setLoading(false);
-      return;
+      setIsOpen(false);
+      return undefined;
     }
 
+    const sequence = ++requestSequence.current;
     let live = true;
     const timer = setTimeout(async () => {
       setLoading(true);
       try {
-        const res = await carAPI.autocompleteLocations(trimmed);
-        if (!live) return;
-        if (res && res.success && Array.isArray(res.data)) {
-          setOptions(res.data);
-          setIsOpen(res.data.length > 0);
-        } else {
+        const response = await carRentalApi.autocompleteLocations(trimmed, countryCode);
+        if (!live || sequence !== requestSequence.current) return;
+        const items = response?.success && Array.isArray(response.data) ? response.data : [];
+        setOptions(items);
+        setIsOpen(items.length > 0);
+      } catch (error) {
+        if (live && sequence === requestSequence.current) {
           setOptions([]);
           setIsOpen(false);
-        }
-      } catch (err) {
-        if (live) {
-          setOptions([]);
-          setIsOpen(false);
-          console.warn('Location autocomplete notice:', err.message);
         }
       } finally {
-        if (live) setLoading(false);
+        if (live && sequence === requestSequence.current) setLoading(false);
       }
-    }, 300);
+    }, 450);
 
     return () => {
       live = false;
       clearTimeout(timer);
     };
-  }, [searchTerm]);
+  }, [searchTerm, countryCode]);
 
   const handleSelect = (item) => {
-    setQuery(item.label);
+    const labelValue = item.label || item.name || '';
+    setQuery(labelValue);
     setSearchTerm('');
     setOptions([]);
     setIsOpen(false);
 
-    let structuredObj = null;
-    if (item.type === 'airport' || item.code) {
-      structuredObj = {
-        type: 'airport',
-        airport: (item.code || item.airport || '').toUpperCase(),
-        label: item.label
-      };
-    } else if (item.type === 'city' || item.city_id) {
-      structuredObj = {
-        type: 'city',
-        city: parseInt(item.city_id || item.city, 10),
-        label: item.label
-      };
-    } else {
-      structuredObj = {
-        type: 'airport',
-        airport: item.label.substring(0, 3).toUpperCase(),
-        label: item.label
-      };
-    }
-
     if (onChange) {
-      onChange(item.label, structuredObj);
+      onChange(labelValue, {
+        id: String(item.id),
+        provider: item.provider || 'parse-enterprise',
+        supplier: item.supplier || 'Enterprise',
+        type: item.type || 'branch',
+        code: item.code || null,
+        airport: item.airport || item.code || null,
+        airportCode: item.airportCode || item.code || null,
+        label: labelValue,
+        name: item.name || labelValue,
+        address: item.address || '',
+        city: item.city || '',
+        state: item.state || '',
+        country: item.country || '',
+        phone: item.phone || null,
+        afterHoursReturn: Boolean(item.afterHoursReturn)
+      });
     }
   };
 
-  const handleInputChange = (e) => {
-    const val = e.target.value;
-    setQuery(val);
-    setSearchTerm(val);
+  const handleInputChange = (event) => {
+    const valueText = event.target.value;
+    setQuery(valueText);
+    setSearchTerm(valueText);
     setIsOpen(false);
-
-    // If typed value is a 3-letter IATA code, format structured object immediately
-    const cleanIata = val.trim().toUpperCase();
-    if (/^[A-Z]{3}$/.test(cleanIata)) {
-      if (onChange) {
-        onChange(val, { type: 'airport', airport: cleanIata, label: `${cleanIata} Airport` });
-      }
-    } else if (onChange) {
-      onChange(val, { type: 'airport', airport: cleanIata.substring(0, 3), label: val });
-    }
-  };
-
-  const handleFocus = () => {
-    // Reopen only suggestions that came from the user's current typed search.
-    if (searchTerm.trim().length >= 2 && options.length > 0) {
-      setIsOpen(true);
-    }
+    // Typed text alone is not a valid Enterprise branch selection.
+    if (onChange) onChange(valueText, null);
   };
 
   return (
@@ -156,28 +129,37 @@ function LocationAutocomplete({
           className="car-location-input"
           value={query}
           onChange={handleInputChange}
-          onFocus={handleFocus}
+          onFocus={() => options.length > 0 && setIsOpen(true)}
           placeholder={placeholder}
           required={required}
           disabled={disabled}
           autoComplete="off"
+          aria-autocomplete="list"
+          aria-expanded={isOpen}
         />
-        {loading && <i className="fas fa-spinner fa-spin car-location-spinner" />}
+        {loading && <i className="fas fa-spinner fa-spin car-location-spinner" aria-label="Searching locations" />}
       </div>
 
+      {searchTerm.trim().length > 0 && searchTerm.trim().length < 3 && (
+        <div className="car-location-hint">Type at least 3 characters to search Enterprise locations.</div>
+      )}
+
       {isOpen && options.length > 0 && (
-        <ul className="car-location-dropdown">
-          {options.map((item, idx) => (
+        <ul className="car-location-dropdown" role="listbox">
+          {options.map((item) => (
             <li
-              key={idx}
+              key={item.id}
               className="car-location-item"
               onClick={() => handleSelect(item)}
+              role="option"
+              aria-selected="false"
             >
-              <i className={item.type === 'city' ? 'fas fa-city' : 'fas fa-plane-arrival'} />
+              <i className={item.type === 'airport' ? 'fas fa-plane-arrival' : 'fas fa-map-marker-alt'} aria-hidden="true" />
               <div className="car-location-item-text">
-                <span className="car-location-title">{item.label}</span>
+                <span className="car-location-title">{item.label || item.name}</span>
                 <span className="car-location-subtitle">
-                  {item.type === 'airport' ? `Airport (${item.code})` : 'City Location'}
+                  {item.type === 'airport' && item.code ? `Airport (${item.code})` : 'Enterprise location'}
+                  {item.address ? ` • ${item.address}` : ''}
                 </span>
               </div>
             </li>

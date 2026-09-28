@@ -1,200 +1,162 @@
 import carService from './car.service.mjs';
 import bookingDemandApiClient from '../../services/bookingDemandApiClient.mjs';
 import logger from '../../config/logger.mjs';
+import { createPublicCarBooking, getPublicCarBooking } from './car-booking.service.mjs';
+import { sendCarRequestNotifications } from './car-request-email.service.mjs';
+
+function errorResponse(error, fallbackCode, fallbackMessage) {
+  return {
+    code: error.code || fallbackCode,
+    message: error.message || fallbackMessage,
+    requestId: error.requestId || null,
+    details: error.details || undefined
+  };
+}
 
 export const carController = {
   /**
-   * Search available rental cars
+   * Search live Enterprise inventory through the server-side Parse integration.
    * POST /api/cars/search
    */
-  search: async (req, res, next) => {
+  search: async (req, res) => {
     try {
-      const searchData = req.body || {};
-      const result = await carService.search(searchData);
-
-      return res.json({
-        success: true,
-        data: result
-      });
+      const result = await carService.search(req.body || {});
+      return res.json({ success: true, data: result });
     } catch (error) {
       logger.error(`Error in carController.search: ${error.message}`);
-      const statusCode = error.statusCode || 400;
-      return res.status(statusCode).json({
+      return res.status(error.statusCode || 400).json({
         success: false,
-        error: {
-          code: error.code || 'CAR_SEARCH_ERROR',
-          message: error.message,
-          requestId: error.requestId || null
-        }
+        error: errorResponse(error, 'CAR_SEARCH_ERROR', 'Unable to search rental cars.')
       });
     }
   },
 
   /**
-   * Fetch car details catalog
-   * POST /api/cars/details
+   * Create a FareTransit-owned reservation request. This does not submit a
+   * reservation to Enterprise; the request enters the internal manual-fulfillment workflow.
+   * POST /api/cars/bookings
    */
-  getDetails: async (req, res, next) => {
+  createBooking: async (req, res) => {
     try {
-      const result = await bookingDemandApiClient.getCarDetails(req.body || {});
-      return res.json({
-        success: true,
-        data: result.data
-      });
-    } catch (error) {
-      return res.status(error.statusCode || 500).json({
-        success: false,
-        error: { code: 'CAR_DETAILS_ERROR', message: error.message, requestId: error.requestId || null }
-      });
-    }
-  },
+      const booking = await createPublicCarBooking(req.body || {});
+      const customerInput = req.body?.customer || {};
+      const customer = {
+        firstName: String(customerInput.firstName || '').trim(),
+        lastName: String(customerInput.lastName || '').trim(),
+        fullName: `${String(customerInput.firstName || '').trim()} ${String(customerInput.lastName || '').trim()}`.trim(),
+        email: String(customerInput.email || '').trim().toLowerCase(),
+        phone: String(customerInput.phone || '').trim()
+      };
 
-  /**
-   * Fetch depots catalog
-   * POST /api/cars/depots
-   */
-  getDepots: async (req, res, next) => {
-    try {
-      const result = await bookingDemandApiClient.getDepots(req.body || {});
-      return res.json({
-        success: true,
-        data: result.data
-      });
-    } catch (error) {
-      return res.status(error.statusCode || 500).json({
-        success: false,
-        error: { code: 'CAR_DEPOTS_ERROR', message: error.message, requestId: error.requestId || null }
-      });
-    }
-  },
-
-  /**
-   * Fetch suppliers catalog
-   * POST /api/cars/suppliers
-   */
-  getSuppliers: async (req, res, next) => {
-    try {
-      const result = await bookingDemandApiClient.getSuppliers(req.body || {});
-      return res.json({
-        success: true,
-        data: result.data
-      });
-    } catch (error) {
-      return res.status(error.statusCode || 500).json({
-        success: false,
-        error: { code: 'CAR_SUPPLIERS_ERROR', message: error.message, requestId: error.requestId || null }
-      });
-    }
-  },
-
-  /**
-   * Fetch depot review scores
-   * POST /api/cars/depot-scores
-   */
-  getDepotScores: async (req, res, next) => {
-    try {
-      const result = await bookingDemandApiClient.getDepotScores(req.body || {});
-      return res.json({
-        success: true,
-        data: result.data
-      });
-    } catch (error) {
-      return res.status(error.statusCode || 500).json({
-        success: false,
-        error: { code: 'CAR_DEPOT_SCORES_ERROR', message: error.message, requestId: error.requestId || null }
-      });
-    }
-  },
-
-  /**
-   * Fetch car constants / translated labels
-   * POST /api/cars/constants
-   */
-  getConstants: async (req, res, next) => {
-    try {
-      const result = await bookingDemandApiClient.getCarConstants(req.body || {});
-      return res.json({
-        success: true,
-        data: result.data
-      });
-    } catch (error) {
-      return res.status(error.statusCode || 500).json({
-        success: false,
-        error: { code: 'CAR_CONSTANTS_ERROR', message: error.message, requestId: error.requestId || null }
-      });
-    }
-  },
-
-  /**
-   * Location Autocomplete (Airports & Cities)
-   * GET /api/cars/locations/autocomplete
-   */
-  autocompleteLocations: async (req, res, next) => {
-    try {
-      const q = String(req.query.q || req.query.query || '').trim();
-      if (!q || q.length < 2) {
-        return res.json({ success: true, data: [] });
+      // A retried POST returns the same reservation and public token, but does not
+      // resend customer/admin notifications. Notification failures also never undo
+      // a successfully persisted request.
+      if (booking.created) {
+        void sendCarRequestNotifications({ booking, customer }).catch((error) => {
+          logger.warn(`[CarBooking] notification notice: ${error.message}`);
+        });
       }
 
-      // Featured major airports database for instant responsive autocomplete
-      const popularAirports = [
-        { type: 'airport', code: 'JFK', label: 'John F. Kennedy International Airport (JFK)', city: 'New York', country: 'United States' },
-        { type: 'airport', code: 'LGA', label: 'LaGuardia Airport (LGA)', city: 'New York', country: 'United States' },
-        { type: 'airport', code: 'EWR', label: 'Newark Liberty International Airport (EWR)', city: 'Newark/New York', country: 'United States' },
-        { type: 'airport', code: 'MIA', label: 'Miami International Airport (MIA)', city: 'Miami', country: 'United States' },
-        { type: 'airport', code: 'FLL', label: 'Fort Lauderdale-Hollywood International Airport (FLL)', city: 'Fort Lauderdale', country: 'United States' },
-        { type: 'airport', code: 'LAX', label: 'Los Angeles International Airport (LAX)', city: 'Los Angeles', country: 'United States' },
-        { type: 'airport', code: 'ORD', label: 'Chicago O\'Hare International Airport (ORD)', city: 'Chicago', country: 'United States' },
-        { type: 'airport', code: 'DFW', label: 'Dallas/Fort Worth International Airport (DFW)', city: 'Dallas', country: 'United States' },
-        { type: 'airport', code: 'MCO', label: 'Orlando International Airport (MCO)', city: 'Orlando', country: 'United States' },
-        { type: 'airport', code: 'SFO', label: 'San Francisco International Airport (SFO)', city: 'San Francisco', country: 'United States' },
-        { type: 'airport', code: 'LAS', label: 'Harry Reid International Airport (LAS)', city: 'Las Vegas', country: 'United States' },
-        { type: 'airport', code: 'BOS', label: 'Boston Logan International Airport (BOS)', city: 'Boston', country: 'United States' },
-        { type: 'airport', code: 'ATL', label: 'Hartsfield-Jackson Atlanta International Airport (ATL)', city: 'Atlanta', country: 'United States' },
-        { type: 'city', city_id: -2140479, label: 'Amsterdam, Netherlands', city: 'Amsterdam', country: 'Netherlands' },
-        { type: 'city', city_id: -2601889, label: 'London, United Kingdom', city: 'London', country: 'United Kingdom' },
-        { type: 'city', city_id: -1456928, label: 'Paris, France', city: 'Paris', country: 'France' },
-        { type: 'city', city_id: -2092174, label: 'Miami, Florida, United States', city: 'Miami', country: 'United States' },
-        { type: 'city', city_id: -2125103, label: 'New York City, New York, United States', city: 'New York', country: 'United States' }
-      ];
-
-      const qLower = q.toLowerCase();
-      const matches = popularAirports.filter(item => 
-        item.code?.toLowerCase().includes(qLower) ||
-        item.label.toLowerCase().includes(qLower) ||
-        item.city.toLowerCase().includes(qLower)
-      );
-
-      return res.json({
+      return res.status(booking.created ? 201 : 200).json({
         success: true,
-        data: matches
+        data: booking,
+        message: 'Reservation request received. FareTransit will confirm supplier availability and final details.'
       });
     } catch (error) {
-      return res.status(500).json({
+      logger.error(`Error in carController.createBooking: ${error.message}`);
+      return res.status(error.statusCode || 400).json({
         success: false,
-        error: { code: 'AUTOCOMPLETE_ERROR', message: error.message }
+        error: errorResponse(error, 'CAR_BOOKING_ERROR', 'Unable to create the reservation request.')
       });
     }
   },
 
   /**
-   * Track affiliate redirect click event
-   * POST /api/cars/click
+   * Customer-safe request lookup using the public read token returned when the
+   * request is created. No customer PII is exposed by this endpoint.
+   * GET /api/cars/bookings/:reference?token=...
    */
-  recordClick: async (req, res, next) => {
+  getBooking: async (req, res) => {
     try {
-      const clickData = req.body || {};
-      const result = await carService.recordClick(clickData);
-      return res.json({
-        success: true,
-        data: result
-      });
+      const result = await getPublicCarBooking(req.params.reference, req.query.token);
+      return res.json({ success: true, data: result });
     } catch (error) {
       return res.status(error.statusCode || 400).json({
         success: false,
-        error: { code: 'CLICK_TRACKING_ERROR', message: error.message }
+        error: errorResponse(error, 'CAR_BOOKING_LOOKUP_ERROR', 'Unable to load the reservation request.')
       });
     }
+  },
+
+  // Legacy Booking.com catalog endpoints remain available for internal compatibility.
+  getDetails: async (req, res) => {
+    try {
+      const result = await bookingDemandApiClient.getCarDetails(req.body || {});
+      return res.json({ success: true, data: result.data });
+    } catch (error) {
+      return res.status(error.statusCode || 500).json({
+        success: false,
+        error: errorResponse(error, 'CAR_DETAILS_ERROR', 'Unable to retrieve car details.')
+      });
+    }
+  },
+
+  getDepots: async (req, res) => {
+    try {
+      const result = await bookingDemandApiClient.getDepots(req.body || {});
+      return res.json({ success: true, data: result.data });
+    } catch (error) {
+      return res.status(error.statusCode || 500).json({
+        success: false,
+        error: errorResponse(error, 'CAR_DEPOTS_ERROR', 'Unable to retrieve depots.')
+      });
+    }
+  },
+
+  getSuppliers: async (req, res) => {
+    try {
+      const result = await bookingDemandApiClient.getSuppliers(req.body || {});
+      return res.json({ success: true, data: result.data });
+    } catch (error) {
+      return res.status(error.statusCode || 500).json({
+        success: false,
+        error: errorResponse(error, 'CAR_SUPPLIERS_ERROR', 'Unable to retrieve suppliers.')
+      });
+    }
+  },
+
+  getDepotScores: async (req, res) => {
+    try {
+      const result = await bookingDemandApiClient.getDepotScores(req.body || {});
+      return res.json({ success: true, data: result.data });
+    } catch (error) {
+      return res.status(error.statusCode || 500).json({
+        success: false,
+        error: errorResponse(error, 'CAR_DEPOT_SCORES_ERROR', 'Unable to retrieve depot scores.')
+      });
+    }
+  },
+
+  getConstants: async (req, res) => {
+    try {
+      const result = await bookingDemandApiClient.getCarConstants(req.body || {});
+      return res.json({ success: true, data: result.data });
+    } catch (error) {
+      return res.status(error.statusCode || 500).json({
+        success: false,
+        error: errorResponse(error, 'CAR_CONSTANTS_ERROR', 'Unable to retrieve car constants.')
+      });
+    }
+  },
+
+  recordClick: async (req, res) => {
+    return res.status(410).json({
+      success: false,
+      error: {
+        code: 'AFFILIATE_REDIRECT_RETIRED',
+        message: 'FareTransit car results now use the on-site reservation-request flow.'
+      }
+    });
   }
 };
 

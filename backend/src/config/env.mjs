@@ -38,6 +38,7 @@ export const env = {
   get inquiryNotifyEmails() { return process.env.INQUIRY_NOTIFY_EMAILS || 'support@faretransit.com,viansaini1608@gmail.com'; },
   get adminBookingNotificationEmail() { return process.env.ADMIN_BOOKING_NOTIFICATION_EMAIL || 'viansaini1608@gmail.com'; },
   get adminBookingNotificationsEnabled() { return process.env.ADMIN_BOOKING_NOTIFICATIONS_ENABLED !== 'false'; },
+  get carRequestEmailsEnabled() { return process.env.CAR_REQUEST_EMAILS_ENABLED !== 'false'; },
 
   // Stripe
   get stripeSecretKey() { return process.env.STRIPE_SECRET_KEY || ''; },
@@ -91,7 +92,18 @@ export const env = {
   get supportPhoneHref() { return process.env.BUSINESS_SUPPORT_PHONE_HREF || 'tel:+18887808855'; },
   get supportPhoneSchema() { return process.env.BUSINESS_SUPPORT_PHONE_SCHEMA || '+1-888-780-8855'; },
 
-  // Booking.com Demand API v3.1
+  // Parse Enterprise rental inventory API. Credentials must remain server-side.
+  get parseApiKey() { return process.env.PARSE_API_KEY || ''; },
+  get parseEnterpriseApiBaseUrl() {
+    return process.env.PARSE_ENTERPRISE_API_BASE_URL || 'https://api.parse.bot/scraper/897a30e0-28fa-40f3-b343-38a2acbd144b';
+  },
+  get carQuoteSigningSecret() { return process.env.CAR_QUOTE_SIGNING_SECRET || process.env.JWT_SECRET || ''; },
+  get carQuoteTtlSeconds() {
+    const value = parseInt(process.env.CAR_QUOTE_TTL_SECONDS || '900', 10);
+    return Number.isFinite(value) && value >= 120 ? value : 900;
+  },
+
+  // Booking.com Demand API v3.1 (legacy car-search integration retained for other modules)
   get bookingDemandApiBaseUrl() { 
     return process.env.BOOKING_DEMAND_API_BASE_URL || 
       (process.env.BOOKING_DEMAND_API_ENVIRONMENT === 'production' 

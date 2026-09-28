@@ -1,0 +1,54 @@
+name: Car Rental Integration Contract
+
+on:
+  push:
+    branches:
+      - feature/parse-car-rental-booking
+  pull_request:
+    paths:
+      - backend/src/modules/cars/**
+      - backend/src/config/env.mjs
+      - backend/tests/stabilization_car_public_booking.test.mjs
+      - backend/tests/full_site_hardening_contract.test.mjs
+      - frontend/src/features/cars/**
+      - frontend/src/app/App.js
+      - .github/workflows/car-rental-contract.yml
+
+jobs:
+  car-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Car booking stabilization contract
+        working-directory: backend
+        run: node tests/stabilization_car_public_booking.test.mjs
+
+      - name: Full-site hardening contract
+        working-directory: backend
+        run: node tests/full_site_hardening_contract.test.mjs
+
+      - name: Backend lint
+        working-directory: backend
+        run: npm run lint
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Frontend production build
+        working-directory: frontend
+        env:
+          CI: 'true'
+        run: npm run build

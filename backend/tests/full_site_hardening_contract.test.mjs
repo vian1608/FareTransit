@@ -16,6 +16,8 @@ const travelAssistance = read('frontend', 'src', 'features', 'flights', 'pages',
 const carResultCard = read('frontend', 'src', 'features', 'cars', 'components', 'CarResultCard.js');
 const carResults = read('frontend', 'src', 'features', 'cars', 'pages', 'CarSearchResultsPage.js');
 const carHome = read('frontend', 'src', 'features', 'cars', 'pages', 'CarRentalsHomePage.js');
+const carCheckout = read('frontend', 'src', 'features', 'cars', 'pages', 'CarRentalCheckoutPage.js');
+const carRequestConfirmation = read('frontend', 'src', 'features', 'cars', 'pages', 'CarRentalRequestConfirmationPage.js');
 const returnFlights = read('frontend', 'src', 'features', 'flights', 'pages', 'ReturnFlightSelectionPage.js');
 const myBookings = read('frontend', 'src', 'features', 'bookings', 'pages', 'MyBookingsPage.js');
 const oneWayConfirmation = read('frontend', 'src', 'features', 'bookings', 'pages', 'OneWayConfirmationPage.js');
@@ -56,8 +58,6 @@ for (const [name, source] of Object.entries({ contact, terms, privacy, refund })
   assert.match(source, /InfoPageShell/, `${name} is not using the shared modern information-page shell`);
 }
 
-// Public information pages should use a consistent modern shell with breadcrumbs,
-// structured content, contextual support, and no disconnected floating back control.
 assert.match(infoLayout, /info-breadcrumbs/);
 assert.match(infoLayout, /info-toc/);
 assert.match(infoLayout, /InfoSupportCTA/);
@@ -90,16 +90,30 @@ assert.match(trainRoute, /serviceType: 'rail'/);
 assert.match(flightRoute, /smsOptIn: formData\.smsOptIn/);
 assert.match(trainRoute, /smsOptIn: formData\.smsOptIn/);
 
-assert.match(carResultCard, /void carAPI\.recordClick/);
-assert.doesNotMatch(carResultCard, /await carAPI\.recordClick/);
-assert.match(carResultCard, /dealError/);
-assert.match(carResultCard, /window\.location\.assign/);
+// Car rental hardening: live provider inventory may be selected, but checkout and
+// customer confirmation remain on FareTransit. A selection creates a FareTransit
+// reservation request, never an unverified supplier-confirmed booking.
+assert.match(carResultCard, /Reserve with FareTransit/);
+assert.match(carResultCard, /sessionStorage\.setItem\('carSelectedQuote'/);
+assert.match(carResultCard, /navigate\('\/car-rentals\/checkout'\)/);
+assert.doesNotMatch(carResultCard, /window\.location\.assign/);
+assert.doesNotMatch(carResultCard, /booking\.com/i);
 assert.match(carResults, /requestSequence/);
-assert.match(carResults, /pageToken/);
-assert.match(carResults, /normalizeError/);
-// The public car-rental landing page is intentionally call-first because FareTransit
-// does not expose live car inventory there. Keep search/results internals hardened,
-// while preventing the PPC landing page from regressing back to an online search UI.
+assert.match(carResults, /carRentalApi\.search/);
+assert.match(carResults, /setErrorMsg\(carApiErrorMessage/);
+assert.doesNotMatch(carResults, /pageToken/);
+assert.match(carCheckout, /No payment is collected on this page/);
+assert.match(carCheckout, /does not create or confirm a supplier reservation/i);
+assert.match(carCheckout, /termsAccepted/);
+assert.match(carRequestConfirmation, /Pending confirmation/);
+assert.match(carRequestConfirmation, /not an Enterprise or supplier confirmation/i);
+
+// The indexed /car-rentals page is the OTA-style online entry point, while the
+// dedicated PPC/call landing route remains available separately for call campaigns.
+assert.match(carHome, /CarSearchForm/);
+assert.match(carHome, /Enterprise inventory/);
+assert.match(carHome, /reservation request/i);
+assert.match(carHome, /No card at request/);
 assert.match(carHome, /SUPPORT_PHONE_HREF/);
 assert.match(carHome, /SUPPORT_PHONE_DISPLAY/);
 assert.match(carHome, /RENTAL_BRANDS/);
@@ -108,9 +122,7 @@ for (const brand of ['Hertz', 'Avis', 'Budget', 'Enterprise', 'Sixt']) {
 }
 assert.match(carHome, /to="\/contact"/);
 assert.match(carHome, /data-support-call-primary/);
-assert.doesNotMatch(carHome, /className="car-mobile-cta"/);
 assert.match(carHome, /not affiliated with or endorsed by/);
-assert.doesNotMatch(carHome, /CarSearchForm/);
 assert.doesNotMatch(carHome, /ProductSearchCard/);
 
 assert.match(returnFlights, /setError\(normalizeError/);
@@ -125,8 +137,6 @@ assert.doesNotMatch(myBookings, /Retry Payment \(Card Failed\)/);
 assert.doesNotMatch(myBookings, /to="\/booking"/);
 assert.match(myBookings, /normalizeError/);
 
-// Legacy confirmation routes must never declare a booking successful from
-// sessionStorage alone; they must route through the backend-backed confirmation page.
 for (const [name, source] of Object.entries({ oneWayConfirmation, roundTripConfirmation })) {
   assert.match(source, /Navigate to={`\/booking-confirmed\//, `${name} does not forward to canonical confirmation`);
   assert.match(source, /Reservation Reference Required/, `${name} lacks safe missing-reference state`);
@@ -160,4 +170,4 @@ assert.match(sensitiveGuard, /controller\.abort\(\)/);
 assert.match(api, /timeout: DEFAULT_API_TIMEOUT_MS/);
 assert.match(api, /DEFAULT_API_TIMEOUT_MS/);
 
-console.log('Full-site hardening contract passed: SEO, modern info pages, leads, search, confirmations, auth, payments, and async-button safety.');
+console.log('Full-site hardening contract passed: SEO, modern info pages, leads, car requests, search, confirmations, auth, payments, and async-button safety.');
