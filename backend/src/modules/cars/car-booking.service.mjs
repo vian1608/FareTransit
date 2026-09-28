@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import supabase from '../../config/supabase.mjs';
 import logger from '../../config/logger.mjs';
+import env from '../../config/env.mjs';
 import { verifyCarQuoteToken } from './car-quote-token.mjs';
 
 const BOOKING_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -40,6 +41,15 @@ function hashPublicToken(value) {
   return crypto.createHash('sha256').update(String(value || '')).digest('hex');
 }
 
+function publicReadTokenFor(reservation, clientRequestId) {
+  const secret = env.carQuoteSigningSecret;
+  if (!secret) throw serviceError('CAR_REQUEST_SIGNING_NOT_CONFIGURED', 'Car-rental request access is not configured yet.', 503);
+  return crypto
+    .createHmac('sha256', secret)
+    .update(`${reservation.id}:${reservation.booking_reference}:${clientRequestId}`)
+    .digest('base64url');
+}
+
 function validateCustomer(input = {}) {
   const firstName = clean(input.firstName, 80);
   const lastName = clean(input.lastName, 80);
@@ -66,7 +76,8 @@ function validateCustomer(input = {}) {
 
 function ageAt(dateOfBirth, atDate) {
   const dob = new Date(`${dateOfBirth}T00:00:00Z`);
-  const at = new Date(atDate);
+  const dateOnly = String(atDate || '').slice(0, 10);
+  const at = new Date(`${dateOnly}T00:00:00Z`);
   let age = at.getUTCFullYear() - dob.getUTCFullYear();
   const month = at.getUTCMonth() - dob.getUTCMonth();
   if (month < 0 || (month === 0 && at.getUTCDate() < dob.getUTCDate())) age -= 1;
@@ -77,7 +88,7 @@ async function loadExistingByClientRequestId(clientRequestId) {
   if (!clientRequestId) return null;
   const { data, error } = await supabase
     .from('reservations')
-    .select('id,booking_reference,reservation_status,created_at,total_amount,currency')
+    .select('id,booking_reference,reservation_status,created_at,total_amount,currency,client_request_id')
     .eq('client_request_id', clientRequestId)
     .maybeSingle();
   if (error) throw serviceError('DATABASE_ERROR', 'Unable to check the reservation request.', 500);
@@ -94,7 +105,8 @@ async function loadCarByReservationId(reservationId) {
   return data || null;
 }
 
-function publicSummary(reservation, car = null, requestToken = null) {
+function publicSummary(reservation, car = null, requestToken = null, created = false) {
+  const sourceQuote = car?.draft_payment_data?.sourceQuote || {};
   return {
     bookingReference: reservation.booking_reference,
     status: reservation.reservation_status,
@@ -106,10 +118,11 @@ function publicSummary(reservation, car = null, requestToken = null) {
     vehicleName: car?.vehicle_name || null,
     vehicleCategory: car?.vehicle_category || null,
     pickupLocation: car?.pickup_location || null,
-    pickupAt: car?.pickup_at || null,
+    pickupAt: sourceQuote.pickupDatetime || car?.pickup_at || null,
     dropoffLocation: car?.dropoff_location || null,
-    dropoffAt: car?.dropoff_at || null,
-    requestToken: requestToken || undefined
+    dropoffAt: sourceQuote.returnDatetime || car?.dropoff_at || null,
+    requestToken: requestToken || undefined,
+    created
   };
 }
 
@@ -181,17 +194,17 @@ export async function createPublicCarBooking(payload = {}) {
   const existing = await loadExistingByClientRequestId(clientRequestId);
   if (existing) {
     const existingCar = await loadCarByReservationId(existing.id);
-    return publicSummary(existing, existingCar);
+    return publicSummary(existing, existingCar, publicReadTokenFor(existing, clientRequestId), false);
   }
 
-  const publicReadToken = crypto.randomBytes(32).toString('base64url');
-  const publicReadTokenHash = hashPublicToken(publicReadToken);
   const reservation = await createReservationRow({ customer, quote, clientRequestId });
   if (reservation.__idempotent) {
     const existingCar = await loadCarByReservationId(reservation.id);
-    return publicSummary(reservation, existingCar);
+    return publicSummary(reservation, existingCar, publicReadTokenFor(reservation, clientRequestId), false);
   }
 
+  const publicReadToken = publicReadTokenFor(reservation, clientRequestId);
+  const publicReadTokenHash = hashPublicToken(publicReadToken);
   const flightNumber = clean(payload.flightNumber, MAX_FLIGHT_NUMBER_LENGTH);
   const specialRequests = clean(payload.specialRequests, MAX_SPECIAL_REQUEST_LENGTH);
   const quoteSnapshot = {
@@ -295,7 +308,7 @@ export async function createPublicCarBooking(payload = {}) {
   }
 
   const car = await loadCarByReservationId(reservation.id);
-  return publicSummary(reservation, car, publicReadToken);
+  return publicSummary(reservation, car, publicReadToken, true);
 }
 
 export async function getPublicCarBooking(reference, requestToken) {
@@ -322,7 +335,7 @@ export async function getPublicCarBooking(reference, requestToken) {
     throw serviceError('INVALID_REQUEST_TOKEN', 'The reservation access token is invalid.', 403);
   }
 
-  return publicSummary(reservation, car);
+  return publicSummary(reservation, car, null, false);
 }
 
 export { serviceError };
