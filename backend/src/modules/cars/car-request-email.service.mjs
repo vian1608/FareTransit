@@ -22,17 +22,18 @@ function formatMoney(amount, currency = 'USD') {
 }
 
 function formatDateTime(value) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return String(value || '');
-  return date.toLocaleString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-    timeZone: 'UTC',
-    timeZoneName: 'short'
-  });
+  const raw = String(value || '').trim();
+  const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+  if (match) {
+    const [, year, month, day, hourRaw, minute] = match;
+    const hour24 = Number(hourRaw);
+    const hour12 = hour24 % 12 || 12;
+    const ampm = hour24 >= 12 ? 'PM' : 'AM';
+    const monthName = new Intl.DateTimeFormat('en-US', { month: 'short', timeZone: 'UTC' })
+      .format(new Date(Date.UTC(Number(year), Number(month) - 1, 1)));
+    return `${monthName} ${Number(day)}, ${year} at ${hour12}:${minute} ${ampm} (rental location local time)`;
+  }
+  return raw;
 }
 
 export async function sendCarRequestNotifications({ booking, customer }) {
@@ -76,28 +77,34 @@ export async function sendCarRequestNotifications({ booking, customer }) {
       <p>Open the FareTransit admin dashboard and verify supplier availability before marking the reservation booked.</p>
     </div>`;
 
-  try {
-    const sends = [
+  const sends = [
+    resend.emails.send({
+      from: env.resendFrom,
+      to: [customer.email],
+      subject: `FareTransit request received — ${reference}`,
+      html: customerHtml
+    })
+  ];
+
+  if (env.adminBookingNotificationsEnabled && env.adminBookingNotificationEmail) {
+    sends.push(
       resend.emails.send({
         from: env.resendFrom,
-        to: [customer.email],
-        subject: `FareTransit request received — ${reference}`,
-        html: customerHtml
+        to: [env.adminBookingNotificationEmail],
+        subject: `New car-rental request ${reference}`,
+        html: adminHtml
       })
-    ];
+    );
+  }
 
-    if (env.adminBookingNotificationsEnabled && env.adminBookingNotificationEmail) {
-      sends.push(
-        resend.emails.send({
-          from: env.resendFrom,
-          to: [env.adminBookingNotificationEmail],
-          subject: `New car-rental request ${reference}`,
-          html: adminHtml
-        })
-      );
+  try {
+    const results = await Promise.allSettled(sends);
+    const rejected = results.filter((result) => result.status === 'rejected');
+    const providerErrors = results.filter((result) => result.status === 'fulfilled' && result.value?.error);
+    if (rejected.length || providerErrors.length) {
+      logger.warn(`[CarBooking] ${rejected.length + providerErrors.length} request email(s) were not accepted by the provider.`);
+      return { sent: false, reason: 'partial_or_total_failure' };
     }
-
-    await Promise.allSettled(sends);
     return { sent: true };
   } catch (error) {
     logger.warn(`[CarBooking] email notification failed: ${error.message}`);
