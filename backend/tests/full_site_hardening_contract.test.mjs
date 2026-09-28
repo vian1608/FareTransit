@@ -16,6 +16,8 @@ const travelAssistance = read('frontend', 'src', 'features', 'flights', 'pages',
 const carResultCard = read('frontend', 'src', 'features', 'cars', 'components', 'CarResultCard.js');
 const carResults = read('frontend', 'src', 'features', 'cars', 'pages', 'CarSearchResultsPage.js');
 const carHome = read('frontend', 'src', 'features', 'cars', 'pages', 'CarRentalsHomePage.js');
+const carCheckout = read('frontend', 'src', 'features', 'cars', 'pages', 'CarRentalCheckoutPage.js');
+const carRequestConfirmation = read('frontend', 'src', 'features', 'cars', 'pages', 'CarRentalRequestConfirmationPage.js');
 const returnFlights = read('frontend', 'src', 'features', 'flights', 'pages', 'ReturnFlightSelectionPage.js');
 const myBookings = read('frontend', 'src', 'features', 'bookings', 'pages', 'MyBookingsPage.js');
 const oneWayConfirmation = read('frontend', 'src', 'features', 'bookings', 'pages', 'OneWayConfirmationPage.js');
@@ -90,16 +92,27 @@ assert.match(trainRoute, /serviceType: 'rail'/);
 assert.match(flightRoute, /smsOptIn: formData\.smsOptIn/);
 assert.match(trainRoute, /smsOptIn: formData\.smsOptIn/);
 
-assert.match(carResultCard, /void carAPI\.recordClick/);
-assert.doesNotMatch(carResultCard, /await carAPI\.recordClick/);
-assert.match(carResultCard, /dealError/);
-assert.match(carResultCard, /window\.location\.assign/);
+// Car rental hardening: live provider inventory may be selected, but checkout and
+// customer confirmation remain on FareTransit. A selection creates a FareTransit
+// reservation request, never an unverified supplier-confirmed booking.
+assert.match(carResultCard, /Reserve with FareTransit/);
+assert.match(carResultCard, /sessionStorage\.setItem\('carSelectedQuote'/);
+assert.match(carResultCard, /navigate\('\/car-rentals\/checkout'\)/);
+assert.doesNotMatch(carResultCard, /window\.location\.assign/);
+assert.doesNotMatch(carResultCard, /booking\.com/i);
 assert.match(carResults, /requestSequence/);
-assert.match(carResults, /pageToken/);
-assert.match(carResults, /normalizeError/);
-// The public car-rental landing page is intentionally call-first because FareTransit
-// does not expose live car inventory there. Keep search/results internals hardened,
-// while preventing the PPC landing page from regressing back to an online search UI.
+assert.match(carResults, /carRentalApi\.search/);
+assert.match(carResults, /setErrorMsg\(carApiErrorMessage/);
+assert.doesNotMatch(carResults, /pageToken/);
+assert.match(carCheckout, /No payment is collected on this page/);
+assert.match(carCheckout, /does not create or confirm a supplier reservation/i);
+assert.match(carCheckout, /termsAccepted/);
+assert.match(carRequestConfirmation, /Pending confirmation/);
+assert.match(carRequestConfirmation, /not an Enterprise or supplier confirmation/i);
+
+// The public car-rental landing page remains a call-first PPC surface; live
+// inventory is exposed through the dedicated /car-rentals search flow rather than
+// weakening the brand-specific call landing contract.
 assert.match(carHome, /SUPPORT_PHONE_HREF/);
 assert.match(carHome, /SUPPORT_PHONE_DISPLAY/);
 assert.match(carHome, /RENTAL_BRANDS/);
@@ -160,4 +173,4 @@ assert.match(sensitiveGuard, /controller\.abort\(\)/);
 assert.match(api, /timeout: DEFAULT_API_TIMEOUT_MS/);
 assert.match(api, /DEFAULT_API_TIMEOUT_MS/);
 
-console.log('Full-site hardening contract passed: SEO, modern info pages, leads, search, confirmations, auth, payments, and async-button safety.');
+console.log('Full-site hardening contract passed: SEO, modern info pages, leads, car requests, search, confirmations, auth, payments, and async-button safety.');
