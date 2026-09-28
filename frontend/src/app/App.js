@@ -51,6 +51,8 @@ import CarRentalCallLandingPage from '../features/cars/pages/CarRentalCallLandin
 import CarRentalLocationPage from '../features/cars/pages/CarRentalLocationPage';
 import CarRentalAirportPage, { CarRentalAirportHubPage } from '../features/cars/pages/CarRentalAirportPage';
 import CarSearchUrlGuard from '../features/cars/pages/CarSearchUrlGuard';
+import CarRentalCheckoutPage from '../features/cars/pages/CarRentalCheckoutPage';
+import CarRentalRequestConfirmationPage from '../features/cars/pages/CarRentalRequestConfirmationPage';
 import HotelSearchPage from '../features/hotels/pages/HotelSearchPage';
 import HotelDestinationPage from '../features/hotels/pages/HotelDestinationPage';
 
@@ -102,13 +104,15 @@ function App() {
                 <Route path="/hotels/results" element={<HotelSearchPage />} />
                 <Route path="/hotels/:destinationSlug" element={<HotelDestinationPage />} />
 
-                {/* Car Rentals: preserve the SEO/browsing hub and isolate paid-search call traffic. */}
+                {/* Car Rentals: live Enterprise inventory feeds an on-site FareTransit request workflow. */}
                 <Route path="/car-rentals" element={<CarRentalsHomePage />} />
                 <Route path="/car-rental/call-now" element={<CarRentalCallLandingPage />} />
                 <Route path="/car-rental/airport" element={<CarRentalAirportHubPage />} />
                 <Route path="/car-rental/airport/:airportCode" element={<CarRentalAirportPage />} />
                 <Route path="/car-rentals/search" element={<CarSearchUrlGuard />} />
                 <Route path="/car-rentals/results" element={<CarSearchUrlGuard />} />
+                <Route path="/car-rentals/checkout" element={<CarRentalCheckoutPage />} />
+                <Route path="/car-rentals/request/:reference" element={<CarRentalRequestConfirmationPage />} />
                 <Route path="/car-rentals/:locationSlug" element={<CarRentalLocationPage />} />
 
                 {/* Legacy Amtrak Route Redirect */}
