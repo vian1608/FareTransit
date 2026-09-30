@@ -184,6 +184,10 @@ function CarRentalsHomePage() {
               <CallButton className="car-ppc-button car-ppc-button--secondary" primary>
                 Call {SUPPORT_PHONE_DISPLAY}
               </CallButton>
+              <Link className="car-ppc-button car-ppc-button--secondary" to="/contact">
+                <i className="fas fa-envelope" aria-hidden="true" />
+                <span>Contact Us</span>
+              </Link>
             </div>
 
             <div className="car-ppc-hero__notes" aria-label="FareTransit service highlights">
