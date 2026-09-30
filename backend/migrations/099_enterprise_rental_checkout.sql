@@ -23,7 +23,7 @@ create table if not exists public.car_rental_orders (
   id uuid primary key default gen_random_uuid(),
   order_reference text not null unique,
   public_token text not null unique,
-  quote_token text not null references public.car_rental_quotes(quote_token) on delete restrict,
+  quote_token text not null unique references public.car_rental_quotes(quote_token) on delete restrict,
   status text not null default 'payment_pending' check (status in (
     'payment_pending',
     'awaiting_manual_booking',
@@ -63,7 +63,6 @@ create table if not exists public.car_rental_orders (
 
 create index if not exists car_rental_orders_status_idx on public.car_rental_orders (status, created_at desc);
 create index if not exists car_rental_orders_payment_status_idx on public.car_rental_orders (payment_status, created_at desc);
-create index if not exists car_rental_orders_quote_idx on public.car_rental_orders (quote_token);
 
 alter table public.car_rental_quotes enable row level security;
 alter table public.car_rental_orders enable row level security;
