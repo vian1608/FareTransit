@@ -1,5 +1,6 @@
 import enterpriseRentalService from './enterprise-rental.service.mjs';
 import nmiCarPaymentService from './nmi-car-payment.service.mjs';
+import { sendRentalEmailSafely } from './enterprise-rental-email.service.mjs';
 import supabase from '../../config/supabase.mjs';
 import logger from '../../config/logger.mjs';
 
@@ -134,6 +135,7 @@ export const enterpriseRentalController = {
           admin_action_required: 'book_enterprise',
           authorized_at: new Date().toISOString()
         });
+        sendRentalEmailSafely('authorized', updated);
         return res.json({ success: true, data: enterpriseRentalService.publicOrder(updated) });
       } catch (paymentError) {
         await supabase.from('car_rental_orders').update({ payment_status: 'not_started', updated_at: new Date().toISOString() }).eq('public_token', publicToken).eq('payment_status', 'authorizing');
@@ -215,6 +217,7 @@ export const enterpriseRentalController = {
         captured_at: new Date().toISOString(),
         confirmed_at: new Date().toISOString()
       });
+      sendRentalEmailSafely('confirmed', updated);
       return res.json({ success: true, data: { ...enterpriseRentalService.publicOrder(updated), supplierCost: Number(updated.supplier_cost), grossMargin: Number(updated.gross_margin) } });
     } catch (error) {
       logger.warn(`[EnterpriseRental] confirm/capture failed: ${error.message}`);
@@ -260,6 +263,7 @@ export const enterpriseRentalController = {
         status: 'booking_failed',
         admin_action_required: needsVoid ? 'void_authorization_in_nmi' : null
       });
+      sendRentalEmailSafely('unable', updated);
       return res.json({
         success: true,
         data: {
