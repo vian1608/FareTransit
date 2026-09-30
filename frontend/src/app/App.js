@@ -14,6 +14,7 @@ import AdminLogin from '../features/admin/pages/AdminLoginPage';
 import AdminDashboard from '../features/admin/pages/AdminDashboardPage';
 import AdminCreateBookingPage from '../features/admin/pages/AdminCreateBookingPage';
 import AdminVouchersPage from '../features/admin/pages/AdminVouchersPage';
+import AdminCarRentalOrdersPage from '../features/admin/pages/AdminCarRentalOrdersPage';
 import AdminVoucherShortcut from '../features/admin/components/AdminVoucherShortcut';
 import OneWayConfirmation from '../features/bookings/pages/OneWayConfirmationPage';
 import RoundTripConfirmation from '../features/bookings/pages/RoundTripConfirmationPage';
@@ -51,6 +52,8 @@ import CarRentalCallLandingPage from '../features/cars/pages/CarRentalCallLandin
 import CarRentalLocationPage from '../features/cars/pages/CarRentalLocationPage';
 import CarRentalAirportPage, { CarRentalAirportHubPage } from '../features/cars/pages/CarRentalAirportPage';
 import CarSearchUrlGuard from '../features/cars/pages/CarSearchUrlGuard';
+import CarRentalCheckoutPage from '../features/cars/pages/CarRentalCheckoutPage';
+import CarRentalConfirmationPage from '../features/cars/pages/CarRentalConfirmationPage';
 import HotelSearchPage from '../features/hotels/pages/HotelSearchPage';
 import HotelDestinationPage from '../features/hotels/pages/HotelDestinationPage';
 
@@ -102,13 +105,15 @@ function App() {
                 <Route path="/hotels/results" element={<HotelSearchPage />} />
                 <Route path="/hotels/:destinationSlug" element={<HotelDestinationPage />} />
 
-                {/* Car Rentals: preserve the SEO/browsing hub and isolate paid-search call traffic. */}
+                {/* Car Rentals: Enterprise inventory, FareTransit checkout, and paid-search call traffic. */}
                 <Route path="/car-rentals" element={<CarRentalsHomePage />} />
                 <Route path="/car-rental/call-now" element={<CarRentalCallLandingPage />} />
                 <Route path="/car-rental/airport" element={<CarRentalAirportHubPage />} />
                 <Route path="/car-rental/airport/:airportCode" element={<CarRentalAirportPage />} />
                 <Route path="/car-rentals/search" element={<CarSearchUrlGuard />} />
                 <Route path="/car-rentals/results" element={<CarSearchUrlGuard />} />
+                <Route path="/car-rentals/checkout/:quoteToken" element={<CarRentalCheckoutPage />} />
+                <Route path="/car-rentals/confirmation/:publicToken" element={<CarRentalConfirmationPage />} />
                 <Route path="/car-rentals/:locationSlug" element={<CarRentalLocationPage />} />
 
                 {/* Legacy Amtrak Route Redirect */}
@@ -120,6 +125,7 @@ function App() {
                 <Route path="/admin/login" element={<AdminLogin />} />
                 <Route path="/admin/dashboard" element={<AdminDashboardWithVoucherShortcut />} />
                 <Route path="/admin/vouchers" element={<AdminVouchersPage />} />
+                <Route path="/admin/car-orders" element={<AdminCarRentalOrdersPage />} />
                 <Route path="/admin/bookings/new" element={<AdminCreateBookingPage />} />
                 <Route path="/admin/bookings/:code" element={<AdminDashboard />} />
 
