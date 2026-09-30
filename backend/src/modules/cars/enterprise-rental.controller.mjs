@@ -131,6 +131,7 @@ export const enterpriseRentalController = {
           payment_status: 'authorized',
           nmi_payment_id: String(paymentId),
           nmi_authorization_code: gateway.authorization_code || gateway.authcode || null,
+          admin_action_required: 'book_enterprise',
           authorized_at: new Date().toISOString()
         });
         return res.json({ success: true, data: enterpriseRentalService.publicOrder(updated) });
@@ -156,8 +157,19 @@ export const enterpriseRentalController = {
   adminGetOrder: async (req, res) => {
     try {
       const row = await enterpriseRentalService.getOrderByReference(req.params.reference);
-      const [item] = await enterpriseRentalService.listOrders({ limit: 250 }).then(rows => rows.filter(order => order.orderReference === row.order_reference));
-      return res.json({ success: true, data: item || enterpriseRentalService.publicOrder(row) });
+      return res.json({
+        success: true,
+        data: {
+          ...enterpriseRentalService.publicOrder(row),
+          customer: row.customer,
+          billing: row.billing,
+          nmiPaymentId: row.nmi_payment_id || null,
+          nmiAuthorizationCode: row.nmi_authorization_code || null,
+          supplierCost: row.supplier_cost === null || row.supplier_cost === undefined ? null : Number(row.supplier_cost),
+          grossMargin: row.gross_margin === null || row.gross_margin === undefined ? null : Number(row.gross_margin),
+          adminActionRequired: row.admin_action_required || null
+        }
+      });
     } catch (error) {
       return sendError(res, error);
     }
@@ -199,6 +211,7 @@ export const enterpriseRentalController = {
         status: 'confirmed',
         payment_status: 'captured',
         nmi_capture_id: String(gateway.id || gateway.transaction_id || gateway.transactionid || row.nmi_payment_id),
+        admin_action_required: null,
         captured_at: new Date().toISOString(),
         confirmed_at: new Date().toISOString()
       });
@@ -228,6 +241,35 @@ export const enterpriseRentalController = {
       };
       const updated = await enterpriseRentalService.updateOrder(row.order_reference, patch);
       return res.json({ success: true, data: { ...enterpriseRentalService.publicOrder(updated), supplierCost: updated.supplier_cost, grossMargin: updated.gross_margin } });
+    } catch (error) {
+      return sendError(res, error);
+    }
+  },
+
+  adminMarkUnavailable: async (req, res) => {
+    try {
+      const row = await enterpriseRentalService.getOrderByReference(req.params.reference);
+      if (row.payment_status === 'captured') {
+        const error = new Error('This order has already been captured. Use the normal refund workflow instead.');
+        error.statusCode = 409;
+        error.code = 'ORDER_ALREADY_CAPTURED';
+        throw error;
+      }
+      const needsVoid = row.payment_status === 'authorized' && Boolean(row.nmi_payment_id);
+      const updated = await enterpriseRentalService.updateOrder(row.order_reference, {
+        status: 'booking_failed',
+        admin_action_required: needsVoid ? 'void_authorization_in_nmi' : null
+      });
+      return res.json({
+        success: true,
+        data: {
+          ...enterpriseRentalService.publicOrder(updated),
+          adminActionRequired: updated.admin_action_required || null,
+          message: needsVoid
+            ? 'Marked unavailable. Void the outstanding authorization in NMI before closing this order.'
+            : 'Marked unavailable.'
+        }
+      });
     } catch (error) {
       return sendError(res, error);
     }
