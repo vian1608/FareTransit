@@ -3,6 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
 import MobileServiceSwitcher from '../../../shared/components/MobileServiceSwitcher';
 import { SUPPORT_PHONE_HREF, SUPPORT_PHONE_DISPLAY } from '../../../shared/constants/supportContact';
+import CarSearchForm from '../components/CarSearchForm';
 import './CarRentalsHomePage.css';
 import './CarRentalBrandLogos.css';
 
@@ -45,47 +46,47 @@ const AIRPORT_GUIDES = [
 
 const HOW_IT_WORKS = [
   {
-    icon: 'fas fa-phone-alt',
-    title: 'Call FareTransit',
-    text: 'Connect with a travel specialist and tell us what kind of rental you need.'
-  },
-  {
-    icon: 'fas fa-map-marker-alt',
-    title: 'Share Your Trip Details',
-    text: 'Tell us your destination, rental dates, pickup preference, and vehicle type.'
-  },
-  {
     icon: 'fas fa-search',
-    title: 'We Check Available Options',
-    text: 'Our specialist helps explore rental options that fit the details you provide.'
+    title: 'Search Enterprise Cars',
+    text: 'Choose your pickup location, dates, times, and driver age to check current Enterprise vehicle classes.'
   },
   {
-    icon: 'fas fa-check-circle',
-    title: 'Review Before Booking',
-    text: 'Review the available option and important rental details before moving forward.'
+    icon: 'fas fa-car-side',
+    title: 'Compare Available Vehicles',
+    text: 'Review current vehicle categories, features, daily rates, and total prices returned for your trip.'
+  },
+  {
+    icon: 'fas fa-credit-card',
+    title: 'Continue With FareTransit',
+    text: 'Select a vehicle and continue through the FareTransit checkout and secure payment authorization flow.'
+  },
+  {
+    icon: 'fas fa-headset',
+    title: 'We Complete the Reservation',
+    text: 'Our team completes the supplier reservation and sends your final confirmation after fulfillment.'
   }
 ];
 
 const BENEFITS = [
   {
     icon: 'fas fa-layer-group',
-    title: 'Multiple Rental Options',
-    text: 'Ask about rental options from established brands based on your destination and dates.'
+    title: 'Current Enterprise Inventory',
+    text: 'Search available Enterprise vehicle classes for your pickup location and travel dates.'
   },
   {
     icon: 'fas fa-headset',
     title: 'Personal Booking Assistance',
-    text: 'Talk with a real person instead of working through an automated car-search form.'
+    text: 'Search online first, then get real human assistance through the reservation and fulfillment process.'
   },
   {
     icon: 'fas fa-car-side',
     title: 'Vehicle Selection Help',
-    text: 'Get help choosing a practical vehicle category for your passengers, luggage, and trip.'
+    text: 'Compare practical vehicle categories for your passengers, luggage, and trip.'
   },
   {
     icon: 'fas fa-plane-arrival',
     title: 'Airport & City Rentals',
-    text: 'Ask for assistance with airport or city pickup locations based on your travel plans.'
+    text: 'Search participating Enterprise airport or city pickup locations based on your travel plans.'
   },
   {
     icon: 'fas fa-life-ring',
@@ -105,24 +106,28 @@ const VEHICLE_TYPES = [
 
 const FAQS = [
   {
+    question: 'Can I search car rentals online?',
+    answer: 'Yes. Use the Enterprise search form on this page to choose your pickup location, dates, times, and driver age. Current vehicle classes and rates are then shown on the results page.'
+  },
+  {
     question: 'Can you help me find airport car rentals?',
-    answer: 'Yes. Tell us your airport, arrival details, rental dates, and vehicle preference, and a FareTransit specialist can help you explore available rental options.'
+    answer: 'Yes. Search your airport or city in the pickup field, choose a location from the Enterprise list, and FareTransit can assist with the reservation after you select a vehicle.'
   },
   {
     question: 'Can I request a specific rental company?',
-    answer: 'Yes. You can tell us if you prefer a particular rental brand. Availability varies by location, dates, vehicle category, and supplier inventory.'
+    answer: 'The online search currently uses Enterprise inventory. You can still contact FareTransit if you want assistance with another rental brand.'
   },
   {
-    question: 'What information do I need before calling?',
-    answer: 'It helps to have your pickup location, pickup and return dates, approximate times, driver requirements, and preferred vehicle type ready.'
+    question: 'What information do I need before searching?',
+    answer: 'Have your pickup location, pickup and return dates, approximate times, and driver age ready.'
   },
   {
     question: 'Can I request an SUV or luxury vehicle?',
-    answer: 'Yes. You can request an SUV, luxury vehicle, van, economy car, or another category. Specific models and categories are subject to availability.'
+    answer: 'Yes. Available categories can include SUVs, luxury vehicles, vans, economy cars, and other classes depending on supplier inventory.'
   },
   {
     question: 'Does availability depend on location and dates?',
-    answer: 'Yes. Rental availability, vehicle categories, policies, and pricing can vary by pickup location, travel dates, and supplier.'
+    answer: 'Yes. Rental availability, vehicle categories, policies, and pricing can vary by pickup location, travel dates, and supplier inventory.'
   }
 ];
 
@@ -144,15 +149,15 @@ function CarRentalsHomePage() {
   return (
     <div className="car-rentals-home-page car-theme-page">
       <Helmet>
-        <title>Car Rental Booking Assistance | FareTransit</title>
+        <title>Enterprise Car Rental Search & Booking Assistance | FareTransit</title>
         <meta
           name="description"
-          content="Call FareTransit for personal car rental booking assistance. Ask about airport and city rental options, vehicle categories, and major rental brands."
+          content="Search current Enterprise car rental availability by location and dates, compare vehicle classes and rates, and continue with FareTransit reservation assistance."
         />
-        <meta property="og:title" content="Car Rental Booking Assistance | FareTransit" />
+        <meta property="og:title" content="Enterprise Car Rental Search & Booking Assistance | FareTransit" />
         <meta
           property="og:description"
-          content="Speak with FareTransit to explore car rental options for your destination and travel dates."
+          content="Search Enterprise rental cars by pickup location and travel dates, compare current vehicle classes, and continue with FareTransit checkout and assistance."
         />
         <meta property="og:url" content="https://www.faretransit.com/car-rentals" />
         <meta property="og:type" content="website" />
@@ -164,28 +169,39 @@ function CarRentalsHomePage() {
           <div className="car-ppc-hero__overlay" aria-hidden="true" />
           <div className="container car-ppc-hero__content">
             <MobileServiceSwitcher active="cars" />
-            <span className="car-ppc-eyebrow">Car rental booking assistance</span>
+            <span className="car-ppc-eyebrow">Enterprise car rental search</span>
             <h1 id="car-rental-hero-title">Find the Right Rental Car for Your Trip</h1>
             <p>
-              Speak with our travel specialists to explore available car rental options for your destination.
-              Tell us where and when you need a vehicle, and we&apos;ll help you review your options.
+              Search current Enterprise vehicle availability by pickup location, dates, times, and driver age.
+              Compare vehicle classes and rates, then continue with FareTransit reservation assistance.
             </p>
 
             <div className="car-ppc-hero__actions" aria-label="Car rental assistance options">
-              <CallButton className="car-ppc-button car-ppc-button--primary" primary>
+              <a className="car-ppc-button car-ppc-button--primary" href="#search-enterprise-cars">
+                <i className="fas fa-search" aria-hidden="true" />
+                <span>Search Cars</span>
+              </a>
+              <CallButton className="car-ppc-button car-ppc-button--secondary" primary>
                 Call {SUPPORT_PHONE_DISPLAY}
               </CallButton>
-              <Link className="car-ppc-button car-ppc-button--secondary" to="/contact">
-                <i className="fas fa-envelope" aria-hidden="true" />
-                <span>Contact Us</span>
-              </Link>
             </div>
 
             <div className="car-ppc-hero__notes" aria-label="FareTransit service highlights">
-              <span><i className="fas fa-headset" aria-hidden="true" /> Human assistance</span>
+              <span><i className="fas fa-search" aria-hidden="true" /> Live Enterprise search</span>
               <span><i className="fas fa-map-marked-alt" aria-hidden="true" /> Airport &amp; city rentals</span>
-              <span><i className="fas fa-car" aria-hidden="true" /> Multiple vehicle categories</span>
+              <span><i className="fas fa-headset" aria-hidden="true" /> Human reservation assistance</span>
             </div>
+          </div>
+        </section>
+
+        <section id="search-enterprise-cars" className="car-how-section" aria-labelledby="enterprise-car-search-title">
+          <div className="container">
+            <span className="car-ppc-section-eyebrow">Search current availability</span>
+            <h2 id="enterprise-car-search-title">Search Enterprise Rental Cars</h2>
+            <p className="car-ppc-section-lead">
+              Select an Enterprise pickup location, your rental dates and times, and the driver&apos;s age. We&apos;ll show the current vehicle classes and rates returned for that trip.
+            </p>
+            <CarSearchForm />
           </div>
         </section>
 
@@ -218,7 +234,7 @@ function CarRentalsHomePage() {
             <span className="car-ppc-section-eyebrow">Recognized rental companies</span>
             <h2 id="car-brand-title">Car Rental Brands We Can Help You Explore</h2>
             <p className="car-ppc-section-lead">
-              Tell us if you have a preferred rental company, or ask our team about options available for your trip.
+              Online inventory search currently uses Enterprise. Contact our team if you want assistance exploring another rental brand.
             </p>
 
             <div className="car-brand-grid" aria-label="Rental brands">
@@ -244,10 +260,10 @@ function CarRentalsHomePage() {
 
         <section className="car-how-section" aria-labelledby="car-how-title">
           <div className="container">
-            <span className="car-ppc-section-eyebrow">Simple call-first assistance</span>
+            <span className="car-ppc-section-eyebrow">Online search + human fulfillment</span>
             <h2 id="car-how-title">How It Works</h2>
             <p className="car-ppc-section-lead">
-              There&apos;s no online car-search form on this page. Call us and a specialist will help with the next steps.
+              Search available Enterprise vehicles online, select the option you want, and FareTransit handles the reservation workflow and support.
             </p>
 
             <div className="car-how-grid">
@@ -265,8 +281,8 @@ function CarRentalsHomePage() {
 
         <section className="car-benefits-section" aria-labelledby="car-benefits-title">
           <div className="container">
-            <span className="car-ppc-section-eyebrow">Why call FareTransit</span>
-            <h2 id="car-benefits-title">Rental Assistance Built Around Your Trip</h2>
+            <span className="car-ppc-section-eyebrow">Why use FareTransit</span>
+            <h2 id="car-benefits-title">Rental Search With Human Assistance</h2>
             <div className="car-benefits-grid">
               {BENEFITS.map((benefit) => (
                 <article className="car-benefit-card" key={benefit.title}>
@@ -284,9 +300,9 @@ function CarRentalsHomePage() {
         <section className="car-vehicle-section" aria-labelledby="car-vehicle-title">
           <div className="container">
             <span className="car-ppc-section-eyebrow">Vehicle categories</span>
-            <h2 id="car-vehicle-title">Tell Us What You Need to Drive</h2>
+            <h2 id="car-vehicle-title">Choose the Vehicle That Fits Your Trip</h2>
             <p className="car-ppc-section-lead">
-              Ask about the vehicle category that best fits your passengers, luggage, destination, and travel plans.
+              Available categories are returned from Enterprise for your selected location and dates and can vary by trip.
             </p>
 
             <div className="car-vehicle-grid">
@@ -300,8 +316,8 @@ function CarRentalsHomePage() {
 
             <div className="car-vehicle-callout">
               <div>
-                <strong>Not sure which vehicle you need?</strong>
-                <span>Tell our specialist about your trip and passenger needs.</span>
+                <strong>Want help choosing a vehicle?</strong>
+                <span>Search first, or call our specialist about your passengers, luggage, and trip needs.</span>
               </div>
               <CallButton className="car-ppc-button car-ppc-button--primary">Call a Rental Specialist</CallButton>
             </div>
@@ -314,17 +330,17 @@ function CarRentalsHomePage() {
               <div className="car-conversion-card__icon"><i className="fas fa-headset" aria-hidden="true" /></div>
               <div className="car-conversion-card__copy">
                 <span className="car-ppc-section-eyebrow">Reservation assistance</span>
-                <h2 id="car-conversion-title">Need Help Finding a Rental Car?</h2>
-                <p>Call our reservation team and tell us where and when you need the vehicle.</p>
+                <h2 id="car-conversion-title">Need Help With Your Rental Search?</h2>
+                <p>Search online above or call our reservation team for help with your trip.</p>
               </div>
               <div className="car-conversion-card__actions">
-                <CallButton className="car-ppc-button car-ppc-button--primary">
+                <a className="car-ppc-button car-ppc-button--primary" href="#search-enterprise-cars">
+                  <i className="fas fa-search" aria-hidden="true" />
+                  <span>Search Cars</span>
+                </a>
+                <CallButton className="car-ppc-button car-ppc-button--outline">
                   Call {SUPPORT_PHONE_DISPLAY}
                 </CallButton>
-                <Link className="car-ppc-button car-ppc-button--outline" to="/contact">
-                  <i className="fas fa-envelope" aria-hidden="true" />
-                  <span>Contact Us</span>
-                </Link>
               </div>
             </div>
           </div>
