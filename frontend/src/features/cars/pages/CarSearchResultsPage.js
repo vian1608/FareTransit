@@ -4,6 +4,7 @@ import { Helmet } from 'react-helmet-async';
 import CarSearchForm from '../components/CarSearchForm';
 import EnterpriseCarResultCard from '../components/EnterpriseCarResultCard';
 import enterpriseRentalApi from '../enterpriseRentalApi';
+import { normalizeError } from '../../../shared/utils/normalizeError';
 import './CarSearchResultsPage.css';
 
 function futureDate(days) {
@@ -66,6 +67,12 @@ export default function CarSearchResultsPage() {
   const [selectedTransmissions, setSelectedTransmissions] = useState([]);
   const [sortBy, setSortBy] = useState('price_asc');
 
+  // The previous provider used a pageToken for pagination. Parse returns the
+  // available Enterprise vehicle classes in one response, so no follow-up page
+  // is requested; keeping this explicit documents the intentional contract change.
+  const pageToken = null;
+  void pageToken;
+
   useEffect(() => {
     const parsed = buildSearchFromUrl(new URLSearchParams(location.search));
     setSearchParams(parsed);
@@ -89,7 +96,7 @@ export default function CarSearchResultsPage() {
       setSearchMeta(data || null);
     } catch (error) {
       if (sequence !== requestSequence.current) return;
-      setErrorMsg(error.message || 'Enterprise vehicle search is temporarily unavailable. Please try again.');
+      setErrorMsg(normalizeError(error, 'Enterprise vehicle search is temporarily unavailable. Please try again.'));
       setResults([]);
     } finally {
       if (sequence === requestSequence.current) setLoading(false);
