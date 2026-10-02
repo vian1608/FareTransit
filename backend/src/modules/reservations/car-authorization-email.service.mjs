@@ -43,6 +43,64 @@ function messageHtml(value) {
   return esc(value || '').replace(/\r?\n/g, '<br>');
 }
 
+function normalizeAttachments(attachments = []) {
+  return (Array.isArray(attachments) ? attachments : []).filter(item => item?.filename && item?.content).map(item => ({
+    filename: String(item.filename),
+    content: Buffer.isBuffer(item.content) ? item.content : Buffer.from(item.content)
+  }));
+}
+
+async function sendViaSmtp({ recipient, subject, html, attachments = [] }) {
+  const transporter = nodemailer.createTransport({
+    host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+    port: Number(process.env.EMAIL_PORT || 587),
+    secure: String(process.env.EMAIL_SECURE || '').toLowerCase() === 'true' || Number(process.env.EMAIL_PORT || 587) === 465,
+    auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
+  });
+  const info = await transporter.sendMail({
+    from: fromAddress(),
+    to: recipient,
+    subject,
+    html,
+    attachments: normalizeAttachments(attachments)
+  });
+  return { id: info.messageId, provider: 'smtp' };
+}
+
+export async function sendCustomerHtmlEmail({ recipient, subject, html, attachments = [] }) {
+  const from = fromAddress();
+  const normalizedAttachments = normalizeAttachments(attachments);
+
+  if (env.resendApiKey) {
+    const resend = new Resend(env.resendApiKey);
+    const { data, error } = await resend.emails.send({
+      from,
+      to: [recipient],
+      subject,
+      html,
+      ...(normalizedAttachments.length ? {
+        attachments: normalizedAttachments.map(item => ({ filename: item.filename, content: item.content.toString('base64') }))
+      } : {})
+    });
+    if (!error) return { ...(data || {}), provider: 'resend', from, to: recipient, subject };
+    if (!smtpConfigured()) throw new Error(error.message || 'Unable to send customer email.');
+  }
+
+  if (smtpConfigured()) {
+    const result = await sendViaSmtp({ recipient, subject, html, attachments: normalizedAttachments });
+    return { ...result, from, to: recipient, subject };
+  }
+
+  if (String(env.nodeEnv || '').toLowerCase() !== 'production') {
+    return { id: `dev-${Date.now()}`, provider: 'simulation', simulated: true, from, to: recipient, subject };
+  }
+
+  const error = new Error('Customer email delivery is not configured. Configure RESEND_API_KEY or EMAIL_USER/EMAIL_PASS before sending customer emails.');
+  error.code = 'EMAIL_PROVIDER_NOT_CONFIGURED';
+  error.statusCode = 503;
+  throw error;
+}
+
 export function buildCarAuthorizationEmail({ bookingReference, authorization, token, subject, message, rentalCompanyName, rentalCompanyLogoUrl }) {
   const base = String(env.frontendUrl || 'https://www.faretransit.com').replace(/\/$/, '');
   const url = `${base}/car-authorization.html?token=${encodeURIComponent(token)}`;
@@ -58,48 +116,10 @@ export function buildCarAuthorizationEmail({ bookingReference, authorization, to
   return { subject: finalSubject, html, url };
 }
 
-async function sendViaSmtp({ recipient, subject, html }) {
-  const transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-    port: Number(process.env.EMAIL_PORT || 587),
-    secure: String(process.env.EMAIL_SECURE || '').toLowerCase() === 'true' || Number(process.env.EMAIL_PORT || 587) === 465,
-    auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
-  });
-  const info = await transporter.sendMail({
-    from: fromAddress(),
-    to: recipient,
-    subject,
-    html
-  });
-  return { id: info.messageId, provider: 'smtp' };
-}
-
 export async function sendCarAuthorizationEmail({ recipient, bookingReference, authorization, token, subject, message, rentalCompanyName, rentalCompanyLogoUrl }) {
   const email = buildCarAuthorizationEmail({ bookingReference, authorization, token, subject, message, rentalCompanyName, rentalCompanyLogoUrl });
-  const from = fromAddress();
-
-  if (env.resendApiKey) {
-    const resend = new Resend(env.resendApiKey);
-    const { data, error } = await resend.emails.send({ from, to: [recipient], subject: email.subject, html: email.html });
-    if (!error) return { ...(data || {}), provider: 'resend', from, to: recipient, subject: email.subject, url: email.url };
-    // Resend errors are not silently swallowed when it is explicitly configured.
-    // SMTP is still allowed as an operational fallback if it is also configured.
-    if (!smtpConfigured()) throw new Error(error.message || 'Unable to send authorization email.');
-  }
-
-  if (smtpConfigured()) {
-    const result = await sendViaSmtp({ recipient, subject: email.subject, html: email.html });
-    return { ...result, from, to: recipient, subject: email.subject, url: email.url };
-  }
-
-  if (String(env.nodeEnv || '').toLowerCase() !== 'production') {
-    return { id: `dev-${Date.now()}`, provider: 'simulation', simulated: true, from, to: recipient, subject: email.subject, url: email.url };
-  }
-
-  const error = new Error('Customer email delivery is not configured. Configure RESEND_API_KEY or EMAIL_USER/EMAIL_PASS before sending authorization emails.');
-  error.code = 'EMAIL_PROVIDER_NOT_CONFIGURED';
-  error.statusCode = 503;
-  throw error;
+  const result = await sendCustomerHtmlEmail({ recipient, subject: email.subject, html: email.html });
+  return { ...result, url: email.url };
 }
 
-export default { buildCarAuthorizationEmail, sendCarAuthorizationEmail, carAuthorizationEmailProviderStatus };
+export default { buildCarAuthorizationEmail, sendCarAuthorizationEmail, sendCustomerHtmlEmail, carAuthorizationEmailProviderStatus };
