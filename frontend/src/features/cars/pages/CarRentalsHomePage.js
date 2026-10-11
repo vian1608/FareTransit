@@ -189,30 +189,6 @@ function CarRentalsHomePage() {
           </div>
         </section>
 
-        <section className="car-how-section" aria-labelledby="airport-rental-guides-title">
-          <div className="container">
-            <span className="car-ppc-section-eyebrow">Airport car rental guides</span>
-            <h2 id="airport-rental-guides-title">Start With Your Arrival Airport</h2>
-            <p className="car-ppc-section-lead">
-              Planning an airport pickup? Review location-specific guidance for vehicle categories, one-way rentals,
-              weekly rentals, nearby trip areas and practical driving considerations before you book.
-            </p>
-            <div className="car-how-grid">
-              {AIRPORT_GUIDES.map((airport) => (
-                <Link className="car-how-card car-airport-guide-card" to={`/car-rental/airport/${airport.slug}`} key={airport.code}>
-                  <div className="car-how-card__icon"><i className="fas fa-plane-arrival" aria-hidden="true" /></div>
-                  <h3>{airport.code} Car Rental</h3>
-                  <p>{airport.city} airport rental planning and booking assistance.</p>
-                  <span className="car-airport-guide-link">View airport guide →</span>
-                </Link>
-              ))}
-            </div>
-            <div style={{ marginTop: '22px', textAlign: 'center' }}>
-              <Link className="car-ppc-button car-ppc-button--outline" to="/car-rental/airport">Browse All Airport Car Rental Guides</Link>
-            </div>
-          </div>
-        </section>
-
         <section className="car-brand-section" aria-labelledby="car-brand-title">
           <div className="container">
             <span className="car-ppc-section-eyebrow">Recognized rental companies</span>
@@ -239,6 +215,30 @@ function CarRentalsHomePage() {
               Brand availability varies by location and travel dates. FareTransit is not affiliated with or endorsed by
               the brands displayed unless expressly stated.
             </p>
+          </div>
+        </section>
+
+        <section className="car-how-section" aria-labelledby="airport-rental-guides-title">
+          <div className="container">
+            <span className="car-ppc-section-eyebrow">Airport car rental guides</span>
+            <h2 id="airport-rental-guides-title">Start With Your Arrival Airport</h2>
+            <p className="car-ppc-section-lead">
+              Planning an airport pickup? Review location-specific guidance for vehicle categories, one-way rentals,
+              weekly rentals, nearby trip areas and practical driving considerations before you book.
+            </p>
+            <div className="car-how-grid">
+              {AIRPORT_GUIDES.map((airport) => (
+                <Link className="car-how-card car-airport-guide-card" to={`/car-rental/airport/${airport.slug}`} key={airport.code}>
+                  <div className="car-how-card__icon"><i className="fas fa-plane-arrival" aria-hidden="true" /></div>
+                  <h3>{airport.code} Car Rental</h3>
+                  <p>{airport.city} airport rental planning and booking assistance.</p>
+                  <span className="car-airport-guide-link">View airport guide →</span>
+                </Link>
+              ))}
+            </div>
+            <div style={{ marginTop: '22px', textAlign: 'center' }}>
+              <Link className="car-ppc-button car-ppc-button--outline" to="/car-rental/airport">Browse All Airport Car Rental Guides</Link>
+            </div>
           </div>
         </section>
 
