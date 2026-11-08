@@ -7,6 +7,7 @@ import ScrollToTop from '../shared/components/ScrollToTop';
 import SeoRouteGuard from '../shared/components/SeoRouteGuard';
 import TravelHomePage from '../shared/pages/TravelHomePage';
 import Home from '../features/flights/pages/Home';
+import DeltaBookingLandingPage from '../features/flights/pages/DeltaBookingLandingPage';
 import SearchResults from '../features/flights/pages/SearchResultsPage';
 import SignIn from '../features/customers/pages/SignInPage';
 import SignUp from '../features/customers/pages/SignUpPage';
@@ -78,6 +79,7 @@ function App() {
               <Routes>
                 <Route path="/" element={<TravelHomePage />} />
                 <Route path="/flights" element={<Home />} />
+                <Route path="/flights/delta" element={<DeltaBookingLandingPage />} />
 
                 {/* Hotel search is URL-authoritative; all booking requests return through CRM. */}
                 <Route path="/hotels" element={<HotelSearchPage />} />
