@@ -7,6 +7,7 @@ function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
+  const isDeltaLanding = location.pathname === '/flights/delta';
 
   useEffect(() => {
     const onScroll = () => {
@@ -48,7 +49,8 @@ function Header() {
     '/senior-travel',
     '/senior-travel/flight-deals',
   ]);
-  const isFlightsActive = location.pathname === '/flights'
+  const isFlightsActive = location.pathname.startsWith('/flights/')
+    || location.pathname === '/flights'
     || location.pathname.startsWith('/flight-')
     || location.pathname.startsWith('/routes/flight-')
     || flightSupportPaths.has(location.pathname);
@@ -63,7 +65,7 @@ function Header() {
 
   return (
     <header
-      className={`header ${headerThemeClass} ${isAdminRoute ? 'header--admin-route' : ''} ${scrolled ? 'header--scrolled' : ''}`}
+      className={`header ${headerThemeClass} ${isAdminRoute ? 'header--admin-route' : ''} ${isDeltaLanding ? 'header--delta-landing' : ''} ${scrolled ? 'header--scrolled' : ''}`}
     >
       <div className="container header-inner">
         <div className="logo">
@@ -73,7 +75,7 @@ function Header() {
             aria-hidden="true"
           />
           <Link to="/" className="logo-link" onClick={closeMenu}>
-            <h1>FareTransit</h1>
+            {isDeltaLanding ? <span className="logo-heading">FareTransit</span> : <h1>FareTransit</h1>}
           </Link>
         </div>
 
