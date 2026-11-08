@@ -68,7 +68,7 @@ function setCanonical(html, canonicalUrl) {
 }
 
 function setRootShell(html, page) {
-  const rootRe = /<div id=["']root["']><\\/div>/i;
+  const rootRe = /<div id=["']root["']><\/div>/i;
   if (!rootRe.test(html)) {
     throw new Error('Could not find the CRA root element while generating SEO prerender output.');
   }
@@ -81,10 +81,6 @@ function setRootShell(html, page) {
   }
 
   const shell = `<div id="root"><main data-seo-prerender="true" style="min-height:60vh;padding:5rem 8%;background:#f8fafc;color:#0f172a;font-family:Inter,Arial,sans-serif"><p style="font-weight:800;text-transform:uppercase;letter-spacing:.12em;color:#8b1538">FareTransit</p><h1 style="max-width:900px;font-size:clamp(2.2rem,5vw,4.2rem);line-height:1.05;margin:.5rem 0 1rem">${escapeHtml(page.h1)}</h1><p style="max-width:760px;font-size:1.1rem;line-height:1.7;color:#475569">${escapeHtml(page.lead)}</p><nav aria-label="Travel services" style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:1.5rem"><a href="/flights">Flights</a><a href="/hotels">Hotels</a><a href="/car-rentals">Car Rentals</a></nav></main></div>`;
-  const rootRe = /<div id=["']root["']><\/div>/i;
-  if (!rootRe.test(html)) {
-    throw new Error('Could not find the CRA root element while generating SEO prerender output.');
-  }
   return html.replace(rootRe, shell);
 }
 
