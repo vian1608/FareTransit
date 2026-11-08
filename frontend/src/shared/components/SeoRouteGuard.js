@@ -9,6 +9,7 @@ import { CANONICAL_ORIGIN, getCoreSeo, serviceSchemaFor } from '../seo/seoConfig
 const INDEXABLE_EXACT = new Set([
   '/',
   '/flights',
+  '/flights/delta',
   '/hotels',
   '/car-rentals',
   '/contact',
