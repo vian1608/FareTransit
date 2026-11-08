@@ -17,6 +17,17 @@ export const CORE_SEO_PAGES = {
       serviceType: 'Flight booking assistance',
     },
   },
+  '/flights/delta': {
+    pageName: 'Delta Flight Booking Assistance',
+    title: 'Delta Flight Booking Assistance | Fare Transit',
+    description: 'Explore available Delta flight options with Fare Transit. Contact our independent travel reservation team to discuss new flight bookings and fares.',
+    socialImage: `${CANONICAL_ORIGIN}/favicon.png`,
+    parent: '/flights',
+    service: {
+      name: 'Independent Delta flight reservation assistance',
+      serviceType: 'New flight reservation assistance',
+    },
+  },
   '/hotels': {
     pageName: 'Hotel Booking Assistance',
     title: 'Hotel Booking & Reservation Assistance | FareTransit',
