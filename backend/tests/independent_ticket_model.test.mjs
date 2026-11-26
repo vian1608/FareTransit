@@ -200,3 +200,27 @@ test('review link and independent returning customer offer render in email, text
  assert.match(raw,/\/Subtype\s*\/Link/);
  assert.equal((raw.match(/\/Type\s*\/Page\b/g)||[]).length,1);
 });
+
+test('e-ticket open detector is recipient-specific and preserves archived HTML',async()=>{
+ const {trackingHtml,trackable,openNotice}=await import('../src/modules/independent-tickets/ticket.activity.mjs');
+ const d=normalizeTicket({customer:{email:'sample@example.test'}});
+ const html=renderTicket(d);
+ assert.match(html,/data-ft-open-notice/);assert.ok(html.includes(openNotice));assert.doesNotMatch(html,/independent-ticket-open\//);
+ const a={tracking_token:'00000000-0000-4000-8000-000000000001',payload:{html}};
+ const b={...a,tracking_token:'00000000-0000-4000-8000-000000000002'};
+ assert.ok(trackable(a));assert.match(trackingHtml(a),/00000000-0000-4000-8000-000000000001\.gif/);
+ assert.notEqual(trackingHtml(a),trackingHtml(b));assert.equal(a.payload.html,html);
+ assert.equal(trackingHtml({...a,payload:{html:'<html><body>Old archive</body></html>'}}),'<html><body>Old archive</body></html>');
+});
+test('Resend webhook authenticates raw bytes, rejects replay and supports exact delivery tag',async()=>{
+ const {verifyResendEvent}=await import('../src/modules/independent-tickets/ticket.activity.mjs');
+ const {createHmac}=await import('node:crypto');
+ const key=Buffer.alloc(32,7),secret='whsec_'+key.toString('base64'),stamp='1795680000',id='msg_test';
+ const raw=Buffer.from(JSON.stringify({type:'email.opened',created_at:'2026-11-26T08:00:00Z',data:{email_id:'00000000-0000-4000-8000-000000000001',to:['sample@example.test'],tags:{ft_delivery:'00000000-0000-4000-8000-000000000002'}}}));
+ const signature=createHmac('sha256',key).update(id+'.'+stamp+'.').update(raw).digest('base64');
+ const headers={'svix-id':id,'svix-timestamp':stamp,'svix-signature':'v1,'+signature};
+ const event=verifyResendEvent(raw,headers,secret,Number(stamp)*1000);
+ assert.equal(event.p_kind,'opened');assert.equal(event.p_event_id,'resend:'+id);assert.equal(event.p_delivery,'00000000-0000-4000-8000-000000000002');
+ assert.throws(()=>verifyResendEvent(Buffer.concat([raw,Buffer.from(' ')]),headers,secret,Number(stamp)*1000));
+ assert.throws(()=>verifyResendEvent(raw,headers,secret,(Number(stamp)+301)*1000));
+});

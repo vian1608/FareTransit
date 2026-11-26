@@ -3,6 +3,7 @@ import env from '../../config/env.mjs';
 import {generateTicketPdf} from './ticket.pdf.mjs';
 import {archivePathForJob} from './ticket.recipients.mjs';
 import {deliverySubject} from './ticket.subject.mjs';
+import {trackingHtml,trackable} from './ticket.activity.mjs';
 const bucket='independent-ticket-pdfs';
 async function archivedPdf(job){
  const store=supabase.storage.from(bucket);
@@ -33,7 +34,7 @@ async function processJob(job){
   return;
  }
  try{
-  const r=await fetch('https://api.resend.com/emails',{method:'POST',signal:AbortSignal.timeout(15000),headers:{Authorization:'Bearer '+env.resendApiKey,'Content-Type':'application/json','Idempotency-Key':'ft-independent-'+job.idempotency_key},body:JSON.stringify({from:env.resendFrom||'FareTransit <support@faretransit.com>',to:[p.recipient],subject:deliverySubject(p),html:p.html,text:p.text,reply_to:'support@faretransit.com',attachments:[{filename:'FareTransit-ticket.pdf',content:pdf.toString('base64')}]})});
+  const r=await fetch('https://api.resend.com/emails',{method:'POST',signal:AbortSignal.timeout(15000),headers:{Authorization:'Bearer '+env.resendApiKey,'Content-Type':'application/json','Idempotency-Key':'ft-independent-'+job.idempotency_key},body:JSON.stringify({from:env.resendFrom||'FareTransit <support@faretransit.com>',to:[p.recipient],subject:deliverySubject(p),html:trackingHtml(job),text:p.text,...(trackable(job)?{tags:[{name:'ft_delivery',value:job.id}]}:{}),reply_to:'support@faretransit.com',attachments:[{filename:'FareTransit-ticket.pdf',content:pdf.toString('base64')}]})});
   if(r.ok){
    const data=await r.json();
    await finish(job,data.id?{status:'sent',provider_id:data.id,last_error:null}:{status:'uncertain',last_error:'Provider returned no message ID'});
