@@ -151,3 +151,15 @@ test('email and PDF share the compact title and airline confirmation; header log
  assert.equal(ticketConfirmationLine(normalizeTicket({})),'');
  assert.doesNotMatch(renderTicket(normalizeTicket({})),/Airline confirmation:/);
 });
+
+test('customer support number appears in HTML, plain text and PDF footer',async()=>{
+ const {ticketText}=await import('../src/modules/independent-tickets/ticket.renderer.mjs');
+ const {generateTicketPdf}=await import('../src/modules/independent-tickets/ticket.pdf.mjs');
+ const d=normalizeTicket({customer:{email:'sample@example.test'},passengers:[{name:'Sample Traveler'}],segments:[{carrier:'UA',flight:'123',from:'EWR',to:'SFO',departureDate:'2027-01-01',arrivalDate:'2027-01-01',departureTime:'10:00',arrivalTime:'13:00'}]});
+ const html=renderTicket(d),footer=html.slice(html.indexOf('Prepared by FareTransit LLC'));
+ assert.match(footer,/href="tel:\+18887808855">\+1 \(888\) 780-8855<\/a>/);
+ assert.match(ticketText(d),/\+1 \(888\) 780-8855/);
+ const pdf=await generateTicketPdf(d);const raw=pdf.toString('latin1');
+ assert.match(raw,/tel:\+18887808855/);
+ assert.equal((raw.match(/\/Type\s*\/Page\b/g)||[]).length,1);
+});
