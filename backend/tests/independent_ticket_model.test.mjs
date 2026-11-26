@@ -126,3 +126,10 @@ test('email subject uses airline and PNR, not internal FareTransit reference',as
  assert.equal(deliverySubject(old),old.subject);
  assert.equal(deliverySubject({...old,source_delivery_id:'original'}),ticketSubject(snapshot));
 });
+
+test('PDF header shows airline PNR without displaying the internal document reference',async()=>{
+ const {pdfConfirmationLine}=await import('../src/modules/independent-tickets/ticket.pdf.mjs');
+ assert.equal(pdfConfirmationLine(normalizeTicket({references:[{carrier:'UA',pnr:'ABC123'}]})),'Airline confirmation: ABC123');
+ assert.equal(pdfConfirmationLine(normalizeTicket({references:[{carrier:'UA',pnr:'ABC123'},{carrier:'AA',pnr:'DEF456'}]})),'Airline confirmations: see confirmation details below');
+ assert.equal(pdfConfirmationLine(normalizeTicket({})),'');
+});

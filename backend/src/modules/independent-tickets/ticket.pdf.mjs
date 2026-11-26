@@ -6,6 +6,11 @@ import {flightDisplay,connectionDisplay} from './ticket.flight-display.mjs';
 import {displayUsd,merchantAmount,paymentLabel,maskedCard} from './ticket.payment-display.mjs';
 import {passengerSeatGroups} from './ticket.seats.mjs';
 const burgundy='#8b1236',ink='#23334b';
+// Customer-facing reference uses the airline's actual confirmation, never a shortened internal ID.
+export function pdfConfirmationLine(d){
+ const pnrs=[...new Set((d.references||[]).map(r=>r.pnr).filter(v=>typeof v==='string'&&/^[A-Z0-9]{6}$/.test(v)))];
+ return pnrs.length===1?'Airline confirmation: '+pnrs[0]:pnrs.length>1?'Airline confirmations: see confirmation details below':'';
+}
 export function generateTicketPdf(d,{reference='',createdAt,draft=false}={}){
  return new Promise((resolve,reject)=>{
   const doc=new PDFDocument({size:'LETTER',margin:44,bufferPages:true,info:{Title:'FareTransit travel document',Author:'FareTransit LLC',CreationDate:createdAt?new Date(createdAt):new Date()}});
@@ -32,7 +37,7 @@ export function generateTicketPdf(d,{reference='',createdAt,draft=false}={}){
    const y=doc.y;doc.roundedRect(44,y,width,34,8).fill(burgundy);
    doc.fillColor('#ffffff').font('Helvetica-Bold').fontSize(15).text(d.documentType==='ticket'?'E-ticket receipt & flight itinerary':'Flight itinerary',58,y+9,{width:width-28,lineBreak:false});
    doc.x=44;doc.y=y+43;
-   if(reference)para('FareTransit document reference: '+reference);
+   const confirmationLine=pdfConfirmationLine(d);if(confirmationLine)para(confirmationLine);
    if(draft)para('DRAFT — NOT VALID FOR TRAVEL');
    const smallLabel=(s,x,y,w,align='left')=>doc.font('Helvetica-Bold').fontSize(8).fillColor('#64748b').text(s,x,y,{width:w,align,lineBreak:false});
    title('Passenger details',d.passengers.length?85:0);
