@@ -96,3 +96,21 @@ test('field-specific validation identifies arrival and ticket number errors',()=
  const errors=validateTicket(d);assert.ok(errors.some(e=>e.includes('Segment 1')&&e.includes('arrival date')));assert.ok(errors.some(e=>e.includes('14 digits')&&e.includes('13 digits')));
  d.segments[0].arrivalDate='2027-01-01';d.passengers[0].ticketNumber='000-0000000000';assert.deepEqual(validateTicket(d),[]);
 });
+
+test('PDF footer never creates blank overflow pages; single leg fits one page',async()=>{
+ const {generateTicketPdf}=await import('../src/modules/independent-tickets/ticket.pdf.mjs');
+ const d=normalizeTicket({customer:{email:'sample@example.test'},passengers:[{name:'Sample Traveler'}],segments:[{carrier:'UA',flight:'123',from:'EWR',to:'SFO',departureDate:'2027-01-01',arrivalDate:'2027-01-01',departureTime:'10:00',arrivalTime:'13:00'}]});
+ const pdf=await generateTicketPdf(d);
+ const pages=(pdf.toString('latin1').match(/\/Type\s*\/Page\b/g)||[]).length;
+ assert.equal(pages,1);
+});
+test('four-leg round trip with seats, payment and notes fits at most three pages',async()=>{
+ const {generateTicketPdf}=await import('../src/modules/independent-tickets/ticket.pdf.mjs');
+ const {seatFlightKey}=await import('../src/modules/independent-tickets/ticket.seats.mjs');
+ const leg=(direction,flight,from,to,date,departureTime,arrivalTime)=>({direction,carrier:'UA',flight,from,to,departureDate:date,arrivalDate:date,departureTime,arrivalTime,baggage:'1 carry-on'});
+ const segments=[leg('outbound','4477','XNA','IAH','2027-01-01','06:30','08:28'),leg('outbound','1512','IAH','LIR','2027-01-01','09:35','13:10'),leg('inbound','1918','LIR','DEN','2027-01-04','13:00','17:31'),leg('inbound','1048','DEN','XNA','2027-01-04','20:40','23:29')];
+ const d=normalizeTicket({customer:{email:'sample@example.test'},documentType:'ticket',seatAssignmentsEnabled:true,passengers:[{name:'Sample Traveler',ticketNumber:'0160000000000',seats:segments.map((s,i)=>({flightKey:seatFlightKey(s),seat:['12A','14C','18F','10B'][i]}))}],references:[{carrier:'UA',pnr:'ABC123'}],segments,payment:{show:true,merchants:[{merchant:'FareTransit',amount:'902.00',cardBrand:'AMEX',cardLast4:'1111',status:'charged'},{merchant:'FareTransit',amount:'335.61',cardBrand:'AMEX',cardLast4:'2222',status:'charged'}]},notes:'Seat selection has been offered.'});
+ const pdf=await generateTicketPdf(d,{reference:'FT-ET-SAMPLE'});
+ const pages=(pdf.toString('latin1').match(/\/Type\s*\/Page\b/g)||[]).length;
+ assert.ok(pages>=2&&pages<=3,'Expected 2–3 content pages, got '+pages);
+});
