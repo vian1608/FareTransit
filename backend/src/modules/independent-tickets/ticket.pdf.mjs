@@ -81,7 +81,16 @@ export function generateTicketPdf(d,{reference='',createdAt,draft=false}={}){
    for(const direction of ['outbound','inbound']){
     const seg=d.segments.filter(s=>s.direction===direction);if(!seg.length)continue;
     title(direction==='outbound'?'Outbound journey':'Inbound journey',190);
-    para(seg[0].from+' → '+seg[seg.length-1].to+' · '+seg.length+' flight'+(seg.length===1?'':'s'));
+    // Draw the route arrow as a vector: built-in Helvetica uses WinAnsi,
+    // which cannot encode U+2192. Keep the airport labels as searchable text.
+    ensure(20);
+    const routeY=doc.y,origin=seg[0].from,destination=seg[seg.length-1].to;
+    doc.font('Helvetica').fontSize(10).fillColor(ink);
+    doc.text(origin,44,routeY,{lineBreak:false});
+    const arrowX=44+doc.widthOfString(origin)+6,arrowY=routeY+5;
+    doc.save().lineWidth(.9).strokeColor(ink).moveTo(arrowX,arrowY).lineTo(arrowX+12,arrowY).moveTo(arrowX+8,arrowY-3).lineTo(arrowX+12,arrowY).lineTo(arrowX+8,arrowY+3).stroke().restore();
+    doc.text(destination+' · '+seg.length+' flight'+(seg.length===1?'':'s'),arrowX+18,routeY,{lineBreak:false});
+    doc.x=44;doc.y=routeY+15;
     for(const [i,s] of seg.entries()){
      const f=flightDisplay(s),c=connectionDisplay(s,seg[i+1]);
      const meta=[s.cabin?'Cabin: '+s.cabin:'',s.operatingCarrier?'Operated by '+carrierName(s.operatingCarrier):'',s.baggage?'Baggage: '+s.baggage:''].filter(Boolean).join(' · ');
