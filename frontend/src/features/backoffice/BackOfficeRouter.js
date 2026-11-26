@@ -7,6 +7,7 @@ import BaggageAdminPage from '../admin/pages/BaggageAdminPage';
 import FlexAdminPage from '../admin/pages/FlexAdminPage';
 import { BackOfficeAuthProvider, useBackOfficeAuth } from './BackOfficeAuthContext';
 import BackOfficeShell from './BackOfficeShell';
+import IndependentTicketPage from '../independent-tickets/IndependentTicketPage';
 import {
   AuditLogsPage, CommissionsPage, DisputesPage, FinancePage, HotelsPage,
   IntegrationsPage, LeadDetailPage, LeadsPage, PaymentsPage, PlaceholderPage,
@@ -61,6 +62,8 @@ export default function BackOfficeRouter() {
     <Route path="/admin/customers/:id" element={<Page permission="crm.customers.view"><CustomerDetailPage /></Page>} />
     <Route path="/admin/payments" element={<Page permissions={PAYMENT_VIEW}><PaymentsNav active="transactions"><PaymentsPage /></PaymentsNav></Page>} />
     <Route path="/admin/settings" element={<Page permissions={SETTINGS_VIEW}><SettingsHomePage /></Page>} />
+
+    {process.env.REACT_APP_INDEPENDENT_TICKETS_ENABLED === "true" && <Route path="/admin/bookings/independent-tickets" element={<Page permission="*"><IndependentTicketPage /></Page>} />}
 
     {/* Booking creation and detail workspaces — not permanent navigation items */}
     <Route path="/admin/bookings/new/flight" element={<Page permission="bookings.flights.create"><AdminCreateBookingPage /></Page>} />

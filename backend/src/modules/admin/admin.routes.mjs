@@ -12,6 +12,7 @@ import adminAssistanceController from './admin.assistance.controller.mjs';
 import voucherController from '../vouchers/voucher.controller.mjs';
 import '../bookings/booking.repository.runtime-repair.mjs';
 import '../bookings/booking.repository.egress-hardening.mjs';
+import independentTicketRoutes from '../independent-tickets/ticket.routes.mjs';
 import authenticate from '../../middleware/authenticate.mjs';
 import authorize from '../../middleware/authorize.mjs';
 import rateLimit from '../../middleware/rate-limit.mjs';
@@ -97,6 +98,8 @@ router.get('/bookings/:id/authorization-pdf', adminReadRateLimiter, authenticate
 router.get('/stats', adminReadRateLimiter, authenticate, authorize(['admin']), adminController.getStats);
 router.get('/analytics', adminReadRateLimiter, authenticate, authorize(['admin']), adminController.getAnalytics);
 router.get('/abandoned-bookings', adminReadRateLimiter, authenticate, authorize(['admin']), adminController.getAbandonedBookings);
+
+router.use('/independent-tickets/v1', adminReadRateLimiter, authenticate, independentTicketRoutes);
 
 export default router;
 export { router as adminRouter };
