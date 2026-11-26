@@ -9,8 +9,8 @@ export function ticketSubject(d={}){
  const carriers=[...new Set([first?.carrier,...segments.map(s=>s?.carrier),...refs.map(r=>r?.carrier)].map(code).filter(Boolean))];
  const lead=carriers[0];
  const name=lead?String(carrierName(lead)).replace(/[\r\n\x00-\x1f\x7f]/g,' ').trim().slice(0,80):'';
- const label=name||lead||(d.documentType==='ticket'?'E-ticket receipt':'Flight itinerary');
- return 'FareTransit — '+label+(carriers.length>1?' +'+(carriers.length-1):'')+(first?' · '+first.pnr:'');
+ const label=name||lead;
+ return 'E-Ticket'+(label?' — '+label:'')+(carriers.length>1?' +'+(carriers.length-1):'')+(first?' · '+first.pnr:'');
 }
 export function deliverySubject(payload){
  // New forwards use the archived snapshot's airline/PNR, not the current draft.
