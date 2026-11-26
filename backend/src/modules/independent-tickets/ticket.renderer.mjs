@@ -1,6 +1,7 @@
 import { carrierName,cents,money,paymentTotal } from './ticket.model.mjs';
 import {carrierLogoUrl,brandMarkUrl} from './ticket.branding.mjs';
 import {flightDisplay,connectionDisplay} from './ticket.flight-display.mjs';
+import {displayUsd,merchantAmount,paymentLabel,maskedCard} from './ticket.payment-display.mjs';
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const logo=code=>carrierLogoUrl(code)?'<img width="40" height="40" style="object-fit:contain;vertical-align:middle" alt="'+esc(carrierName(code))+'" src="'+esc(carrierLogoUrl(code))+'">':'';
 const line=(a,b)=>'<tr><td style="padding:8px;border-bottom:1px solid #e4e8ee">'+a+'</td><td style="padding:8px;border-bottom:1px solid #e4e8ee;text-align:right">'+b+'</td></tr>';
@@ -25,11 +26,17 @@ export function renderTicket(d,{draft=false}={}){
   }).join('')+'<p style="font-size:11px;color:#64748b;margin:9px 0 0">All departure and arrival times are local to the respective airports.</p>';
  }
  if(d.payment.show&&d.payment.merchants.length){
-  body+=heading('Payment & merchant charges')+table(d.payment.merchants.map(m=>line(esc(m.merchant)+'<br><small>'+esc(m.status)+(m.cardLast4?' · '+esc(m.cardBrand)+' ending in '+esc(m.cardLast4):'')+'</small>',money(cents(m.amount)||0)+' USD')).join('')+['charged','authorized','pending'].filter(s=>d.payment.merchants.some(m=>m.status===s)).map(s=>line('<strong>Total '+s+'</strong>','<strong>'+money(paymentTotal(d,s))+' USD</strong>')).join(''));
-  body+='<p style="font-size:12px">Separate merchant transactions may appear on your card statement.</p>';
+  const merchants=d.payment.merchants;
+  body+=heading('Payment & merchant charges')+'<div style="border:1px solid #dce3ec;border-radius:10px;overflow:hidden;margin:9px 0"><table role="presentation" width="100%" style="border-collapse:collapse;table-layout:fixed;background:#f4f6fa"><tr><td style="padding:10px 12px;font-size:10px;color:#64748b;letter-spacing:.6px;font-weight:bold">MERCHANT / PAYMENT METHOD</td><td align="right" width="36%" style="padding:10px 12px;font-size:10px;color:#64748b;letter-spacing:.6px;font-weight:bold">AMOUNT (USD)</td></tr></table><table role="presentation" width="100%" style="border-collapse:collapse;table-layout:fixed">'+merchants.map(m=>{
+   const tone=m.status==='charged'?['#edf6ef','#245c36']:m.status==='authorized'?['#eef3fa','#355579']:['#fff6e7','#845817'];
+   return '<tr><td valign="top" style="padding:14px 12px;border-bottom:1px solid #e5eaf0"><div style="font-size:16px;line-height:1.4;color:#172b46;font-weight:bold;overflow-wrap:anywhere">'+esc(m.merchant||'Merchant to be confirmed')+'</div>'+(maskedCard(m)?'<div style="margin-top:5px;font-size:12px;color:#475569">'+esc(maskedCard(m))+'</div>':'')+'<div style="margin-top:7px"><span style="display:inline-block;background:'+tone[0]+';color:'+tone[1]+';font-size:10px;font-weight:bold;padding:4px 8px;border-radius:4px">'+esc(paymentLabel(m.status))+'</span></div></td><td width="36%" align="right" valign="middle" style="padding:14px 12px;border-bottom:1px solid #e5eaf0"><strong style="font-size:18px;color:#172b46">'+esc(merchantAmount(m))+'</strong></td></tr>';
+  }).join('')+'</table><table role="presentation" width="100%" style="border-collapse:collapse;background:#f4f6fa">'+['charged','authorized','pending'].filter(s=>merchants.some(m=>m.status===s)).map(s=>{
+   const valid=merchants.filter(m=>m.status===s).every(m=>cents(m.amount)!==null&&m.currency==='USD');
+   return '<tr><td style="padding:13px 12px;font-weight:bold;color:#172b46;font-size:14px">Total '+esc(s)+'</td><td align="right" style="padding:13px 12px"><strong style="color:#8b1236;font-size:23px">'+esc(valid?displayUsd(paymentTotal(d,s)):'Amount to be confirmed')+'</strong> <span style="color:#64748b;font-size:11px">USD</span></td></tr>';
+  }).join('')+'</table></div><p style="font-size:12px;line-height:1.5;color:#64748b;margin:8px 0">Separate merchant transactions may appear on your card statement.</p>';
  }
- if(d.notes)body+=heading('Special notes')+'<p style="white-space:pre-wrap">'+esc(d.notes).replace(/\n/g,'<br>')+'</p>';
- body+='<p style="border-top:1px solid #ddd;padding-top:12px;font-size:12px">Prepared by FareTransit LLC · support@faretransit.com · Airline reservation details should be verified with the airline.</p></div>';
+ if(d.notes)body+=heading('Special notes')+'<div style="background:#f4f6fa;border-left:3px solid #8b1236;border-radius:4px;padding:14px 16px;font-size:14px;line-height:1.6;color:#23334b;overflow-wrap:anywhere">'+esc(d.notes).replace(/\n/g,'<br>')+'</div>';
+ body+='<div style="border-top:1px solid #dce3ec;margin-top:28px;padding-top:16px"><table role="presentation" width="100%" style="border-collapse:collapse"><tr><td valign="middle" style="padding-right:8px"><strong style="font-size:15px;color:#8b1236">Prepared by FareTransit LLC</strong><div style="font-size:11px;color:#64748b;margin-top:4px">Customer support</div></td><td align="right" valign="middle"><a style="font-size:12px;color:#23334b;text-decoration:underline" href="mailto:support@faretransit.com">support@faretransit.com</a></td></tr></table><p style="font-size:11px;color:#64748b;line-height:1.5;margin:12px 0 0">Airline reservation details should be verified with the airline.</p></div></div>';
  return '<!doctype html><html><head><meta charset="utf-8"></head><body>'+body+'</body></html>';
 }
 export function ticketText(d){

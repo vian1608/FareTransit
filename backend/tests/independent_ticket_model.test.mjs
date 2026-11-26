@@ -41,3 +41,14 @@ test('passenger and airline confirmation cards preserve original identifiers and
  assert.match(html,/CONFIRMATION CODE \(PNR\)/);assert.match(html,/ABC123/);
  assert.match(html,/\/assets\/airlines\/ua\.png/);
 });
+
+test('payment presentation retains separate merchant transactions and status-specific totals',()=>{
+ const d=normalizeTicket({payment:{show:true,merchants:[{merchant:'FareTransit',amount:'902.00',cardBrand:'AMEX',cardLast4:'1111',status:'charged'},{merchant:'FareTransit',amount:'335.61',cardBrand:'AMEX',cardLast4:'2222',status:'charged'},{merchant:'Airline',amount:'25.00',status:'authorized'}]},notes:'Seat selection offered.'});
+ const html=renderTicket(d);
+ assert.match(html,/\$1,237\.61/);assert.match(html,/\$902\.00/);assert.match(html,/\$335\.61/);
+ assert.match(html,/AMEX ending in 1111/);assert.match(html,/AMEX ending in 2222/);
+ assert.match(html,/Total charged/);assert.match(html,/Total authorized/);
+ assert.match(html,/Seat selection offered\./);assert.match(html,/mailto:support@faretransit\.com/);
+ assert.doesNotMatch(renderTicket(normalizeTicket({})),/Payment & merchant charges/);
+ assert.match(renderTicket(normalizeTicket({payment:{show:true,merchants:[{merchant:'Sample',amount:'',status:'pending'}]}})),/Amount to be confirmed/);
+});

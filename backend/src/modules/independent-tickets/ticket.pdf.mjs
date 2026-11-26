@@ -3,6 +3,7 @@ import {carrierName,cents,money,paymentTotal} from './ticket.model.mjs';
 import {localCarrierLogo,localBrandMark} from './ticket.branding.mjs';
 
 import {flightDisplay,connectionDisplay} from './ticket.flight-display.mjs';
+import {displayUsd,merchantAmount,paymentLabel,maskedCard} from './ticket.payment-display.mjs';
 const burgundy='#8b1236',ink='#23334b';
 export function generateTicketPdf(d,{reference='',createdAt,draft=false}={}){
  return new Promise((resolve,reject)=>{
@@ -86,12 +87,39 @@ export function generateTicketPdf(d,{reference='',createdAt,draft=false}={}){
    }
    if(d.payment.show&&d.payment.merchants.length){
     title('Payment & merchant charges');
-    for(const m of d.payment.merchants){ensure(42);para(m.merchant+' · '+money(cents(m.amount)||0)+' USD · '+m.status+(m.cardLast4?' · '+m.cardBrand+' ending in '+m.cardLast4:''));}
-    for(const status of ['charged','authorized','pending'])if(d.payment.merchants.some(m=>m.status===status)){ensure(30);doc.font('Helvetica-Bold').fontSize(11).fillColor(ink).text('Total '+status+': '+money(paymentTotal(d,status))+' USD');}
+    const merchants=d.payment.merchants;
+    ensure(34);let yy=doc.y;doc.roundedRect(44,yy,width,24,4).fill('#f4f6fa');smallLabel('MERCHANT / PAYMENT METHOD',56,yy+8,width*.6);smallLabel('AMOUNT (USD)',44+width*.64,yy+8,width*.36-12,'right');doc.x=44;doc.y=yy+29;
+    for(const m of merchants){
+     const name=m.merchant||'Merchant to be confirmed',card=maskedCard(m),left=width*.62-24;
+     doc.font('Helvetica-Bold').fontSize(12);const nameH=doc.heightOfString(name,{width:left});
+     doc.font('Helvetica').fontSize(9);const cardH=card?doc.heightOfString(card,{width:left})+4:0;
+     const h=Math.max(60,40+nameH+cardH);ensure(h+4);yy=doc.y;
+     doc.roundedRect(44,yy,width,h,5).lineWidth(.7).stroke('#dce3ec');
+     doc.font('Helvetica-Bold').fontSize(12).fillColor(ink).text(name,56,yy+10,{width:left});
+     let sy=yy+13+nameH;if(card){doc.font('Helvetica').fontSize(9).fillColor('#475569').text(card,56,sy,{width:left});sy+=cardH;}
+     const [bg,fg]=m.status==='charged'?['#edf6ef','#245c36']:m.status==='authorized'?['#eef3fa','#355579']:['#fff6e7','#845817'];
+     doc.font('Helvetica-Bold').fontSize(8);const label=paymentLabel(m.status),bw=doc.widthOfString(label)+14;
+     doc.roundedRect(56,sy+3,bw,15,3).fill(bg);doc.fillColor(fg).text(label,63,sy+7,{lineBreak:false});
+     doc.font('Helvetica-Bold').fontSize(15).fillColor(ink).text(merchantAmount(m),44+width*.64,yy+h/2-9,{width:width*.36-12,align:'right',lineBreak:false,ellipsis:true});
+     doc.x=44;doc.y=yy+h+4;
+    }
+    for(const status of ['charged','authorized','pending'])if(merchants.some(m=>m.status===status)){
+     const valid=merchants.filter(m=>m.status===status).every(m=>cents(m.amount)!==null&&m.currency==='USD');
+     ensure(42);yy=doc.y;doc.roundedRect(44,yy,width,36,5).fill('#f4f6fa');
+     doc.font('Helvetica-Bold').fontSize(11).fillColor(ink).text('Total '+status,56,yy+12,{width:width*.45,lineBreak:false});
+     doc.font('Helvetica-Bold').fontSize(18).fillColor(burgundy).text(valid?displayUsd(paymentTotal(d,status))+' USD':'Amount to be confirmed',44+width*.47,yy+9,{width:width*.53-12,align:'right',lineBreak:false,ellipsis:true});
+     doc.x=44;doc.y=yy+41;
+    }
     para('Separate merchant transactions may appear on your card statement.');
    }
-   if(d.notes){title('Special notes');para(d.notes);}
-   ensure(44);doc.moveDown();para('Prepared by FareTransit LLC · support@faretransit.com');para('Verify airline reservation details directly with the airline.');
+   if(d.notes){
+    title('Special notes');doc.font('Helvetica').fontSize(10);
+    const nh=doc.heightOfString(d.notes,{width:width-28,lineGap:3})+24;
+    if(nh<doc.page.height-120){ensure(nh+8);const ny=doc.y;doc.roundedRect(44,ny,width,nh,4).fill('#f4f6fa');doc.rect(44,ny,3,nh).fill(burgundy);doc.font('Helvetica').fontSize(10).fillColor(ink).text(d.notes,58,ny+12,{width:width-28,lineGap:3});doc.x=44;doc.y=ny+nh+8;}
+    else{doc.font('Helvetica').fontSize(10).fillColor(ink).text(d.notes,44,doc.y,{width,lineGap:3});doc.x=44;}
+   }
+   ensure(58);doc.moveDown();const fy=doc.y;doc.moveTo(44,fy).lineTo(44+width,fy).stroke('#dce3ec');doc.font('Helvetica-Bold').fontSize(11).fillColor(burgundy).text('Prepared by FareTransit LLC',44,fy+12,{width:width*.55,lineBreak:false});
+   doc.font('Helvetica').fontSize(9).fillColor(ink).text('support@faretransit.com',44+width*.55,fy+13,{width:width*.45,align:'right',lineBreak:false});doc.x=44;doc.y=fy+30;para('Airline reservation details should be verified with the airline.');
    const range=doc.bufferedPageRange();for(let i=range.start;i<range.start+range.count;i++){doc.switchToPage(i);doc.font('Helvetica').fontSize(8).fillColor('#65758b').text('FareTransit · '+(i+1)+' / '+range.count,44,doc.page.height-43,{align:'right',width,lineBreak:false});}
    doc.end();
   }catch(e){doc.destroy();reject(e);}
