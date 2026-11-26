@@ -33,7 +33,17 @@ export function validateTicket(d,{sending=false}={}){
   if(!d.passengers.length||d.passengers.some(p=>!p.name)) errors.push('Enter every passenger name.');
   if(!d.segments.length) errors.push('At least one flight segment is required.');
   d.segments.forEach((s,i)=>{
-    if(!/^[A-Z0-9]{2,3}$/.test(s.carrier)||!/^\d{1,4}[A-Z]?$/.test(s.flight)||!(/^[A-Z]{3}$/.test(s.from)&&/^[A-Z]{3}$/.test(s.to))||s.from===s.to||!calendar(s.departureDate)||!calendar(s.arrivalDate)||!clock(s.departureTime)||!clock(s.arrivalTime)) errors.push('Complete valid flight fields for segment '+(i+1)+'.');
+    const invalid=[];
+    if(!/^[A-Z0-9]{2,3}$/.test(s.carrier))invalid.push('carrier code');
+    if(!/^\d{1,4}[A-Z]?$/.test(s.flight))invalid.push('flight number');
+    if(!/^[A-Z]{3}$/.test(s.from))invalid.push('origin airport');
+    if(!/^[A-Z]{3}$/.test(s.to))invalid.push('destination airport');
+    if(s.from&&s.from===s.to)invalid.push('different origin and destination airports');
+    if(!calendar(s.departureDate))invalid.push('departure date');
+    if(!calendar(s.arrivalDate))invalid.push('arrival date');
+    if(!clock(s.departureTime))invalid.push('departure local time');
+    if(!clock(s.arrivalTime))invalid.push('arrival local time');
+    if(invalid.length)errors.push('Segment '+(i+1)+' ('+s.direction+'): check '+invalid.join(', ')+'.');
   });
   for(const direction of ['outbound','inbound']){
     const journey=d.segments.filter(s=>s.direction===direction);
@@ -42,8 +52,13 @@ export function validateTicket(d,{sending=false}={}){
   if(d.references.some(r=>!/^[A-Z0-9]{6}$/.test(r.pnr)||!/^[A-Z0-9]{2,3}$/.test(r.carrier)))errors.push('Complete valid airline reference rows or remove empty rows.');
   if(d.documentType==='ticket'){
     if(!d.references.length)errors.push('An actual airline PNR is required.');
-    if(d.passengers.some(p=>!/^\d{13}$/.test(p.ticketNumber.replace(/[- ]/g,'')))) errors.push('An issued 13-digit ticket number is required for each passenger. Use itinerary for ticketless reservations.');
+
   }
+  d.passengers.forEach((p,i)=>{
+    const number=p.ticketNumber.replace(/[- ]/g,'');
+    if(d.documentType==='ticket'&&!number)errors.push('Passenger '+(i+1)+': enter the issued 13-digit ticket number, or select Flight itinerary for ticketless travel.');
+    else if(number&&!/^\d{13}$/.test(number))errors.push('Passenger '+(i+1)+': ticket number has '+number.replace(/\D/g,'').length+' digits; expected exactly 13 digits. Check the original airline receipt.');
+  });
   if(d.payment.show){
     if(!d.payment.merchants.length)errors.push('Add merchant charges or hide the payment section.');
     d.payment.merchants.forEach((m,i)=>{
