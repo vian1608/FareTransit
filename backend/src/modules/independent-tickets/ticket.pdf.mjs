@@ -24,22 +24,10 @@ export function generateTicketPdf(d,{reference='',createdAt,draft=false}={}){
    logo(brand,44,44,38);
    doc.font('Helvetica-Bold').fillColor(burgundy).fontSize(23).text('FareTransit',brand?90:44,51,{lineBreak:false});
    const carriers=[...new Set(d.segments.map(s=>s.carrier).filter(Boolean))];
-   if(carriers.length===1){
-    const code=carriers[0],file=localCarrierLogo(code);
-    if(file)logo(file,right-32,46,32);
-    const nameWidth=file?174:208,nameRight=file?right-40:right;
-    doc.font('Helvetica-Bold').fontSize(11).fillColor(ink).text(carrierName(code),nameRight-nameWidth,57,{width:nameWidth,align:'right',lineBreak:false,ellipsis:true});
-   }else if(carriers.length>1){
-    const visible=carriers.slice(0,4),cell=40;
-    const remainder=carriers.length-visible.length;
-    const startX=right-(visible.length+(remainder?1:0))*cell;
-    for(const [i,code] of visible.entries()){
-     const x=startX+i*cell,file=localCarrierLogo(code);
-     if(file)logo(file,x+6,44,28);
-     doc.font('Helvetica-Bold').fontSize(8).fillColor(ink).text(code,x,76,{width:cell,align:'center',lineBreak:false});
-    }
-    if(remainder)doc.font('Helvetica-Bold').fontSize(10).fillColor(ink).text('+'+remainder,startX+visible.length*cell,56,{width:cell,align:'center',lineBreak:false});
-   }
+   // Header is logo-only; airline names remain in the detailed itinerary.
+   const marks=carriers.map(localCarrierLogo).filter(Boolean).slice(0,5);
+   const markSize=36,markGap=8;
+   marks.forEach((file,i)=>logo(file,right-marks.length*markSize-(marks.length-1)*markGap+i*(markSize+markGap),45,markSize));
    doc.x=44;doc.y=94;
    const y=doc.y;doc.roundedRect(44,y,width,34,8).fill(burgundy);
    doc.fillColor('#ffffff').font('Helvetica-Bold').fontSize(15).text(d.documentType==='ticket'?'E-ticket receipt & flight itinerary':'Flight itinerary',58,y+9,{width:width-28,lineBreak:false});
