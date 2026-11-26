@@ -41,8 +41,8 @@ export function generateTicketPdf(d,{reference='',createdAt,draft=false}={}){
     if(remainder)doc.font('Helvetica-Bold').fontSize(10).fillColor(ink).text('+'+remainder,startX+visible.length*cell,56,{width:cell,align:'center',lineBreak:false});
    }
    doc.x=44;doc.y=94;
-   const y=doc.y;doc.rect(44,y,width,34).fill(burgundy);
-   doc.fillColor('#ffffff').font('Helvetica-Bold').fontSize(15).text(d.documentType==='ticket'?'E-ticket receipt & flight itinerary':'Flight itinerary',54,y+9,{width:width-20,lineBreak:false});
+   const y=doc.y;doc.roundedRect(44,y,width,34,8).fill(burgundy);
+   doc.fillColor('#ffffff').font('Helvetica-Bold').fontSize(15).text(d.documentType==='ticket'?'E-ticket receipt & flight itinerary':'Flight itinerary',58,y+9,{width:width-28,lineBreak:false});
    doc.x=44;doc.y=y+43;
    if(reference)para('FareTransit document reference: '+reference);
    if(draft)para('DRAFT — NOT VALID FOR TRAVEL');
