@@ -4,7 +4,7 @@ import {localCarrierLogo,localBrandMark} from './ticket.branding.mjs';
 
 import {flightDisplay,connectionDisplay} from './ticket.flight-display.mjs';
 import {displayUsd,merchantAmount,paymentLabel,maskedCard} from './ticket.payment-display.mjs';
-import {passengerSeatGroups} from './ticket.seats.mjs';
+import {passengerSeatBadges} from './ticket.seats.mjs';
 const burgundy='#8b1236',ink='#23334b';
 import {ticketTitle,ticketConfirmationLine} from './ticket.header.mjs';
 import {supportPhone,supportPhoneUri} from './ticket.support.mjs';
@@ -42,30 +42,26 @@ export function generateTicketPdf(d,{reference='',createdAt,draft=false}={}){
    for(const [i,p] of d.passengers.entries()){
     const name=p.name||'Not entered',ticket=p.ticketNumber||'',left=ticket?width*.51-24:width-24,right=width*.49-24;
     doc.font('Helvetica-Bold').fontSize(13);const nameH=doc.heightOfString(name,{width:left}),ticketH=ticket?doc.heightOfString(ticket,{width:right}):0;
-    const h=60+Math.max(nameH,ticketH);ensure(h+8);const yy=doc.y,x=44;
-    doc.roundedRect(x,yy,width,h,7).lineWidth(.7).stroke('#dce3ec');doc.rect(x+1,yy+1,width-2,22).fill('#f4f6fa');
-    smallLabel('PASSENGER '+String(i+1).padStart(2,'0'),x+12,yy+7,width-24);
-    smallLabel('PASSENGER NAME',x+12,yy+33,left);doc.font('Helvetica-Bold').fontSize(13).fillColor(ink).text(name,x+12,yy+46,{width:left});
-    if(ticket){const xx=x+width*.51;doc.moveTo(xx,yy+23).lineTo(xx,yy+h-1).stroke('#e5eaf0');smallLabel('E-TICKET NUMBER',xx+12,yy+33,right,'right');doc.font('Helvetica-Bold').fontSize(13).fillColor(ink).text(ticket,xx+12,yy+46,{width:right,align:'right'});}
-    doc.x=44;doc.y=yy+h+8;
-    const groups=passengerSeatGroups(d,p);
-    if(groups.length){
-     ensure(36);doc.font('Helvetica-Bold').fontSize(11).fillColor(ink).text('Assigned seats - '+name,44,doc.y,{width});doc.moveDown(.4);
-     for(const g of groups){
-      for(let offset=0;offset<g.legs.length;offset+=4){
-       const before=doc.page;ensure(84);if(doc.page!==before){doc.font('Helvetica-Bold').fontSize(10).fillColor(ink).text('Assigned seats - '+name,44,doc.y,{width});doc.moveDown(.4);}
-       const gy=doc.y;smallLabel(g.direction.toUpperCase(),44,gy,width);const boxY=gy+13,boxW=(width-18)/4;
-       g.legs.slice(offset,offset+4).forEach((l,j)=>{
-        const bx=44+j*(boxW+6);
-        doc.roundedRect(bx,boxY,boxW,60,5).fill('#f4f6fa');
-        doc.font('Helvetica-Bold').fontSize(10).fillColor(ink).text(l.flight,bx+3,boxY+6,{width:boxW-6,align:'center',lineBreak:false,ellipsis:true});
-        doc.font('Helvetica').fontSize(8).fillColor('#64748b').text(l.route,bx+3,boxY+19,{width:boxW-6,align:'center',lineBreak:false,ellipsis:true});
-        doc.text(l.date,bx+3,boxY+30,{width:boxW-6,align:'center',lineBreak:false});
-        doc.font('Helvetica-Bold').fontSize(16).fillColor(burgundy).text(l.seat,bx+3,boxY+41,{width:boxW-6,align:'center',lineBreak:false});
-       });
-       doc.x=44;doc.y=boxY+67;
-      }
-     }
+    const seats=passengerSeatBadges(d,p),badgeW=36,badgeH=20,badgeGap=5,rowH=25;
+    const perRow=Math.max(1,Math.floor((left+badgeGap)/(badgeW+badgeGap)));
+    // A large itinerary can span pages; retain passenger identity on continuation cards.
+    const maxRows=Math.max(1,Math.floor((doc.page.height-120-60-Math.max(nameH,ticketH)-5)/rowH));
+    const chunkSize=perRow*maxRows;
+    const chunks=seats.length?Array.from({length:Math.ceil(seats.length/chunkSize)},(_,j)=>seats.slice(j*chunkSize,(j+1)*chunkSize)):[[]];
+    for(const chunk of chunks){
+     const extra=chunk.length?5+Math.ceil(chunk.length/perRow)*rowH:0;
+     const h=60+Math.max(nameH+extra,ticketH);ensure(h+8);const yy=doc.y,x=44;
+     doc.roundedRect(x,yy,width,h,7).lineWidth(.7).stroke('#dce3ec');doc.rect(x+1,yy+1,width-2,22).fill('#f4f6fa');
+     smallLabel('PASSENGER '+String(i+1).padStart(2,'0'),x+12,yy+7,width-24);
+     smallLabel('PASSENGER NAME',x+12,yy+33,left);doc.font('Helvetica-Bold').fontSize(13).fillColor(ink).text(name,x+12,yy+46,{width:left});
+     if(ticket){const xx=x+width*.51;doc.moveTo(xx,yy+23).lineTo(xx,yy+h-1).stroke('#e5eaf0');smallLabel('E-TICKET NUMBER',xx+12,yy+33,right,'right');doc.font('Helvetica-Bold').fontSize(13).fillColor(ink).text(ticket,xx+12,yy+46,{width:right,align:'right'});}
+     chunk.forEach((l,j)=>{
+      const bx=x+12+(j%perRow)*(badgeW+badgeGap),by=yy+46+nameH+5+Math.floor(j/perRow)*rowH;
+      doc.roundedRect(bx,by,badgeW,badgeH,5).fill('#f6e9ee');
+      doc.font('Helvetica-Bold').fontSize(11).fillColor(burgundy);
+      doc.text(l.seat,bx+(badgeW-doc.widthOfString(l.seat))/2,by+4,{lineBreak:false});
+     });
+     doc.x=44;doc.y=yy+h+8;
     }
    }
    if(d.references.length){

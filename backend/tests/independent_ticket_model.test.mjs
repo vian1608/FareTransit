@@ -80,10 +80,10 @@ test('optional seats belong to a passenger and stable flight, never display empt
  const first={direction:'outbound',carrier:'UA',flight:'123',from:'EWR',to:'SFO',departureDate:'2027-01-01',arrivalDate:'2027-01-01',departureTime:'10:00',arrivalTime:'13:00'};
  const second={...first,direction:'inbound',flight:'124',from:'SFO',to:'EWR',departureDate:'2027-01-03',arrivalDate:'2027-01-03'};
  const input={customer:{email:'sample@example.test'},passengers:[{name:'Sample A',seats:[{flightKey:seatFlightKey(first),seat:'12a'}]},{name:'Sample B'}],segments:[first,second]};
- const off=normalizeTicket(input);assert.doesNotMatch(renderTicket(off),/Assigned seats/);assert.doesNotMatch(ticketText(off),/Assigned seat/);
- const empty=normalizeTicket({...input,seatAssignmentsEnabled:true,passengers:[{name:'Sample B'}]});assert.doesNotMatch(renderTicket(empty),/Assigned seats/);
+ const off=normalizeTicket(input);assert.doesNotMatch(renderTicket(off),/data-seat-badge/);assert.doesNotMatch(ticketText(off),/Assigned seat/);
+ const empty=normalizeTicket({...input,seatAssignmentsEnabled:true,passengers:[{name:'Sample B'}]});assert.doesNotMatch(renderTicket(empty),/data-seat-badge/);
  const on=normalizeTicket({...input,seatAssignmentsEnabled:true});assert.deepEqual(validateTicket(on),[]);
- const html=renderTicket(on);assert.equal((html.match(/Assigned seats/g)||[]).length,1);assert.match(html,/12A/);assert.doesNotMatch(html,/Not assigned/);
+ const html=renderTicket(on);assert.equal((html.match(/data-seat-badge="true"/g)||[]).length,1);assert.doesNotMatch(html,/Assigned seats/);assert.match(html,/12A/);assert.doesNotMatch(html,/Not assigned/);
  assert.match(ticketText(on),/Assigned seat \(outbound\): UA 123.*12A/);
  const reordered=normalizeTicket({...input,seatAssignmentsEnabled:true,segments:[second,first]});assert.match(ticketText(reordered),/Assigned seat \(outbound\): UA 123.*12A/);
  const duplicate=normalizeTicket({...input,seatAssignmentsEnabled:true,passengers:[input.passengers[0],{name:'Sample B',seats:input.passengers[0].seats}]});
@@ -162,4 +162,23 @@ test('customer support number appears in HTML, plain text and PDF footer',async(
  const pdf=await generateTicketPdf(d);const raw=pdf.toString('latin1');
  assert.match(raw,/tel:\+18887808855/);
  assert.equal((raw.match(/\/Type\s*\/Page\b/g)||[]).length,1);
+});
+
+test('compact seat badges contain only the seat number, in displayed itinerary order, inside the passenger card',async()=>{
+ const {seatFlightKey,passengerSeatBadges}=await import('../src/modules/independent-tickets/ticket.seats.mjs');
+ const leg=(direction,flight,from,to,date)=>({direction,carrier:'UA',flight,from,to,departureDate:date,arrivalDate:date,departureTime:'10:00',arrivalTime:'13:00'});
+ const segments=[leg('outbound','4477','XNA','IAH','2027-01-01'),leg('outbound','1512','IAH','LIR','2027-01-01'),leg('inbound','1918','LIR','DEN','2027-01-04'),leg('inbound','1048','DEN','XNA','2027-01-04')];
+ const numbers=['17C','30C','30D','29C'];
+ const seats=segments.map((s,i)=>({flightKey:seatFlightKey(s),seat:numbers[i]})).reverse();
+ const d=normalizeTicket({seatAssignmentsEnabled:true,passengers:[{name:'Sample Traveler',ticketNumber:'0160000000000',seats},{name:'Second Traveler'}],segments});
+ assert.deepEqual(passengerSeatBadges(d,d.passengers[0]).map(l=>l.seat),numbers);
+ const html=renderTicket(d);const cards=html.slice(html.indexOf('Passenger details'),html.indexOf('Outbound journey'));
+ assert.deepEqual([...cards.matchAll(/<span data-seat-badge="true"[^>]*>([^<]+)<\/span>/g)].map(m=>m[1]),numbers);
+ assert.ok(cards.indexOf('29C')<cards.indexOf('Second Traveler'));
+ assert.doesNotMatch(cards,/Assigned seats|>OUTBOUND<|>INBOUND</);
+ const partial=normalizeTicket({...d,passengers:[{...d.passengers[0],seats:seats.slice(1,3)}]});
+ assert.equal((renderTicket(partial).match(/data-seat-badge="true"/g)||[]).length,2);
+ const empty=normalizeTicket({...d,passengers:[{name:'Sample Traveler'}]});assert.doesNotMatch(renderTicket(empty),/data-seat-badge/);
+ const {generateTicketPdf}=await import('../src/modules/independent-tickets/ticket.pdf.mjs');
+ const pdf=await generateTicketPdf(d);assert.equal(pdf.subarray(0,5).toString(),'%PDF-');
 });
