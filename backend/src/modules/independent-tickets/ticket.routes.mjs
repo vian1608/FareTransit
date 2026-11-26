@@ -61,7 +61,7 @@ router.post('/preview',wrap(async(req,res)=>{
  res.json({success:true,html:renderTicket(d,{draft:true}),errors:validateTicket(d)});
 }));
 router.post('/tickets/:id/send',wrap(async(req,res)=>{
- if(process.env.INDEPENDENT_TICKET_EMAIL_ENABLED!=='true')return fail(res,503,'Independent email delivery is disabled.');
+ if(process.env.INDEPENDENT_TICKET_EMAIL_ENABLED!=='true'||process.env.INDEPENDENT_TICKET_WORKER_ENABLED!=='true'||!process.env.RESEND_API_KEY)return fail(res,503,'Independent email delivery is disabled or unconfigured.');
  const t=await one(req.params.id);
  if(!t)return fail(res,404,'Ticket not found.');
  if(t.revision!==Number(req.body.revision))return fail(res,409,'Save and reload the latest revision before sending.');
@@ -88,6 +88,19 @@ router.post('/deliveries/:id/retry',wrap(async(req,res)=>{
  const data=check(await supabase.from('independent_ticket_deliveries').update({status:'queued',next_attempt_at:new Date().toISOString(),last_error:null,updated_at:new Date().toISOString()}).eq('id',req.params.id).eq('status','failed').eq('retry_safe',true).lt('attempts',4).select('id,status').maybeSingle());
  if(!data)return fail(res,409,'Delivery is not eligible for safe retry.');
  res.status(202).json({success:true,data});
+}));
+router.post('/deliveries/:id/process',wrap(async(req,res)=>{
+ if(process.env.INDEPENDENT_TICKET_EMAIL_ENABLED!=='true'||process.env.INDEPENDENT_TICKET_WORKER_ENABLED!=='true')return fail(res,503,'Independent email delivery is disabled.');
+ if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(req.params.id))return fail(res,400,'Invalid delivery ID.');
+ const readStatus=()=>supabase.from('independent_ticket_deliveries').select('id,status,attempts,provider_id,last_error').eq('id',req.params.id).maybeSingle();
+ const existing=check(await readStatus());
+ if(!existing)return fail(res,404,'Delivery not found.');
+ const {dispatchIndependentTicket,independentDeliveryConfigured}=await import('./ticket.dispatch.mjs');
+ if(!independentDeliveryConfigured())return fail(res,503,'Independent email provider or worker is not configured.');
+ await dispatchIndependentTicket(req.params.id);
+ const status=check(await readStatus());
+ res.set('Cache-Control','no-store');
+ res.json({success:true,data:status});
 }));
 router.get('/deliveries/:id',wrap(async(req,res)=>{
  const d=check(await supabase.from('independent_ticket_deliveries').select('id,ticket_id,revision,status,payload,pdf_path').eq('id',req.params.id).maybeSingle());
