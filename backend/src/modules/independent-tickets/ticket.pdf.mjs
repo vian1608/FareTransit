@@ -163,7 +163,7 @@ export function generateTicketPdf(d,{reference='',createdAt,draft=false}={}){
    const linkX=44+width-108,linkY=cy+5,linkW=98,linkH=20;
    doc.roundedRect(linkX,linkY,linkW,linkH,5).lineWidth(.7).stroke('#00865c');
    doc.font('Helvetica-Bold').fontSize(10).fillColor('#006c4b');
-   doc.text(reviewLinkLabel,linkX+(linkW-doc.widthOfString(reviewLinkLabel))/2,linkY+6,{lineBreak:false,underline:true});
+   doc.text(reviewLinkLabel,linkX+(linkW-doc.widthOfString(reviewLinkLabel))/2,linkY+6,{lineBreak:false});
    doc.link(linkX,linkY,linkW,linkH,reviewUrl);
    doc.x=44;doc.y=cy+37;
    ensure(49);cy=doc.y;
