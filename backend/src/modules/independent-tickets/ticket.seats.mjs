@@ -39,3 +39,6 @@ export function seatErrors(d){
  }
  return errors;
 }
+
+// Follow the displayed itinerary: outbound, then inbound, in leg order.
+export const passengerSeatBadges=(d,p)=>passengerSeatGroups(d,p).flatMap(g=>g.legs);
