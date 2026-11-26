@@ -5,6 +5,7 @@ import adminService from '../admin/admin.service.mjs';
 import validator from '../bookings/booking-validator.service.mjs';
 import {normalizeTicket,mapBooking,validateTicket} from './ticket.model.mjs';
 import {renderTicket,ticketText} from './ticket.renderer.mjs';
+import {recipientEntries} from './ticket.recipients.mjs';
 const router=express.Router();
 const table='independent_tickets';
 const bucket='independent-ticket-pdfs';
@@ -36,7 +37,7 @@ router.get('/tickets',wrap(async(req,res)=>{
 router.get('/tickets/:id',wrap(async(req,res)=>{
  const ticket=await one(req.params.id);
  if(!ticket)return fail(res,404,'Ticket not found.');
- const deliveries=check(await supabase.from('independent_ticket_deliveries').select('id,revision,status,created_at,updated_at,attempts,provider_id,last_error,pdf_path,retry_safe').eq('ticket_id',ticket.id).order('created_at',{ascending:false}).limit(50));
+ const deliveries=check(await supabase.from('independent_ticket_deliveries').select('id,revision,status,created_at,updated_at,attempts,provider_id,last_error,pdf_path,retry_safe,recipient:payload->>recipient,source_delivery_id:payload->>source_delivery_id').eq('ticket_id',ticket.id).order('created_at',{ascending:false}).limit(50));
  res.json({success:true,data:ticket,deliveries});
 }));
 const summary=d=>({passenger:d.passengers[0]?.name||'',email:d.customer.email,route:d.segments.map(s=>s.from+'–'+s.to).join(', ')});
@@ -73,14 +74,32 @@ router.post('/tickets/:id/send',wrap(async(req,res)=>{
   if(!v.valid)return fail(res,422,'Existing booking integrity or authorization checks failed.');
   const current=mapBooking(await adminService.getBookingDetails(t.source_booking_id));
   // Keep registered booking flight facts, recipient and passenger identities tied to the authorized source.
-  for(const k of ['customer','passengers','references','segments'])if(hash(current[k])!==hash(d[k]))return fail(res,409,'Registered booking facts changed or were edited. Correct the original booking and import again before sending.');
+  const passengerFacts=rows=>rows.map(({name,ticketNumber})=>({name,ticketNumber}));
+  for(const k of ['customer','passengers','references','segments'])if(hash(k==='passengers'?passengerFacts(current[k]):current[k])!==hash(k==='passengers'?passengerFacts(d[k]):d[k]))return fail(res,409,'Registered booking facts changed or were edited. Correct the original booking and import again before sending.');
   if(d.payment.show&&d.payment.merchants.some(m=>m.status==='charged'))return fail(res,422,'Booking allocations alone do not prove captured merchant charges. Use pending/authorized or omit payment details until verified.');
  }
  const key=hash({ticket:t.id,document:{...d,verified:undefined}});
- const payload={recipient:d.customer.email,subject:'FareTransit — '+(d.documentType==='ticket'?'E-ticket receipt':'Flight itinerary')+' · '+t.reference,html:renderTicket(d),text:ticketText(d),snapshot:d,reference:t.reference};
- const result=check(await supabase.rpc('ft_enqueue_independent_ticket',{p_ticket:t.id,p_revision:t.revision,p_key:key,p_payload:payload,p_actor:req.user.email||'owner'}));
+ const requested=req.body.additionalRecipients??[];
+ if(requested.length&&req.body.recipientsVerified!==true)return fail(res,422,'Confirm the passenger authorized all additional recipients.');
+ let entries;
+ try{entries=recipientEntries(d.customer.email,requested,key,{includePrimary:true});}catch(e){return fail(res,422,e.message);}
+ const payload={recipient:d.customer.email,group_key:key,subject:'FareTransit — '+(d.documentType==='ticket'?'E-ticket receipt':'Flight itinerary')+' · '+t.reference,html:renderTicket(d),text:ticketText(d),snapshot:d,reference:t.reference};
+ const result=check(await supabase.rpc('ft_enqueue_independent_recipient_batch',{p_ticket:t.id,p_revision:t.revision,p_source:null,p_payload:payload,p_entries:entries,p_actor:req.user.email||'owner'}));
  if(!result)return fail(res,409,'Draft changed before send; reload and retry.');
- res.status(202).json({success:true,data:result});
+ // Preserve the original response shape for older CRM tabs on single-recipient sends.
+ res.status(202).json({success:true,data:result[0].id,deliveries:result});
+}));
+router.post('/deliveries/:id/add-recipients',wrap(async(req,res)=>{
+ if(process.env.INDEPENDENT_TICKET_EMAIL_ENABLED!=='true'||process.env.INDEPENDENT_TICKET_WORKER_ENABLED!=='true'||!process.env.RESEND_API_KEY)return fail(res,503,'Independent email delivery is disabled or unconfigured.');
+ if(req.body.recipientsVerified!==true)return fail(res,422,'Confirm passenger authorization and that the archived itinerary is still appropriate to share.');
+ const original=check(await supabase.from('independent_ticket_deliveries').select('id,ticket_id,revision,status,payload,pdf_path,idempotency_key').eq('id',req.params.id).maybeSingle());
+ if(!original)return fail(res,404,'Delivery not found.');
+ if(original.status!=='sent'||!original.pdf_path)return fail(res,409,'Only a successfully sent ticket with an archived PDF may be forwarded.');
+ let entries;
+ try{entries=recipientEntries(original.payload.snapshot?.customer?.email||original.payload.recipient,req.body.recipients,original.payload.group_key||original.idempotency_key);}catch(e){return fail(res,422,e.message);}
+ const result=check(await supabase.rpc('ft_enqueue_independent_recipient_batch',{p_ticket:original.ticket_id,p_revision:original.revision,p_source:original.id,p_payload:null,p_entries:entries,p_actor:req.user.email||'owner'}));
+ if(!result)return fail(res,409,'Archived delivery is no longer available.');
+ res.status(202).json({success:true,deliveries:result});
 }));
 router.post('/deliveries/:id/retry',wrap(async(req,res)=>{
  if(process.env.INDEPENDENT_TICKET_EMAIL_ENABLED!=='true')return fail(res,503,'Independent email delivery is disabled.');

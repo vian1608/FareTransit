@@ -1,15 +1,17 @@
 import supabase from '../../integrations/supabase/supabase.client.mjs';
 import env from '../../config/env.mjs';
 import {generateTicketPdf} from './ticket.pdf.mjs';
+import {archivePathForJob} from './ticket.recipients.mjs';
 const bucket='independent-ticket-pdfs';
 async function archivedPdf(job){
  const store=supabase.storage.from(bucket);
- const path=job.id+'.pdf';
+ const {path,existingOnly}=archivePathForJob(job);
  // Always reuse the original archived bytes; no upsert or replacement.
  let old=await store.download(path);
  let bytes;
  if(!old.error){bytes=Buffer.from(await old.data.arrayBuffer());}
  else{
+  if(existingOnly)throw Error('Original archived PDF is unavailable; do not regenerate a historical ticket');
   bytes=await generateTicketPdf(job.payload.snapshot,{reference:job.payload.reference,createdAt:job.created_at});
   const upload=await store.upload(path,bytes,{contentType:'application/pdf',upsert:false});
   if(upload.error){old=await store.download(path);if(old.error)throw Error('PDF archive unavailable');bytes=Buffer.from(await old.data.arrayBuffer());}
