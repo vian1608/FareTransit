@@ -1,13 +1,14 @@
 import { carrierName,cents,money,paymentTotal } from './ticket.model.mjs';
+import {carrierLogoUrl,brandMarkUrl} from './ticket.branding.mjs';
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const logo=code=>'<img width="40" height="40" style="object-fit:contain;vertical-align:middle" alt="'+esc(carrierName(code))+'" src="https://www.faretransit.com/assets/airlines/'+esc(code.toLowerCase())+'.png">';
+const logo=code=>carrierLogoUrl(code)?'<img width="40" height="40" style="object-fit:contain;vertical-align:middle" alt="'+esc(carrierName(code))+'" src="'+esc(carrierLogoUrl(code))+'">':'';
 const line=(a,b)=>'<tr><td style="padding:8px;border-bottom:1px solid #e4e8ee">'+a+'</td><td style="padding:8px;border-bottom:1px solid #e4e8ee;text-align:right">'+b+'</td></tr>';
 const table=content=>'<table role="presentation" width="100%" style="border-collapse:collapse;font-size:14px">'+content+'</table>';
 const heading=t=>'<h2 style="font-size:16px;color:#8b1236;margin-top:24px">'+esc(t)+'</h2>';
 export function renderTicket(d,{draft=false}={}){
  const codes=[...new Set(d.segments.map(s=>s.carrier).filter(c=>/^[A-Z0-9]{2,3}$/.test(c)))];
  const title=d.documentType==='ticket'?'E-ticket receipt & flight itinerary':'Flight itinerary';
- let body='<div style="max-width:720px;margin:auto;background:white;color:#23334b;font-family:Arial,sans-serif;padding:20px"><table role="presentation" width="100%"><tr><td><strong style="font-size:25px;color:#8b1236">FareTransit</strong><br><small>Travel agency</small></td><td style="text-align:right">'+codes.map(c=>logo(c)+' <span style="font-size:12px">'+esc(carrierName(c))+'</span>').join(' &nbsp; ')+'</td></tr></table><h1 style="background:#8b1236;color:white;padding:16px;font-size:20px">'+title+'</h1>';
+ let body='<div style="max-width:720px;margin:auto;background:white;color:#23334b;font-family:Arial,sans-serif;padding:20px"><table role="presentation" width="100%"><tr><td><img width="38" height="38" alt="FareTransit" style="vertical-align:middle" src="'+brandMarkUrl+'"> <strong style="font-size:25px;color:#8b1236">FareTransit</strong><br><small>Travel agency</small></td><td style="text-align:right">'+codes.map(c=>logo(c)+' <span style="font-size:12px">'+esc(carrierName(c))+'</span>').join(' &nbsp; ')+'</td></tr></table><h1 style="background:#8b1236;color:white;padding:16px;font-size:20px">'+title+'</h1>';
  if(draft)body+='<p style="color:#8b1236"><strong>DRAFT — NOT VALID FOR TRAVEL</strong></p>';
  body+=heading('Passengers')+table(d.passengers.map(p=>line(esc(p.name),p.ticketNumber?'Ticket: '+esc(p.ticketNumber):'')).join(''));
  if(d.references.length)body+=heading('Airline references')+table(d.references.map(r=>line(esc(carrierName(r.carrier)),esc(r.pnr))).join(''));

@@ -16,7 +16,7 @@ export function normalizeTicket(raw={}) {
   return {
     customer:{name:str(raw.customer?.name),email:str(raw.customer?.email,254),phone:str(raw.customer?.phone,40)},
     passengers:rows(raw.passengers).map(p=>({name:str(p.name),ticketNumber:str(p.ticketNumber,40)})),
-    references:rows(raw.references).map(r=>({carrier:upper(r.carrier,3),pnr:upper(r.pnr,12)})),
+    references:rows(raw.references).map(r=>({carrier:upper(r.carrier,3),pnr:upper(r.pnr,12)})).filter(r=>r.carrier||r.pnr),
     segments:rows(raw.segments,60).map(s=>({direction:s.direction==='inbound'?'inbound':'outbound',carrier:upper(s.carrier,3),flight:upper(s.flight,8),from:upper(s.from,3),to:upper(s.to,3),departureDate:date(s.departureDate),arrivalDate:date(s.arrivalDate),departureTime:time(s.departureTime),arrivalTime:time(s.arrivalTime),cabin:str(s.cabin,60),operatingCarrier:upper(s.operatingCarrier,3),baggage:str(s.baggage,100)})),
     gds:{outbound:str(raw.gds?.outbound,10000),inbound:str(raw.gds?.inbound,10000)},
     payment:{show:raw.payment?.show===true,merchants:rows(raw.payment?.merchants).map(m=>({merchant:str(m.merchant),amount:str(m.amount,16),currency:upper(m.currency,3)||'USD',cardBrand:str(m.cardBrand,40),cardLast4:digits(m.cardLast4),status:['charged','authorized','pending'].includes(m.status)?m.status:'pending'}))},
@@ -39,8 +39,9 @@ export function validateTicket(d,{sending=false}={}){
     const journey=d.segments.filter(s=>s.direction===direction);
     journey.forEach((s,i)=>{if(i&&journey[i-1].to!==s.from) errors.push('Disconnected '+direction+' itinerary at segment '+(i+1)+'.');});
   }
+  if(d.references.some(r=>!/^[A-Z0-9]{6}$/.test(r.pnr)||!/^[A-Z0-9]{2,3}$/.test(r.carrier)))errors.push('Complete valid airline reference rows or remove empty rows.');
   if(d.documentType==='ticket'){
-    if(!d.references.length||d.references.some(r=>!/^[A-Z0-9]{6}$/.test(r.pnr)||!/^[A-Z0-9]{2,3}$/.test(r.carrier)))errors.push('An actual airline PNR is required.');
+    if(!d.references.length)errors.push('An actual airline PNR is required.');
     if(d.passengers.some(p=>!/^\d{13}$/.test(p.ticketNumber.replace(/[- ]/g,'')))) errors.push('An issued 13-digit ticket number is required for each passenger. Use itinerary for ticketless reservations.');
   }
   if(d.payment.show){

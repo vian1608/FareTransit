@@ -7,6 +7,7 @@ import {normalizeTicket,mapBooking,validateTicket} from './ticket.model.mjs';
 import {renderTicket,ticketText} from './ticket.renderer.mjs';
 const router=express.Router();
 const table='independent_tickets';
+const bucket='independent-ticket-pdfs';
 const fail=(res,status,message)=>res.status(status).json({success:false,error:{code:'INDEPENDENT_TICKET_ERROR',message}});
 const wrap=fn=>async(req,res,next)=>{try{await fn(req,res);}catch(e){next(e);}};
 const check=({data,error})=>{if(error)throw new Error('Independent ticket storage operation failed.');return data;};
@@ -25,12 +26,15 @@ router.get('/bookings/:id',wrap(async(req,res)=>{
 router.get('/tickets',wrap(async(req,res)=>{
  const offset=Math.max(0,Math.min(10000,Number(req.query.offset)||0));
  const data=check(await supabase.from(table).select('id,source_booking_id,reference,revision,created_at,updated_at,summary').order('updated_at',{ascending:false}).order('id',{ascending:false}).range(offset,offset+24));
- res.json({success:true,data});
+ const ids=data.map(t=>t.id);
+ const history=ids.length?check(await supabase.from('independent_ticket_deliveries').select('ticket_id,status,created_at').in('ticket_id',ids).order('created_at',{ascending:false}).limit(500)):[];
+ const latest=new Map();for(const h of history)if(!latest.has(h.ticket_id))latest.set(h.ticket_id,h.status);
+ res.json({success:true,data:data.map(t=>({...t,latest_status:latest.get(t.id)||'draft'}))});
 }));
 router.get('/tickets/:id',wrap(async(req,res)=>{
  const ticket=await one(req.params.id);
  if(!ticket)return fail(res,404,'Ticket not found.');
- const deliveries=check(await supabase.from('independent_ticket_deliveries').select('id,revision,status,created_at,updated_at,attempts,provider_id,last_error').eq('ticket_id',ticket.id).order('created_at',{ascending:false}).limit(50));
+ const deliveries=check(await supabase.from('independent_ticket_deliveries').select('id,revision,status,created_at,updated_at,attempts,provider_id,last_error,pdf_path,retry_safe').eq('ticket_id',ticket.id).order('created_at',{ascending:false}).limit(50));
  res.json({success:true,data:ticket,deliveries});
 }));
 const summary=d=>({passenger:d.passengers[0]?.name||'',email:d.customer.email,route:d.segments.map(s=>s.from+'–'+s.to).join(', ')});
@@ -70,8 +74,8 @@ router.post('/tickets/:id/send',wrap(async(req,res)=>{
   for(const k of ['customer','passengers','references','segments'])if(hash(current[k])!==hash(d[k]))return fail(res,409,'Registered booking facts changed or were edited. Correct the original booking and import again before sending.');
   if(d.payment.show&&d.payment.merchants.some(m=>m.status==='charged'))return fail(res,422,'Booking allocations alone do not prove captured merchant charges. Use pending/authorized or omit payment details until verified.');
  }
- const key=hash({ticket:t.id,revision:t.revision,recipient:d.customer.email});
- const payload={recipient:d.customer.email,subject:'FareTransit — '+(d.documentType==='ticket'?'E-ticket receipt':'Flight itinerary')+' · '+t.reference,html:renderTicket(d),text:ticketText(d),snapshot:d};
+ const key=hash({ticket:t.id,document:{...d,verified:undefined}});
+ const payload={recipient:d.customer.email,subject:'FareTransit — '+(d.documentType==='ticket'?'E-ticket receipt':'Flight itinerary')+' · '+t.reference,html:renderTicket(d),text:ticketText(d),snapshot:d,reference:t.reference};
  const result=check(await supabase.rpc('ft_enqueue_independent_ticket',{p_ticket:t.id,p_revision:t.revision,p_key:key,p_payload:payload,p_actor:req.user.email||'owner'}));
  if(!result)return fail(res,409,'Draft changed before send; reload and retry.');
  res.status(202).json({success:true,data:result});
@@ -82,5 +86,18 @@ router.post('/deliveries/:id/retry',wrap(async(req,res)=>{
  const data=check(await supabase.from('independent_ticket_deliveries').update({status:'queued',next_attempt_at:new Date().toISOString(),last_error:null,updated_at:new Date().toISOString()}).eq('id',req.params.id).eq('status','failed').eq('retry_safe',true).lt('attempts',4).select('id,status').maybeSingle());
  if(!data)return fail(res,409,'Delivery is not eligible for safe retry.');
  res.status(202).json({success:true,data});
+}));
+router.get('/deliveries/:id',wrap(async(req,res)=>{
+ const d=check(await supabase.from('independent_ticket_deliveries').select('id,ticket_id,revision,status,payload,pdf_path').eq('id',req.params.id).maybeSingle());
+ if(!d)return fail(res,404,'Delivery not found.');
+ res.json({success:true,data:{id:d.id,ticket_id:d.ticket_id,revision:d.revision,status:d.status,snapshot:d.payload.snapshot,pdf_path:d.pdf_path}});
+}));
+router.get('/deliveries/:id/pdf',wrap(async(req,res)=>{
+ const d=check(await supabase.from('independent_ticket_deliveries').select('id,pdf_path').eq('id',req.params.id).maybeSingle());
+ if(!d?.pdf_path)return fail(res,404,'Archived PDF not available.');
+ const result=await supabase.storage.from(bucket).download(d.pdf_path);
+ if(result.error)return fail(res,503,'Archived PDF could not be retrieved.');
+ res.set({'Content-Type':'application/pdf','Content-Disposition':'attachment; filename="FareTransit-ticket.pdf"','Cache-Control':'no-store'});
+ res.send(Buffer.from(await result.data.arrayBuffer()));
 }));
 export default router;

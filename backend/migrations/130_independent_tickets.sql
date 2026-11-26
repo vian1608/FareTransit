@@ -11,7 +11,7 @@ create table if not exists public.independent_ticket_deliveries (
  revision integer not null, idempotency_key text not null unique, payload jsonb not null, actor text not null,
  status text not null default 'queued' check(status in ('queued','processing','sent','failed','uncertain')),
  attempts integer not null default 0, next_attempt_at timestamptz not null default now(),
- lease_token uuid, lease_until timestamptz, provider_id text, last_error text, retry_safe boolean not null default false,
+ lease_token uuid, lease_until timestamptz, provider_id text, pdf_path text, last_error text, retry_safe boolean not null default false,
  created_at timestamptz not null default now(), updated_at timestamptz not null default now()
 );
 create index if not exists ft_independent_ticket_history on public.independent_tickets(updated_at desc,id desc);
@@ -52,4 +52,24 @@ begin
 end $$;
 revoke execute on function public.ft_claim_independent_ticket() from public,anon,authenticated;
 grant execute on function public.ft_claim_independent_ticket() to service_role;
+
+-- Private archive: no public read grants or client-side storage policies.
+insert into storage.buckets(id,name,public,file_size_limit,allowed_mime_types)
+values('independent-ticket-pdfs','independent-ticket-pdfs',false,5242880,array['application/pdf']::text[])
+on conflict(id) do nothing;
+
+-- Protect original delivery content even when operational state is updated.
+create or replace function public.ft_preserve_independent_ticket_snapshot()
+returns trigger language plpgsql security invoker set search_path='' as $
+begin
+ if new.payload is distinct from old.payload or new.ticket_id is distinct from old.ticket_id
+ or new.revision is distinct from old.revision or new.idempotency_key is distinct from old.idempotency_key
+ or new.actor is distinct from old.actor or new.created_at is distinct from old.created_at
+ or (old.pdf_path is not null and new.pdf_path is distinct from old.pdf_path)
+ then raise exception 'Independent ticket delivery snapshot is immutable'; end if;
+ return new;
+end $;
+revoke execute on function public.ft_preserve_independent_ticket_snapshot() from public,anon,authenticated;
+create trigger ft_independent_snapshot_immutable before update on public.independent_ticket_deliveries
+for each row execute function public.ft_preserve_independent_ticket_snapshot();
 commit;
