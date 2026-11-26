@@ -28,17 +28,21 @@ router.get('/bookings/:id',wrap(async(req,res)=>{
  res.json({success:true,data:mapBooking(b),sourceBookingId:b.id,reference:b.confirmation_code});
 }));
 router.get('/tickets',wrap(async(req,res)=>{
- const offset=Math.max(0,Math.min(10000,Number(req.query.offset)||0));
- const data=check(await supabase.from(table).select('id,source_booking_id,reference,revision,created_at,updated_at,summary').order('updated_at',{ascending:false}).order('id',{ascending:false}).range(offset,offset+24));
- const ids=data.map(t=>t.id);
- const history=ids.length?check(await supabase.from('independent_ticket_deliveries').select('ticket_id,status,created_at').in('ticket_id',ids).order('created_at',{ascending:false}).limit(500)):[];
- const latest=new Map();for(const h of history)if(!latest.has(h.ticket_id))latest.set(h.ticket_id,h.status);
- res.json({success:true,data:data.map(t=>({...t,latest_status:latest.get(t.id)||'draft'}))});
+ const offset=Math.max(0,Math.min(10000,Math.floor(Number(req.query.offset)||0)));
+ const search=String(req.query.search||'').trim().slice(0,200),airline=String(req.query.airline||'').trim().toUpperCase().slice(0,3);
+ const allowed=['all','draft','queued','processing','sent','delivered','opened','no_open','delivery_delayed','bounced','failed','suppressed','complained','uncertain'];
+ const status=allowed.includes(req.query.status)?req.query.status:'all';
+ const date=v=>typeof v==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(v)&&Number.isFinite(Date.parse(v))&&new Date(v).toISOString().slice(0,10)===v?v:null;
+ const from=date(req.query.from),to=date(req.query.to);
+ if((req.query.from&&!from)||(req.query.to&&!to)||(from&&to&&from>to))return fail(res,400,'Invalid date range.');
+ const result=check(await supabase.rpc('ft_independent_ticket_history',{p_search:search,p_status:status,p_airline:airline,p_from:from,p_to:to,p_offset:offset}));
+ res.set('Cache-Control','no-store');
+ res.json({success:true,...result,providerWebhookConfigured:Boolean(process.env.RESEND_INDEPENDENT_TICKET_WEBHOOK_SECRET)});
 }));
 router.get('/tickets/:id',wrap(async(req,res)=>{
  const ticket=await one(req.params.id);
  if(!ticket)return fail(res,404,'Ticket not found.');
- const deliveries=check(await supabase.from('independent_ticket_deliveries').select('id,revision,status,created_at,updated_at,attempts,provider_id,last_error,pdf_path,retry_safe,recipient:payload->>recipient,source_delivery_id:payload->>source_delivery_id').eq('ticket_id',ticket.id).order('created_at',{ascending:false}).limit(50));
+ const deliveries=check(await supabase.from('independent_ticket_activity').select('*').eq('ticket_id',ticket.id).order('created_at',{ascending:false}).limit(50));
  res.json({success:true,data:ticket,deliveries});
 }));
 const summary=d=>({passenger:d.passengers[0]?.name||'',email:d.customer.email,route:d.segments.map(s=>s.from+'–'+s.to).join(', ')});
