@@ -118,10 +118,10 @@ test('four-leg round trip with seats, payment and notes fits at most three pages
 test('email subject uses airline and PNR, not internal FareTransit reference',async()=>{
  const {ticketSubject,deliverySubject}=await import('../src/modules/independent-tickets/ticket.subject.mjs');
  const snapshot=normalizeTicket({references:[{carrier:'UA',pnr:'ABC123'}],segments:[{carrier:'UA'}]});
- assert.equal(ticketSubject(snapshot),'FareTransit — United Airlines · ABC123');
- assert.equal(ticketSubject(normalizeTicket({segments:[{carrier:'UA'}]})),'FareTransit — United Airlines');
- assert.equal(ticketSubject(normalizeTicket({segments:[{carrier:'UA'},{carrier:'AA'}],references:[{carrier:'UA',pnr:'ABC123'}]})),'FareTransit — United Airlines +1 · ABC123');
- assert.equal(ticketSubject(normalizeTicket({})),'FareTransit — Flight itinerary');
+ assert.equal(ticketSubject(snapshot),'E-Ticket — United Airlines · ABC123');
+ assert.equal(ticketSubject(normalizeTicket({segments:[{carrier:'UA'}]})),'E-Ticket — United Airlines');
+ assert.equal(ticketSubject(normalizeTicket({segments:[{carrier:'UA'},{carrier:'AA'}],references:[{carrier:'UA',pnr:'ABC123'}]})),'E-Ticket — United Airlines +1 · ABC123');
+ assert.equal(ticketSubject(normalizeTicket({})),'E-Ticket');
  const old={subject:'FareTransit — Flight itinerary · FT-ET-OLD',snapshot};
  assert.equal(deliverySubject(old),old.subject);
  assert.equal(deliverySubject({...old,source_delivery_id:'original'}),ticketSubject(snapshot));
