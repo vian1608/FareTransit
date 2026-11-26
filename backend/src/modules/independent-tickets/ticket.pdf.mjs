@@ -2,6 +2,7 @@ import PDFDocument from 'pdfkit';
 import {carrierName,cents,money,paymentTotal} from './ticket.model.mjs';
 import {localCarrierLogo,localBrandMark} from './ticket.branding.mjs';
 
+import {flightDisplay,connectionDisplay} from './ticket.flight-display.mjs';
 const burgundy='#8b1236',ink='#23334b';
 export function generateTicketPdf(d,{reference='',createdAt,draft=false}={}){
  return new Promise((resolve,reject)=>{
@@ -28,7 +29,37 @@ export function generateTicketPdf(d,{reference='',createdAt,draft=false}={}){
    for(const direction of ['outbound','inbound']){
     const seg=d.segments.filter(s=>s.direction===direction);if(!seg.length)continue;
     title(direction==='outbound'?'Outbound journey':'Inbound journey');
-    for(const s of seg){ensure(104);const yy=doc.y;logo(localCarrierLogo(s.carrier),44,yy,28);doc.font('Helvetica-Bold').fontSize(11).fillColor(ink).text(carrierName(s.carrier)+' · '+s.carrier+' '+s.flight,80,yy+4,{width:width-36});doc.y=Math.max(doc.y,yy+32);para(s.from+'   '+s.departureDate+' '+s.departureTime+'   →   '+s.to+'   '+s.arrivalDate+' '+s.arrivalTime);if(s.cabin)para('Cabin: '+s.cabin);if(s.operatingCarrier)para('Operated by '+carrierName(s.operatingCarrier));if(s.baggage)para('Baggage: '+s.baggage);para('Local airport times');doc.moveDown(.4);}
+    para(seg[0].from+' → '+seg[seg.length-1].to+' · '+seg.length+' flight'+(seg.length===1?'':'s'));
+    for(const [i,s] of seg.entries()){
+     const f=flightDisplay(s),c=connectionDisplay(s,seg[i+1]);
+     const meta=[s.cabin?'Cabin: '+s.cabin:'',s.operatingCarrier?'Operated by '+carrierName(s.operatingCarrier):'',s.baggage?'Baggage: '+s.baggage:''].filter(Boolean).join(' · ');
+     doc.font('Helvetica').fontSize(9);const metaHeight=meta?doc.heightOfString(meta,{width:width-24})+18:0;
+     const cardHeight=146+metaHeight;
+     ensure(cardHeight+10);const yy=doc.y,x=44;
+     doc.roundedRect(x,yy,width,cardHeight,7).lineWidth(0.7).stroke('#dce3ec');
+     doc.rect(x+1,yy+1,width-2,35).fill('#f4f6fa');
+     logo(localCarrierLogo(s.carrier),x+10,yy+5,25);
+     doc.font('Helvetica-Bold').fontSize(11).fillColor(ink).text(carrierName(s.carrier)+' · '+s.carrier+' '+s.flight,x+42,yy+12,{width:width-115,lineBreak:false,ellipsis:true});
+     doc.font('Helvetica').fontSize(8).fillColor('#64748b').text('FLIGHT '+(i+1)+' OF '+seg.length,x+width-75,yy+13,{width:65,align:'right',lineBreak:false});
+     const col=(width-90)/2;
+     const endpoint=(airport,clock,date,shift,xx,align,caption)=>{
+      const put=(v,y,size,color,bold=false)=>doc.font(bold?'Helvetica-Bold':'Helvetica').fontSize(size).fillColor(color).text(v,xx,yy+y,{width:col-12,align,lineBreak:false,ellipsis:true});
+      put(caption,43,8,'#64748b',true);put(clock,56,23,ink,true);put(airport.code+(shift?' ('+shift+')':''),85,13,burgundy,true);
+      if(airport.city)put(airport.city,102,9,ink);
+      if(airport.name)put(airport.name,114,8,'#64748b');
+      put(date,129,9,ink);
+     };
+     endpoint(f.from,f.departureTime,f.departureDate,'',x+12,'left','DEPARTURE');
+     endpoint(f.to,f.arrivalTime,f.arrivalDate,f.dayShift,x+col+90,'right','ARRIVAL');
+     const center=x+width/2;
+     doc.moveTo(center-25,yy+77).lineTo(center+25,yy+77).stroke('#8b1236');
+     doc.moveTo(center+19,yy+73).lineTo(center+25,yy+77).lineTo(center+19,yy+81).stroke('#8b1236');
+     if(f.duration)doc.font('Helvetica-Bold').fontSize(10).fillColor(ink).text(f.duration,center-40,yy+85,{width:80,align:'center',lineBreak:false});
+     if(meta){doc.moveTo(x+10,yy+145).lineTo(x+width-10,yy+145).stroke('#dce3ec');doc.font('Helvetica').fontSize(9).fillColor(ink).text(meta,x+12,yy+153,{width:width-24});}
+     doc.x=44;doc.y=yy+cardHeight+10;
+     if(c){ensure(28);const cy=doc.y;doc.roundedRect(x,cy,width,22,5).fill('#f4f6fa');doc.font('Helvetica-Bold').fontSize(9).fillColor('#475569').text((c.duration?c.duration+' layover':'Connection')+' at '+(c.airport.city||c.airport.code)+' ('+c.airport.code+')',x+8,cy+7,{width:width-16,align:'center',lineBreak:false,ellipsis:true});doc.x=44;doc.y=cy+29;}
+    }
+    para('All departure and arrival times are local to the respective airports.');
    }
    if(d.payment.show&&d.payment.merchants.length){
     title('Payment & merchant charges');

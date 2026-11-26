@@ -17,3 +17,18 @@ test('ticket header omits travel agency subtitle while retaining agency attribut
  assert.doesNotMatch(html,/<small>Travel agency<\/small>/i);
  assert.match(html,/Prepared by FareTransit LLC/);
 });
+
+test('flight presentation formats local dates and calculates known-zone durations and connections',async()=>{
+ const {flightDisplay,connectionDisplay}=await import('../src/modules/independent-tickets/ticket.flight-display.mjs');
+ const first={from:'XNA',to:'IAH',departureDate:'2026-11-26',arrivalDate:'2026-11-26',departureTime:'06:30',arrivalTime:'08:28'};
+ const second={from:'IAH',to:'LIR',departureDate:'2026-11-26',arrivalDate:'2026-11-26',departureTime:'09:35',arrivalTime:'13:10'};
+ assert.equal(flightDisplay(first).departureTime,'6:30 AM');
+ assert.equal(flightDisplay(first).duration,'1h 58m');
+ assert.equal(connectionDisplay(first,second).duration,'1h 7m');
+ assert.equal(flightDisplay(second).duration,'3h 35m');
+ assert.equal(flightDisplay({...first,from:'ZZZ'}).duration,'');
+ assert.equal(flightDisplay({...first,arrivalDate:''}).duration,'');
+ assert.equal(flightDisplay({...first,arrivalDate:'2026-11-27'}).dayShift,'+1 day');
+ const html=renderTicket(normalizeTicket({segments:[{...first,carrier:'UA',flight:'4477'},{...second,carrier:'UA',flight:'1512'}]}));
+ assert.match(html,/6:30 AM/);assert.match(html,/1h 7m layover/);assert.match(html,/Guanacaste Airport/);
+});
