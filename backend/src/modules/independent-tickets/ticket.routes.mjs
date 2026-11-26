@@ -6,6 +6,7 @@ import validator from '../bookings/booking-validator.service.mjs';
 import {normalizeTicket,mapBooking,validateTicket} from './ticket.model.mjs';
 import {renderTicket,ticketText} from './ticket.renderer.mjs';
 import {recipientEntries} from './ticket.recipients.mjs';
+import {ticketSubject} from './ticket.subject.mjs';
 const router=express.Router();
 const table='independent_tickets';
 const bucket='independent-ticket-pdfs';
@@ -83,7 +84,7 @@ router.post('/tickets/:id/send',wrap(async(req,res)=>{
  if(requested.length&&req.body.recipientsVerified!==true)return fail(res,422,'Confirm the passenger authorized all additional recipients.');
  let entries;
  try{entries=recipientEntries(d.customer.email,requested,key,{includePrimary:true});}catch(e){return fail(res,422,e.message);}
- const payload={recipient:d.customer.email,group_key:key,subject:'FareTransit — '+(d.documentType==='ticket'?'E-ticket receipt':'Flight itinerary')+' · '+t.reference,html:renderTicket(d),text:ticketText(d),snapshot:d,reference:t.reference};
+ const payload={recipient:d.customer.email,group_key:key,subject:ticketSubject(d),html:renderTicket(d),text:ticketText(d),snapshot:d,reference:t.reference};
  const result=check(await supabase.rpc('ft_enqueue_independent_recipient_batch',{p_ticket:t.id,p_revision:t.revision,p_source:null,p_payload:payload,p_entries:entries,p_actor:req.user.email||'owner'}));
  if(!result)return fail(res,409,'Draft changed before send; reload and retry.');
  // Preserve the original response shape for older CRM tabs on single-recipient sends.
