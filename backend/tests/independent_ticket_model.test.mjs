@@ -114,3 +114,15 @@ test('four-leg round trip with seats, payment and notes fits at most three pages
  const pages=(pdf.toString('latin1').match(/\/Type\s*\/Page\b/g)||[]).length;
  assert.ok(pages>=2&&pages<=3,'Expected 2–3 content pages, got '+pages);
 });
+
+test('email subject uses airline and PNR, not internal FareTransit reference',async()=>{
+ const {ticketSubject,deliverySubject}=await import('../src/modules/independent-tickets/ticket.subject.mjs');
+ const snapshot=normalizeTicket({references:[{carrier:'UA',pnr:'ABC123'}],segments:[{carrier:'UA'}]});
+ assert.equal(ticketSubject(snapshot),'FareTransit — United Airlines · ABC123');
+ assert.equal(ticketSubject(normalizeTicket({segments:[{carrier:'UA'}]})),'FareTransit — United Airlines');
+ assert.equal(ticketSubject(normalizeTicket({segments:[{carrier:'UA'},{carrier:'AA'}],references:[{carrier:'UA',pnr:'ABC123'}]})),'FareTransit — United Airlines +1 · ABC123');
+ assert.equal(ticketSubject(normalizeTicket({})),'FareTransit — Flight itinerary');
+ const old={subject:'FareTransit — Flight itinerary · FT-ET-OLD',snapshot};
+ assert.equal(deliverySubject(old),old.subject);
+ assert.equal(deliverySubject({...old,source_delivery_id:'original'}),ticketSubject(snapshot));
+});
