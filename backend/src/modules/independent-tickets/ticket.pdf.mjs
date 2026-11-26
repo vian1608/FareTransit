@@ -7,6 +7,7 @@ import {displayUsd,merchantAmount,paymentLabel,maskedCard} from './ticket.paymen
 import {passengerSeatGroups} from './ticket.seats.mjs';
 const burgundy='#8b1236',ink='#23334b';
 import {ticketTitle,ticketConfirmationLine} from './ticket.header.mjs';
+import {supportPhone,supportPhoneUri} from './ticket.support.mjs';
 export {ticketConfirmationLine as pdfConfirmationLine} from './ticket.header.mjs';
 export function generateTicketPdf(d,{reference='',createdAt,draft=false}={}){
  return new Promise((resolve,reject)=>{
@@ -157,8 +158,8 @@ export function generateTicketPdf(d,{reference='',createdAt,draft=false}={}){
     if(nh<doc.page.height-120){ensure(nh+8);const ny=doc.y;doc.roundedRect(44,ny,width,nh,4).fill('#f4f6fa');doc.rect(44,ny,3,nh).fill(burgundy);doc.font('Helvetica').fontSize(10).fillColor(ink).text(d.notes,58,ny+12,{width:width-28,lineGap:3});doc.x=44;doc.y=ny+nh+8;}
     else{doc.font('Helvetica').fontSize(10).fillColor(ink).text(d.notes,44,doc.y,{width,lineGap:3});doc.x=44;}
    }
-   ensure(64);const fy=doc.y+7;doc.moveTo(44,fy).lineTo(44+width,fy).stroke('#dce3ec');doc.font('Helvetica-Bold').fontSize(11).fillColor(burgundy).text('Prepared by FareTransit LLC',44,fy+10,{width:width*.55,lineBreak:false});
-   doc.font('Helvetica').fontSize(9).fillColor(ink).text('support@faretransit.com',44+width*.55,fy+11,{width:width*.45,align:'right',lineBreak:false});doc.x=44;doc.y=fy+27;para('Airline reservation details should be verified with the airline.');
+   ensure(78);const fy=doc.y+7;doc.moveTo(44,fy).lineTo(44+width,fy).stroke('#dce3ec');doc.font('Helvetica-Bold').fontSize(11).fillColor(burgundy).text('Prepared by FareTransit LLC',44,fy+10,{width:width*.55,lineBreak:false});
+   doc.font('Helvetica').fontSize(9).fillColor(ink).text('support@faretransit.com',44+width*.55,fy+11,{width:width*.45,align:'right',lineBreak:false});doc.font('Helvetica-Bold').fontSize(10).fillColor(ink).text(supportPhone,44+width*.55,fy+24,{width:width*.45,align:'right',lineBreak:false,link:supportPhoneUri});doc.x=44;doc.y=fy+42;para('Airline reservation details should be verified with the airline.');
    // PDFKit can auto-create pages when a width-constrained text line is drawn
    // below the content boundary. Stamp page numbers with an explicit x/y
    // and NO wrapping width, so footer drawing cannot create extra pages.
