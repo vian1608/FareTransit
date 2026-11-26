@@ -182,3 +182,21 @@ test('compact seat badges contain only the seat number, in displayed itinerary o
  const {generateTicketPdf}=await import('../src/modules/independent-tickets/ticket.pdf.mjs');
  const pdf=await generateTicketPdf(d);assert.equal(pdf.subarray(0,5).toString(),'%PDF-');
 });
+
+test('review link and independent returning customer offer render in email, text and PDF',async()=>{
+ const {ticketText}=await import('../src/modules/independent-tickets/ticket.renderer.mjs');
+ const {generateTicketPdf}=await import('../src/modules/independent-tickets/ticket.pdf.mjs');
+ const d=normalizeTicket({customer:{email:'sample@example.test'},passengers:[{name:'Sample Traveler'}],segments:[{carrier:'UA',flight:'123',from:'EWR',to:'SFO',departureDate:'2027-01-01',arrivalDate:'2027-01-01',departureTime:'10:00',arrivalTime:'13:00'}]});
+ const html=renderTicket(d);
+ assert.match(html,/href="https:\/\/www\.trustpilot\.com\/review\/faretransit\.com"/);
+ assert.match(html,/TRUST20/);
+ assert.match(html,/No review required\./);
+ assert.ok(html.indexOf('TRUST20')<html.indexOf('Prepared by FareTransit LLC'));
+ assert.match(ticketText(d),/https:\/\/www\.trustpilot\.com\/review\/faretransit\.com/);
+ assert.match(ticketText(d),/TRUST20/);
+ assert.match(ticketText(d),/No review required/);
+ const raw=(await generateTicketPdf(d)).toString('latin1');
+ assert.match(raw,/https:\/\/www\.trustpilot\.com\/review\/faretransit\.com/);
+ assert.match(raw,/\/Subtype\s*\/Link/);
+ assert.equal((raw.match(/\/Type\s*\/Page\b/g)||[]).length,1);
+});
