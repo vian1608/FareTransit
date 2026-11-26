@@ -8,6 +8,8 @@ import responseMetrics from './middleware/response-metrics.mjs';
 import requestMetricsContext from './observability/request-metrics.mjs';
 import { autoWriteNoStore } from './middleware/cache-control.middleware.mjs';
 
+import {mountTicketActivity} from './modules/independent-tickets/ticket.activity.routes.mjs';
+
 const app = express();
 
 // Enable Express trust proxy for Vercel/proxies IP forwarding headers
@@ -22,6 +24,9 @@ app.use(responseMetrics);
 // Raw body parser for Whop webhook HMAC signature verification
 app.use('/api/webhooks/whop', express.raw({ type: 'application/json' }));
 app.use('/webhooks/whop', express.raw({ type: 'application/json' }));
+
+// Public activity endpoints must receive the raw signed body before the JSON parser.
+mountTicketActivity(app);
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
