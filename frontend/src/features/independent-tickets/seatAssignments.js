@@ -12,8 +12,9 @@ export const validSeat=s=>/^[1-9]\d{0,2}[A-Z]$/.test(String(s||'').trim().toUppe
 // Clear only assignments whose flight no longer exists. Identical re-import/reorder retains assignments.
 export function reconcileSeats(d){
  const keys=d.segments.map(seatFlightKey);
- return {...d,passengers:d.passengers.map(p=>p.seats?{...p,seats:p.seats.filter(a=>keys.filter(k=>k===a.flightKey).length===1)}:p)};
+ const passengers=d.passengers.map(p=>p.seats?{...p,seats:p.seats.filter(a=>keys.filter(k=>k===a.flightKey).length===1)}:p);
+ return {...d,passengers,seatAssignmentsEnabled:passengers.some(p=>p.seats?.some(a=>a.seat.trim()))};
 }
 export function setPassengerSeat(d,index,flightKey,seat){
- return {...d,passengers:d.passengers.map((p,i)=>i===index?{...p,seats:[...(p.seats||[]).filter(a=>a.flightKey!==flightKey),...(seat.trim()?[{flightKey,seat:seat.toUpperCase()}]:[])]}:p)};
+ return reconcileSeats({...d,passengers:d.passengers.map((p,i)=>i===index?{...p,seats:[...(p.seats||[]).filter(a=>a.flightKey!==flightKey),...(seat.trim()?[{flightKey,seat:seat.toUpperCase()}]:[])]}:p)});
 }
