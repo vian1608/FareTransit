@@ -64,7 +64,7 @@ on conflict(id) do nothing;
 
 -- Protect original delivery content even when operational state is updated.
 create or replace function public.ft_preserve_independent_ticket_snapshot()
-returns trigger language plpgsql security invoker set search_path='' as $
+returns trigger language plpgsql security invoker set search_path='' as $ticket_snapshot$
 begin
  if new.payload is distinct from old.payload or new.ticket_id is distinct from old.ticket_id
  or new.revision is distinct from old.revision or new.idempotency_key is distinct from old.idempotency_key
@@ -72,7 +72,7 @@ begin
  or (old.pdf_path is not null and new.pdf_path is distinct from old.pdf_path)
  then raise exception 'Independent ticket delivery snapshot is immutable'; end if;
  return new;
-end $;
+end $ticket_snapshot$;
 revoke execute on function public.ft_preserve_independent_ticket_snapshot() from public,anon,authenticated;
 create trigger ft_independent_snapshot_immutable before update on public.independent_ticket_deliveries
 for each row execute function public.ft_preserve_independent_ticket_snapshot();
