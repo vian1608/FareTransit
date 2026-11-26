@@ -35,7 +35,7 @@ export function generateTicketPdf(d,{reference='',createdAt,draft=false}={}){
    marks.forEach((file,i)=>logo(file,right-marks.length*markSize-(marks.length-1)*markGap+i*(markSize+markGap),45,markSize));
    doc.x=44;doc.y=94;
    const y=doc.y;doc.roundedRect(44,y,width,34,8).fill(burgundy);
-   doc.fillColor('#ffffff').font('Helvetica-Bold').fontSize(15).text(d.documentType==='ticket'?'E-ticket receipt & flight itinerary':'Flight itinerary',58,y+9,{width:width-28,lineBreak:false});
+   doc.fillColor('#ffffff').font('Helvetica-Bold').fontSize(15).text(d.documentType==='ticket'?'E-Ticket & Itinerary':'Flight Itinerary',58,y+9,{width:width-28,lineBreak:false});
    doc.x=44;doc.y=y+43;
    const confirmationLine=pdfConfirmationLine(d);if(confirmationLine)para(confirmationLine);
    if(draft)para('DRAFT — NOT VALID FOR TRAVEL');
