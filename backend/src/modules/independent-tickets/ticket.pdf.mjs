@@ -2,6 +2,8 @@ import PDFDocument from 'pdfkit';
 import {carrierName,cents,money,paymentTotal} from './ticket.model.mjs';
 import {localCarrierLogo,localBrandMark} from './ticket.branding.mjs';
 
+import {flightDisplay,connectionDisplay} from './ticket.flight-display.mjs';
+import {displayUsd,merchantAmount,paymentLabel,maskedCard} from './ticket.payment-display.mjs';
 const burgundy='#8b1236',ink='#23334b';
 export function generateTicketPdf(d,{reference='',createdAt,draft=false}={}){
  return new Promise((resolve,reject)=>{
@@ -17,28 +19,107 @@ export function generateTicketPdf(d,{reference='',createdAt,draft=false}={}){
    const para=t=>{doc.font('Helvetica').fontSize(10).fillColor(ink).text(String(t??''),{width,lineGap:2});};
    const logo=(file,x,y,w=28)=>{if(file)try{doc.image(file,x,y,{fit:[w,w]});}catch{/* Fall back to printed name */}};
    const brand=localBrandMark();logo(brand,44,44,38);doc.font('Helvetica-Bold').fillColor(burgundy).fontSize(23).text('FareTransit',brand?90:44,46);
-   doc.font('Helvetica').fillColor(ink).fontSize(10).text('Travel agency',brand?90:44,72);
-   doc.y=98;
+   doc.y=88;
    const carriers=[...new Set(d.segments.map(s=>s.carrier))];
    if(carriers.length){title('Airline partners in this itinerary');for(const code of carriers){ensure(38);const y=doc.y;logo(localCarrierLogo(code),44,y,28);doc.font('Helvetica-Bold').fontSize(11).fillColor(ink).text(carrierName(code),80,y+6,{width:width-36});doc.y=Math.max(doc.y,y+32);}}
    ensure(55);doc.moveDown(.4);const y=doc.y;doc.rect(44,y,width,35).fill(burgundy);doc.fillColor('#ffffff').font('Helvetica-Bold').fontSize(15).text(d.documentType==='ticket'?'E-ticket receipt & flight itinerary':'Flight itinerary',54,y+10,{width:width-20});doc.y=y+45;
    if(reference)para('FareTransit document reference: '+reference);
    if(draft)para('DRAFT — NOT VALID FOR TRAVEL');
-   title('Passengers');for(const p of d.passengers){ensure(32);para(p.name+(p.ticketNumber?' · Ticket '+p.ticketNumber:''));}
-   if(d.references.length){title('Airline references');for(const r of d.references){ensure(28);para(carrierName(r.carrier)+' · '+r.pnr);}}
+   const smallLabel=(s,x,y,w,align='left')=>doc.font('Helvetica-Bold').fontSize(8).fillColor('#64748b').text(s,x,y,{width:w,align,lineBreak:false});
+   title('Passenger details');
+   for(const [i,p] of d.passengers.entries()){
+    const name=p.name||'Not entered',ticket=p.ticketNumber||'',left=ticket?width*.51-24:width-24,right=width*.49-24;
+    doc.font('Helvetica-Bold').fontSize(13);const nameH=doc.heightOfString(name,{width:left}),ticketH=ticket?doc.heightOfString(ticket,{width:right}):0;
+    const h=60+Math.max(nameH,ticketH);ensure(h+8);const yy=doc.y,x=44;
+    doc.roundedRect(x,yy,width,h,7).lineWidth(.7).stroke('#dce3ec');doc.rect(x+1,yy+1,width-2,22).fill('#f4f6fa');
+    smallLabel('PASSENGER '+String(i+1).padStart(2,'0'),x+12,yy+7,width-24);
+    smallLabel('PASSENGER NAME',x+12,yy+33,left);doc.font('Helvetica-Bold').fontSize(13).fillColor(ink).text(name,x+12,yy+46,{width:left});
+    if(ticket){const xx=x+width*.51;doc.moveTo(xx,yy+23).lineTo(xx,yy+h-1).stroke('#e5eaf0');smallLabel('E-TICKET NUMBER',xx+12,yy+33,right,'right');doc.font('Helvetica-Bold').fontSize(13).fillColor(ink).text(ticket,xx+12,yy+46,{width:right,align:'right'});}
+    doc.x=44;doc.y=yy+h+8;
+   }
+   if(d.references.length){
+    title('Airline confirmation');
+    for(const r of d.references){
+     const name=carrierName(r.carrier),logoFile=localCarrierLogo(r.carrier),nameX=logoFile?86:56,right=width*.40;
+     const nameWidth=width-right-30-(nameX-44);doc.font('Helvetica-Bold').fontSize(12);
+     const h=Math.max(68,35+doc.heightOfString(name,{width:nameWidth}));ensure(h+8);const yy=doc.y,x=44;
+     doc.roundedRect(x,yy,width,h,7).lineWidth(.7).stroke('#dce3ec');logo(logoFile,x+12,yy+18,24);
+     smallLabel('AIRLINE',nameX,yy+15,nameWidth);doc.font('Helvetica-Bold').fontSize(12).fillColor(ink).text(name,nameX,yy+29,{width:nameWidth});
+     const rx=x+width-right-9;doc.roundedRect(rx,yy+9,right,h-18,5).fill('#f4f6fa');smallLabel('CONFIRMATION CODE (PNR)',rx+4,yy+17,right-8,'center');
+     doc.font('Helvetica-Bold').fontSize(20).fillColor(burgundy).text(r.pnr||'—',rx+4,yy+32,{width:right-8,align:'center',lineBreak:false,ellipsis:true});
+     doc.x=44;doc.y=yy+h+8;
+    }
+   }
    for(const direction of ['outbound','inbound']){
     const seg=d.segments.filter(s=>s.direction===direction);if(!seg.length)continue;
     title(direction==='outbound'?'Outbound journey':'Inbound journey');
-    for(const s of seg){ensure(104);const yy=doc.y;logo(localCarrierLogo(s.carrier),44,yy,28);doc.font('Helvetica-Bold').fontSize(11).fillColor(ink).text(carrierName(s.carrier)+' · '+s.carrier+' '+s.flight,80,yy+4,{width:width-36});doc.y=Math.max(doc.y,yy+32);para(s.from+'   '+s.departureDate+' '+s.departureTime+'   →   '+s.to+'   '+s.arrivalDate+' '+s.arrivalTime);if(s.cabin)para('Cabin: '+s.cabin);if(s.operatingCarrier)para('Operated by '+carrierName(s.operatingCarrier));if(s.baggage)para('Baggage: '+s.baggage);para('Local airport times');doc.moveDown(.4);}
+    para(seg[0].from+' → '+seg[seg.length-1].to+' · '+seg.length+' flight'+(seg.length===1?'':'s'));
+    for(const [i,s] of seg.entries()){
+     const f=flightDisplay(s),c=connectionDisplay(s,seg[i+1]);
+     const meta=[s.cabin?'Cabin: '+s.cabin:'',s.operatingCarrier?'Operated by '+carrierName(s.operatingCarrier):'',s.baggage?'Baggage: '+s.baggage:''].filter(Boolean).join(' · ');
+     doc.font('Helvetica').fontSize(9);const metaHeight=meta?doc.heightOfString(meta,{width:width-24})+18:0;
+     const cardHeight=146+metaHeight;
+     ensure(cardHeight+10);const yy=doc.y,x=44;
+     doc.roundedRect(x,yy,width,cardHeight,7).lineWidth(0.7).stroke('#dce3ec');
+     doc.rect(x+1,yy+1,width-2,35).fill('#f4f6fa');
+     logo(localCarrierLogo(s.carrier),x+10,yy+5,25);
+     doc.font('Helvetica-Bold').fontSize(11).fillColor(ink).text(carrierName(s.carrier)+' · '+s.carrier+' '+s.flight,x+42,yy+12,{width:width-115,lineBreak:false,ellipsis:true});
+     doc.font('Helvetica').fontSize(8).fillColor('#64748b').text('FLIGHT '+(i+1)+' OF '+seg.length,x+width-75,yy+13,{width:65,align:'right',lineBreak:false});
+     const col=(width-90)/2;
+     const endpoint=(airport,clock,date,shift,xx,align,caption)=>{
+      const put=(v,y,size,color,bold=false)=>doc.font(bold?'Helvetica-Bold':'Helvetica').fontSize(size).fillColor(color).text(v,xx,yy+y,{width:col-12,align,lineBreak:false,ellipsis:true});
+      put(caption,43,8,'#64748b',true);put(clock,56,23,ink,true);put(airport.code+(shift?' ('+shift+')':''),85,13,burgundy,true);
+      if(airport.city)put(airport.city,102,9,ink);
+      if(airport.name)put(airport.name,114,8,'#64748b');
+      put(date,129,9,ink);
+     };
+     endpoint(f.from,f.departureTime,f.departureDate,'',x+12,'left','DEPARTURE');
+     endpoint(f.to,f.arrivalTime,f.arrivalDate,f.dayShift,x+col+90,'right','ARRIVAL');
+     const center=x+width/2;
+     doc.moveTo(center-25,yy+77).lineTo(center+25,yy+77).stroke('#8b1236');
+     doc.moveTo(center+19,yy+73).lineTo(center+25,yy+77).lineTo(center+19,yy+81).stroke('#8b1236');
+     if(f.duration)doc.font('Helvetica-Bold').fontSize(10).fillColor(ink).text(f.duration,center-40,yy+85,{width:80,align:'center',lineBreak:false});
+     if(meta){doc.moveTo(x+10,yy+145).lineTo(x+width-10,yy+145).stroke('#dce3ec');doc.font('Helvetica').fontSize(9).fillColor(ink).text(meta,x+12,yy+153,{width:width-24});}
+     doc.x=44;doc.y=yy+cardHeight+10;
+     if(c){ensure(28);const cy=doc.y;doc.roundedRect(x,cy,width,22,5).fill('#f4f6fa');doc.font('Helvetica-Bold').fontSize(9).fillColor('#475569').text((c.duration?c.duration+' layover':'Connection')+' at '+(c.airport.city||c.airport.code)+' ('+c.airport.code+')',x+8,cy+7,{width:width-16,align:'center',lineBreak:false,ellipsis:true});doc.x=44;doc.y=cy+29;}
+    }
+    para('All departure and arrival times are local to the respective airports.');
    }
    if(d.payment.show&&d.payment.merchants.length){
     title('Payment & merchant charges');
-    for(const m of d.payment.merchants){ensure(42);para(m.merchant+' · '+money(cents(m.amount)||0)+' USD · '+m.status+(m.cardLast4?' · '+m.cardBrand+' ending in '+m.cardLast4:''));}
-    for(const status of ['charged','authorized','pending'])if(d.payment.merchants.some(m=>m.status===status)){ensure(30);doc.font('Helvetica-Bold').fontSize(11).fillColor(ink).text('Total '+status+': '+money(paymentTotal(d,status))+' USD');}
+    const merchants=d.payment.merchants;
+    ensure(34);let yy=doc.y;doc.roundedRect(44,yy,width,24,4).fill('#f4f6fa');smallLabel('MERCHANT / PAYMENT METHOD',56,yy+8,width*.6);smallLabel('AMOUNT (USD)',44+width*.64,yy+8,width*.36-12,'right');doc.x=44;doc.y=yy+29;
+    for(const m of merchants){
+     const name=m.merchant||'Merchant to be confirmed',card=maskedCard(m),left=width*.62-24;
+     doc.font('Helvetica-Bold').fontSize(12);const nameH=doc.heightOfString(name,{width:left});
+     doc.font('Helvetica').fontSize(9);const cardH=card?doc.heightOfString(card,{width:left})+4:0;
+     const h=Math.max(60,40+nameH+cardH);ensure(h+4);yy=doc.y;
+     doc.roundedRect(44,yy,width,h,5).lineWidth(.7).stroke('#dce3ec');
+     doc.font('Helvetica-Bold').fontSize(12).fillColor(ink).text(name,56,yy+10,{width:left});
+     let sy=yy+13+nameH;if(card){doc.font('Helvetica').fontSize(9).fillColor('#475569').text(card,56,sy,{width:left});sy+=cardH;}
+     const [bg,fg]=m.status==='charged'?['#edf6ef','#245c36']:m.status==='authorized'?['#eef3fa','#355579']:['#fff6e7','#845817'];
+     doc.font('Helvetica-Bold').fontSize(8);const label=paymentLabel(m.status),bw=doc.widthOfString(label)+14;
+     doc.roundedRect(56,sy+3,bw,15,3).fill(bg);doc.fillColor(fg).text(label,63,sy+7,{lineBreak:false});
+     doc.font('Helvetica-Bold').fontSize(15).fillColor(ink).text(merchantAmount(m),44+width*.64,yy+h/2-9,{width:width*.36-12,align:'right',lineBreak:false,ellipsis:true});
+     doc.x=44;doc.y=yy+h+4;
+    }
+    for(const status of ['charged','authorized','pending'])if(merchants.some(m=>m.status===status)){
+     const valid=merchants.filter(m=>m.status===status).every(m=>cents(m.amount)!==null&&m.currency==='USD');
+     ensure(42);yy=doc.y;doc.roundedRect(44,yy,width,36,5).fill('#f4f6fa');
+     doc.font('Helvetica-Bold').fontSize(11).fillColor(ink).text('Total '+status,56,yy+12,{width:width*.45,lineBreak:false});
+     doc.font('Helvetica-Bold').fontSize(18).fillColor(burgundy).text(valid?displayUsd(paymentTotal(d,status))+' USD':'Amount to be confirmed',44+width*.47,yy+9,{width:width*.53-12,align:'right',lineBreak:false,ellipsis:true});
+     doc.x=44;doc.y=yy+41;
+    }
     para('Separate merchant transactions may appear on your card statement.');
    }
-   if(d.notes){title('Special notes');para(d.notes);}
-   ensure(44);doc.moveDown();para('Prepared by FareTransit LLC · support@faretransit.com');para('Verify airline reservation details directly with the airline.');
+   if(d.notes){
+    title('Special notes');doc.font('Helvetica').fontSize(10);
+    const nh=doc.heightOfString(d.notes,{width:width-28,lineGap:3})+24;
+    if(nh<doc.page.height-120){ensure(nh+8);const ny=doc.y;doc.roundedRect(44,ny,width,nh,4).fill('#f4f6fa');doc.rect(44,ny,3,nh).fill(burgundy);doc.font('Helvetica').fontSize(10).fillColor(ink).text(d.notes,58,ny+12,{width:width-28,lineGap:3});doc.x=44;doc.y=ny+nh+8;}
+    else{doc.font('Helvetica').fontSize(10).fillColor(ink).text(d.notes,44,doc.y,{width,lineGap:3});doc.x=44;}
+   }
+   ensure(58);doc.moveDown();const fy=doc.y;doc.moveTo(44,fy).lineTo(44+width,fy).stroke('#dce3ec');doc.font('Helvetica-Bold').fontSize(11).fillColor(burgundy).text('Prepared by FareTransit LLC',44,fy+12,{width:width*.55,lineBreak:false});
+   doc.font('Helvetica').fontSize(9).fillColor(ink).text('support@faretransit.com',44+width*.55,fy+13,{width:width*.45,align:'right',lineBreak:false});doc.x=44;doc.y=fy+30;para('Airline reservation details should be verified with the airline.');
    const range=doc.bufferedPageRange();for(let i=range.start;i<range.start+range.count;i++){doc.switchToPage(i);doc.font('Helvetica').fontSize(8).fillColor('#65758b').text('FareTransit · '+(i+1)+' / '+range.count,44,doc.page.height-43,{align:'right',width,lineBreak:false});}
    doc.end();
   }catch(e){doc.destroy();reject(e);}
