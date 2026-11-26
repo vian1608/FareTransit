@@ -59,3 +59,17 @@ test('independent ticket generates a real PDF without sending email',async()=>{
  const pdf=await generateTicketPdf(d,{reference:'FT-ET-TEST',createdAt:'2026-11-26T00:00:00Z',draft:true});
  assert.equal(pdf.subarray(0,5).toString(),'%PDF-');assert.ok(pdf.length>1000&&pdf.length<5*1024*1024);
 });
+
+test('multiple ticket recipients deduplicate while preserving legacy primary key',async()=>{
+ const {recipientEntries,archivePathForJob}=await import('../src/modules/independent-tickets/ticket.recipients.mjs');
+ const group='a'.repeat(64),primary='traveler@example.test';
+ const entries=recipientEntries(primary,['TRAVELER@example.test','other@example.test',' OTHER@example.test '],group,{includePrimary:true});
+ assert.equal(entries.length,2);assert.equal(entries[0].key,group);assert.notEqual(entries[1].key,group);
+ assert.deepEqual(recipientEntries(primary,['other@example.test'],group),[entries[1]]);
+ assert.throws(()=>recipientEntries(primary,['invalid'],group));
+ assert.throws(()=>recipientEntries(primary,Array(5).fill(primary),group,{includePrimary:true}));
+ assert.deepEqual(archivePathForJob({id:'old',payload:{group_key:group}}),{path:group+'.pdf',existingOnly:false});
+ const original='00000000-0000-0000-0000-000000000001.pdf';
+ assert.deepEqual(archivePathForJob({id:'new',payload:{archive_path:original,group_key:group}}),{path:original,existingOnly:true});
+ assert.throws(()=>archivePathForJob({id:'new',payload:{archive_path:'../private.pdf'}}));
+});
