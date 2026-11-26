@@ -73,3 +73,26 @@ test('multiple ticket recipients deduplicate while preserving legacy primary key
  assert.deepEqual(archivePathForJob({id:'new',payload:{archive_path:original,group_key:group}}),{path:original,existingOnly:true});
  assert.throws(()=>archivePathForJob({id:'new',payload:{archive_path:'../private.pdf'}}));
 });
+
+test('optional seats belong to a passenger and stable flight, never display empty placeholders',async()=>{
+ const {seatFlightKey}=await import('../src/modules/independent-tickets/ticket.seats.mjs');
+ const {ticketText}=await import('../src/modules/independent-tickets/ticket.renderer.mjs');
+ const first={direction:'outbound',carrier:'UA',flight:'123',from:'EWR',to:'SFO',departureDate:'2027-01-01',arrivalDate:'2027-01-01',departureTime:'10:00',arrivalTime:'13:00'};
+ const second={...first,direction:'inbound',flight:'124',from:'SFO',to:'EWR',departureDate:'2027-01-03',arrivalDate:'2027-01-03'};
+ const input={customer:{email:'sample@example.test'},passengers:[{name:'Sample A',seats:[{flightKey:seatFlightKey(first),seat:'12a'}]},{name:'Sample B'}],segments:[first,second]};
+ const off=normalizeTicket(input);assert.doesNotMatch(renderTicket(off),/Assigned seats/);assert.doesNotMatch(ticketText(off),/Assigned seat/);
+ const empty=normalizeTicket({...input,seatAssignmentsEnabled:true,passengers:[{name:'Sample B'}]});assert.doesNotMatch(renderTicket(empty),/Assigned seats/);
+ const on=normalizeTicket({...input,seatAssignmentsEnabled:true});assert.deepEqual(validateTicket(on),[]);
+ const html=renderTicket(on);assert.equal((html.match(/Assigned seats/g)||[]).length,1);assert.match(html,/12A/);assert.doesNotMatch(html,/Not assigned/);
+ assert.match(ticketText(on),/Assigned seat \(outbound\): UA 123.*12A/);
+ const reordered=normalizeTicket({...input,seatAssignmentsEnabled:true,segments:[second,first]});assert.match(ticketText(reordered),/Assigned seat \(outbound\): UA 123.*12A/);
+ const duplicate=normalizeTicket({...input,seatAssignmentsEnabled:true,passengers:[input.passengers[0],{name:'Sample B',seats:input.passengers[0].seats}]});
+ assert.ok(validateTicket(duplicate).some(e=>e.includes('Duplicate seat 12A')));
+ const changed=normalizeTicket({...input,seatAssignmentsEnabled:true,segments:[{...first,flight:'999'},second]});assert.ok(validateTicket(changed).some(e=>e.includes('missing or ambiguous flight')));
+ const {generateTicketPdf}=await import('../src/modules/independent-tickets/ticket.pdf.mjs');const pdf=await generateTicketPdf(on,{draft:true});assert.equal(pdf.subarray(0,5).toString(),'%PDF-');
+});
+test('field-specific validation identifies arrival and ticket number errors',()=>{
+ const d=normalizeTicket({customer:{email:'sample@example.test'},documentType:'ticket',passengers:[{name:'Sample Passenger',ticketNumber:'00000000000000'}],references:[{carrier:'UA',pnr:'ABC123'}],segments:[{carrier:'UA',flight:'123',from:'EWR',to:'SFO',departureDate:'2027-01-01',departureTime:'10:00',arrivalTime:'13:00'}]});
+ const errors=validateTicket(d);assert.ok(errors.some(e=>e.includes('Segment 1')&&e.includes('arrival date')));assert.ok(errors.some(e=>e.includes('14 digits')&&e.includes('13 digits')));
+ d.segments[0].arrivalDate='2027-01-01';d.passengers[0].ticketNumber='000-0000000000';assert.deepEqual(validateTicket(d),[]);
+});

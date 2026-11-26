@@ -74,7 +74,8 @@ router.post('/tickets/:id/send',wrap(async(req,res)=>{
   if(!v.valid)return fail(res,422,'Existing booking integrity or authorization checks failed.');
   const current=mapBooking(await adminService.getBookingDetails(t.source_booking_id));
   // Keep registered booking flight facts, recipient and passenger identities tied to the authorized source.
-  for(const k of ['customer','passengers','references','segments'])if(hash(current[k])!==hash(d[k]))return fail(res,409,'Registered booking facts changed or were edited. Correct the original booking and import again before sending.');
+  const passengerFacts=rows=>rows.map(({name,ticketNumber})=>({name,ticketNumber}));
+  for(const k of ['customer','passengers','references','segments'])if(hash(k==='passengers'?passengerFacts(current[k]):current[k])!==hash(k==='passengers'?passengerFacts(d[k]):d[k]))return fail(res,409,'Registered booking facts changed or were edited. Correct the original booking and import again before sending.');
   if(d.payment.show&&d.payment.merchants.some(m=>m.status==='charged'))return fail(res,422,'Booking allocations alone do not prove captured merchant charges. Use pending/authorized or omit payment details until verified.');
  }
  const key=hash({ticket:t.id,document:{...d,verified:undefined}});
