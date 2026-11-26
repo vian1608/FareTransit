@@ -24,8 +24,31 @@ export function generateTicketPdf(d,{reference='',createdAt,draft=false}={}){
    ensure(55);doc.moveDown(.4);const y=doc.y;doc.rect(44,y,width,35).fill(burgundy);doc.fillColor('#ffffff').font('Helvetica-Bold').fontSize(15).text(d.documentType==='ticket'?'E-ticket receipt & flight itinerary':'Flight itinerary',54,y+10,{width:width-20});doc.y=y+45;
    if(reference)para('FareTransit document reference: '+reference);
    if(draft)para('DRAFT — NOT VALID FOR TRAVEL');
-   title('Passengers');for(const p of d.passengers){ensure(32);para(p.name+(p.ticketNumber?' · Ticket '+p.ticketNumber:''));}
-   if(d.references.length){title('Airline references');for(const r of d.references){ensure(28);para(carrierName(r.carrier)+' · '+r.pnr);}}
+   const smallLabel=(s,x,y,w,align='left')=>doc.font('Helvetica-Bold').fontSize(8).fillColor('#64748b').text(s,x,y,{width:w,align,lineBreak:false});
+   title('Passenger details');
+   for(const [i,p] of d.passengers.entries()){
+    const name=p.name||'Not entered',ticket=p.ticketNumber||'',left=ticket?width*.51-24:width-24,right=width*.49-24;
+    doc.font('Helvetica-Bold').fontSize(13);const nameH=doc.heightOfString(name,{width:left}),ticketH=ticket?doc.heightOfString(ticket,{width:right}):0;
+    const h=60+Math.max(nameH,ticketH);ensure(h+8);const yy=doc.y,x=44;
+    doc.roundedRect(x,yy,width,h,7).lineWidth(.7).stroke('#dce3ec');doc.rect(x+1,yy+1,width-2,22).fill('#f4f6fa');
+    smallLabel('PASSENGER '+String(i+1).padStart(2,'0'),x+12,yy+7,width-24);
+    smallLabel('PASSENGER NAME',x+12,yy+33,left);doc.font('Helvetica-Bold').fontSize(13).fillColor(ink).text(name,x+12,yy+46,{width:left});
+    if(ticket){const xx=x+width*.51;doc.moveTo(xx,yy+23).lineTo(xx,yy+h-1).stroke('#e5eaf0');smallLabel('E-TICKET NUMBER',xx+12,yy+33,right,'right');doc.font('Helvetica-Bold').fontSize(13).fillColor(ink).text(ticket,xx+12,yy+46,{width:right,align:'right'});}
+    doc.x=44;doc.y=yy+h+8;
+   }
+   if(d.references.length){
+    title('Airline confirmation');
+    for(const r of d.references){
+     const name=carrierName(r.carrier),logoFile=localCarrierLogo(r.carrier),nameX=logoFile?86:56,right=width*.40;
+     const nameWidth=width-right-30-(nameX-44);doc.font('Helvetica-Bold').fontSize(12);
+     const h=Math.max(68,35+doc.heightOfString(name,{width:nameWidth}));ensure(h+8);const yy=doc.y,x=44;
+     doc.roundedRect(x,yy,width,h,7).lineWidth(.7).stroke('#dce3ec');logo(logoFile,x+12,yy+18,24);
+     smallLabel('AIRLINE',nameX,yy+15,nameWidth);doc.font('Helvetica-Bold').fontSize(12).fillColor(ink).text(name,nameX,yy+29,{width:nameWidth});
+     const rx=x+width-right-9;doc.roundedRect(rx,yy+9,right,h-18,5).fill('#f4f6fa');smallLabel('CONFIRMATION CODE (PNR)',rx+4,yy+17,right-8,'center');
+     doc.font('Helvetica-Bold').fontSize(20).fillColor(burgundy).text(r.pnr||'—',rx+4,yy+32,{width:right-8,align:'center',lineBreak:false,ellipsis:true});
+     doc.x=44;doc.y=yy+h+8;
+    }
+   }
    for(const direction of ['outbound','inbound']){
     const seg=d.segments.filter(s=>s.direction===direction);if(!seg.length)continue;
     title(direction==='outbound'?'Outbound journey':'Inbound journey');

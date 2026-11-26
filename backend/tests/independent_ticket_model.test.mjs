@@ -32,3 +32,12 @@ test('flight presentation formats local dates and calculates known-zone duration
  const html=renderTicket(normalizeTicket({segments:[{...first,carrier:'UA',flight:'4477'},{...second,carrier:'UA',flight:'1512'}]}));
  assert.match(html,/6:30 AM/);assert.match(html,/1h 7m layover/);assert.match(html,/Guanacaste Airport/);
 });
+
+test('passenger and airline confirmation cards preserve original identifiers and omit absent ticket numbers',()=>{
+ const html=renderTicket(normalizeTicket({passengers:[{name:'Sample & Traveler',ticketNumber:'0160000000000'},{name:'Second Traveler'}],references:[{carrier:'UA',pnr:'ABC123'}]}));
+ assert.match(html,/PASSENGER 01/);assert.match(html,/PASSENGER 02/);
+ assert.match(html,/Sample &amp; Traveler/);assert.match(html,/0160000000000/);
+ assert.equal((html.match(/E-TICKET NUMBER/g)||[]).length,1);
+ assert.match(html,/CONFIRMATION CODE \(PNR\)/);assert.match(html,/ABC123/);
+ assert.match(html,/\/assets\/airlines\/ua\.png/);
+});
