@@ -19,3 +19,7 @@ The existing five-item sidebar is preserved; open **Bookings > Independent E-Tic
 - Same ticket and document content is deduplicated; an intentional same-version resend UI is not yet enabled. No webhook, staff permission migration, persistent provider-wide rate limiter, or automatic background supervisor is included in this pilot.
 - PDF is archived before email and can be recovered from delivery history. Draft-only PDF export, full historical draft versions, global server-side search, and per-attempt append-only log are follow-up work. The PDF and email share canonical fields but use different layouts.
 - Provider quota, asset rights and production hosting capacity must be verified before enabling. Existing CRM still shares infrastructure, so load testing is mandatory.
+
+## Read-only production review mode
+
+To make the option available before applying the migration, set `REACT_APP_INDEPENDENT_TICKETS_ENABLED=true` and `INDEPENDENT_TICKETS_ENABLED=true`, leave `REACT_APP_INDEPENDENT_TICKET_PERSISTENCE_ENABLED`, `INDEPENDENT_TICKET_PERSISTENCE_ENABLED`, `REACT_APP_INDEPENDENT_TICKET_EMAIL_ENABLED`, `INDEPENDENT_TICKET_EMAIL_ENABLED`, and `INDEPENDENT_TICKET_WORKER_ENABLED` disabled. This allows booking lookups and draft preview only; no ticket records are stored or email sent. After staging validation and migration, explicitly enable both persistence flags; only enable both email flags after worker and delivery validation. The UI and API independently enforce review mode.

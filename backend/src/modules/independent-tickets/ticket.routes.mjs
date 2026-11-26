@@ -16,6 +16,8 @@ const hash=o=>createHash('sha256').update(JSON.stringify(o)).digest('hex');
 router.use((req,res,next)=>{
  if(process.env.INDEPENDENT_TICKETS_ENABLED!=='true')return fail(res,503,'Independent tickets are disabled.');
  if(req.user?.role!=='admin')return fail(res,403,'Owner access required during initial rollout.');
+ const reviewOnly=(req.method==='GET'&&/^\/bookings\/[^/]+$/.test(req.path))||(req.method==='POST'&&req.path==='/preview');
+ if(process.env.INDEPENDENT_TICKET_PERSISTENCE_ENABLED!=='true'&&!reviewOnly)return fail(res,503,'Ticket persistence is disabled during review.');
  next();
 });
 router.get('/bookings/:id',wrap(async(req,res)=>{
