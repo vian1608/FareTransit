@@ -133,3 +133,21 @@ test('PDF header shows airline PNR without displaying the internal document refe
  assert.equal(pdfConfirmationLine(normalizeTicket({references:[{carrier:'UA',pnr:'ABC123'},{carrier:'AA',pnr:'DEF456'}]})),'Airline confirmations: see confirmation details below');
  assert.equal(pdfConfirmationLine(normalizeTicket({})),'');
 });
+
+test('email and PDF share the compact title and airline confirmation; header logos have no visible airline name',async()=>{
+ const {ticketTitle,ticketConfirmationLine}=await import('../src/modules/independent-tickets/ticket.header.mjs');
+ const {ticketText}=await import('../src/modules/independent-tickets/ticket.renderer.mjs');
+ const d=normalizeTicket({documentType:'ticket',references:[{carrier:'UA',pnr:'ABC123'}],segments:[{carrier:'UA'}]});
+ const html=renderTicket(d),header=html.slice(0,html.indexOf('Passenger details'));
+ assert.equal(ticketTitle(d),'E-Ticket & Itinerary');
+ assert.match(header,/E-Ticket &amp; Itinerary/);
+ assert.match(header,/Airline confirmation: ABC123/);
+ assert.match(header,/border-radius:10px/);
+ assert.match(header,/\/assets\/airlines\/ua\.png/);
+ assert.doesNotMatch(header,/>United Airlines</);
+ assert.doesNotMatch(header,/E-ticket receipt|FareTransit document reference/);
+ assert.match(ticketText(d),/FareTransit — E-Ticket & Itinerary/);
+ assert.equal(ticketTitle(normalizeTicket({})),'Flight Itinerary');
+ assert.equal(ticketConfirmationLine(normalizeTicket({})),'');
+ assert.doesNotMatch(renderTicket(normalizeTicket({})),/Airline confirmation:/);
+});
