@@ -84,7 +84,7 @@ export function AdminHomePage() {
   const displayName = first(profile?.name, profile?.roleName, profile?.role, 'Owner');
 
   return <>
-    <PageTitle title={`Good ${new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'}, ${displayName}`} subtitle="Here is what needs your attention across FareTransit today." actions={<Link className="bo-button" to="/admin/bookings/new">+ New Booking</Link>} />
+    <PageTitle title={`Good ${new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'}, ${displayName}`} subtitle="Here is what needs your attention across FareTransit today." actions={<><Link className="bo-button" to="/admin/bookings/new">+ New Booking</Link>{process.env.REACT_APP_INDEPENDENT_TICKETS_ENABLED === "true" && hasPermission("*") && <Link className="bo-button secondary" to="/admin/bookings/independent-tickets">Independent E-Ticket Sender</Link>}</>} />
     <ErrorCard message={summaryError || bookings.errors[0]} />
     <div className="ops-kpi-grid">
       <div className="ops-kpi"><span>Bookings</span><strong>{bookings.loading ? '—' : bookings.rows.length}</strong><small>Across flights, hotels and cars</small></div>
@@ -106,6 +106,7 @@ export function AdminHomePage() {
 }
 
 export function UnifiedBookingsPage() {
+  const { hasPermission } = useBackOfficeAuth();
   const data = useAllBookings();
   const [params, setParams] = useSearchParams();
   const type = params.get('type') || 'all';
