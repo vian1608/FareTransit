@@ -52,3 +52,10 @@ test('payment presentation retains separate merchant transactions and status-spe
  assert.doesNotMatch(renderTicket(normalizeTicket({})),/Payment & merchant charges/);
  assert.match(renderTicket(normalizeTicket({payment:{show:true,merchants:[{merchant:'Sample',amount:'',status:'pending'}]}})),/Amount to be confirmed/);
 });
+
+test('independent ticket generates a real PDF without sending email',async()=>{
+ const {generateTicketPdf}=await import('../src/modules/independent-tickets/ticket.pdf.mjs');
+ const d=normalizeTicket({customer:{email:'sample@example.test'},passengers:[{name:'Sample Traveler',ticketNumber:'0160000000000'}],references:[{carrier:'UA',pnr:'ABC123'}],segments:[{carrier:'UA',flight:'123',from:'EWR',to:'SFO',departureDate:'2027-01-01',arrivalDate:'2027-01-01',departureTime:'10:00',arrivalTime:'13:00',baggage:'1 carry-on · 2 checked bags'}],payment:{show:true,merchants:[{merchant:'Sample Merchant',amount:'123.45',status:'charged',cardLast4:'1111'}]},notes:'Sample only.',documentType:'ticket'});
+ const pdf=await generateTicketPdf(d,{reference:'FT-ET-TEST',createdAt:'2026-11-26T00:00:00Z',draft:true});
+ assert.equal(pdf.subarray(0,5).toString(),'%PDF-');assert.ok(pdf.length>1000&&pdf.length<5*1024*1024);
+});
