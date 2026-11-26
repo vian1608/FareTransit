@@ -11,3 +11,9 @@ test('notes are conditional and HTML escaped',()=>{
  assert.match(renderTicket(normalizeTicket({notes:'<script>alert(1)</script>'})),/&lt;script&gt;/);
 });
 test('incomplete ticket cannot be sent',()=>assert.ok(validateTicket(normalizeTicket({documentType:'ticket'}),{sending:true}).length>0));
+
+test('ticket header omits travel agency subtitle while retaining agency attribution',()=>{
+ const html=renderTicket(normalizeTicket({}));
+ assert.doesNotMatch(html,/<small>Travel agency<\/small>/i);
+ assert.match(html,/Prepared by FareTransit LLC/);
+});

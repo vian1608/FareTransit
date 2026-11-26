@@ -17,8 +17,7 @@ export function generateTicketPdf(d,{reference='',createdAt,draft=false}={}){
    const para=t=>{doc.font('Helvetica').fontSize(10).fillColor(ink).text(String(t??''),{width,lineGap:2});};
    const logo=(file,x,y,w=28)=>{if(file)try{doc.image(file,x,y,{fit:[w,w]});}catch{/* Fall back to printed name */}};
    const brand=localBrandMark();logo(brand,44,44,38);doc.font('Helvetica-Bold').fillColor(burgundy).fontSize(23).text('FareTransit',brand?90:44,46);
-   doc.font('Helvetica').fillColor(ink).fontSize(10).text('Travel agency',brand?90:44,72);
-   doc.y=98;
+   doc.y=88;
    const carriers=[...new Set(d.segments.map(s=>s.carrier))];
    if(carriers.length){title('Airline partners in this itinerary');for(const code of carriers){ensure(38);const y=doc.y;logo(localCarrierLogo(code),44,y,28);doc.font('Helvetica-Bold').fontSize(11).fillColor(ink).text(carrierName(code),80,y+6,{width:width-36});doc.y=Math.max(doc.y,y+32);}}
    ensure(55);doc.moveDown(.4);const y=doc.y;doc.rect(44,y,width,35).fill(burgundy);doc.fillColor('#ffffff').font('Helvetica-Bold').fontSize(15).text(d.documentType==='ticket'?'E-ticket receipt & flight itinerary':'Flight itinerary',54,y+10,{width:width-20});doc.y=y+45;
