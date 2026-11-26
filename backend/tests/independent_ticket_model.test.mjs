@@ -190,11 +190,11 @@ test('review link and independent returning customer offer render in email, text
  const html=renderTicket(d);
  assert.match(html,/href="https:\/\/www\.trustpilot\.com\/review\/faretransit\.com"/);
  assert.match(html,/TRUST20/);
- assert.match(html,/No review required\./);
+ assert.match(html,/Subject to offer terms and availability\./);assert.doesNotMatch(html,/No review required/i);
  assert.ok(html.indexOf('TRUST20')<html.indexOf('Prepared by FareTransit LLC'));
  assert.match(ticketText(d),/https:\/\/www\.trustpilot\.com\/review\/faretransit\.com/);
  assert.match(ticketText(d),/TRUST20/);
- assert.match(ticketText(d),/No review required/);
+ assert.match(ticketText(d),/Subject to offer terms and availability\./);assert.doesNotMatch(ticketText(d),/No review required/i);
  const raw=(await generateTicketPdf(d)).toString('latin1');
  assert.match(raw,/https:\/\/www\.trustpilot\.com\/review\/faretransit\.com/);
  assert.match(raw,/\/Subtype\s*\/Link/);
