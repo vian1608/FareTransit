@@ -13,6 +13,9 @@ export function mountTicketActivity(app){
    }
    return image(res);
   });
+  const servicePath=prefix+'/customer-service-email-open/:token.gif';
+  app.head(servicePath,(_req,res)=>image(res));
+  app.get(servicePath,async(req,res)=>{if(uuidPattern.test(req.params.token)){try{await supabase.rpc('ft_record_service_email_open',{p_token:req.params.token});}catch{}}return image(res);});
   app.post(prefix+'/webhooks/resend-independent-tickets',express.raw({type:'application/json',limit:'64kb'}),async(req,res)=>{
    const secret=process.env.RESEND_INDEPENDENT_TICKET_WEBHOOK_SECRET;
    if(!secret||process.env.INDEPENDENT_TICKETS_ENABLED!=='true'||process.env.INDEPENDENT_TICKET_PERSISTENCE_ENABLED!=='true')return res.status(503).json({success:false});
