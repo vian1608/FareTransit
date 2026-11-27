@@ -10,6 +10,7 @@ function Icon({ type }) {
     customers: <><circle cx="12" cy="8" r="4"/><path d="M4.5 21a7.5 7.5 0 0 1 15 0"/></>,
     service: <><path d="M3 13v-2a9 9 0 0 1 18 0v2M3 12h3v6H4a1 1 0 0 1-1-1zM21 12h-3v6h2a1 1 0 0 0 1-1zM18 18c0 3-3 3-6 3"/></>,
     ticket: <><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 9h5M7 13h8M16 5v3M16 16v3"/></>,
+    refund: <><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 10h18M12 15h5m-5 0 2-2m-2 2 2 2"/></>,
     mail: <><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></>,
     payments: <><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 10h18M7 15h4"/></>,
     settings: <><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21h-4v-.1a1.7 1.7 0 0 0-1.1-1.6 1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.4H3v-4h.1A1.7 1.7 0 0 0 4.7 8.5a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.1V3h4v.1a1.7 1.7 0 0 0 1.1 1.6 1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.4 9c.14.36.36.7.6 1 .28.33.67.52 1.1.53h.1v4h-.1a1.7 1.7 0 0 0-1.7.47Z"/></>
@@ -23,7 +24,8 @@ const navItems = [
   { label: 'Customers', href: '/admin/customers', icon: 'customers', permissions: ['crm.customers.view'] },
   { label: 'Customer Service', href: '/admin/customer-service', icon: 'service', permissions: ['*'], children: [
     ...(process.env.REACT_APP_INDEPENDENT_TICKETS_ENABLED === 'true' ? [{ title: 'E-Ticket Generator', href: '/admin/customer-service/e-ticket', icon: 'ticket' }] : []),
-    { title: 'Feedback Email', href: '/admin/customer-service/feedback-email', icon: 'mail' }
+    { title: 'Feedback Email', href: '/admin/customer-service/feedback-email', icon: 'mail' },
+    { title: 'Refund Email', href: '/admin/customer-service/refund-email', icon: 'refund' }
   ] },
   { label: 'Payments', href: '/admin/payments', icon: 'payments', permissions: ['payments.view','authorization.view'] },
   { label: 'Settings', href: '/admin/settings', icon: 'settings', permissions: ['admin.settings','team.view','admin.integrations'] }
