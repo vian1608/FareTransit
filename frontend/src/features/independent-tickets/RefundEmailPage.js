@@ -1,12 +1,13 @@
 import React,{useEffect,useRef,useState} from 'react';
 import api,{getApiErrorMessage} from '../../shared/api/api';
 import './IndependentTicket.css';
+import CustomerEmailHistory from './CustomerEmailHistory';
 
 const blank=()=>({email:'',passengerName:'',cardholderName:'',cardBrand:'',last4:'',amount:''});
 const fields=[['email','Passenger email','email',254],['passengerName','Passenger name','text',120],['cardholderName','Cardholder name','text',120],['cardBrand','Card type','select',0],['last4','Last four digits of card','text',4],['amount','Refund amount (USD)','text',10]];
 export default function RefundEmailPage(){
  const lock=useRef(false);
- const [refundProcessed,setRefundProcessed]=useState(false);
+ const [refundProcessed,setRefundProcessed]=useState(false),[historyVersion,setHistoryVersion]=useState(0);
  const [marketing,setMarketing]=useState(false),[html,setHtml]=useState(''),[previewError,setPreviewError]=useState('');
  const [data,setData]=useState(blank),[busy,setBusy]=useState(false),[notice,setNotice]=useState(''),[error,setError]=useState('');
  const change=(key,value)=>setData(d=>({...d,[key]:key==='last4'?value.replace(/\D/g,'').slice(0,4):value}));
@@ -28,7 +29,7 @@ export default function RefundEmailPage(){
   lock.current=true;setBusy(true);setError('');
   try{const r=await api.post('/admin/refund-email',{...data,marketing,refundProcessed});if(!r.data?.success)throw Error('Email acceptance could not be verified.');setNotice(r.data.message);}
   catch(e){setError(getApiErrorMessage(e)||e.message);}
-  finally{lock.current=false;setBusy(false);}
+  finally{lock.current=false;setBusy(false);setHistoryVersion(v=>v+1);}
  };
  return <main className="it-page">
  <header><div><p>FareTransit / Customer Service</p><h1>Refund Email</h1><p>Send a branded refund confirmation after processing the refund.</p></div></header>
@@ -45,5 +46,5 @@ export default function RefundEmailPage(){
  <p className="it-muted">Live preview of the actual email template, including your selected travel invitation.</p>
  {previewError?<p role="alert" className="it-error">{previewError}</p>:html?<iframe title="Refund email preview" sandbox="" referrerPolicy="no-referrer" srcDoc={html} style={{width:'100%',height:marketing?1400:1150,border:'1px solid #dce3ec',borderRadius:12,background:'#eef2f6'}}/>:<p role="status">Loading email preview…</p>}
  </section>
- </div></main>;
+ </div><CustomerEmailHistory kind="refund" refreshVersion={historyVersion}/></main>;
 }
