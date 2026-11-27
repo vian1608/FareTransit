@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {normalizeRefundEmail,refundTemplate,refundKey,sendRefundEmail} from '../src/modules/admin/admin.refund-email.mjs';
+import {normalizeRefundEmail,refundTemplate,refundKey,sendRefundEmail,previewRefundEmail} from '../src/modules/admin/admin.refund-email.mjs';
 const input={email:'passenger@example.com',passengerName:'Sample Passenger',cardholderName:'Sample Holder',last4:'0123',amount:'250.05'};
 const response=()=>({statusCode:200,body:null,set(){return this;},status(n){this.statusCode=n;return this;},json(v){this.body=v;return this;}});
 test('refund email validates four digits and positive exact USD cents',()=>{
@@ -13,6 +13,18 @@ test('template escapes names and does not falsely confirm refund completion',()=
  const t=refundTemplate(normalizeRefundEmail({...input,passengerName:'<script>alert(1)</script>'}));
  assert.doesNotMatch(t.html,/<script>/);assert.match(t.html,/&lt;script&gt;/);
  for(const v of [t.html,t.text]){assert.match(v,/0123/);assert.match(v,/\$250\.05/);assert.match(v,/does not confirm that a refund has been approved, issued or credited/);}
+});
+test('preview shares the exact sent template and travel invitation is optional',()=>{
+ const d=normalizeRefundEmail(input);
+ const standard=refundTemplate(d),promotional=refundTemplate(d,{marketing:true});
+ for(const result of [standard,promotional]){assert.match(result.html,/Refund summary/);assert.match(result.html,/What happens next/);assert.match(result.text,/look forward to serving you again/);}
+ assert.doesNotMatch(standard.html,/Explore your next trip/);
+ assert.match(promotional.html,/Explore your next trip/);
+ assert.match(promotional.text,/Explore your next trip/);
+ assert.notEqual(refundKey(d,'2026-11-27',true),refundKey(d,'2026-11-27',false));
+ const preview=response();previewRefundEmail({body:{...input,marketing:true}},preview);
+ assert.equal(preview.body.html,promotional.html);
+ assert.equal(preview.body.text,promotional.text);
 });
 test('provider is mocked and acceptance is required',async t=>{
  const old=process.env.RESEND_API_KEY;process.env.RESEND_API_KEY='test-placeholder';
