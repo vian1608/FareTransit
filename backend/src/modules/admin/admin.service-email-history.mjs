@@ -61,7 +61,7 @@ export async function listServiceEmails(req,res){
  try{
   const db=await database();let q=db.from(activity).select(columns,{count:'exact'}).eq('kind',kind);
   if(search)q=q.ilike('search_text','%'+search.replace(/[\\%_]/g,'\\$&')+'%');
-  if(email)q=q.ilike('recipient','%'+email.replace(/[\\%_]/g,'\\  if(status==='opened')')+'%');
+  if(email)q=q.ilike('recipient','%'+email.replace(/[\\%_]/g,ch=>'\\'+ch)+'%');
   if(status==='opened')q=q.gt('open_count',0);else if(status==='clicked')q=q.gt('click_count',0);else if(status!=='all')q=q.eq('status',status);
   if(from)q=q.gte('created_at',from+'T00:00:00Z');
   if(to)q=q.lt('created_at',new Date(Date.parse(to)+86400000).toISOString());
