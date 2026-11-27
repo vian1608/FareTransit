@@ -1,7 +1,9 @@
 import env from '../../config/env.mjs';
+export const serviceOpenNotice='We use email open detection for customer-service follow-up. Images may be blocked by your email settings.';
 const table='customer_service_emails',activity='customer_service_email_activity',events='customer_service_email_events';
 const columns='id,kind,recipient,actor,subject,details,provider_id,last_error,created_at,updated_at,accepted_at,status,sent_at,delivered_at,first_open_at,last_open_at,open_count,click_count';
 const database=async()=> (await import('../../integrations/supabase/supabase.client.mjs')).default;
+const withOpenPixel=(html,token)=>uuid.test(token||'')?html.replace('</body>','<img src="https://www.faretransit.com/api/customer-service-email-open/'+token+'.gif" width="1" height="1" alt="" style="display:block;border:0;width:1px;height:1px"/></body>'):html;
 const statuses=new Set(['processing','accepted','sent','delivered','engaged','delivery_delayed','failed','uncertain','bounced','complained','suppressed','opened','clicked']);
 const kinds=new Set(['feedback','refund']);
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -13,7 +15,7 @@ export function createServiceEmailDelivery({getDb=database,fetcher=(...args)=>fe
   let db,row;
   try{
    db=await getDb();
-   const result=await db.from(table).upsert({kind,idempotency_key:key,recipient,actor:actorOf(req),subject:template.subject,html:template.html,plain_text:template.text,details},{onConflict:'idempotency_key',ignoreDuplicates:true}).select('id,status,provider_id').maybeSingle();
+   const result=await db.from(table).upsert({kind,idempotency_key:key,recipient,actor:actorOf(req),subject:template.subject,html:template.html,plain_text:template.text,details},{onConflict:'idempotency_key',ignoreDuplicates:true}).select('id,status,provider_id,tracking_token').maybeSingle();
    if(result.error)throw Error('history unavailable');
    row=result.data;
    if(!row){
@@ -27,7 +29,7 @@ export function createServiceEmailDelivery({getDb=database,fetcher=(...args)=>fe
   const finish=async patch=>{const r=await db.from(table).update({...patch,updated_at:new Date().toISOString()}).eq('id',row.id).eq('status','processing').select('id,status,provider_id').maybeSingle();if(r.error)throw Error('history update failed');if(r.data)return r.data;const current=await db.from(table).select('id,status,provider_id').eq('id',row.id).single();if(current.error)throw Error('history update failed');return current.data;};
   try{
    if(!apiKey()){await finish({status:'failed',last_error:'Email provider not configured'});return fail(res,503,'Email delivery is not configured. Attempt recorded.');}
-   const response=await fetcher('https://api.resend.com/emails',{method:'POST',signal:AbortSignal.timeout(15000),headers:{Authorization:'Bearer '+apiKey(),'Content-Type':'application/json','Idempotency-Key':key},body:JSON.stringify({from:env.resendFrom||'FareTransit <support@faretransit.com>',to:[recipient],...template,reply_to:'support@faretransit.com',tags:[{name:'category',value:tag},{name:'ft_delivery',value:row.id}]})});
+   const response=await fetcher('https://api.resend.com/emails',{method:'POST',signal:AbortSignal.timeout(15000),headers:{Authorization:'Bearer '+apiKey(),'Content-Type':'application/json','Idempotency-Key':key},body:JSON.stringify({from:env.resendFrom||'FareTransit <support@faretransit.com>',to:[recipient],...template,html:withOpenPixel(template.html,row.tracking_token),reply_to:'support@faretransit.com',tags:[{name:'category',value:tag},{name:'ft_delivery',value:row.id}]})});
    if(!response.ok){
     const rejected=[400,401,403,404,422,429].includes(response.status);
     const result=await finish({status:rejected?'failed':'uncertain',last_error:'Provider returned HTTP '+response.status});
