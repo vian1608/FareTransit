@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useBackOfficeAuth } from './BackOfficeAuthContext';
 import './BackOfficeShell.css';
 
@@ -8,6 +8,9 @@ function Icon({ type }) {
     dashboard: <><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></>,
     bookings: <><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v11a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5z"/><path d="M8 2v4M16 2v4M4 9h16M8 13h3M13 13h3M8 17h3"/></>,
     customers: <><circle cx="12" cy="8" r="4"/><path d="M4.5 21a7.5 7.5 0 0 1 15 0"/></>,
+    service: <><path d="M3 13v-2a9 9 0 0 1 18 0v2M3 12h3v6H4a1 1 0 0 1-1-1zM21 12h-3v6h2a1 1 0 0 0 1-1zM18 18c0 3-3 3-6 3"/></>,
+    ticket: <><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 9h5M7 13h8M16 5v3M16 16v3"/></>,
+    mail: <><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></>,
     payments: <><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 10h18M7 15h4"/></>,
     settings: <><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21h-4v-.1a1.7 1.7 0 0 0-1.1-1.6 1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.4H3v-4h.1A1.7 1.7 0 0 0 4.7 8.5a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.1V3h4v.1a1.7 1.7 0 0 0 1.1 1.6 1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.4 9c.14.36.36.7.6 1 .28.33.67.52 1.1.53h.1v4h-.1a1.7 1.7 0 0 0-1.7.47Z"/></>
   };
@@ -18,6 +21,10 @@ const navItems = [
   { label: 'Dashboard', href: '/admin', icon: 'dashboard', permissions: ['dashboard.view'] },
   { label: 'Bookings', href: '/admin/bookings', icon: 'bookings', permissions: ['bookings.flights.view','bookings.hotels.view','bookings.cars.view'] },
   { label: 'Customers', href: '/admin/customers', icon: 'customers', permissions: ['crm.customers.view'] },
+  { label: 'Customer Service', href: '/admin/customer-service', icon: 'service', permissions: ['*'], children: [
+    ...(process.env.REACT_APP_INDEPENDENT_TICKETS_ENABLED === 'true' ? [{ title: 'E-Ticket Generator', href: '/admin/customer-service/e-ticket', icon: 'ticket' }] : []),
+    { title: 'Feedback Email', href: '/admin/customer-service/feedback-email', icon: 'mail' }
+  ] },
   { label: 'Payments', href: '/admin/payments', icon: 'payments', permissions: ['payments.view','authorization.view'] },
   { label: 'Settings', href: '/admin/settings', icon: 'settings', permissions: ['admin.settings','team.view','admin.integrations'] }
 ];
@@ -25,6 +32,8 @@ const navItems = [
 export default function BackOfficeShell({ children }) {
   const { profile, hasPermission, logout } = useBackOfficeAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [serviceExpanded, setServiceExpanded] = useState(true);
   const [open, setOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -48,7 +57,10 @@ export default function BackOfficeShell({ children }) {
         <span className="backoffice-brand-copy"><strong>FareTransit</strong><small>Admin</small></span>
       </NavLink>
       <nav aria-label="Admin navigation">
-        {visibleItems.map(item => <NavLink key={item.href} to={item.href} end={item.href === '/admin'} onClick={() => setOpen(false)} className={({ isActive }) => isActive ? 'active' : ''}><Icon type={item.icon} /><span>{item.label}</span></NavLink>)}
+        {visibleItems.map(item => item.children ? <div className="backoffice-nav-group" key={item.href}>
+          <button type="button" className={'backoffice-nav-group-toggle'+(location.pathname.startsWith(item.href+'/')?' current':'')} aria-expanded={serviceExpanded} aria-controls="customer-service-nav" onClick={() => setServiceExpanded(value => !value)}><Icon type={item.icon}/><span>{item.label}</span><span className="backoffice-nav-chevron" aria-hidden="true">{serviceExpanded?'⌄':'›'}</span></button>
+          {serviceExpanded && <div className="backoffice-nav-children" id="customer-service-nav">{item.children.map(child => <NavLink key={child.href} to={child.href} onClick={() => setOpen(false)} className={({isActive})=>isActive?'active':''}><Icon type={child.icon}/><span>{child.title}</span></NavLink>)}</div>}
+        </div> : <NavLink key={item.href} to={item.href} end={item.href === '/admin'} onClick={() => setOpen(false)} className={({ isActive }) => isActive ? 'active' : ''}><Icon type={item.icon} /><span>{item.label}</span></NavLink>)}
       </nav>
       <div className="backoffice-sidebar-foot">
         <div className="backoffice-mini-avatar">{initials}</div>
