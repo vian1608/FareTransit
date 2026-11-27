@@ -7,6 +7,7 @@ import adminBulkDeleteController from './admin.bulk-delete.controller.mjs';
 import adminPassengerController from './admin.passenger.controller.mjs';
 import adminBookingMutationController from './admin.booking-mutation.controller.mjs';
 import adminEmailManualController from './admin.email-manual.controller.mjs';
+import {sendFeedbackEmail} from './admin.feedback-email.mjs';
 import adminDemoController from './admin.demo.controller.mjs';
 import adminAssistanceController from './admin.assistance.controller.mjs';
 import voucherController from '../vouchers/voucher.controller.mjs';
@@ -25,6 +26,9 @@ const router = express.Router();
 const loginRateLimiter = rateLimit({ windowMs: 60000, maxRequests: 5, message: 'Too many admin login attempts. Please try again later.' });
 const adminReadRateLimiter = rateLimit({ windowMs: 60000, maxRequests: 120, message: 'Too many admin read requests. Please wait a minute.' });
 const adminWriteRateLimiter = rateLimit({ windowMs: 60000, maxRequests: 60, message: 'Too many admin changes. Please wait a minute.' });
+
+const feedbackRateLimiter = rateLimit({ windowMs: 60000, maxRequests: 10, message: 'Too many feedback email requests. Please wait a minute.' });
+router.post('/feedback-email', adminWriteRateLimiter, authenticate, authorize(['admin']), feedbackRateLimiter, sendFeedbackEmail);
 
 router.post('/login', loginRateLimiter, adminController.login);
 router.post('/demo-login', loginRateLimiter, adminDemoController.merchantDemoLogin);
