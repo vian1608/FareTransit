@@ -53,16 +53,19 @@ export async function listServiceEmails(req,res){
  if(!kinds.has(kind))return fail(res,400,'Unknown email type.');
  const search=String(req.query.search||'').trim().slice(0,200),status=String(req.query.status||'all');
  const offset=Math.max(0,Math.min(100000,Math.floor(Number(req.query.offset)||0)));
+ const limit=[10,25,50,100].includes(Number(req.query.limit))?Number(req.query.limit):25;
+ const email=String(req.query.email||'').trim().slice(0,254);
  const day=value=>typeof value==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(value)&&Number.isFinite(Date.parse(value))&&new Date(value).toISOString().slice(0,10)===value;
  const from=req.query.from,to=req.query.to;
  if((from&&!day(from))||(to&&!day(to))||(from&&to&&from>to)||(status!=='all'&&!statuses.has(status)))return fail(res,400,'Invalid history filters.');
  try{
   const db=await database();let q=db.from(activity).select(columns,{count:'exact'}).eq('kind',kind);
   if(search)q=q.ilike('search_text','%'+search.replace(/[\\%_]/g,'\\$&')+'%');
+  if(email)q=q.ilike('recipient','%'+email.replace(/[\\%_]/g,ch=>'\\'+ch)+'%');
   if(status==='opened')q=q.gt('open_count',0);else if(status==='clicked')q=q.gt('click_count',0);else if(status!=='all')q=q.eq('status',status);
   if(from)q=q.gte('created_at',from+'T00:00:00Z');
   if(to)q=q.lt('created_at',new Date(Date.parse(to)+86400000).toISOString());
-  const {data,error,count}=await q.order('created_at',{ascending:false}).order('id',{ascending:false}).range(offset,offset+24);
+  const {data,error,count}=await q.order('created_at',{ascending:false}).order('id',{ascending:false}).range(offset,offset+limit-1);
   if(error)throw Error('history unavailable');
   return res.json({success:true,data,total:count||0,webhookConfigured:Boolean(process.env.RESEND_INDEPENDENT_TICKET_WEBHOOK_SECRET)});
  }catch{return fail(res,503,'Email history is unavailable.');}
