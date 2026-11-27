@@ -8,6 +8,7 @@ import FlexAdminPage from '../admin/pages/FlexAdminPage';
 import { BackOfficeAuthProvider, useBackOfficeAuth } from './BackOfficeAuthContext';
 import BackOfficeShell from './BackOfficeShell';
 import IndependentTicketPage from '../independent-tickets/IndependentTicketPage';
+import FeedbackEmailPage from '../independent-tickets/FeedbackEmailButton';
 import {
   AuditLogsPage, CommissionsPage, DisputesPage, FinancePage, HotelsPage,
   IntegrationsPage, LeadDetailPage, LeadsPage, PaymentsPage, PlaceholderPage,
@@ -54,7 +55,7 @@ const SETTINGS_VIEW = ['admin.settings','team.view','admin.integrations','admin.
 
 export default function BackOfficeRouter() {
   return <BackOfficeAuthProvider><Routes>
-    {/* Five primary admin destinations */}
+    {/* Six primary admin destinations */}
     <Route path="/admin" element={<Page permission="dashboard.view"><AdminHomePage /></Page>} />
     <Route path="/admin/bookings" element={<Page permissions={BOOKING_VIEW}><UnifiedBookingsPage /></Page>} />
     <Route path="/admin/bookings/new" element={<Page permissions={['bookings.flights.create','bookings.hotels.create','bookings.cars.create']}><NewBookingPage /></Page>} />
@@ -63,7 +64,9 @@ export default function BackOfficeRouter() {
     <Route path="/admin/payments" element={<Page permissions={PAYMENT_VIEW}><PaymentsNav active="transactions"><PaymentsPage /></PaymentsNav></Page>} />
     <Route path="/admin/settings" element={<Page permissions={SETTINGS_VIEW}><SettingsHomePage /></Page>} />
 
-    {process.env.REACT_APP_INDEPENDENT_TICKETS_ENABLED === "true" && <Route path="/admin/bookings/independent-tickets" element={<Page permission="*"><IndependentTicketPage /></Page>} />}
+    <Route path="/admin/customer-service" element={<Navigate to="/admin/customer-service/feedback-email" replace />} />
+    <Route path="/admin/customer-service/feedback-email" element={<Page permission="*"><FeedbackEmailPage /></Page>} />
+    {process.env.REACT_APP_INDEPENDENT_TICKETS_ENABLED === "true" && <><Route path="/admin/customer-service/e-ticket" element={<Page permission="*"><IndependentTicketPage /></Page>} /><Route path="/admin/bookings/independent-tickets" element={<Navigate to="/admin/customer-service/e-ticket" replace />} /></>}
 
     {/* Booking creation and detail workspaces — not permanent navigation items */}
     <Route path="/admin/bookings/new/flight" element={<Page permission="bookings.flights.create"><AdminCreateBookingPage /></Page>} />
