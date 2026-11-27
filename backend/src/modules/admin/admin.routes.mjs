@@ -8,6 +8,7 @@ import adminPassengerController from './admin.passenger.controller.mjs';
 import adminBookingMutationController from './admin.booking-mutation.controller.mjs';
 import adminEmailManualController from './admin.email-manual.controller.mjs';
 import {sendFeedbackEmail} from './admin.feedback-email.mjs';
+import {sendRefundEmail} from './admin.refund-email.mjs';
 import adminDemoController from './admin.demo.controller.mjs';
 import adminAssistanceController from './admin.assistance.controller.mjs';
 import voucherController from '../vouchers/voucher.controller.mjs';
@@ -29,6 +30,8 @@ const adminWriteRateLimiter = rateLimit({ windowMs: 60000, maxRequests: 60, mess
 
 const feedbackRateLimiter = rateLimit({ windowMs: 60000, maxRequests: 10, message: 'Too many feedback email requests. Please wait a minute.' });
 router.post('/feedback-email', adminWriteRateLimiter, authenticate, authorize(['admin']), feedbackRateLimiter, sendFeedbackEmail);
+const refundEmailRateLimiter = rateLimit({ windowMs: 60000, maxRequests: 10, message: 'Too many refund email requests. Please wait a minute.' });
+router.post('/refund-email', adminWriteRateLimiter, authenticate, authorize(['admin']), refundEmailRateLimiter, sendRefundEmail);
 
 router.post('/login', loginRateLimiter, adminController.login);
 router.post('/demo-login', loginRateLimiter, adminDemoController.merchantDemoLogin);
