@@ -7,7 +7,8 @@ import adminBulkDeleteController from './admin.bulk-delete.controller.mjs';
 import adminPassengerController from './admin.passenger.controller.mjs';
 import adminBookingMutationController from './admin.booking-mutation.controller.mjs';
 import adminEmailManualController from './admin.email-manual.controller.mjs';
-import {sendFeedbackEmail} from './admin.feedback-email.mjs';
+import {listServiceEmails,serviceEmailDetail,refreshServiceEmail} from './admin.service-email-history.mjs';
+import {sendFeedbackEmail,previewFeedbackEmail} from './admin.feedback-email.mjs';
 import {sendRefundEmail,previewRefundEmail} from './admin.refund-email.mjs';
 import adminDemoController from './admin.demo.controller.mjs';
 import adminAssistanceController from './admin.assistance.controller.mjs';
@@ -29,10 +30,14 @@ const adminReadRateLimiter = rateLimit({ windowMs: 60000, maxRequests: 120, mess
 const adminWriteRateLimiter = rateLimit({ windowMs: 60000, maxRequests: 60, message: 'Too many admin changes. Please wait a minute.' });
 
 const feedbackRateLimiter = rateLimit({ windowMs: 60000, maxRequests: 10, message: 'Too many feedback email requests. Please wait a minute.' });
-router.post('/feedback-email', adminWriteRateLimiter, authenticate, authorize(['admin']), feedbackRateLimiter, sendFeedbackEmail);
+router.post('/feedback-email', adminWriteRateLimiter, authenticate, authorize(['admin']), feedbackRateLimiter, (req,res)=>sendFeedbackEmail(req,res));
+router.get('/feedback-email/preview', adminReadRateLimiter, authenticate, authorize(['admin']), previewFeedbackEmail);
+router.get('/customer-service-emails/:kind', adminReadRateLimiter, authenticate, authorize(['admin']), listServiceEmails);
+router.get('/customer-service-emails/:kind/:id', adminReadRateLimiter, authenticate, authorize(['admin']), serviceEmailDetail);
+router.post('/customer-service-emails/:kind/:id/refresh', adminWriteRateLimiter, authenticate, authorize(['admin']), refreshServiceEmail);
 const refundEmailRateLimiter = rateLimit({ windowMs: 60000, maxRequests: 10, message: 'Too many refund email requests. Please wait a minute.' });
 router.post('/refund-email/preview', adminReadRateLimiter, authenticate, authorize(['admin']), previewRefundEmail);
-router.post('/refund-email', adminWriteRateLimiter, authenticate, authorize(['admin']), refundEmailRateLimiter, sendRefundEmail);
+router.post('/refund-email', adminWriteRateLimiter, authenticate, authorize(['admin']), refundEmailRateLimiter, (req,res)=>sendRefundEmail(req,res));
 
 router.post('/login', loginRateLimiter, adminController.login);
 router.post('/demo-login', loginRateLimiter, adminDemoController.merchantDemoLogin);
