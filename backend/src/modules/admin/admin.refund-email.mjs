@@ -1,5 +1,5 @@
 import {createHash} from 'node:crypto';
-import env from '../../config/env.mjs';
+import {deliverServiceEmail} from './admin.service-email-history.mjs';
 import {normalizeFeedbackEmail} from './admin.feedback-email.mjs';
 import {supportPhone,supportPhoneUri} from '../independent-tickets/ticket.support.mjs';
 const cardBrands=Object.freeze({visa:'Visa',mastercard:'Mastercard',amex:'American Express',discover:'Discover',other:'Other card'});
@@ -47,16 +47,11 @@ export function previewRefundEmail(req,res){
  return res.json({success:true,...refundTemplate(d,{marketing:input.marketing===true})});
 }
 export const refundKey=(d,day=new Date().toISOString().slice(0,10),marketing=false)=>'ft-refund-email-'+createHash('sha256').update(JSON.stringify([day,d.email.toLowerCase(),d.passengerName,d.cardholderName,d.cardBrand,d.last4,d.cents,marketing])).digest('hex');
-export async function sendRefundEmail(req,res){
+export async function sendRefundEmail(req,res,deliver=deliverServiceEmail){
  const fail=(status,message)=>res.status(status).json({success:false,error:{code:'REFUND_EMAIL_ERROR',message}});
  res.set('Cache-Control','no-store');
  if(req.body?.refundProcessed!==true)return fail(400,'Confirm that the refund has actually been processed before sending this email.');
  let d;try{d=normalizeRefundEmail(req.body);}catch(e){return fail(400,e.message);}
- if(!env.resendApiKey)return fail(503,'Refund email delivery is not configured.');
- try{
-  const r=await fetch('https://api.resend.com/emails',{method:'POST',signal:AbortSignal.timeout(15000),headers:{Authorization:'Bearer '+env.resendApiKey,'Content-Type':'application/json','Idempotency-Key':refundKey(d,undefined,req.body?.marketing===true)},body:JSON.stringify({from:env.resendFrom||'FareTransit <support@faretransit.com>',to:[d.email],...refundTemplate(d,{marketing:req.body?.marketing===true}),reply_to:'support@faretransit.com',tags:[{name:'category',value:'refund-processed-confirmation'}]})});
-  if(!r.ok){if(r.status===429)return fail(429,'Email provider is rate limited. Try again later.');if(r.status===409)return fail(409,'An identical refund email is already being processed or was submitted today.');return fail(502,'Email provider could not accept the request. Check the provider before retrying.');}
-  const result=await r.json();if(!result.id)return fail(502,'Email acceptance could not be verified. Check the provider before retrying.');
-  return res.json({success:true,message:'Refund confirmation accepted by the email provider. Sending this email does not perform a payment transaction.'});
- }catch{return fail(502,'Email acceptance could not be verified. Check the provider before retrying.');}
+ const marketing=req.body?.marketing===true;
+ return deliver(req,res,{kind:'refund',key:refundKey(d,undefined,marketing),recipient:d.email,template:refundTemplate(d,{marketing}),details:{passengerName:d.passengerName,cardholderName:d.cardholderName,cardBrand:d.cardBrand,last4:d.last4,amount:usd(d.cents),amount_cents:d.cents,currency:'USD',refundProcessed:true,marketing},tag:'refund-processed-confirmation'});
 }
