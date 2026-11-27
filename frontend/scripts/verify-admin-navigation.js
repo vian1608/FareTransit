@@ -27,6 +27,7 @@ const shell = read('src/features/backoffice/BackOfficeShell.js');
 ].forEach(([needle, label]) => { if (!shell.includes(needle)) failures.push(`BackOfficeShell.js: missing primary ${label} destination`); });
 if ((shell.match(/label:\s*'/g) || []).length !== 6) failures.push('BackOfficeShell.js: permanent sidebar must contain exactly six primary destinations');
 if (!shell.includes("title: 'E-Ticket Generator', href: '/admin/customer-service/e-ticket'") || !shell.includes("title: 'Feedback Email', href: '/admin/customer-service/feedback-email'")) failures.push('BackOfficeShell.js: Customer Service must contain both tools');
+if (!shell.includes("title: 'Refund Email', href: '/admin/customer-service/refund-email'")) failures.push('BackOfficeShell.js: Customer Service must include Refund Email');
 if (!shell.includes('<NavLink to="/admin" end className="backoffice-brand"')) failures.push('BackOfficeShell.js: FareTransit brand must link to /admin');
 if (shell.includes('THE FINAL SEAT')) failures.push('BackOfficeShell.js: legacy THE FINAL SEAT branding must not appear in FareTransit Admin');
 if (!shell.includes("navigate('/admin/bookings/new')")) failures.push('BackOfficeShell.js: New Booking must remain a top-level action');
@@ -37,6 +38,7 @@ const routerFile = 'src/features/backoffice/BackOfficeRouter.js';
   '<Route path="/admin/bookings"',
   '<Route path="/admin/customers"',
   '<Route path="/admin/customer-service/feedback-email"',
+  '<Route path="/admin/customer-service/refund-email"',
   '<Route path="/admin/customer-service/e-ticket"',
   '<Route path="/admin/payments"',
   '<Route path="/admin/settings"'
