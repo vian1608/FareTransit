@@ -12,7 +12,7 @@ export function memoryEmailDb(){
    async maybeSingle(){
     if(mode==='upsert'){
      if(rows.some(r=>r.idempotency_key===payload.idempotency_key))return {data:null,error:null};
-     const row={id:'00000000-0000-4000-8000-'+String(rows.length+1).padStart(12,'0'),status:'processing',provider_id:null,...payload};rows.push(row);return {data:{...row},error:null};
+     const row={id:'00000000-0000-4000-8000-'+String(rows.length+1).padStart(12,'0'),tracking_token:'10000000-0000-4000-8000-'+String(rows.length+1).padStart(12,'0'),status:'processing',provider_id:null,...payload};rows.push(row);return {data:{...row},error:null};
     }
     const row=rows.find(matches);if(mode==='update'&&row)Object.assign(row,payload);
     return {data:row?{...row}:null,error:null};
