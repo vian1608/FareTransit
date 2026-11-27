@@ -20,13 +20,13 @@ test('provider acceptance is required and no real email is sent in tests',async 
  t.after(()=>{if(original===undefined)delete process.env.RESEND_API_KEY;else process.env.RESEND_API_KEY=original;});
  const mock=t.mock.method(globalThis,'fetch',async(url,options)=>{
   assert.equal(url,'https://api.resend.com/emails');
-  const body=JSON.parse(options.body);assert.deepEqual(body.to,['guest@example.com']);assert.equal(body.subject,feedbackSubject);assert.equal(body.attachments,undefined);assert.match(options.headers['Idempotency-Key'],/^ft-feedback-/);
+  const body=JSON.parse(options.body);assert.deepEqual(body.to,['guest@example.com']);assert.equal(body.subject,feedbackSubject);assert.equal(body.attachments,undefined);assert.match(body.html,/customer-service-email-open\/[0-9a-f-]+\.gif/);assert.match(options.headers['Idempotency-Key'],/^ft-feedback-/);
   return {ok:true,json:async()=>({id:'mock-message'})};
  });
  const db=memoryEmailDb();const deliver=createServiceEmailDelivery({getDb:async()=>db});
  const invalid=res();await sendFeedbackEmail({body:{email:'bad'}},invalid,deliver);assert.equal(invalid.statusCode,400);assert.equal(mock.mock.callCount(),0);
  const result=res();await sendFeedbackEmail({body:{email:'guest@example.com'}},result,deliver);assert.equal(result.body.success,true);assert.equal(mock.mock.callCount(),1);
- assert.equal(db.rows[0].status,'accepted');assert.equal(db.rows[0].recipient,'guest@example.com');assert.equal(db.rows[0].html,feedbackHtml);
+ assert.equal(db.rows[0].status,'accepted');assert.equal(db.rows[0].recipient,'guest@example.com');assert.equal(db.rows[0].html,feedbackHtml);assert.doesNotMatch(db.rows[0].html,/customer-service-email-open\//);
  const duplicate=res();await sendFeedbackEmail({body:{email:'guest@example.com'}},duplicate,deliver);assert.equal(duplicate.body.success,true);assert.equal(mock.mock.callCount(),1);
  mock.mock.mockImplementation(async()=>({ok:true,json:async()=>({})}));
  const uncertain=res();await sendFeedbackEmail({body:{email:'second@example.com'}},uncertain,deliver);assert.equal(uncertain.statusCode,502);assert.equal(uncertain.body.success,false);assert.equal(db.rows[1].status,'uncertain');
