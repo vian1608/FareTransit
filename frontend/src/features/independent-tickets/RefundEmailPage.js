@@ -2,8 +2,8 @@ import React,{useEffect,useRef,useState} from 'react';
 import api,{getApiErrorMessage} from '../../shared/api/api';
 import './IndependentTicket.css';
 
-const blank=()=>({email:'',passengerName:'',cardholderName:'',last4:'',amount:''});
-const fields=[['email','Passenger email','email',254],['passengerName','Passenger name','text',120],['cardholderName','Cardholder name','text',120],['last4','Last four digits of card','text',4],['amount','Refund amount (USD)','text',10]];
+const blank=()=>({email:'',passengerName:'',cardholderName:'',cardBrand:'',last4:'',amount:''});
+const fields=[['email','Passenger email','email',254],['passengerName','Passenger name','text',120],['cardholderName','Cardholder name','text',120],['cardBrand','Card type','select',0],['last4','Last four digits of card','text',4],['amount','Refund amount (USD)','text',10]];
 export default function RefundEmailPage(){
  const lock=useRef(false);
  const [marketing,setMarketing]=useState(false),[html,setHtml]=useState(''),[previewError,setPreviewError]=useState('');
@@ -11,15 +11,15 @@ export default function RefundEmailPage(){
  const change=(key,value)=>setData(d=>({...d,[key]:key==='last4'?value.replace(/\D/g,'').slice(0,4):value}));
  const valid=Object.values(data).every(v=>v.trim())&&/^\d{4}$/.test(data.last4)&&/^\d{1,7}(\.\d{1,2})?$/.test(data.amount)&&Number(data.amount)>0;
  const formatted=Number(data.amount)>0&&/^\d{1,7}(\.\d{1,2})?$/.test(data.amount)?new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(Number(data.amount)):'—';
- const {passengerName,cardholderName,last4,amount}=data;
+ const {passengerName,cardholderName,cardBrand,last4,amount}=data;
  useEffect(()=>{
   let active=true;
   const timer=setTimeout(async()=>{
-   try{const r=await api.post('/admin/refund-email/preview',{passengerName,cardholderName,last4,amount,marketing});if(active){if(!r.data?.html)throw Error('Preview unavailable');setHtml(r.data.html);setPreviewError('');}}
+   try{const r=await api.post('/admin/refund-email/preview',{passengerName,cardholderName,cardBrand,last4,amount,marketing});if(active){if(!r.data?.html)throw Error('Preview unavailable');setHtml(r.data.html.replaceAll('https://www.faretransit.com/assets/refund-cards/',window.location.origin+'/assets/refund-cards/'));setPreviewError('');}}
    catch{if(active){setHtml('');setPreviewError('Email preview unavailable. Please check your connection.');}}
   },350);
   return ()=>{active=false;clearTimeout(timer);};
- },[passengerName,cardholderName,last4,amount,marketing]);
+ },[passengerName,cardholderName,cardBrand,last4,amount,marketing]);
  const reset=()=>{setData(blank());setNotice('');setError('');setMarketing(false);};
  const send=async e=>{
   e.preventDefault();if(lock.current||notice||!valid)return;
@@ -34,7 +34,7 @@ export default function RefundEmailPage(){
  <div className="it-grid" style={{gridTemplateColumns:'repeat(auto-fit,minmax(min(100%,340px),1fr))',alignItems:'start'}}>
  <section className="it-card"><h2>Refund details</h2><p>Enter only the information required for the email. Never enter a full card number or CVV.</p>
  <form onSubmit={send}>
-  {fields.map(([key,label,type,maxLength])=><label key={key}>{label}<input type={type} maxLength={maxLength} required value={data[key]} disabled={busy||Boolean(notice)} onChange={e=>change(key,e.target.value)} inputMode={key==='last4'?'numeric':key==='amount'?'decimal':undefined} pattern={key==='last4'?'[0-9]{4}':undefined} autoComplete={key==='email'?'email':'off'} placeholder={{email:'passenger@example.com',passengerName:'Passenger full name',cardholderName:'Name on card',last4:'1234',amount:'250.00'}[key]}/></label>)}
+  {fields.map(([key,label,type,maxLength])=><label key={key}>{label}{type==='select'?<select required value={data[key]} disabled={busy||Boolean(notice)} onChange={e=>change(key,e.target.value)}><option value="">Select card type</option><option value="visa">Visa</option><option value="mastercard">Mastercard</option><option value="amex">American Express</option><option value="discover">Discover</option><option value="other">Other card</option></select>:<input type={type} maxLength={maxLength} required value={data[key]} disabled={busy||Boolean(notice)} onChange={e=>change(key,e.target.value)} inputMode={key==='last4'?'numeric':key==='amount'?'decimal':undefined} pattern={key==='last4'?'[0-9]{4}':undefined} autoComplete={key==='email'?'email':'off'} placeholder={{email:'passenger@example.com',passengerName:'Passenger full name',cardholderName:'Name on card',last4:'1234',amount:'250.00'}[key]}/>}</label>)}
   <label style={{display:'flex',alignItems:'flex-start',gap:8}}><input type="checkbox" style={{width:'auto',marginTop:3}} checked={marketing} disabled={busy||Boolean(notice)} onChange={e=>setMarketing(e.target.checked)}/><span>Include future travel invitation<br/><small>Only select for recipients eligible to receive promotional messages.</small></span></label>
   {error&&<p role="alert" className="it-error">{error}</p>}{notice&&<p role="status" className="it-notice">{notice}</p>}
   {notice?<button type="button" onClick={reset}>New refund email</button>:<button type="submit" className="it-primary" disabled={busy||!valid}>{busy?'Sending…':'Send refund email'}</button>}
