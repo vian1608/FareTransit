@@ -53,7 +53,7 @@ revoke execute on function public.ft_record_service_email_event(text,text,uuid,t
 grant execute on function public.ft_record_service_email_event(text,text,uuid,text,text,timestamptz) to service_role;
 
 create or replace function public.ft_record_service_email_open(p_token uuid)
-returns boolean language plpgsql security invoker set search_path='' as $
+returns boolean language plpgsql security invoker set search_path='' as $open$
 declare v_id uuid; v_now timestamptz:=now();
 begin
  select id into v_id from public.customer_service_emails where tracking_token=p_token and status in ('processing','accepted','uncertain');
@@ -62,7 +62,7 @@ begin
  values('pixel:'||v_id::text||':'||floor(extract(epoch from v_now)/60)::text,v_id,'opened',v_now,'faretransit')
  on conflict(event_id) do nothing;
  return true;
-end $;
+end $open$;
 revoke execute on function public.ft_record_service_email_open(uuid) from public,anon,authenticated;
 grant execute on function public.ft_record_service_email_open(uuid) to service_role;
 
