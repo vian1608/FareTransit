@@ -17,7 +17,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "prebuild": "node scripts/verify-admin-navigation.js && node scripts/verify-business-phone.js && node scripts/verify-ui-interaction-safety.js && node scripts/verify-responsive-travel-redundancy.js && node scripts/verify-seo-architecture.js && node scripts/verify-car-airport-seo.js && node scripts/verify-car-call-landing.js && react-scripts test --watchAll=false --runInBand --runTestsByPath src/features/independent-tickets/seatAssignments.test.js src/features/independent-tickets/newTicket.test.js",
+    "prebuild": "node scripts/generate-refund-card-badges.js && node scripts/verify-admin-navigation.js && node scripts/verify-business-phone.js && node scripts/verify-ui-interaction-safety.js && node scripts/verify-responsive-travel-redundancy.js && node scripts/verify-seo-architecture.js && node scripts/verify-car-airport-seo.js && node scripts/verify-car-call-landing.js && react-scripts test --watchAll=false --runInBand --runTestsByPath src/features/independent-tickets/seatAssignments.test.js src/features/independent-tickets/newTicket.test.js",
     "build": "CI=false react-scripts build",
     "postbuild": "node scripts/prerender-seo-hubs.js",
     "test": "react-scripts test",
