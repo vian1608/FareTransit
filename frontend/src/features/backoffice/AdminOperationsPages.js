@@ -106,7 +106,6 @@ export function AdminHomePage() {
 }
 
 export function UnifiedBookingsPage() {
-  const { hasPermission } = useBackOfficeAuth();
   const data = useAllBookings();
   const [params, setParams] = useSearchParams();
   const type = params.get('type') || 'all';
@@ -122,7 +121,7 @@ export function UnifiedBookingsPage() {
   }).sort((a,b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)), [data.rows, type, status, query]);
 
   return <>
-    <PageTitle eyebrow="Operations" title="Bookings" subtitle="One workspace for every FareTransit reservation." actions={<><Link className="bo-button" to="/admin/bookings/new">+ New Booking</Link>{process.env.REACT_APP_INDEPENDENT_TICKETS_ENABLED === "true" && hasPermission("*") && <Link className="bo-button secondary" to="/admin/bookings/independent-tickets">Independent E-Ticket Sender</Link>}</>} />
+    <PageTitle eyebrow="Operations" title="Bookings" subtitle="One workspace for every FareTransit reservation." actions={<Link className="bo-button" to="/admin/bookings/new">+ New Booking</Link>} />
     <div className="ops-tabs" role="tablist" aria-label="Booking type">{['all','flight','hotel','car'].map(item => <button key={item} className={type === item ? 'active' : ''} onClick={() => setFilter('type', item)}>{item === 'all' ? 'All' : `${item.charAt(0).toUpperCase()}${item.slice(1)}s`}</button>)}</div>
     <div className="ops-filterbar"><label className="ops-search"><span>⌕</span><input value={query} onChange={e => setFilter('q', e.target.value)} placeholder="Search reference, customer or email" /></label><select value={status} onChange={e => setFilter('status', e.target.value)}><option value="">All statuses</option>{statuses.map(value => <option key={value} value={value}>{value.replaceAll('_',' ')}</option>)}</select>{(query || status) && <button className="ops-clear" onClick={() => { const next = new URLSearchParams(); if (type !== 'all') next.set('type', type); setParams(next); }}>Clear filters</button>}</div>
     {data.loading ? <LoadingCard text="Loading bookings…" /> : <>{data.errors.length > 0 && <ErrorCard message={`${data.errors.length} service source(s) could not be loaded. Available bookings are still shown.`} />}<div className="ops-card ops-card--table"><div className="ops-table-wrap"><table className="ops-table"><thead><tr><th>Reference</th><th>Customer</th><th>Type</th><th>Travel date</th><th>Total</th><th>Status</th><th></th></tr></thead><tbody>{rows.map(row => <tr key={`${row.type}-${row.id}`}><td><Link to={bookingHref(row)}>{row.reference}</Link></td><td><strong>{row.customer}</strong>{row.email && <small>{row.email}</small>}</td><td className="ops-capitalize">{row.type}</td><td>{date(row.travelDate)}</td><td>{money(row.total, row.currency)}</td><td><StatusBadge value={row.status} /></td><td><Link className="ops-open-link" to={bookingHref(row)}>View →</Link></td></tr>)}</tbody></table>{!rows.length && <div className="ops-empty">No bookings match these filters.</div>}</div></div></>}

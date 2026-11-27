@@ -1,8 +1,11 @@
 import React from 'react';
+import CompactSection from './CompactSection';
 import {seatFlightKey,seatFlightReady,validSeat} from './seatAssignments';
 export default function PassengerSeatFields({passenger,index,segments,onSeat}){
- return <div className="it-passenger-seats">
-  <strong>Assigned seats (optional)</strong>
+ const assigned=segments.map(s=>({s,seat:passenger.seats?.find(a=>a.flightKey===seatFlightKey(s))?.seat||''})).filter(x=>x.seat.trim());
+ const invalid=assigned.filter(x=>!validSeat(x.seat)).length;
+ const summary=segments.length?assigned.length+' of '+segments.length+' assigned'+(assigned.length?' · '+assigned.map(({s,seat})=>[s.carrier,s.flight].filter(Boolean).join(' ')+' '+seat).join(' · '):'')+(invalid?' · '+invalid+' invalid seat(s) — check entries':''):'Add flight segments first';
+ return <CompactSection title="Assigned seats (optional)" summary={summary} className="it-passenger-seats">
   {!segments.length?<p className="it-seat-hint">Add or import flight segments below, then return here to enter this passenger's seats.</p>:<>
    {['outbound','inbound'].map(direction=>{
     const legs=segments.map((s,j)=>({s,j})).filter(({s})=>s.direction===direction);
@@ -14,5 +17,5 @@ export default function PassengerSeatFields({passenger,index,segments,onSeat}){
    })}
   </>}
   <small className="it-seat-hint">Leave unassigned seats blank. If no seats are entered, nothing about seats appears in the customer's ticket.</small>
- </div>;
+ </CompactSection>;
 }
