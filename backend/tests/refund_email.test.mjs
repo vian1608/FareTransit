@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {createServiceEmailDelivery} from '../src/modules/admin/admin.service-email-history.mjs';
+import {memoryEmailDb} from './service-email-memory-db.mjs';
 import {normalizeRefundEmail,refundTemplate,refundKey,sendRefundEmail,previewRefundEmail} from '../src/modules/admin/admin.refund-email.mjs';
 const input={email:'passenger@example.com',passengerName:'Sample Passenger',cardholderName:'Sample Holder',cardBrand:'visa',last4:'0123',amount:'250.05',refundProcessed:true};
 const response=()=>({statusCode:200,body:null,set(){return this;},status(n){this.statusCode=n;return this;},json(v){this.body=v;return this;}});
@@ -41,8 +43,10 @@ test('provider is mocked and acceptance is required',async t=>{
  const old=process.env.RESEND_API_KEY;process.env.RESEND_API_KEY='test-placeholder';
  t.after(()=>{if(old===undefined)delete process.env.RESEND_API_KEY;else process.env.RESEND_API_KEY=old;});
  const mock=t.mock.method(globalThis,'fetch',async(url,options)=>{assert.equal(url,'https://api.resend.com/emails');const body=JSON.parse(options.body);assert.deepEqual(body.to,[input.email]);assert.equal(body.attachments,undefined);assert.match(options.headers['Idempotency-Key'],/^ft-refund-email-/);return {ok:true,json:async()=>({id:'mock-id'})};});
- const unverified=response();await sendRefundEmail({body:{...input,refundProcessed:false}},unverified);assert.equal(unverified.statusCode,400);assert.equal(mock.mock.callCount(),0);
- const invalid=response();await sendRefundEmail({body:{...input,last4:'12345'}},invalid);assert.equal(invalid.statusCode,400);assert.equal(mock.mock.callCount(),0);
- const sent=response();await sendRefundEmail({body:input},sent);assert.equal(sent.body.success,true);assert.equal(mock.mock.callCount(),1);
- mock.mock.mockImplementation(async()=>({ok:true,json:async()=>({})}));const failed=response();await sendRefundEmail({body:input},failed);assert.equal(failed.statusCode,502);
+ const db=memoryEmailDb();const deliver=createServiceEmailDelivery({getDb:async()=>db});
+ const unverified=response();await sendRefundEmail({body:{...input,refundProcessed:false}},unverified,deliver);assert.equal(unverified.statusCode,400);assert.equal(mock.mock.callCount(),0);
+ const invalid=response();await sendRefundEmail({body:{...input,last4:'12345'}},invalid,deliver);assert.equal(invalid.statusCode,400);assert.equal(mock.mock.callCount(),0);
+ const sent=response();await sendRefundEmail({body:input},sent,deliver);assert.equal(sent.body.success,true);assert.equal(mock.mock.callCount(),1);
+ assert.equal(db.rows[0].details.amount_cents,25005);assert.equal(db.rows[0].details.last4,'0123');assert.equal(db.rows[0].details.refundProcessed,true);assert.equal(db.rows[0].status,'accepted');
+ mock.mock.mockImplementation(async()=>({ok:true,json:async()=>({})}));const failed=response();await sendRefundEmail({body:{...input,amount:'251.05'}},failed,deliver);assert.equal(failed.statusCode,502);assert.equal(db.rows[1].status,'uncertain');
 });
