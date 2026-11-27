@@ -21,10 +21,13 @@ const shell = read('src/features/backoffice/BackOfficeShell.js');
   ["label: 'Dashboard', href: '/admin'", 'Dashboard'],
   ["label: 'Bookings', href: '/admin/bookings'", 'Bookings'],
   ["label: 'Customers', href: '/admin/customers'", 'Customers'],
+  ["label: 'Customer Service', href: '/admin/customer-service'", 'Customer Service'],
   ["label: 'Payments', href: '/admin/payments'", 'Payments'],
   ["label: 'Settings', href: '/admin/settings'", 'Settings']
 ].forEach(([needle, label]) => { if (!shell.includes(needle)) failures.push(`BackOfficeShell.js: missing primary ${label} destination`); });
-if ((shell.match(/label:\s*'/g) || []).length !== 5) failures.push('BackOfficeShell.js: permanent sidebar must contain exactly five primary destinations');
+if ((shell.match(/label:\s*'/g) || []).length !== 6) failures.push('BackOfficeShell.js: permanent sidebar must contain exactly six primary destinations');
+if (!shell.includes("title: 'E-Ticket Generator', href: '/admin/customer-service/e-ticket'") || !shell.includes("title: 'Feedback Email', href: '/admin/customer-service/feedback-email'")) failures.push('BackOfficeShell.js: Customer Service must contain both tools');
+if (!shell.includes("title: 'Refund Email', href: '/admin/customer-service/refund-email'")) failures.push('BackOfficeShell.js: Customer Service must include Refund Email');
 if (!shell.includes('<NavLink to="/admin" end className="backoffice-brand"')) failures.push('BackOfficeShell.js: FareTransit brand must link to /admin');
 if (shell.includes('THE FINAL SEAT')) failures.push('BackOfficeShell.js: legacy THE FINAL SEAT branding must not appear in FareTransit Admin');
 if (!shell.includes("navigate('/admin/bookings/new')")) failures.push('BackOfficeShell.js: New Booking must remain a top-level action');
@@ -34,6 +37,9 @@ const routerFile = 'src/features/backoffice/BackOfficeRouter.js';
   '<Route path="/admin"',
   '<Route path="/admin/bookings"',
   '<Route path="/admin/customers"',
+  '<Route path="/admin/customer-service/feedback-email"',
+  '<Route path="/admin/customer-service/refund-email"',
+  '<Route path="/admin/customer-service/e-ticket"',
   '<Route path="/admin/payments"',
   '<Route path="/admin/settings"'
 ].forEach(route => requireText(routerFile, route, `missing primary route ${route}`));
@@ -42,6 +48,8 @@ requireText(routerFile, '<Route path="/admin/backoffice" element={<Navigate to="
 requireText(routerFile, '<Route path="/admin/dashboard" element={<Navigate to="/admin/bookings?type=flight" replace />} />', 'legacy flight dashboard URL must resolve into unified bookings');
 requireText(routerFile, '<Route path="/admin/bookings/hotels" element={<Navigate to="/admin/bookings?type=hotel" replace />} />', 'legacy hotel list must resolve into unified bookings');
 requireText(routerFile, '<Route path="/admin/bookings/cars" element={<Navigate to="/admin/bookings?type=car" replace />} />', 'legacy car list must resolve into unified bookings');
+
+requireText(routerFile, '<Route path="/admin/bookings/independent-tickets" element={<Navigate to="/admin/customer-service/e-ticket" replace />} />', 'legacy ticket links must redirect to Customer Service');
 
 const pagesFile = 'src/features/backoffice/AdminOperationsPages.js';
 requireText(pagesFile, 'export function AdminHomePage()', 'new operational dashboard must exist');
@@ -61,4 +69,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('Admin architecture verification passed: five primary destinations, unified booking/payment/settings hubs, legacy redirects, safe login handoff and FareTransit-only branding.');
+console.log('Admin architecture verification passed: six primary destinations, customer service tools, unified booking/payment/settings hubs, legacy redirects, safe login handoff and FareTransit-only branding.');
