@@ -3,6 +3,7 @@ import React from 'react';
 import {createRoot} from 'react-dom/client';
 import {act,Simulate} from 'react-dom/test-utils';
 import IndependentTicketPage from './IndependentTicketPage';
+import {HistoryPagination,lastOffset} from './HistoryPagination';
 jest.mock('../../shared/api/api',()=>({__esModule:true,default:{get:jest.fn(),post:jest.fn(),patch:jest.fn()},getApiErrorMessage:()=>''}));
 jest.mock('../../shared/components/AirlineLogo',()=>()=>null);
 jest.mock('./TicketHistory',()=>({__esModule:true,default:()=>null,TicketActivity:()=>null}));
@@ -72,4 +73,19 @@ test('compact editor preserves entered flight and seat values across collapse an
  expect(disclosure('Special notes').textContent).toContain('Keep this note');
  act(()=>optional.click());
  expect(notes.value).toBe('Keep this note');
+});
+
+test('history pagination supports 105 records, page size selection, direct page jump and correct bounds',()=>{
+ const onOffset=jest.fn(),onSize=jest.fn();
+ act(()=>root.render(<HistoryPagination total={105} offset={0} size={100} loading={false} onOffset={onOffset} onSize={onSize}/>));
+ expect(host.textContent).toContain('1–100 of 105 records');
+ click('Next');expect(onOffset).toHaveBeenLastCalledWith(100);
+ const jump=host.querySelector('select[aria-label="Go to page"]');
+ act(()=>{jump.value='2';Simulate.change(jump);});expect(onOffset).toHaveBeenLastCalledWith(100);
+ act(()=>root.render(<HistoryPagination total={105} offset={100} size={100} loading={false} onOffset={onOffset} onSize={onSize}/>));
+ expect(host.textContent).toContain('101–105 of 105 records');
+ expect(button('Next').disabled).toBe(true);
+ click('Previous');expect(onOffset).toHaveBeenLastCalledWith(0);
+ const size=host.querySelector('select');act(()=>{size.value='25';Simulate.change(size);});expect(onSize).toHaveBeenCalledWith(25);
+ expect(lastOffset(0,100)).toBe(0);expect(lastOffset(100,100)).toBe(0);expect(lastOffset(105,100)).toBe(100);
 });

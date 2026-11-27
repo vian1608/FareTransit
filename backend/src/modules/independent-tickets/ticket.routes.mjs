@@ -28,14 +28,16 @@ router.get('/bookings/:id',wrap(async(req,res)=>{
  res.json({success:true,data:mapBooking(b),sourceBookingId:b.id,reference:b.confirmation_code});
 }));
 router.get('/tickets',wrap(async(req,res)=>{
- const offset=Math.max(0,Math.min(10000,Math.floor(Number(req.query.offset)||0)));
+ const offset=Math.max(0,Math.min(100000,Math.floor(Number(req.query.offset)||0)));
+ const limit=[10,25,50,100].includes(Number(req.query.limit))?Number(req.query.limit):25;
+ const email=String(req.query.email||'').trim().slice(0,254);
  const search=String(req.query.search||'').trim().slice(0,200),airline=String(req.query.airline||'').trim().toUpperCase().slice(0,3);
  const allowed=['all','draft','queued','processing','sent','delivered','opened','no_open','delivery_delayed','bounced','failed','suppressed','complained','uncertain'];
  const status=allowed.includes(req.query.status)?req.query.status:'all';
  const date=v=>typeof v==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(v)&&Number.isFinite(Date.parse(v))&&new Date(v).toISOString().slice(0,10)===v?v:null;
  const from=date(req.query.from),to=date(req.query.to);
  if((req.query.from&&!from)||(req.query.to&&!to)||(from&&to&&from>to))return fail(res,400,'Invalid date range.');
- const result=check(await supabase.rpc('ft_independent_ticket_history',{p_search:search,p_status:status,p_airline:airline,p_from:from,p_to:to,p_offset:offset}));
+ const result=check(await supabase.rpc('ft_independent_ticket_history_v2',{p_search:search,p_status:status,p_airline:airline,p_from:from,p_to:to,p_offset:offset,p_limit:limit,p_email:email}));
  res.set('Cache-Control','no-store');
  res.json({success:true,...result,providerWebhookConfigured:Boolean(process.env.RESEND_INDEPENDENT_TICKET_WEBHOOK_SECRET)});
 }));
