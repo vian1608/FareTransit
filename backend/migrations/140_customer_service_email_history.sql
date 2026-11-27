@@ -3,6 +3,7 @@ begin;
 create table if not exists public.customer_service_emails (
  id uuid primary key default gen_random_uuid(),
  kind text not null check(kind in ('feedback','refund')),
+ tracking_token uuid not null unique default gen_random_uuid(),
  idempotency_key text not null unique,
  recipient text not null check(length(recipient)<=254),
  actor text not null check(length(actor)<=254),
@@ -26,7 +27,7 @@ create table if not exists public.customer_service_email_events (
  email_id uuid not null references public.customer_service_emails(id),
  kind text not null check(kind in ('sent','delivered','delivery_delayed','bounced','failed','complained','suppressed','opened','clicked')),
  occurred_at timestamptz not null,
- source text not null check(source in ('resend','provider_status'))
+ source text not null check(source in ('resend','provider_status','faretransit'))
 );
 create index if not exists ft_service_email_events on public.customer_service_email_events(email_id,occurred_at desc);
 alter table public.customer_service_email_events enable row level security;
@@ -51,6 +52,20 @@ end $$;
 revoke execute on function public.ft_record_service_email_event(text,text,uuid,text,text,timestamptz) from public,anon,authenticated;
 grant execute on function public.ft_record_service_email_event(text,text,uuid,text,text,timestamptz) to service_role;
 
+create or replace function public.ft_record_service_email_open(p_token uuid)
+returns boolean language plpgsql security invoker set search_path='' as $
+declare v_id uuid; v_now timestamptz:=now();
+begin
+ select id into v_id from public.customer_service_emails where tracking_token=p_token and status in ('processing','accepted','uncertain');
+ if v_id is null then return false; end if;
+ insert into public.customer_service_email_events(event_id,email_id,kind,occurred_at,source)
+ values('pixel:'||v_id::text||':'||floor(extract(epoch from v_now)/60)::text,v_id,'opened',v_now,'faretransit')
+ on conflict(event_id) do nothing;
+ return true;
+end $;
+revoke execute on function public.ft_record_service_email_open(uuid) from public,anon,authenticated;
+grant execute on function public.ft_record_service_email_open(uuid) to service_role;
+
 create or replace view public.customer_service_email_activity with (security_invoker=true) as
 select e.id,e.kind,e.recipient,e.actor,e.subject,e.details,e.provider_id,e.last_error,e.created_at,e.updated_at,e.accepted_at,
  case when a.complained then 'complained' when a.bounced then 'bounced' when a.suppressed then 'suppressed' when a.failed then 'failed'
@@ -62,7 +77,8 @@ from public.customer_service_emails e left join lateral (
  select min(occurred_at) filter(where kind='sent') as sent_at,
  min(occurred_at) filter(where kind='delivered') as delivered_at,
  min(occurred_at) filter(where kind='opened') as first_open_at,max(occurred_at) filter(where kind='opened') as last_open_at,
- count(*) filter(where kind='opened') as open_count,count(*) filter(where kind='clicked') as click_count,
+ case when count(*) filter(where kind='opened' and source='resend')>0 then count(*) filter(where kind='opened' and source='resend') when count(*) filter(where kind='opened' and source='faretransit')>0 then count(*) filter(where kind='opened' and source='faretransit') else count(*) filter(where kind='opened' and source='provider_status') end as open_count,
+ case when count(*) filter(where kind='clicked' and source='resend')>0 then count(*) filter(where kind='clicked' and source='resend') else count(*) filter(where kind='clicked' and source='provider_status') end as click_count,
  bool_or(kind='complained') as complained,bool_or(kind='bounced') as bounced,bool_or(kind='suppressed') as suppressed,
  bool_or(kind='failed') as failed,bool_or(kind='delivery_delayed') as delayed
  from public.customer_service_email_events where email_id=e.id
