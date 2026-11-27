@@ -9,6 +9,7 @@ import { BackOfficeAuthProvider, useBackOfficeAuth } from './BackOfficeAuthConte
 import BackOfficeShell from './BackOfficeShell';
 import IndependentTicketPage from '../independent-tickets/IndependentTicketPage';
 import FeedbackEmailPage from '../independent-tickets/FeedbackEmailButton';
+import RefundEmailPage from '../independent-tickets/RefundEmailPage';
 import {
   AuditLogsPage, CommissionsPage, DisputesPage, FinancePage, HotelsPage,
   IntegrationsPage, LeadDetailPage, LeadsPage, PaymentsPage, PlaceholderPage,
@@ -66,6 +67,7 @@ export default function BackOfficeRouter() {
 
     <Route path="/admin/customer-service" element={<Navigate to="/admin/customer-service/feedback-email" replace />} />
     <Route path="/admin/customer-service/feedback-email" element={<Page permission="*"><FeedbackEmailPage /></Page>} />
+    <Route path="/admin/customer-service/refund-email" element={<Page permission="*"><RefundEmailPage /></Page>} />
     {process.env.REACT_APP_INDEPENDENT_TICKETS_ENABLED === "true" && <><Route path="/admin/customer-service/e-ticket" element={<Page permission="*"><IndependentTicketPage /></Page>} /><Route path="/admin/bookings/independent-tickets" element={<Navigate to="/admin/customer-service/e-ticket" replace />} /></>}
 
     {/* Booking creation and detail workspaces — not permanent navigation items */}
