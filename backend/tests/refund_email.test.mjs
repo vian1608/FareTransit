@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {normalizeRefundEmail,refundTemplate,refundKey,sendRefundEmail,previewRefundEmail} from '../src/modules/admin/admin.refund-email.mjs';
-const input={email:'passenger@example.com',passengerName:'Sample Passenger',cardholderName:'Sample Holder',last4:'0123',amount:'250.05'};
+const input={email:'passenger@example.com',passengerName:'Sample Passenger',cardholderName:'Sample Holder',cardBrand:'visa',last4:'0123',amount:'250.05'};
 const response=()=>({statusCode:200,body:null,set(){return this;},status(n){this.statusCode=n;return this;},json(v){this.body=v;return this;}});
 test('refund email validates four digits and positive exact USD cents',()=>{
  const d=normalizeRefundEmail(input);assert.equal(d.last4,'0123');assert.equal(d.cents,25005);
- for(const patch of [{last4:'1234567890123456'},{last4:'abc4'},{amount:'0'},{amount:'1.234'},{amount:'1e2'},{amount:'-5'},{email:'bad'},{passengerName:''},{cardholderName:'A\nB'}])assert.throws(()=>normalizeRefundEmail({...input,...patch}));
+ for(const patch of [{last4:'1234567890123456'},{last4:'abc4'},{cardBrand:'fake'},{cardBrand:''},{cardBrand:'constructor'},{amount:'0'},{amount:'1.234'},{amount:'1e2'},{amount:'-5'},{email:'bad'},{passengerName:''},{cardholderName:'A\nB'}])assert.throws(()=>normalizeRefundEmail({...input,...patch}));
  assert.equal(refundKey(d,'2026-11-27'),refundKey(normalizeRefundEmail({...input,amount:'250.05'}),'2026-11-27'));
  assert.notEqual(refundKey(d,'2026-11-27'),refundKey(d,'2026-11-28'));
 });
@@ -13,6 +13,17 @@ test('template escapes names and does not falsely confirm refund completion',()=
  const t=refundTemplate(normalizeRefundEmail({...input,passengerName:'<script>alert(1)</script>'}));
  assert.doesNotMatch(t.html,/<script>/);assert.match(t.html,/&lt;script&gt;/);
  for(const v of [t.html,t.text]){assert.match(v,/0123/);assert.match(v,/\$250\.05/);assert.match(v,/does not confirm that a refund has been approved, issued or credited/);}
+});
+test('network graphics, contact number and masked data are included for each selected brand',()=>{
+ for(const [cardBrand,name] of [['visa','Visa'],['mastercard','Mastercard'],['amex','American Express'],['discover','Discover'],['other','Other card']]){
+  const d=normalizeRefundEmail({...input,cardBrand});const t=refundTemplate(d);
+  assert.ok(t.text.includes(name+' •••• 0123'));
+  assert.ok(t.html.includes(name));assert.ok(t.html.includes('tel:+18887808855'));
+  assert.ok(t.text.includes('+1 (888) 780-8855'));
+  if(cardBrand!=='other')assert.ok(t.html.includes('/assets/refund-cards/'+cardBrand+'.png'));
+  else assert.doesNotMatch(t.html,/\/assets\/refund-cards\//);
+ }
+ assert.notEqual(refundKey(normalizeRefundEmail(input),'2026-11-27'),refundKey(normalizeRefundEmail({...input,cardBrand:'amex'}),'2026-11-27'));
 });
 test('preview shares the exact sent template and travel invitation is optional',()=>{
  const d=normalizeRefundEmail(input);
